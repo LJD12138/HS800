@@ -1,0 +1,7 @@
+r
+halt
+Erase  0x08000000 0x8040000
+loadfile ".\build\BOOT\BOOT.hex"
+r
+go
+exit

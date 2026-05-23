@@ -1,0 +1,464 @@
+version: "4.1"
+name: APP
+type: ARM
+deviceName: GD32F303RC
+packDir: .pack/GigaDevice/GD32F30x_DFP.2.0.0
+srcDirs: []
+virtualFolder:
+  name: <virtual_root>
+  files: []
+  folders:
+    - name: StartUp
+      files:
+        - path: Firmware/CMSIS/GD/GD32F30x/Source/ARM/startup_gd32f30x_hd.s
+      folders: []
+    - name: CMSIS
+      files:
+        - path: Firmware/CMSIS/GD/GD32F30x/Source/system_gd32f30x.c
+      folders: []
+    - name: Peripherals
+      files:
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_adc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_bkp.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_can.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_crc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_ctc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_dac.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_dbg.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_dma.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_enet.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_exmc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_exti.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_fmc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_fwdgt.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_gpio.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_i2c.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_misc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_pmu.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_rcu.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_rtc.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_sdio.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_spi.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_timer.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_usart.c
+        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_wwdgt.c
+      folders: []
+    - name: MW-FreeRTOS
+      files:
+        - path: Middlewares/FreeRTOS/croutine.c
+        - path: Middlewares/FreeRTOS/event_groups.c
+        - path: Middlewares/FreeRTOS/list.c
+        - path: Middlewares/FreeRTOS/queue.c
+        - path: Middlewares/FreeRTOS/stream_buffer.c
+        - path: Middlewares/FreeRTOS/tasks.c
+        - path: Middlewares/FreeRTOS/timers.c
+        - path: Middlewares/FreeRTOS/portable/MemMang/heap_4.c
+        - path: Middlewares/FreeRTOS/portable/RVDS/ARM_CM4F/port.c
+      folders: []
+    - name: MW-EasyFlash
+      files:
+        - path: Middlewares/EasyFlash/src/easyflash.c
+        - path: Middlewares/EasyFlash/src/ef_env.c
+        - path: Middlewares/EasyFlash/src/ef_iap.c
+        - path: Middlewares/EasyFlash/src/ef_log.c
+        - path: Middlewares/EasyFlash/src/ef_utils.c
+        - path: Middlewares/EasyFlash/port/ef_port.c
+      folders: []
+    - name: MW-EasyLogger
+      files:
+        - path: Middlewares/EasyLogger/src/elog.c
+        - path: Middlewares/EasyLogger/port/elog_port.c
+        - path: Middlewares/EasyLogger/src/elog_async.c
+        - path: Middlewares/EasyLogger/src/elog_buf.c
+        - path: Middlewares/EasyLogger/src/elog_Init.c
+        - path: Middlewares/EasyLogger/src/elog_utils.c
+        - path: Middlewares/EasyLogger/plugins/flash/elog_flash.c
+        - path: Middlewares/EasyLogger/plugins/flash/elog_flash_port.c
+      folders: []
+    - name: MW-CmBacktrace
+      files:
+        - path: Middlewares/CmBacktrace/cm_backtrace.c
+        - path: Middlewares/CmBacktrace/fault_handler/keil/cmb_fault.S
+      folders: []
+    - name: MW-SeggerRtt
+      files:
+        - path: Middlewares/SeggerRtt/SEGGER_RTT.c
+        - path: Middlewares/SeggerRtt/SEGGER_RTT_printf.c
+        - path: Middlewares/SeggerRtt/SEGGER_SYSVIEW.c
+        - path: Middlewares/SeggerRtt/SEGGER_SYSVIEW_Config_FreeRTOS.c
+        - path: Middlewares/SeggerRtt/SEGGER_SYSVIEW_FreeRTOS.c
+      folders: []
+    - name: MW-Protocol
+      files:
+        - path: Middlewares/Protocol/Modbus/modbus_proto.c
+        - path: Middlewares/Protocol/Modbus/modbus_proto.h
+        - path: Middlewares/Protocol/BaiKu/baiku_proto.c
+        - path: Middlewares/Protocol/BaiKu/baiku_proto.h
+        - path: Middlewares/Protocol/Modbus1/modbus_proto1.c
+        - path: Middlewares/Protocol/Modbus1/modbus_proto1.h
+        - path: Middlewares/Protocol/proto_update.c
+        - path: Middlewares/Protocol/proto_update.h
+      folders: []
+    - name: MW-Lwrb
+      files:
+        - path: Middlewares/LightweightRingBuffer/src/lwrb.c
+        - path: Middlewares/LightweightRingBuffer/src/lwrb_ex.c
+      folders: []
+    - name: ComFunc
+      files:
+        - path: ComFunc/check.c
+        - path: ComFunc/filtration.c
+        - path: ComFunc/function.c
+        - path: ComFunc/i2c.c
+        - path: ComFunc/ntc.c
+        - path: ComFunc/queue_task.c
+      folders: []
+    - name: Application
+      files:
+        - path: Application/board_config.h
+        - path: Application/FreeRTOSConfig.h
+        - path: Application/main.c
+        - path: Application/board_config.c
+        - path: Application/app_info.c
+        - path: Application/gpio_init.c
+        - path: Application/fwdgt.c
+        - path: Application/gd32f30x_it.c
+        - path: Application/timer_task.c
+      folders: []
+    - name: App-Sys
+      files:
+        - path: Application/Sys/sys_task.c
+        - path: Application/Sys/sys_task.h
+        - path: Application/Sys/sys_queue_task.c
+        - path: Application/Sys/sys_queue_task.h
+        - path: Application/Sys/sys_queue_task_init.c
+        - path: Application/Sys/sys_queue_task_closing.c
+        - path: Application/Sys/sys_queue_task_shut_down.c
+        - path: Application/Sys/sys_queue_task_booting.c
+        - path: Application/Sys/sys_queue_task_work.c
+        - path: Application/Sys/sys_queue_task_err.c
+        - path: Application/Sys/sys_queue_task_reset.c
+        - path: Application/Sys/sys_queue_task_eng.c
+        - path: Application/Sys/sys_queue_task_eng.h
+        - path: Application/Sys/sys_queue_task_update.c
+        - path: Application/Sys/sys_queue_task_update.h
+      folders: []
+    - name: HW-Flash
+      files:
+        - path: Hardware/Flash/flash_gd32.c
+        - path: Hardware/Flash/flash_iface.c
+      folders: []
+    - name: HW-Print
+      files:
+        - path: Hardware/Print/print_task.c
+        - path: Hardware/Print/print_task.h
+        - path: Hardware/Print/print_queue_task.c
+        - path: Hardware/Print/print_queue_task.h
+        - path: Hardware/Print/print_queue_task_main.c
+        - path: Hardware/Print/print_queue_task_reply_cali.c
+        - path: Hardware/Print/print_queue_task_reply_app_info.c
+        - path: Hardware/Print/print_prot_frame.c
+        - path: Hardware/Print/print_prot_frame.h
+        - path: Hardware/Print/print_api.c
+        - path: Hardware/Print/print_api.h
+        - path: Hardware/Print/print_iface.c
+        - path: Hardware/Print/print_iface.h
+        - path: Hardware/Print/print_queue_task_update.c
+      folders: []
+    - name: HW-Adc
+      files:
+        - path: Hardware/Adc/adc_task.c
+        - path: Hardware/Adc/adc_task.h
+        - path: Hardware/Adc/adc_iface.c
+        - path: Hardware/Adc/adc_iface.h
+      folders: []
+    - name: HW-Key
+      files:
+        - path: Hardware/Key/key_task.c
+        - path: Hardware/Key/key_task.h
+        - path: Hardware/Key/key_func.c
+        - path: Hardware/Key/key_func.h
+        - path: Hardware/Key/key_func_eng.c
+        - path: Hardware/Key/key_func_eng.h
+      folders: []
+    - name: HW-Buz
+      files:
+        - path: Hardware/Buz/buz_task.c
+        - path: Hardware/Buz/buz_task.h
+        - path: Hardware/Buz/buz_iface.c
+        - path: Hardware/Buz/buz_iface.h
+      folders: []
+    - name: HW-Dc
+      files:
+        - path: Hardware/Dc/dc_task.c
+        - path: Hardware/Dc/dc_task.h
+        - path: Hardware/Dc/dc_iface.c
+        - path: Hardware/Dc/dc_iface.h
+      folders: []
+    - name: HW-Usb
+      files:
+        - path: Hardware/Usb/usb_task.c
+        - path: Hardware/Usb/usb_task.h
+        - path: Hardware/Usb/usb_iface.c
+        - path: Hardware/Usb/usb_iface.h
+        - path: Hardware/Usb/usb_prot_frame.c
+        - path: Hardware/Usb/usb_prot_frame.h
+        - path: Hardware/Usb/usb_queue_task.c
+        - path: Hardware/Usb/usb_queue_task.h
+        - path: Hardware/Usb/usb_queue_task_init.c
+        - path: Hardware/Usb/usb_queue_task_booting.c
+        - path: Hardware/Usb/usb_queue_task_work.c
+        - path: Hardware/Usb/usb_queue_task_closing.c
+        - path: Hardware/Usb/usb_queue_task_err.c
+      folders: []
+    - name: HW-Led
+      files:
+        - path: Hardware/Led/led_task.c
+        - path: Hardware/Led/led_task.h
+        - path: Hardware/Led/led_iface.c
+        - path: Hardware/Led/led_iface.h
+      folders: []
+    - name: HW-MD_Display
+      files:
+        - path: Hardware/MD_Display/md_display_task.c
+        - path: Hardware/MD_Display/md_display_task.h
+        - path: Hardware/MD_Display/md_display_api.c
+        - path: Hardware/MD_Display/md_display_api.h
+        - path: Hardware/MD_Display/md_display_iface.c
+        - path: Hardware/MD_Display/md_display_iface.h
+        - path: Hardware/MD_Display/md_display_eng_mode.c
+        - path: Hardware/MD_Display/md_display_eng_mode.h
+        - path: Hardware/MD_Display/md_display_err.c
+      folders: []
+    - name: HW-MD_Light
+      files:
+        - path: Hardware/MD_Light/md_light_task.c
+        - path: Hardware/MD_Light/md_light_task.h
+        - path: Hardware/MD_Light/md_light_iface.c
+        - path: Hardware/MD_Light/md_light_iface.h
+      folders: []
+    - name: HW-MD_HeatManage
+      files:
+        - path: Hardware/MD_HeatManage/md_hm_task.c
+        - path: Hardware/MD_HeatManage/md_hm_task.h
+        - path: Hardware/MD_HeatManage/md_hm_iface.c
+        - path: Hardware/MD_HeatManage/md_hm_iface.h
+      folders: []
+    - name: HW-MD_Bms
+      files:
+        - path: Hardware/MD_Bms/md_bms_task.c
+        - path: Hardware/MD_Bms/md_bms_task.h
+        - path: Hardware/MD_Bms/md_bms_queue_task.c
+        - path: Hardware/MD_Bms/md_bms_queue_task.h
+        - path: Hardware/MD_Bms/md_bms_queue_task_init.c
+        - path: Hardware/MD_Bms/md_bms_queue_task_main.c
+        - path: Hardware/MD_Bms/md_bms_queue_task_ctrl_switch.c
+        - path: Hardware/MD_Bms/md_bms_queue_task_cali.c
+        - path: Hardware/MD_Bms/md_bms_queue_task_err.c
+        - path: Hardware/MD_Bms/md_bms_queue_task_get_app_info.c
+        - path: Hardware/MD_Bms/md_bms_queue_task_req_set_cmd.c
+        - path: Hardware/MD_Bms/md_bms_rec_task.c
+        - path: Hardware/MD_Bms/md_bms_rec_task.h
+        - path: Hardware/MD_Bms/md_bms_rec_data_proc.c
+        - path: Hardware/MD_Bms/md_bms_rec_data_proc.h
+        - path: Hardware/MD_Bms/md_bms_prot_frame.c
+        - path: Hardware/MD_Bms/md_bms_prot_frame.h
+        - path: Hardware/MD_Bms/md_bms_iface.c
+        - path: Hardware/MD_Bms/md_bms_iface.h
+        - path: Hardware/MD_Bms/md_bms_queue_task_update.c
+      folders: []
+    - name: HW-MD_Mppt
+      files:
+        - path: Hardware/MD_Mppt/md_mppt_task.c
+        - path: Hardware/MD_Mppt/md_mppt_task.h
+        - path: Hardware/MD_Mppt/md_mppt_queue_task.c
+        - path: Hardware/MD_Mppt/md_mppt_queue_task.h
+        - path: Hardware/MD_Mppt/md_mppt_queue_task_init.c
+        - path: Hardware/MD_Mppt/md_mppt_queue_task_main.c
+        - path: Hardware/MD_Mppt/md_mppt_queue_task_err_process.c
+        - path: Hardware/MD_Mppt/md_mppt_queue_task_set_chg_pwr.c
+        - path: Hardware/MD_Mppt/md_mppt_rec_task.c
+        - path: Hardware/MD_Mppt/md_mppt_rec_task.h
+        - path: Hardware/MD_Mppt/md_mppt_rec_data_proc.c
+        - path: Hardware/MD_Mppt/md_mppt_rec_data_proc.h
+        - path: Hardware/MD_Mppt/md_mppt_prot_frame.c
+        - path: Hardware/MD_Mppt/md_mppt_prot_frame.h
+      folders: []
+    - name: HW-MD_Dcac
+      files:
+        - path: Hardware/MD_Dcac/md_dcac_task.c
+        - path: Hardware/MD_Dcac/md_dcac_task.h
+        - path: Hardware/MD_Dcac/md_dcac_queue_task.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task.h
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_init.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_main.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_dcac_in.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_dcac_out.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_para_in.c
+        - path: Hardware/MD_Dcac/md_dcac_rec_task.c
+        - path: Hardware/MD_Dcac/md_dcac_rec_task.h
+        - path: Hardware/MD_Dcac/md_dcac_rec_data_proc.c
+        - path: Hardware/MD_Dcac/md_dcac_rec_data_proc.h
+        - path: Hardware/MD_Dcac/md_dcac_prot_frame.c
+        - path: Hardware/MD_Dcac/md_dcac_prot_frame.h
+        - path: Hardware/MD_Dcac/md_dcac_iface.c
+        - path: Hardware/MD_Dcac/md_dcac_iface.h
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_err_proc.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_update.c
+      folders: []
+dependenceList: []
+outDir: build
+miscInfo:
+  uid: 48d4f15bd052abe5146e054a2b1e714d
+targets:
+  APP:
+    cppPreprocessAttrs:
+      defineList:
+        - USE_STDPERIPH_DRIVER
+        - GD32F30X_HD
+      incList:
+        - .
+        - Firmware/CMSIS/GD/GD32F30x/Include
+        - Firmware/GD32F30x_standard_peripheral/Include
+        - Firmware/CMSIS
+        - Middlewares/FreeRTOS/portable/RVDS/ARM_CM4F
+        - Middlewares/FreeRTOS/include
+        - Middlewares/SeggerRtt
+        - ComFunc
+        - Application
+        - Hardware
+        - Hardware/BSP
+        - Middlewares/CmBacktrace
+        - Middlewares/CmBacktrace/Languages/zh-CN
+        - Middlewares/LightweightRingBuffer/src
+        - Middlewares/EasyLogger/inc
+        - Middlewares/EasyLogger/plugins/flash
+        - Middlewares/EasyFlash/inc
+        - Middlewares/Protocol
+        - .cmsis/include
+        - RTE/_APP
+      libList: []
+    excludeList: []
+    settings:
+      debugger: cortex-debug
+    toolchain: AC5
+    toolchainConfigMap:
+      AC5:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: single
+        options:
+          version: 4
+          afterBuildTasks:
+            - name: "[Copy linker output for Keil User Commands]"
+              abortAfterFailed: true
+              command: mkdir ${KEIL_OUTPUT_DIR} & copy "${OutDir}\${ProjectName}.axf" "${KEIL_OUTPUT_DIR}\${ProjectName}.axf"
+              disable: false
+            - name: $PMergeTool.bat
+              abortAfterFailed: true
+              command: ${P}MergeTool.bat ${K}
+              disable: false
+          asm-compiler: {}
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            CXX_FLAGS: --diag_suppress=1 --diag_suppress=1295
+            C_FLAGS: --diag_suppress=1 --diag_suppress=1295
+            c99-mode: true
+            one-elf-section-per-function: true
+            optimization: level-0
+            warnings: all-warnings
+          global:
+            output-debug-info: enable
+            use-microLIB: true
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            output-format: elf
+            ro-base: "0x08000000"
+            rw-base: "0x20000000"
+        scatterFilePath: ""
+        storageLayout:
+          RAM:
+            - id: 1
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 3
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 1
+              isChecked: true
+              mem:
+                size: "0xc000"
+                startAddr: "0x20000000"
+              noInit: false
+              tag: IRAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: IRAM
+          ROM:
+            - id: 1
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 3
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 1
+              isChecked: true
+              isStartup: true
+              mem:
+                size: "0x28000"
+                startAddr: "0x800d000"
+              tag: IROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: IROM
+        useCustomScatterFile: false
+    uploadConfigMap:
+      JLink:
+        baseAddr: ""
+        bin: ""
+        cpuInfo:
+          cpuName: GD32F303RC
+          vendor: GigaDevice
+        otherCmds: ""
+        proType: 1
+        speed: 1000
+    uploader: JLink

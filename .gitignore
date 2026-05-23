@@ -1,0 +1,14 @@
+*.bin
+*.hex
+build/
+
+Projects.uvguix.*
+*.txt
+compile_commands.json
+Listings/
+Objects/
+RTE/
+*.jac
+*.PC
+
+

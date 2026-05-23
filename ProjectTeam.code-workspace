@@ -1,0 +1,16 @@
+{
+     "folders": [
+          {
+              "name": "BOOT",
+              "path": "BOOT"
+          },
+          {
+              "name": "APP",
+              "path": "APP"
+          }
+    ],
+    "settings": {
+        "cortex-debug.variableUseNaturalFormat": true,
+        "git.ignoreLimitWarning": true
+    }
+}
