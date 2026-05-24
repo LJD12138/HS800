@@ -1,9 +1,17 @@
+/***********************************************************************************************************************
+ -----文件说明    LVGL显示端口头文件
+ -----说明(备注)  LVGL显示驱动接口层头文件，声明显示初始化和刷新控制函数
+ -----文件版本    V1.0
+ -----作者        HS800开发团队
+ -----日期        2024
+ ************************************************************************************************************************/
+
 #ifndef LV_PORT_DISP_TEMPL_H
 #define LV_PORT_DISP_TEMPL_H
 
 #include "board_config.h"
 
-#if(boardDISPLAY)
+#if(boardDISPLAY_EN)
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,15 +38,10 @@ extern "C" {
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
-/* Initialize low level display driver */
+
+
 void lv_port_disp_init(void);
-
-/* Enable updating the screen (the flushing process) when disp_flush() is called by LVGL
- */
 void disp_enable_update(u8 index);
-
-/* Disable updating the screen (the flushing process) when disp_flush() is called by LVGL
- */
 void disp_disable_update(void);
 
 /**********************

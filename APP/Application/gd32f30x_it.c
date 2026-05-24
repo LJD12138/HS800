@@ -37,6 +37,11 @@ OF SUCH DAMAGE.
 
 #include "gd32f30x_it.h"
 #include "Sys/sys_task.h"
+#include "board_config.h"
+
+#if(!boardUSE_OS)
+#include "MD_Display/lv_port_timer.h"
+#endif
 
 /*!
     \brief      this function handles NMI exception
@@ -132,16 +137,19 @@ void DebugMon_Handler(void)
 //{
 //}
 
-///*!
-//    \brief      this function handles SysTick exception
-//    \param[in]  none
-//    \param[out] none
-//    \retval     none
-//*/
-//void SysTick_Handler(void)
-//{
-//   
-//}
+/*!
+    \brief      this function handles SysTick exception
+    \param[in]  none
+    \param[out] none
+    \retval     none
+*/
+#if(!boardUSE_OS)
+void SysTick_Handler(void)
+{
+    /* LVGL定时器回调 */
+    vLV_TimerIrqCallback();
+}
+#endif
 
 
 void EXTI0_IRQHandler(void)

@@ -9,11 +9,11 @@
 
   <project>
     <PathAndName>.\BOOT\BOOT.uvprojx</PathAndName>
+    <NodeIsActive>1</NodeIsActive>
   </project>
 
   <project>
-    <PathAndName>.\APP\APP.uvprojx</PathAndName>
-    <NodeIsActive>1</NodeIsActive>
+    <PathAndName>G:\1-BaikuProjects\25-HS800\1.software\HS800\APP\APP.uvprojx</PathAndName>
   </project>
 
 </ProjectWorkspace>

@@ -74,7 +74,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 	
 	if(tSysInfo.uInit.tFinish.bIF_DispTask == 0) //初始化未完成
 	{
-		tp_task->ucID = DTI_INIT;           
+		tp_task->ucID = DDTI_INIT;          
 		tp_task->usInParam = 0;
 	}
 	else if(uc_temp)//队列里面有任务   
@@ -84,13 +84,13 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 	}
 	else
 	{
-		tp_task->ucID = DTI_NULL;           
+		tp_task->ucID = DDTI_NULL;          
 		tp_task->usInParam = 0;
 	}
 	
     switch (tp_task->ucID)
     {
-        case DTI_INIT:
+		case DDTI_INIT:
         {
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("\r\n bDispTask:----装载初始化显示任务---- \r\n");
@@ -98,7 +98,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         }
         break;
 		
-		case DTI_CLOSING:
+		case DDTI_CLOSING:
         {	
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载关闭中显示任务----\r\n");
@@ -106,7 +106,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         }
         break;
 
-		case DTI_SHUT_DOWN:
+		case DDTI_SHUT_DOWN:
         {	
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载关闭完成显示任务----\r\n");
@@ -114,7 +114,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         }
         break;
 		
-		case DTI_ERR:
+		case DDTI_ERR:
         {  
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载错误显示任务----\r\n");
@@ -122,7 +122,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         }
         break;
         
-        case DTI_BOOTING:
+		case DDTI_BOOTING:
         {  
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载启动显示任务----\r\n");
@@ -130,7 +130,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         }
         break;
 
-		case DTI_WORK:
+		case DDTI_WORK:
         {  
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载工作显示任务----\r\n");
@@ -139,7 +139,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         break;
 
 		#if(boardUPDATA)
-		case DTI_UPDATA:
+		case DDTI_UPDATA:
         {  
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载升级显示任务----\r\n");
@@ -149,7 +149,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 		#endif  //boardUPDATA
 		
 		#if(boardENG_MODE_EN)
-		case DTI_ENG:
+		case DDTI_ENG:
         {  
 			if(uPrint.tFlag.bDispTask)
 				sMyPrint("bDispTask:----装载工程模式显示任务----\r\n");
@@ -158,7 +158,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         break;
 		#endif
 		
-		case DTI_NULL:
+		case DDTI_NULL:
         default:
             tp_task->vp_func = NULL;
 			tp_task->usInParam = 0;

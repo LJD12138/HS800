@@ -66,6 +66,7 @@ typedef union
 		
 		u16 			bIF_UsbTask:1;
 		u16 			bIF_DcTask:1;
+		u16 			bIF_DispTask:1;
 	}tFinish;
 	u16 State;
 }InitFinish_U;
