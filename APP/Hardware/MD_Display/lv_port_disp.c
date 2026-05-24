@@ -16,7 +16,7 @@
 #include "Middlewares/LVGL/src/misc/lv_color.h"
 
 /* LVGL 内置 ST7789 驱动支持 */
-#if(LV_USE_ST7796)
+#if(LV_USE_ST7789)
 #include "Middlewares/LVGL/src/drivers/display/st7789/lv_st7789.h"
 #include "Middlewares/LVGL/src/drivers/display/lcd/lv_lcd_generic_mipi.h"
 #endif
@@ -45,7 +45,7 @@ static void disp_flush(lv_display_t * disp, const lv_area_t * area, uint8_t * px
 static bool b_disp_flush_area_is_valid(const lv_area_t * area); /* 刷新区域合法性检查 */
 
 /* LVGL 内置 ST7789 驱动回调函数 */
-#if(LV_USE_ST7796)
+#if(LV_USE_ST7789)
 static void st7789_send_cmd(lv_lcd_send_cmd_cb_t cmd, const uint8_t *param, uint32_t param_len);
 static void st7789_send_color(lv_lcd_send_color_cb_t cmd, const uint8_t *param, uint32_t param_len);
 #endif
@@ -78,7 +78,7 @@ void lv_port_disp_init(void)
 	/* 初始化底层显示控制器与同步对象 */
     disp_init();
 
-	#if(LV_USE_ST7796) /* 使用 LVGL 内置 ST7789 驱动 */
+	#if(LV_USE_ST7789) /* 使用 LVGL 内置 ST7789 驱动 */
 	
     /* 创建 ST7789 LCD 驱动 */
     disp = lv_st7789_create(DISP_HOR_RES, DISP_VER_RES, 0, st7789_send_cmd, st7789_send_color);
@@ -100,7 +100,7 @@ void lv_port_disp_init(void)
  *   静态函数实现
  **********************/
 
-#if(LV_USE_ST7796)
+#if(LV_USE_ST7789)
 /**
  * @brief  ST7789 发送命令回调函数
  * @param  cmd: 命令值
