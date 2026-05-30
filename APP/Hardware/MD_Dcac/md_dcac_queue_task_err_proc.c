@@ -4,6 +4,8 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
+
+#if(boardDCAC_EN)
 #include "MD_Dcac/md_dcac_task.h"
 #include "MD_Dcac/md_dcac_prot_frame.h"
 #include "Print/print_task.h"
@@ -60,3 +62,4 @@ void v_dcac_queue_task_err_proc(Task_T *tp_task)
 }
 
 
+#endif  //boardDCAC_EN

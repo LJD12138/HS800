@@ -11,7 +11,7 @@
 ************************************************************************************************************************/
 static void v_led_gpio_init(void)
 {
-	// rcu_periph_clock_enable(RCU_AF);//开启复用外设时钟使能
+	rcu_periph_clock_enable(RCU_AF);//开启复用外设时钟使能
 //    gpio_pin_remap_config(GPIO_TIMER2_FULL_REMAP,ENABLE);//重映射T2_H0
 	rcu_periph_clock_enable(ledPWR_SW_RCU);
 	gpio_init(ledPWR_SW_PORT,GPIO_MODE_AF_PP,GPIO_OSPEED_50MHZ,ledPWR_SW_PIN);
@@ -23,17 +23,17 @@ static void v_led_gpio_init(void)
 	gpio_init(ledAC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledAC_SW_PIN);
 	ledAC_SW_OFF();
 	
-	rcu_periph_clock_enable(ledUSB_SW_RCU);
-	gpio_init(ledUSB_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledUSB_SW_PIN);
-	ledUSB_SW_OFF();
+//	rcu_periph_clock_enable(ledUSB_SW_RCU);
+//	gpio_init(ledUSB_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledUSB_SW_PIN);
+//	ledUSB_SW_OFF();
 	
 	rcu_periph_clock_enable(ledLight_SW_RCU);
 	gpio_init(ledLight_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledLight_SW_PIN);
 	ledLight_SW_OFF();
 	
-	rcu_periph_clock_enable(ledDC_SW_RCU);
-	gpio_init(ledDC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledDC_SW_PIN);
-	ledDC_SW_OFF();
+//	rcu_periph_clock_enable(ledDC_SW_RCU);
+//	gpio_init(ledDC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledDC_SW_PIN);
+//	ledDC_SW_OFF();
 }
 
 /***********************************************************************************************************************
@@ -49,44 +49,44 @@ static void v_led_gpio_init(void)
 ************************************************************************************************************************/
 static void v_led_pwm_init(void)
 {
-	// timer_parameter_struct timer0_init;
-	// timer_oc_parameter_struct timer0_ocintpara;
-	// // Enable TIMER0 clock
-	// rcu_periph_clock_enable(ledTIMER_RCU);
-	// // TIMER0 reset
-	// timer_deinit(ledTIMER);
+	timer_parameter_struct timer0_init;
+	timer_oc_parameter_struct timer0_ocintpara;
+	// Enable TIMER0 clock
+	rcu_periph_clock_enable(ledTIMER_RCU);
+	// TIMER0 reset
+	timer_deinit(ledTIMER);
  
-	// // TIMER0 configuration PWM frequency is 100HZ
-	// timer0_init.prescaler         = 59;
-	// timer0_init.alignedmode       = TIMER_COUNTER_EDGE;
-	// timer0_init.counterdirection  = TIMER_COUNTER_UP;
-	// timer0_init.period            = 999;
-	// timer0_init.clockdivision     = TIMER_CKDIV_DIV1;
-	// timer0_init.repetitioncounter = 0;
-	// timer_init(ledTIMER, &timer0_init);
+	// TIMER0 configuration PWM frequency is 100HZ
+	timer0_init.prescaler         = 59;
+	timer0_init.alignedmode       = TIMER_COUNTER_EDGE;
+	timer0_init.counterdirection  = TIMER_COUNTER_UP;
+	timer0_init.period            = 999;
+	timer0_init.clockdivision     = TIMER_CKDIV_DIV1;
+	timer0_init.repetitioncounter = 0;
+	timer_init(ledTIMER, &timer0_init);
  
-	// // Output channel_2 is configured as PWM mode
-	// timer0_ocintpara.outputstate  = TIMER_CCX_ENABLE;
-	// timer0_ocintpara.outputnstate = TIMER_CCXN_DISABLE;
-	// timer0_ocintpara.ocpolarity   = TIMER_OC_POLARITY_HIGH;
-	// timer0_ocintpara.ocnpolarity  = TIMER_OCN_POLARITY_HIGH;
-	// timer0_ocintpara.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
-	// timer0_ocintpara.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
-	// timer_channel_output_config(ledTIMER, ledTIMER_CH, &timer0_ocintpara);
+	// Output channel_2 is configured as PWM mode
+	timer0_ocintpara.outputstate  = TIMER_CCX_ENABLE;
+	timer0_ocintpara.outputnstate = TIMER_CCXN_DISABLE;
+	timer0_ocintpara.ocpolarity   = TIMER_OC_POLARITY_HIGH;
+	timer0_ocintpara.ocnpolarity  = TIMER_OCN_POLARITY_HIGH;
+	timer0_ocintpara.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
+	timer0_ocintpara.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
+	timer_channel_output_config(ledTIMER, ledTIMER_CH, &timer0_ocintpara);
  
-	// // Set the comparison register value
-	// timer_channel_output_pulse_value_config(ledTIMER, ledTIMER_CH, 0);
-	// timer_channel_output_mode_config(ledTIMER, ledTIMER_CH, TIMER_OC_MODE_PWM0);
-	// timer_channel_output_shadow_config(ledTIMER, ledTIMER_CH, TIMER_OC_SHADOW_DISABLE);
+	// Set the comparison register value
+	timer_channel_output_pulse_value_config(ledTIMER, ledTIMER_CH, 0);
+	timer_channel_output_mode_config(ledTIMER, ledTIMER_CH, TIMER_OC_MODE_PWM0);
+	timer_channel_output_shadow_config(ledTIMER, ledTIMER_CH, TIMER_OC_SHADOW_DISABLE);
  
-	// // Enable TIMER0 output
-	// timer_primary_output_config(ledTIMER, ENABLE);
-	// // Enable timer auto reload shadow
-	// timer_auto_reload_shadow_enable(ledTIMER);
-	// // Enable TIMER0
-	// timer_enable(ledTIMER);
+	// Enable TIMER0 output
+	timer_primary_output_config(ledTIMER, ENABLE);
+	// Enable timer auto reload shadow
+	timer_auto_reload_shadow_enable(ledTIMER);
+	// Enable TIMER0
+	timer_enable(ledTIMER);
 
-	// ledPWR_SW_PWM_SET(0);
+	ledPWR_SW_PWM_SET(0);
 }
 
 /***********************************************************************************************************************

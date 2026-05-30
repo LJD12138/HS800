@@ -14,6 +14,9 @@ echo -----------------------------------【一、 生成Bin文件】--------------------
 ::删除前APP.bin文件
 del .\APP.bin
 
+
+echo $K
+
 ::生成Bin文件
 ::$K\ARM\ARMCC\bin\fromelf.exe --bin --output=@L.bin !L
 %1\ARM\ARMCC\bin\fromelf.exe --bin --output .\APP.bin .\Objects\APP.axf

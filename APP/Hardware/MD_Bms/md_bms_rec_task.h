@@ -19,23 +19,6 @@ extern TaskHandle_t tBmsRecTaskHandle;
 #endif  //boardUSE_OS
 
 //*********************************任务参数**********************************
-#pragma pack (1)   //强制进行1字节对齐
-typedef struct
-{
-	vu16				usSOC;				//总的SOC      1%
-	vu16				usTotalVolt;		//总的电压     0.001V
-	vs16				sTotalCurr;			//总的电流     0.01A
-	u16	 				usRemainCap;    	//剩余容量     mA/H
-	u16 				usFullCap;      	//充满容量     mA/H
-	vu16				usCycleCnt;    		//循环次数
-	vs16				sMaxTemp;			//主机最高温度 1摄氏度
-	vs16				sMinTemp;			//主机最低温度 1摄氏度	
-	vu16				usChgFullTime;		//总的充满时间 1min
-	vu16				usDisChgEmptyTime;	//总的放空时间 1min
-	vu16 				usState;        	//电池状态
-	vu16 				usErrCode;    		//错误代码
-}BmsParam_T;  
-#pragma pack()   //取消进行1字节对齐
 
 #pragma pack(2)
 typedef struct

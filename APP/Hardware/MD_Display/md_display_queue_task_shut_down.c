@@ -10,7 +10,7 @@
 #include "Print/print_task.h"
 
 
-#define     dispTASK_SHUT_DOWN_CYCLE_TIME       100 //任务时间
+#define     dispTASK_SHUT_DOWN_CYCLE_TIME       10 //任务时间
 
 /***********************************************************************************************************************
 -----函数功能    关闭完成显示任务
@@ -39,7 +39,6 @@ void v_disp_queue_task_shut_down(Task_T *tp_task)
 
         case 1:
         {
-            vDisp_SetPower(false);
             cQueue_GotoStep(tp_task, STEP_END);
         }
         break;

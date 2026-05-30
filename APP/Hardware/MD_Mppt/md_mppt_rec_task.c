@@ -16,7 +16,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define        	mpptREC_TASK_PRIO                    	2   			//任务优先级 
-#define        	mpptREC_TASK_SIZE                    	256    	 		//任务堆栈  实际字节数 *4
+#define        	mpptREC_TASK_SIZE                    	192    	 		//任务堆栈  实际字节数 *4
 TaskHandle_t   	tMpptRecTaskHandle;
 void           	vMppt_RecTask(void *pvParameters);
 #endif  //boardUSE_OS

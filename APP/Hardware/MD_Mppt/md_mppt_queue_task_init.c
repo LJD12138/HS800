@@ -27,7 +27,7 @@ void v_mppt_queue_task_init(Task_T *tp_task)
     {
 		case 0:
         {
-			if(1)
+			if(tSysInfo.uInit.tFinish.bIF_DcacTask)
 				cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
 			else
 				break;
@@ -49,9 +49,9 @@ void v_mppt_queue_task_init(Task_T *tp_task)
 	
 	//等待超时
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt>(3000/mpptTASK_INIT_CYCLE_TIME)) 
+	if(tp_task->usTaskWaitCnt > (3000 / mpptTASK_INIT_CYCLE_TIME)) 
 	{
-		if(uPrint.tFlag.bMpptTask)
+		if(uPrint.tFlag.bMpptTask|| uPrint.tFlag.bImportant)
 			log_w("bMpptTask:初始化任务等待超时,步骤%d", tp_task->ucStep);
 		
 		cQueue_GotoStep(tp_task, STEP_END);  //结束

@@ -1,46 +1,61 @@
-Ôªø/*****************************************************************************************************************
-*                                                                                                                *
- *                                         ÊòæÁ§∫ÈòüÂàó‰ªªÂä°-ÂàùÂßãÂåñ - TFT+LVGLÁâàÊú¨                                    *
-*                                                                                                                *
+/*****************************************************************************************************************
+ *                                                                                                                *
+ *                                         œ‘ æ∂”¡–»ŒŒÒ-≥ı ºªØ - TFT+LVGL∞Ê±æ                                    *
+ *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
 
-#if(boardDISPLAY_EN)
-
-#include <string.h>
+#if (boardDISPLAY_EN)
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_task.h"
-#include "Sys/sys_task.h"
 #include "Print/print_task.h"
+#include "Sys/sys_task.h"
 
-#define dispTASK_INIT_CYCLE_TIME            100
+#define dispTASK_INIT_CYCLE_TIME 10
 
+/***********************************************************************************************************************
+-----∫Ø ˝π¶ƒ‹    ≥ı ºªØœ‘ æ»ŒŒÒ
+-----Àµ√˜(±∏◊¢)  ≥ı ºªØœ‘ æ«˝∂Ø, À¢–¬≥ı ºªØ“≥√Ê≤¢÷√Œªœ‘ æ»ŒŒÒÕÍ≥…±Í÷æ
+-----¥´»Î≤Œ ˝    tp_task:»ŒŒÒ∂‘œÛ÷∏’Î
+----- ‰≥ˆ≤Œ ˝    none
+-----∑µªÿ÷µ      none
+************************************************************************************************************************/
 void v_disp_queue_task_init(Task_T *tp_task)
 {
-    switch(tp_task->ucStep)
+    switch (tp_task->ucStep)
     {
-        case 0:
-            if(tDisp.eDevState != DS_INIT)
-                bDisp_SetDevState(DS_INIT);
-            bDisp_Switch(ST_OFF, false);
-            cQueue_GotoStep(tp_task, STEP_NEXT);
-            break;
+    case 0: {
+        if (tDisp.eDevState != DS_INIT)
+            bDisp_SetDevState(DS_INIT);
 
-        case 1:
-            /* TFT+LVGLÁâàÊú¨ - ÂàùÂßãÂåñÊòæÁ§∫ */
-            bDisp_Switch(ST_ON, true);
-            tSysInfo.uInit.tFinish.bIF_DispTask = 1;
-            cQueue_GotoStep(tp_task, STEP_END);
-            break;
-
-        default:
-            cQueue_GotoStep(tp_task, STEP_END);
-            break;
+        bDisp_Switch(ST_OFF, false);
+        cQueue_GotoStep(tp_task, STEP_NEXT);
+        break;
     }
 
-#if(boardUSE_OS)
+    case 1: {
+        vDisp_Init();
+        cQueue_GotoStep(tp_task, STEP_NEXT);
+    }
+    break;
+
+    case 2: {
+        if (true)
+        {
+            tSysInfo.uInit.tFinish.bIF_DispTask = 1;
+            cQueue_GotoStep(tp_task, STEP_END);
+        }
+    }
+    break;
+
+    default:
+        cQueue_GotoStep(tp_task, STEP_END);
+        break;
+    }
+
+#if (boardUSE_OS)
     vTaskDelay(dispTASK_INIT_CYCLE_TIME);
 #endif
 }
 
-#endif  /*boardDISPLAY_EN*/
+#endif /*boardDISPLAY_EN*/

@@ -78,7 +78,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto);
 ************************************************************************************************************************/
 bool bPrint_SendProtInit(void)
 {
-	s8 c_result = cBaiku_ProtoTransInit(&tpPrintProtoTx,//协议指针
+	s8 c_result = cBaiku_ProtoSendInit(&tpPrintProtoTx,//协议指针
 								printTX_FRAME_SIZE, 	//协议缓存器大小
 								printDEV_ADRR);			//协议设备ID
 	if(c_result <= 0)

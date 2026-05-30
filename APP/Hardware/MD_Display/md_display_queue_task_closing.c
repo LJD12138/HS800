@@ -1,6 +1,6 @@
-ï»¿/*****************************************************************************************************************
+/*****************************************************************************************************************
 *                                                                                                                *
- *                                         æ˜¾ç¤ºé˜Ÿåˆ—ä»»åŠ¡-å…³é—­ä¸­ - TFT+LVGLç‰ˆæœ¬                                    *
+ *                                         ÏÔÊ¾¶ÓÁĞÈÎÎñ-¹Ø±ÕÖĞ - TFT+LVGL°æ±¾                                    *
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
@@ -12,7 +12,7 @@
 #include "MD_Display/md_display_task.h"
 #include "Print/print_task.h"
 
-#define dispTASK_CLOSE_CYCLE_TIME           100
+#define dispTASK_CLOSE_CYCLE_TIME           10
 
 void v_disp_queue_task_closing(Task_T *tp_task)
 {
@@ -26,9 +26,9 @@ void v_disp_queue_task_closing(Task_T *tp_task)
             break;
 
         case 1:
-            /* TFT+LVGLç‰ˆæœ¬ - å…³é—­ä¸­çŠ¶æ€å¤„ç† */
+            /* TFT+LVGL°æ±¾ - ¹Ø±ÕÖĞ×´Ì¬´¦Àí */
             if(uPrint.tFlag.bDispTask)
-                sMyPrint("DispTask: å…³é—­æ¨¡å¼è¿è¡Œä¸­\r\n");
+                sMyPrint("DispTask: ¹Ø±ÕÄ£Ê½ÔËĞĞÖĞ\r\n");
             bDisp_SetDevState(DS_SHUT_DOWN);
             cQueue_GotoStep(tp_task, STEP_END);
             break;

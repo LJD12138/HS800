@@ -831,24 +831,28 @@ s16 cApp_BootGetMemParam(const char* id_str)
 		read_len = sizeof(tBootMemParam.tVerInfo);
 		return_len = ef_get_env_blob(tBootVerInfoStr, &tBootMemParam.tVerInfo, read_len, NULL);
 		if(return_len != read_len)
-		return -2;
+			return -2;
 		
 		read_len = sizeof(tBootMemParam.tParam);
 		return_len = ef_get_env_blob(tBootParamStr, &tBootMemParam.tParam, read_len, NULL);
 		if(return_len != read_len)
-		return -3;
+			return -3;
 	}
 	//读取版本信息
 	else if (strcmp(id_str, tBootVerInfoStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tVerInfo);
 		return_len = ef_get_env_blob(id_str, &tBootMemParam.tVerInfo, read_len, NULL);
+		if(return_len == 0)
+			return 0;
 	}
 	//读取参数
 	else if (strcmp(id_str, tBootParamStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tParam);
 		return_len = ef_get_env_blob(id_str, &tBootMemParam.tParam, read_len, NULL);
+		if(return_len == 0)
+			return 0;
 	}
 	else
 		return -99;

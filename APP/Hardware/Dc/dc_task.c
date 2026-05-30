@@ -33,7 +33,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define     	DC_TASK_PRIO                 			1   	//任务优先级 
-#define     	DC_TASK_SIZE                 			256   	//任务堆栈  实际字节数 *4
+#define     	DC_TASK_SIZE                 			140   	//任务堆栈  实际字节数 *4
 TaskHandle_t    tDcTaskHandler = NULL; 
 void          	vDc_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -222,11 +222,11 @@ void vDc_Task(void *pvParameters)
         }
 		
 		tDc.usInVolt = tAdcSamp.usSysInVolt;
-		tDc.sMaxTemp = tAdcSamp.sDcTemp;
+		tDc.sMaxTemp = tAdcSamp.sDcOutTemp;
 		//*********************************功率**********************************
 		if( tDc.eDevState >= DS_BOOTING)
 		{
-			tDc.usOutVolt = tAdcSamp.usDcOutVolt;
+			tDc.usOutVolt = tAdcSamp.usDcOutVolt;//0.1V
 			tDc.usOutCurr = tAdcSamp.fDcOutCurr * 10;//0.1A
 
 			//计算DC 总功率
@@ -686,8 +686,6 @@ static s8 c_dc_check_in_volt(void)
 	else
 		return -1;
 }
-
-
 
 
 

@@ -25,15 +25,15 @@
 //显示队列任务ID, 由队列管理函数装载对应任务函数
 typedef enum
 {
-	DDTI_NULL = 0,      //空任务
-	DDTI_INIT,          //初始化显示
-	DDTI_CLOSING,       //关闭中显示
-	DDTI_SHUT_DOWN,     //关闭完成显示
-	DDTI_ERR,           //错误显示
-	DDTI_BOOTING,       //启动中显示
-	DDTI_WORK,          //工作显示
-	DDTI_UPDATA,        //升级显示
-	DDTI_ENG,           //工程模式显示
+	DISPTI_NULL = 0,      //空任务
+	DISPTI_INIT,          //初始化显示
+	DISPTI_CLOSING,       //关闭中显示
+	DISPTI_SHUT_DOWN,     //关闭完成显示
+	DISPTI_ERR,           //错误显示
+	DISPTI_BOOTING,       //启动中显示
+	DISPTI_WORK,          //工作显示
+	DISPTI_UPDATA,        //升级显示
+	DISPTI_ENG,           //工程模式显示
 }DispTaskId_E;
 
 //*********************************任务对象**********************************
@@ -43,22 +43,21 @@ typedef struct
     bool             	bLight;           	//1:打开   0:关闭
 	bool             	bSleepShow;       	//1:打开   0:关闭
 	DevState_E    		eDevState;          //设备状态
-	vu16             	usAutoOffTime;     //息屏时间
-	vu16             	usAutoOffCnt;      //息屏倒计时
+	vu16             	usAutoOffTime;     	//息屏时间
+	vu16             	usAutoOffCnt;      	//息屏倒计时
 	#if(boardENG_MODE_EN)
-	DispTypeSet_E    	eLightSetType;     //亮度设置
+	DispTypeSet_E    	eLightSetType;     	//亮度设置
 	#endif
 }Disp_T;  
 extern Disp_T tDisp; 
 
-//LVGL版本不需要OLED页面系统结构定义
 
 extern Task_T *tpDispTask;      //队列任务对象
-extern bool g_bDispPageDirty;   //页面脏标志
 
 #if(boardUSE_OS)
 extern TaskHandle_t tDispTaskHandler;
 #endif
+
 
 //*********************************记忆参数**********************************
 //显示模块记忆参数, 存入APP参数区
@@ -79,7 +78,6 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en);
 void vDisp_TickTimer(void);
 bool bDisp_MemParamInit(DispMemParam_T* p_disp_mem);
 u16 usDisp_ErrCodeDisplay(void);
-void vDisp_RequestRefresh(void);
 
 #if(!boardUSE_OS)
 void vDisp_Task(void *pvParameters);

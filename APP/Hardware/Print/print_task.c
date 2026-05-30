@@ -20,7 +20,7 @@ DebugPrint_U   	uPrint;
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define       	printTASK_PRIO                        	1        						//任务优先级 
-#define       	printTASK_SIZE                        	1024     						//任务堆栈  实际字节数 *4
+#define       	printTASK_SIZE                        	512     						//任务堆栈  实际字节数 *4
 TaskHandle_t	tPrintTaskHandler = NULL;
 void          	vPrint_Task(void *pvParameters);
 #endif  //boardUSE_OS

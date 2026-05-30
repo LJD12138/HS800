@@ -12,7 +12,6 @@
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
-#include "MD_Display/md_display_eng_mode.h"
 
 
 #include "app_info.h"
@@ -56,13 +55,6 @@
 #include "MD_Light/md_light_task.h"
 #endif
 
-
-//****************************************************参数初始化**************************************************//
-#if(boardDISPLAY_EN)
-static vu8 S_ucHighLightTemp = 0;
-static vu8 S_ucLowLightTemp = 0;
-static vu16 S_usBLOffTimeTemp = 0;
-#endif
 
 //****************************************************函数声明****************************************************//
 void Display_EngModeObj(u16 obj, u8 index);
@@ -210,7 +202,7 @@ void vDisp_EnginModeDis(void)
 		case EMS_ADC:
 		{
 			if(tEngMode.ucEngModeItem == 0)
-				temp = tAdcSamp.sDcTemp;
+				temp = tAdcSamp.sDcOutTemp;
 			else if(tEngMode.ucEngModeItem == 1)
 				temp = tAdcSamp.sUsbTemp;
 			else if(tEngMode.ucEngModeItem == 2)
@@ -431,20 +423,6 @@ void Display_Time1(uint16_t min)//时间界面显示
 
 
 /*****************************************************************************************************************
------函数功能    设置亮度
------说明(备注)  none
------传入参数    en:true 开始设置亮度   反之 false
------输出参数    none
------返回值      none
-*****************************************************************************************************************/
-void bDisp_SetLightness(void)
-{
-	S_ucHighLightTemp = tAppMemParam.tDISP.ucHighLightValue;
-	S_ucLowLightTemp = tAppMemParam.tDISP.ucLowLightValue;
-	S_usBLOffTimeTemp = tAppMemParam.tDISP.usAutoOffTime;
-}
-
-/*****************************************************************************************************************
 -----函数功能    选择设置的类型
 -----说明(备注)  none
 -----传入参数    none
@@ -502,21 +480,5 @@ void vDisp_MemParamSet(bool add)
 			tAppMemParam.tDISP.usAutoOffTime--;
 		}
 	}
-}
-
-/*****************************************************************************************************************
------函数功能    退出亮度设置
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      true:设置成功   反之:false
-*****************************************************************************************************************/
-bool bDisp_ExitSetLightness(void)
-{
-	tAppMemParam.tDISP.ucHighLightValue = S_ucHighLightTemp;
-	tAppMemParam.tDISP.ucLowLightValue = S_ucLowLightTemp;
-	tAppMemParam.tDISP.usAutoOffTime = S_usBLOffTimeTemp;
-//	bApp_MemParamUpdate(NULL,NULL,false);  //写入APP_INFO_FLASH
-	return true;
 }
 #endif  //boardDISPLAY_EN  && boardENG_MODE_EN

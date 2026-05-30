@@ -68,7 +68,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define     	SYS_TASK_PRIO                  			3     //任务优先级 
-#define      	SYS_TASK_STK_SIZE              			256   //任务堆栈  实际字节数 *4
+#define      	SYS_TASK_STK_SIZE              			192   //任务堆栈  实际字节数 *4
 TaskHandle_t  	tSysTaskHandler = NULL; 
 void         	vSys_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -218,6 +218,8 @@ static void v_sys_check_prote(void)
 	s16 s_min_temp = 255;
 	s16 s_max_temp = 0;
 	s16 s_board_max_temp = 0;
+	tSysInfo.usOutPwr = 0;
+	tSysInfo.usInPwr = 0;
 
 	#if(boardUSB_EN)
 	if(tUsb.eDevState >= DS_WORK)
@@ -226,6 +228,8 @@ static void v_sys_check_prote(void)
 		// 	s_board_max_temp = MAX2(s_board_max_temp, 45);
 		// else
 			s_board_max_temp = MAX2(s_board_max_temp, tUsb.sMaxTemp);
+
+		tSysInfo.usOutPwr += tUsb.usOutPwr;
 	}
 	#endif  //boardUSB_EN
 
@@ -236,35 +240,21 @@ static void v_sys_check_prote(void)
 		// 	s_board_max_temp = MAX2(s_board_max_temp, 45);
 		// else
 			s_board_max_temp = MAX2(s_board_max_temp, tDc.sMaxTemp);
+
+		tSysInfo.usInPwr += tDc.usOutPwr;
 	}
 	#endif  //boardDC_EN
+
+	#if(boardLIGHT_EN)
+	if(tLight.eDevState == DS_WORK)
+		tSysInfo.usOutPwr += tLight.usPower;
+	#endif  //boardLIGHT_EN
 	
 	#if(boardBMS_EN)
 	s_max_temp = MAX2(s_max_temp, tBms.sMaxTemp);
 	s_min_temp = MIN2(s_min_temp, tBms.sMinTemp);
-	#endif  //boardBMS_EN
 
 	#if(boardDCAC_EN)
-	s_max_temp = MAX2(s_max_temp, tDcac.sMaxTemp);
-	#endif  //boardDCAC_EN
-
-	#if(boardMPPT_EN)
-	s_max_temp = MAX2(s_max_temp, tMppt.sMaxTemp);
-	#endif  //boardMPPT_EN
-
-	tSysInfo.sBoardTempMax = s_board_max_temp;
-
-	s_max_temp = MAX2(tSysInfo.sBoardTempMax, s_max_temp);
-
-	tSysInfo.sMinTemp = s_min_temp;
-	tSysInfo.sMaxTemp = s_max_temp;
-
-
-	//------------------------------------------------功率计算-----------------------------------------------
-	tSysInfo.usOutPwr = 0;
-	tSysInfo.usInPwr = 0;
-
-	#if(boardBMS_EN && boardDCAC_EN)
 	if(ucBms_GetSoc() == 100)
 	{
 		if(tDcac.eDisChgState == IOS_WORK && tDcac.eChgState == IOS_WORK)
@@ -273,23 +263,11 @@ static void v_sys_check_prote(void)
 			tDcacRx.usInPwr = 0;
 	}
 	#endif  //boardBMS_EN
-
-	#if(boardDC_EN)
-	if(tDc.eDevState == DS_WORK)
-		tSysInfo.usOutPwr += tDc.usOutPwr;
-	#endif  //boardDC_EN
-
-	#if(boardUSB_EN)
-	if(tUsb.eDevState == DS_WORK)
-		tSysInfo.usOutPwr += tUsb.usOutPwr;
-	#endif  //boardUSB_EN
-
-	#if(boardLIGHT_EN)
-	if(tLight.eDevState == DS_WORK)
-		tSysInfo.usOutPwr += tLight.usPower;
-	#endif  //boardLIGHT_EN
+	#endif  //boardBMS_EN
 
 	#if(boardDCAC_EN)
+	s_max_temp = MAX2(s_max_temp, tDcac.sMaxTemp);
+
 	if(tDcac.eChgState == IOS_WORK)
 		tSysInfo.usInPwr += tDcacRx.usInPwr;
 
@@ -301,9 +279,19 @@ static void v_sys_check_prote(void)
 	#endif  //boardDCAC_EN
 
 	#if(boardMPPT_EN)
+	s_max_temp = MAX2(s_max_temp, tMppt.sMaxTemp);
+
 	if(tMppt.eDevState == DS_WORK)
 		tSysInfo.usInPwr += tMppt.usInPwr;
 	#endif  //boardMPPT_EN
+
+	tSysInfo.sBoardTempMax = s_board_max_temp;
+	s_max_temp = MAX2(tSysInfo.sBoardTempMax, s_max_temp);
+
+	tSysInfo.sMinTemp = s_min_temp;
+	tSysInfo.sMaxTemp = s_max_temp;
+
+
 	
 	//------------------------------------------------系统输入过压-----------------------------------------------
 	#if(boardADC_EN)
@@ -740,42 +728,67 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 		}
 		else if(tSysInfo.eDevState == DS_CLOSING)  //关闭中
 		{
+			if(tDisp.eDevState != DS_CLOSING)
+				cQueue_AddQueueTask(tpDispTask, DISPTI_CLOSING, 0, false);
+
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为关闭中\r\n");
 		}
 		else if(tSysInfo.eDevState == DS_SHUT_DOWN)  //关闭
 		{
+			if(tDisp.eDevState != DS_SHUT_DOWN)
+				cQueue_AddQueueTask(tpDispTask, DISPTI_SHUT_DOWN, 0, false);
+
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为关闭\r\n");
 		}
 		else if(tSysInfo.eDevState == DS_ERR)  //错误
 		{
+			if(tDisp.eDevState != DS_ERR)
+				cQueue_AddQueueTask(tpDispTask, DISPTI_ERR, 0, false);
+
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为错误\r\n");
 		}
 		else if(tSysInfo.eDevState == DS_BOOTING)    //启动中
 		{
+			#if(board12V_EN)
+			vGPIO_12VPowerSwitch(true);
+			#endif
+
+			if(tDisp.eDevState != DS_BOOTING)
+				cQueue_AddQueueTask(tpDispTask, DISPTI_BOOTING, 0, false);
+
 			vSys_RefreshAllOffTime(true);
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为启动中\r\n");
 		}
 		else if(tSysInfo.eDevState == DS_WORK)    //工作
 		{
+			if(tDisp.eDevState != DS_WORK)
+				cQueue_AddQueueTask(tpDispTask, DISPTI_WORK, 0, false);
+
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为工作\r\n");
 		}
 		#if(boardENG_MODE_EN)
 		else if(tSysInfo.eDevState == DS_ENG_MODE)  //工程模式
 		{
+			if(tDisp.eDevState != DS_ENG_MODE)
+				cQueue_AddQueueTask(tpDispTask, DTI_ENG, 0, false);
+
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----更新系统任务状态为工程模式----\r\n");
 		}
 		#endif //boardENG_MODE_EN
-		else if(tSysInfo.eDevState == DS_UPDATE_MODE)    //工作
-		{
-			if(uPrint.tFlag.bSysTask)
-				sMyPrint("bSysTask:----更新系统任务状态为升级模式----\r\n");
-		}
+		// else if(tSysInfo.eDevState == DS_UPDATA_MODE)    //工作
+		// {
+		// 	// if(tDisp.eDevState != DS_UPDATA_MODE)
+		// 	// 	cQueue_AddQueueTask(tpDispTask, DTI_UPDATA, 0, false);
+
+		// 	if(uPrint.tFlag.bSysTask)
+		// 		sMyPrint("bSysTask:----更新系统任务状态为升级模式----\r\n");
+		// }
 	}	
 	
 	#if(boardBUZ_EN)

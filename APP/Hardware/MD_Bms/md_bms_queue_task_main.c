@@ -122,7 +122,7 @@ __STATIC_INLINE s8 c_bms_proc_rec_param(void)
 	static u8 uc_clear_err_cnt = 0;
 	if(tBms.sMaxTemp >= tAppMemParam.tBMS.cChgMaxTemp)
     {
-		if(tBms.uErrCode.tCode.bSysChgOT == 0 && bSys_ExistInVolt() == true)
+		if(tBms.uErrCode.tCode.bSysChgOT == 0 && bBms_GetBmsChgState() == true)
 		{
 			uc_chg_temp_err_cnt++;
 			if(uc_chg_temp_err_cnt >= 2)
@@ -186,7 +186,7 @@ __STATIC_INLINE s8 c_bms_proc_rec_param(void)
 	static u8 uc_low_temp_err_cnt = 0;
     if(tBms.sMinTemp <= tAppMemParam.tBMS.cChgMinTemp)
 	{
-		if(tBms.uErrCode.tCode.bSysChgUT == 0 && bSys_ExistInVolt() == true)
+		if(tBms.uErrCode.tCode.bSysChgUT == 0 && bBms_GetBmsChgState() == true)
 		{
 			uc_low_temp_err_cnt++;
 			if(uc_low_temp_err_cnt >= 2)

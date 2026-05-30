@@ -26,7 +26,7 @@
 //****************************************************任务参数初始化**********************************************//
 #if(boardUSE_OS)
 #define			MPPT_TASK_PRIO                         	2        					//任务优先级 
-#define        	MPPT_TASK_SIZE                         	256      					//任务堆栈  实际字节数 *4
+#define        	MPPT_TASK_SIZE                         	192      					//任务堆栈  实际字节数 *4
 TaskHandle_t    tMpptTaskHandler = NULL; 
 void           	vMppt_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -36,9 +36,13 @@ void           	vMppt_Task(void *pvParameters);
 __ALIGNED(4)	Mppt_T tMppt;
 static Task_T	*tp_task = NULL;
 
+vu16 usDcInVolt = 0;//0.1V
+vu16 usXT60InVolt = 0;//0.1V
+
 //****************************************************函数声明****************************************************//
 static bool b_mppt_update_dev_state(void);
-
+static void v_mppt_param_update(void);
+static void v_mppt_auto_switch_chg_source(void);
 
 /*****************************************************************************************************************
 -----函数功能    任务参数初始化
@@ -70,6 +74,9 @@ bool b_mppt_task_param_init(void)
 ******************************************************************************************************************/
 bool bMppt_TaskInit(void)
 {
+	//接口初始化
+	vMppt_IfaceInit();
+
 	//协议初始化
 	if(bMppt_SendProtInit() == false)
 		return false;
@@ -124,6 +131,8 @@ void vMppt_Task(void *pvParameters)
 			return;
 			#endif
 		}
+
+		v_mppt_param_update();
 		
 		if(tp_task->vp_func != NULL && tp_task ->bNowRun == false)
 			tp_task->vp_func(tp_task);
@@ -181,7 +190,74 @@ static bool b_mppt_update_dev_state(void)
 	return true;
 }
 
+/***********************************************************************************************************************
+-----函数功能	更新参数
+-----作者       LJD
+-----日期       2026-04-10
+************************************************************************************************************************/
+static void v_mppt_param_update(void)
+{
+	usDcInVolt = tAdcSamp.usDcIn1Volt;//0.1V
+	usXT60InVolt = tAdcSamp.usDcIn2Volt;//0.1V
 
+	v_mppt_auto_switch_chg_source();
+}
+
+/***********************************************************************************************************************
+-----函数功能	自动切换充电源
+-----作者       LJD
+-----日期       2026-05-29
+************************************************************************************************************************/
+static void v_mppt_auto_switch_chg_source(void)
+{
+    // 如果两个输入任意一个都高于 110V → 全部关闭
+    if(usDcInVolt > 650 || usXT60InVolt > 650){
+        mpptGPIO_DC_EN_OFF();
+        mpptGPIO_XT60_EN_OFF();
+        tMppt.eWorkMode = MWM_NULL;
+        bMppt_SetErrCode( MEC_MPPT_IN_OV, true );
+        return;
+    }
+    
+    bMppt_SetErrCode( MEC_MPPT_IN_OV, false );
+    
+    // 如果两个输入都低于 110V → 全部关闭
+    if(usDcInVolt < 50 && usXT60InVolt < 50)
+    {
+        mpptGPIO_DC_EN_OFF();
+        mpptGPIO_XT60_EN_OFF();
+        tMppt.eWorkMode = MWM_NULL;
+        return;
+    }
+
+    // PV 优先逻辑
+    if(tMppt.eWorkMode == MWM_NULL) {
+        if(usXT60InVolt > 115)
+        {
+            tMppt.eWorkMode = MWM_PV;
+            mpptGPIO_DC_EN_OFF();
+            mpptGPIO_XT60_EN_ON();
+        }
+        else if(usDcInVolt > 115)
+        {
+            tMppt.eWorkMode = MWM_DC;
+            mpptGPIO_DC_EN_ON();
+            mpptGPIO_XT60_EN_OFF();
+        }
+    } else if(tMppt.eWorkMode == MWM_PV) {
+        if(usXT60InVolt < 50) {
+            tMppt.eWorkMode = MWM_NULL;
+            mpptGPIO_DC_EN_OFF();
+            mpptGPIO_XT60_EN_OFF();
+        }
+    } else if(tMppt.eWorkMode == MWM_DC) {
+        if(usDcInVolt < 50) {
+            tMppt.eWorkMode = MWM_NULL;
+            mpptGPIO_DC_EN_OFF();
+            mpptGPIO_XT60_EN_OFF();
+        }
+    }
+}
 
 
 

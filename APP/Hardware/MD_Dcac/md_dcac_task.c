@@ -25,7 +25,7 @@
 //****************************************************任务参数初始化**********************************************//
 #if(boardUSE_OS)
 #define       	DCAC_TASK_PRIO                         	3        	//任务优先级 
-#define       	DCAC_TASK_SIZE                         	256      	//任务堆栈  实际字节数 *4
+#define       	DCAC_TASK_SIZE                         	192      	//任务堆栈  实际字节数 *4
 TaskHandle_t    tDcacTaskHandler = NULL; 
 void          	vDcac_Task(void *pvParameters);
 #endif  //boardUSE_OS

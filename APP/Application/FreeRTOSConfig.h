@@ -102,7 +102,7 @@ extern uint32_t SystemCoreClock;
 //<i> 1:默认,FreeRTOS 支持使用动态方式管理内存.
 //-------------------------------------------------------------------
 //          	<o0> 总的堆栈大小
-#define 		configTOTAL_HEAP_SIZE					 ((size_t)(30 * 1024))
+#define 		configTOTAL_HEAP_SIZE					 ((size_t)(38 * 1024))
 //<i>	RTOS动态内存管理的内存大小(RAM总量)，即RTOS的内存堆，单位为 Byte
 //-------------------------------------------------------------------
 //          	<q0> 使能手动分配RTOS内存堆(ucHeap).
@@ -148,17 +148,17 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //<h>        	钩子函数
 //-------------------------------------------------------------------
 //          	<q0> 使能空闲任务钩子函数
-#define 		configUSE_IDLE_HOOK						 1
+#define 		configUSE_IDLE_HOOK						 0
 //<i> 0:默认
 //<i> 1:需自己实现vApplicationIdleHook
 //-------------------------------------------------------------------
 //          	<q0> 使能系统时钟节拍中断钩子函数
-#define 		configUSE_TICK_HOOK						 0
+#define 		configUSE_TICK_HOOK						 1
 //<i> 0:默认
 //<i> 1:需自己实现vApplicationTickHook
 //-------------------------------------------------------------------
 //          	<q0> 使能选择栈溢出检测方法
-#define 		configCHECK_FOR_STACK_OVERFLOW			 0
+#define 		configCHECK_FOR_STACK_OVERFLOW			 2
 //<i> 2:使用栈溢出检测方法二
 //<i> 1:使用栈溢出检测方法一
 //<i> 0:默认

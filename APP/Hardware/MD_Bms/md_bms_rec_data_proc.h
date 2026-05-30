@@ -5,9 +5,9 @@
 
 #if(boardBMS_EN)
 #include "main.h"
-#include "Modbus1/modbus_proto1.h"
+#include "Baiku/baiku_proto.h"
 
-s8 c_bms_rec_proc_data(ModbusProtoRx1_t* proto_rx, ModbusProtoTx1_t* proto_tx);
+s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto);
 
 #endif  //boardBMS_EN
 

@@ -7,6 +7,10 @@
 #include "queue_task.h"
 #include "MD_Bms/md_bms_rec_task.h"
 
+#if(boardUPDATE)
+#include "Sys/sys_queue_task_update.h"
+#endif
+
 #if(boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
@@ -142,6 +146,10 @@ bool bBms_MemParamInit(BmsMemParam_T* p_bms_mem);
 void vBms_MemParamSet(u8 item, bool add);
 bool bBms_SetPerm(BmsPermObject_E obj, bool en);
 s8 cBms_CheckPerm(void);
+
+#if(boardUPDATE)
+s8 cBms_GetUpdateStage(void);
+#endif
 
 #if(!boardUSE_OS)
 void vBms_Task(void *pvParameters);

@@ -26,7 +26,7 @@
 
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
-#define        	BUZ_TASK_PRIO                  		1   //任务优先级 
+#define        	BUZ_TASK_PRIO                  		2   //任务优先级 
 #define        	BUZ_TASK_STK_SIZE              		64   //任务堆栈  实际字节数 *4
 TaskHandle_t    tBuzTaskHandler = NULL; 
 void           	vBuz_Task(void *pvParameters);

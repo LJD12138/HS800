@@ -101,9 +101,9 @@ void vLed_Task(void *pvParameters)
 			{	
 				ledPWR_SW_OFF();
 				ledAC_SW_OFF();
-				ledUSB_SW_OFF();
 				ledLight_SW_OFF();
-				ledDC_SW_OFF();
+				// ledUSB_SW_OFF();
+				// ledDC_SW_OFF();
 				#if(boardUSE_OS)
 				vTaskDelay(ledTASK_CYCLE_TIME);
 				#endif  //boardUSE_OS
@@ -157,16 +157,16 @@ void vLed_Task(void *pvParameters)
 				else 
 					ledDC_SW_OFF();
 				#else
-				//USB
-				if(tUsb.eDevState >= DS_BOOTING)
-					ledUSB_SW_ON();
-				else 
-					ledUSB_SW_OFF();
-				//DC
-				if(tDc.eDevState >= DS_BOOTING)
-					ledDC_SW_ON();
-				else 
-					ledDC_SW_OFF();
+				// //USB
+				// if(tUsb.eDevState >= DS_BOOTING)
+				// 	ledUSB_SW_ON();
+				// else 
+				// 	ledUSB_SW_OFF();
+				// //DC
+				// if(tDc.eDevState >= DS_BOOTING)
+				// 	ledDC_SW_ON();
+				// else 
+				// 	ledDC_SW_OFF();
 				#endif
 				
 				#if(boardUSE_OS)

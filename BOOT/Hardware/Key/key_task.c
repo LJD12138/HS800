@@ -111,8 +111,10 @@ void vKey_TaskInit(void)
 ************************************************************************************************************************/
 static void v_key_gpio_init(void)
 {
-//	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
-//	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
+	#if(!boardADC_EN)
+	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
+	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
+	#endif  //boardADC_EN
 	
 	#if(boardDCAC_EN)
 	rcu_periph_clock_enable(keyGPIO_AC_RCU);

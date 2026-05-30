@@ -1,95 +1,194 @@
-ï»¿/*****************************************************************************************************************
-*                                                                                                                *
- *                                         æ˜¾ç¤ºé˜Ÿåˆ—ä»»åŠ¡-å·¥ä½œä¸­ - TFT+LVGLç‰ˆæœ¬                                    *
-*                                                                                                                *
+/*****************************************************************************************************************
+ *                                                                                                                *
+ *                                         ÏÔÊ¾¶ÓÁÐÈÎÎñ-¹¤×÷ÖÐ - TFT+LVGL°æ±¾                                    *
+ *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
+#include "Print/print_api.h"
 
-#if(boardDISPLAY_EN)
+#if (boardDISPLAY_EN)
+#include "MD_Display/eez_ui/vars.h"
+#include "MD_Display/eez_ui/ui.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_task.h"
+#include "MD_Display/user_ui/main_1_ui.h"
 #include "Print/print_task.h"
+#include "Sys/sys_task.h"
+
+
+#include "MD_Bms/md_bms_rec_task.h"
+#include "MD_Bms/md_bms_task.h"
+#include "MD_Dcac/md_dcac_task.h"
+
+// #include "Adc/adc_task.h"
+#include "Dc/dc_task.h"
+#include "MD_Dcac/md_dcac_rec_task.h"
+#include "MD_Light/md_light_task.h"
+#include "MD_Mppt/md_mppt_task.h"
+#include "Usb/usb_task.h"
 
 #include "lvgl.h"
+#include <string.h>
 
-#define dispTASK_WORK_CYCLE_TIME            100
+//****************************************************¾Ö²¿ºê¶¨Òå³õÊ¼»¯*********************************************//
+#define dispTASK_WORK_CYCLE_TIME boardDISP_REFRESH_TIME
+#define dispTASK_WORK_SLEEP_OFF_MS 100U
 
-/* LVGL UIå¯¹è±¡ */
-static lv_obj_t *s_pLabel = NULL;
+//****************************************************¾Ö²¿±äÁ¿¶¨Òå************************************************//
+/* s_ucDispWorkUpdateIndex removed: all params updated in one pass */
 
-static void vDemo_CreateTestUI(void);
+//****************************************************¾Ö²¿º¯Êý¶¨Òå************************************************//
+static void v_update_dev_param(void);
+#if (boardBMS_EN)
+static void v_disp_work_format_remaining_time(char *pc_str, size_t str_size, u16 us_total_minutes);
+#endif
 
-
+/***********************************************************************************************************************
+-----º¯Êý¹¦ÄÜ    ¹¤×÷ÏÔÊ¾ÈÎÎñ
+-----ËµÃ÷(±¸×¢)  1.eez_uiÊÇEEZ StudioÈí¼þÊä³öµÄÏîÄ¿,ËùÒÔÏÔÊ¾¸üÐÂ»úÖÆÊÇ»ùÓÚÊý¾Ý±ä»¯×Ô¶¯¸üÐÂÏÔÊ¾µÄ,Òò´ËÕâÀïÖ»ÐèÒª¶¨Ê±¸üÐÂÊý¾Ý¼´¿É;
+                  µ«ÊÇeez_uiÖÐÆäËûÊý¾Ý(ÈçImage)¶¼ÐèÒªuser_uiÇø½øÐÐ¿ØÖÆ.
+                2.user_uiÊÇÓÃ»§×Ô¶¨ÒåµÄÏÔÊ¾½çÃæ,ÐèÒªÔÚÕâÀï¿ØÖÆÏÔÊ¾Ë¢ÐÂ,ÒÔ±ÜÃâÎÞÐ§Ë¢ÐÂµ¼ÖÂµÄÐÔÄÜÎÊÌâ;µ±±³¹â¹Ø±ÕÊ±,²»¸üÐÂÏÔÊ¾ÒÔ½ÚÊ¡×ÊÔ´;
+                3.ÕâÀïµÄÈÎÎñµ÷¶Èº¯ÊýÓÉ¶ÓÁÐ¹ÜÀíº¯Êý×°ÔØ,µ±´æÔÚÐÂÈÎÎñÊ±,»áÍË³öµ±Ç°ÈÎÎñ,Òò´Ë²»ÐèÒªÔÚÕâÀïµ¥¶À´¦ÀíÈÎÎñÇÐ»»µÄÇé¿ö;
+-----´«Èë²ÎÊý    tp_task:ÈÎÎñ¶ÔÏóÖ¸Õë
+-----Êä³ö²ÎÊý    none
+-----·µ»ØÖµ      none
+************************************************************************************************************************/
 void v_disp_queue_task_work(Task_T *tp_task)
 {
-    if(lwrb_get_full(&tp_task->tQueueBuff) > 0U)
+    // ´æÔÚÐÂÈÎÎñ,ÍË³öµ±Ç°ÈÎÎñ
+    if (lwrb_get_full(&tp_task->tQueueBuff) > 0U)
     {
+        vDisp_Main1Exit();
         cQueue_GotoStep(tp_task, STEP_END);
     }
 
-    if((tDisp.bLight == false) && (tp_task->ucStep != 0U))
+    switch (tp_task->ucStep)
     {
-        tp_task->ucStep = 0U;
-        #if(boardUSE_OS)
-        vTaskDelay(dispTASK_WORK_CYCLE_TIME);
-        #endif
-        return;
-    }
-
-    switch(tp_task->ucStep)
-    {
-        case 0:
-            if(tDisp.eDevState != DS_WORK)
+        // ³õÊ¼»¯
+        case 0: 
+        {
+            if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
+
+            ui_init();
+
+            vDisp_Main1UiStart();
+
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
+        break;
+
+        // ´ò¿ª±³¹â,±ÜÃâÏÔÊ¾¼ÓÔØ¹ý³Ì
+        case 1: 
+        {
             bDisp_Switch(ST_ON, true);
             cQueue_GotoStep(tp_task, STEP_NEXT);
-            break;
+        }
+        break;
 
-        case 1:
-            vDemo_CreateTestUI();
-            cQueue_GotoStep(tp_task, STEP_END);
-            break;
+        // ¸üÐÂÊý¾Ý
+        case 2: 
+        {
+            v_update_dev_param();
+            bDisp_Main1DataUpdate();
+
+            // ±³¹â´ò¿ªÊ±²Å¸üÐÂ UI
+            if (tDisp.bLight == true)
+                vDisp_UiRefresh();
+        }
+        break;
 
         default:
+            vDisp_Main1Exit();
             cQueue_GotoStep(tp_task, STEP_END);
             break;
     }
 
-#if(boardUSE_OS)
+    sMyPrint("ÏÔÊ¾Ë¢ÐÂ \r\n");
+
     vTaskDelay(dispTASK_WORK_CYCLE_TIME);
-#endif
 }
 
-
-/**
- * åˆ›å»ºæµ‹è¯•UIç•Œé¢
- */
-static void vDemo_CreateTestUI(void)
+/***********************************************************************************************************************
+-----º¯Êý¹¦ÄÜ    ¸üÐÂÉè±¸²ÎÊý
+-----ËµÃ÷(±¸×¢)  ÕâÀïÖ»ÐèÒª¸üÐÂÊý¾Ý,eez_uiÀïÃæ»á¸ù¾ÝÊý¾Ý±ä»¯×Ô¶¯¸üÐÂÏÔÊ¾;µ«ÊÇDevStateIconÐèÒªµ¥¶À¸üÐÂ,ÔÚuser_uiÖÐÊµÏÖ
+-----´«Èë²ÎÊý    none
+-----Êä³ö²ÎÊý    none
+-----·µ»ØÖµ      true:ÎÄ±¾Êý¾ÝÓÐ±ä»¯ false:ÎÄ±¾Êý¾ÝÎÞ±ä»¯
+-----ÈÕÆÚ        2026-05-28
+************************************************************************************************************************/
+__STATIC_INLINE void v_update_dev_param(void)
 {
-    /* è®¾ç½®é»˜è®¤èƒŒæ™¯è‰²ä¸ºæ·±è“è‰² */
-    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
-    
-    /* åˆ›å»ºæ ‡é¢˜æ ‡ç­¾ */
-    lv_obj_t *title_label = lv_label_create(lv_screen_active());
-    lv_label_set_text(title_label, "HS800 TFT Demo");
-    lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_obj_align(title_label, LV_ALIGN_TOP_MID, 0, 10);
-    
-    /* åˆ›å»ºä¸»æ ‡ç­¾ */
-    s_pLabel = lv_label_create(lv_screen_active());
-    lv_label_set_text(s_pLabel, "Hello TFT!\nZJY240KP-IF10\n240x320 RGB565");
-    lv_obj_set_style_text_color(s_pLabel, lv_color_white(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(s_pLabel, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_obj_set_style_text_align(s_pLabel, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_center(s_pLabel);
-    
-    /* åˆ›å»ºçŠ¶æ€æ ‡ç­¾ */
-    lv_obj_t *status_label = lv_label_create(lv_screen_active());
-    lv_label_set_text(status_label, "LVGL v9.4 + ST7789V2");
-    lv_obj_set_style_text_color(status_label, lv_color_make(0, 255, 0), LV_PART_MAIN);
-    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -10);
+    char cStr[10];
+
+    /* Ò»´ÎÐÔ¸üÐÂËùÓÐ²ÎÊý, ±ÜÃâ·ÖÉ¢µ½¶à¸öË¢ÐÂÖÜÆÚ */
+    #if (boardBMS_EN)
+    snprintf(cStr, sizeof(cStr), "%d", tBmsRx.usSOC);
+    set_var_uca_bat_soc_value(cStr);
+
+    {
+        u16 usTotalMinutes;
+        if (tBms.eWorkState == BWS_CHG)
+            usTotalMinutes = tBmsRx.usChgFullTime;
+        else
+            usTotalMinutes = tBmsRx.usDisChgEmptyTime;
+        v_disp_work_format_remaining_time(cStr, sizeof(cStr), usTotalMinutes);
+        set_var_uca_remaining_usage_time(cStr);
+    }
+    #endif // boardBMS_EN
+
+    #if (boardUSB_EN)
+    vDisp_SetDevStateIcon(DEV_TYPE_USB, (tUsb.eDevState == DS_WORK));
+    #endif // boardUSB_EN
+
+    #if (boardDC_EN)
+    vDisp_SetDevStateIcon(DEV_TYPE_DC, (tDc.eDevState == DS_WORK));
+    #endif // boardDC_EN
+
+    #if (boardMPPT_EN)
+    vDisp_SetDevStateIcon(DEV_TYPE_PV, (tMppt.eDevState >= DS_BOOTING));
+    #endif // boardMPPT_EN
+
+    #if (boardDCAC_EN)
+    vDisp_SetDevStateIcon(DEV_TYPE_AC_OUT, (tDcac.eDisChgState >= IOS_STARTING));
+    vDisp_SetDevStateIcon(DEV_TYPE_AC_IN, (tDcac.eChgState >= IOS_STARTING));
+    #endif // boardDCAC_EN
+
+    snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usOutPwr);
+    set_var_uca_out_pwr_value(cStr);
+
+    snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usInPwr);
+    set_var_uca_in_pwr_value(cStr);
 }
 
-#endif  /*boardDISPLAY_EN*/
+/***********************************************************************************************************************
+-----º¯Êý¹¦ÄÜ    ¸ñÊ½»¯Ê£ÓàÊ¹ÓÃÊ±¼ä
+-----ËµÃ÷(±¸×¢)  ½«·ÖÖÓÊý×ª»»Îª¹Ì¶¨¿í¶ÈµÄÐ¡Ê±/·ÖÖÓÏÔÊ¾ÎÄ±¾
+-----´«Èë²ÎÊý    pc_str:Êä³ö»º´æ  str_size:»º´æ´óÐ¡  us_total_minutes:×Ü·ÖÖÓÊý
+-----Êä³ö²ÎÊý    none
+-----·µ»ØÖµ      none
+************************************************************************************************************************/
+#if (boardBMS_EN)
+__STATIC_INLINE void v_disp_work_format_remaining_time(char *pc_str, size_t str_size, u16 us_total_minutes)
+{
+    u16 us_hours = us_total_minutes / 60U;
+    u16 us_minutes = us_total_minutes % 60U;
+
+    if (us_hours > 99U)
+    {
+        us_hours = 99U;
+        us_minutes = 99U;
+    }
+
+    if (us_hours >= 10U && us_minutes >= 10U)
+        snprintf(pc_str, str_size, "%2uh %2um", (unsigned int)us_hours, (unsigned int)us_minutes);
+    else if (us_hours >= 10U)
+        snprintf(pc_str, str_size, "%2uh  %1um", (unsigned int)us_hours, (unsigned int)us_minutes);
+    else if (us_minutes >= 10U)
+        snprintf(pc_str, str_size, " %1uh %2um", (unsigned int)us_hours, (unsigned int)us_minutes);
+    else
+        snprintf(pc_str, str_size, " %1uh  %1um", (unsigned int)us_hours, (unsigned int)us_minutes);
+}
+#endif // boardBMS_EN
+
+#endif /*boardDISPLAY_EN*/

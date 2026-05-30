@@ -27,7 +27,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define       	KEY_TASK_PRIO                  			2     	//任务优先级 
-#define        	KEY_TASK_STK_SIZE              			256   	//任务堆栈  实际字节数 *4
+#define        	KEY_TASK_STK_SIZE              			128   	//任务堆栈  实际字节数 *4
 TaskHandle_t    tKeyTaskHandler = NULL; 
 void          	vKey_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -111,8 +111,10 @@ void vKey_TaskInit(void)
 ************************************************************************************************************************/
 static void v_key_gpio_init(void)
 {
+	#if(!boardADC_EN)
 	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
 	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
+	#endif  //boardADC_EN
 	
 	#if(boardDCAC_EN)
 	rcu_periph_clock_enable(keyGPIO_AC_RCU);

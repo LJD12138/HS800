@@ -144,9 +144,9 @@
 #define     	printGPIO_485_TX_EN_OFF()     			GPIO_BC(printGPIO_485_TX_EN_PORT) = (uint32_t)printGPIO_485_TX_EN_PIN   //使能接收
 #endif //boardPRINT_485_IFACE_EN
 
-#define     	printIFACE_EN_RCU       				RCU_GPIOB
-#define     	printIFACE_EN_PORT      				GPIOB
-#define     	printIFACE_EN_PIN       				GPIO_PIN_9
+#define     	printIFACE_EN_RCU       				RCU_GPIOC
+#define     	printIFACE_EN_PORT      				GPIOC
+#define     	printIFACE_EN_PIN       				GPIO_PIN_3
 #define     	printIFACE_EN_ON()      				GPIO_BOP(printIFACE_EN_PORT) = (uint32_t)printIFACE_EN_PIN   //使能发送
 #define     	printIFACE_EN_OFF()     				GPIO_BC(printIFACE_EN_PORT) = (uint32_t)printIFACE_EN_PIN   //使能接收
 

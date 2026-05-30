@@ -23,17 +23,17 @@ static void v_led_gpio_init(void)
 	gpio_init(ledAC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledAC_SW_PIN);
 	ledAC_SW_OFF();
 	
-	rcu_periph_clock_enable(ledUSB_SW_RCU);
-	gpio_init(ledUSB_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledUSB_SW_PIN);
-	ledUSB_SW_OFF();
+//	rcu_periph_clock_enable(ledUSB_SW_RCU);
+//	gpio_init(ledUSB_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledUSB_SW_PIN);
+//	ledUSB_SW_OFF();
 	
 	rcu_periph_clock_enable(ledLight_SW_RCU);
 	gpio_init(ledLight_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledLight_SW_PIN);
 	ledLight_SW_OFF();
 	
-	rcu_periph_clock_enable(ledDC_SW_RCU);
-	gpio_init(ledDC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledDC_SW_PIN);
-	ledDC_SW_OFF();
+//	rcu_periph_clock_enable(ledDC_SW_RCU);
+//	gpio_init(ledDC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledDC_SW_PIN);
+//	ledDC_SW_OFF();
 }
 
 /***********************************************************************************************************************

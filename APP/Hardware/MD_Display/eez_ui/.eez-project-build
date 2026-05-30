@@ -1,0 +1,31 @@
+{
+  "files": [
+    "actions.h",
+    "fonts.h",
+    "images.c",
+    "images.h",
+    "screens.c",
+    "screens.h",
+    "structs.h",
+    "styles.c",
+    "styles.h",
+    "ui.c",
+    "ui.h",
+    "ui_font_barlow_condensed_regular_26.c",
+    "ui_font_barlow_condensed_regular_50.c",
+    "ui_font_barlow_condensed_regular_66.c",
+    "ui_image_icon__.c",
+    "ui_image_icon_ac.c",
+    "ui_image_icon_bat_ot.c",
+    "ui_image_icon_dc.c",
+    "ui_image_icon_in.c",
+    "ui_image_icon_ot.c",
+    "ui_image_icon_out.c",
+    "ui_image_icon_time.c",
+    "ui_image_icon_tx60.c",
+    "ui_image_icon_usb.c",
+    "ui_image_icon_w.c",
+    "ui_image_out.c",
+    "vars.h"
+  ]
+}

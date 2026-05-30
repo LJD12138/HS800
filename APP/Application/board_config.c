@@ -13,6 +13,10 @@
 #include "Flash/flash_iface.h"
 #include "..\..\BOOT\Application\flash_allot_table.h"
 
+#if(boardDISPLAY_EN)
+#include "Middlewares/LVGL/lvgl.h"
+#endif
+
 #if(boardADC_EN)
 #include "Adc/adc_task.h"
 #endif  //boardADC_EN
@@ -99,14 +103,14 @@ void SysParamInit(void)
 	#if(boardPRINT_IFACE)
 	uPrint.tFlag.bImportant = 1;
 	uPrint.tFlag.bAppInfo   = 1;
-	uPrint.tFlag.bSysTask   = 0;
+	uPrint.tFlag.bSysTask   = 1;
 	uPrint.tFlag.bKeyTask   = 1;
-	uPrint.tFlag.bBmsRecTask= 0;
-	uPrint.tFlag.bBmsTask   = 0;
-	uPrint.tFlag.bDcacTask  = 0;
-	uPrint.tFlag.bDcacRecTask= 0;
-	uPrint.tFlag.bMpptTask  = 0;
-	uPrint.tFlag.bMpptRecTask= 0;
+	uPrint.tFlag.bBmsRecTask= 1;
+	uPrint.tFlag.bBmsTask   = 1;
+	uPrint.tFlag.bDcacTask  = 1;
+	uPrint.tFlag.bDcacRecTask= 1;
+	uPrint.tFlag.bMpptTask  = 1;
+	uPrint.tFlag.bMpptRecTask= 1;
 	uPrint.tFlag.bUsbTask   = 0;
 	uPrint.tFlag.bDcTask    = 0;
 	uPrint.tFlag.bDispTask   = 0;
@@ -195,23 +199,23 @@ void vBoard_StartTask(void *pvParameters)
 	#endif  //boardDISPLAY_EN
 	
 	#if(boardBUZ_EN)
-    bBuz_TaskInit();            //蜂鸣器任务
+   	bBuz_TaskInit();            //蜂鸣器任务 1
 	#endif  //boardBUZ_EN
 	
 	#if(boardKEY_EN)
-    vKey_TaskInit();             //按键任务
+   	vKey_TaskInit();             //按键任务
 	#endif  //boardKEY_EN
 	
 	#if(boardLED_EN)
-	vLed_TaskInit();             //指示灯任务
+	vLed_TaskInit();             //指示灯任务 1
 	#endif  //boardLED_EN
 	
 	#if(boardLIGHT_EN)
-	vLight_TaskInit();           //照明灯任务
+	vLight_TaskInit();           //照明灯任务 1
 	#endif  //boardLIGHT_EN
 	
 	#if(boardHEAT_MANAGE_EN)
-	bHM_TaskInit();             //风扇散热任务
+	bHM_TaskInit();             //风扇散热任务 1
 	#endif  //boardHEAT_MANAGE_EN
 	
 	#if(boardUSB_EN)
@@ -225,22 +229,22 @@ void vBoard_StartTask(void *pvParameters)
 	#if(boardDCAC_EN)
 	bDcac_TaskInit();           //逆变器发送任务
 	bDcac_RecTaskInit();        //逆变器接收任务
-	#endif
+	#endif  //boardDCAC_EN
 	
 	#if(boardBMS_EN)
 	bBms_TaskInit();            //BMS发送任务
 	bBms_RecTaskInit();         //BMS接收任务
-	#endif
+	#endif  //boardBMS_EN
 	
 	#if(boardMPPT_EN)
 	bMppt_TaskInit();           //MPPT发送任务
 	bMppt_RecTaskInit();        //MPPT接收任务
-	#endif
+	#endif  //boardMPPT_EN
 	
 	#if(boardWIFI_IFACE)
 	vWifi_TaskInit();           //WiFi发送任务
 	vWiFi_RecTaskInit();        //WiFi接收任务
-	#endif
+	#endif  //boardWIFI_IFACE
 	
 	vTimer_TaskInit();           //系统计时
 
@@ -249,7 +253,6 @@ void vBoard_StartTask(void *pvParameters)
     taskEXIT_CRITICAL();
 	#endif  //boardUSE_OS
 }
-
 
 
 /*
@@ -265,9 +268,29 @@ void vApplicationIdleHook( void )  //钩子函数
     
 }
 
+void vApplicationTickHook( void )
+{
+   /* This function will be called by each tick interrupt if
+   configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h. User code can be
+   added here, but the tick hook is called from an interrupt context, so
+   code must not attempt to block, and only the interrupt safe FreeRTOS API
+   functions can be used (those that end in FromISR()). */
+	// 告诉lvgl已经过去1毫秒
+	#if(boardDISPLAY_EN)
+	lv_tick_inc(1);
+	#endif  //boardDISPLAY_EN
+}
 
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+	(void)xTask;
 
-
+	printf("\r\nStack overflow: %s\r\n", (pcTaskName != NULL) ? pcTaskName : "unknown");
+	taskDISABLE_INTERRUPTS();
+	for(;;)
+	{
+	}
+}
 
 
 

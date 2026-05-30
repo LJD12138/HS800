@@ -13,35 +13,33 @@ u16 adc_value[ADC_CHANNEL_NUM];
 ******************************************************************************************************************/
 static void gpio_config(void)
 {
+    // 电池电压 PA7
     rcu_periph_clock_enable(adcSYS_IN_VOLT_RCU);
 	gpio_init(adcSYS_IN_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcSYS_IN_VOLT_PIN);
 	
+    // DC温度 PA6
     rcu_periph_clock_enable(adcDC_TEMP_RCU);
 	gpio_init(adcDC_TEMP_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_TEMP_PIN);
 
+    // DC电流 PA1
     rcu_periph_clock_enable(adcDC_CURR_RCU);
 	gpio_init(adcDC_CURR_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_CURR_PIN);
 
+    // DC电压 PC1
     rcu_periph_clock_enable(adcDC_VOLT_RCU);
 	gpio_init(adcDC_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_VOLT_PIN);
+
+    // 按键电源 PA0
+    rcu_periph_clock_enable(adcKEY_POWER_RCU);
+	gpio_init(adcKEY_POWER_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcKEY_POWER_PIN);
 	
-	rcu_periph_clock_enable(adcUSB_TEMP_RCU);
-	gpio_init(adcUSB_TEMP_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_TEMP_PIN);
-	
-	rcu_periph_clock_enable(adcUSB_PD_CURR_RCU);
-	gpio_init(adcUSB_PD_CURR_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_PD_CURR_PIN);
-	
-	rcu_periph_clock_enable(adcUSB_PD_VOLT_RCU);
-	gpio_init(adcUSB_PD_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_PD_VOLT_PIN);
-	
-	rcu_periph_clock_enable(adcUSB_WC_CURR_RCU);
-	gpio_init(adcUSB_WC_CURR_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_WC_CURR_PIN);
-	
-	rcu_periph_clock_enable(adcUSB_WC_VOLT_RCU);
-	gpio_init(adcUSB_WC_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_WC_VOLT_PIN);
-	
-	// rcu_periph_clock_enable(adcKEY_POWER_RCU);
-	// gpio_init(adcKEY_POWER_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcKEY_POWER_PIN);
+    // DC输入电压1 PC5
+    rcu_periph_clock_enable(adcDC_IN_1_RCU);
+	gpio_init(adcDC_IN_1_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_IN_1_PIN);
+    
+    // DC输入电压2 PB0
+    rcu_periph_clock_enable(adcDC_IN_2_RCU);
+	gpio_init(adcDC_IN_2_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_IN_2_PIN);
 }
 
 
@@ -114,16 +112,13 @@ static void adc_config(void)
     adc_channel_length_config(ADCX, ADC_REGULAR_CHANNEL, ADC_CHANNEL_NUM);
 
     /* ADC regular channel config */ 
-    adc_regular_channel_config(ADCX, 0, adcSYS_IN_VOLT_CH , ADC_SAMPLETIME_239POINT5);
-    adc_regular_channel_config(ADCX, 1, adcDC_TEMP_CH , ADC_SAMPLETIME_239POINT5);
-    adc_regular_channel_config(ADCX, 2, adcDC_CURR_CH, ADC_SAMPLETIME_239POINT5);
-    adc_regular_channel_config(ADCX, 3, adcDC_VOLT_CH, ADC_SAMPLETIME_239POINT5);
-    adc_regular_channel_config(ADCX, 4, adcUSB_TEMP_CH, ADC_SAMPLETIME_239POINT5);
-    adc_regular_channel_config(ADCX, 5, adcUSB_PD_CURR_CH, ADC_SAMPLETIME_239POINT5);
-	adc_regular_channel_config(ADCX, 6, adcUSB_PD_VOLT_CH, ADC_SAMPLETIME_239POINT5);
-	adc_regular_channel_config(ADCX, 7, adcUSB_WC_CURR_CH, ADC_SAMPLETIME_239POINT5);
-	adc_regular_channel_config(ADCX, 8, adcUSB_WC_VOLT_CH, ADC_SAMPLETIME_239POINT5);
-	// adc_regular_channel_config(ADCX, 7, adcKEY_POWER_CH, ADC_SAMPLETIME_239POINT5);
+    adc_regular_channel_config(ADCX, 0, adcSYS_IN_VOLT_CH , ADC_SAMPLETIME_239POINT5);  // 电池电压
+    adc_regular_channel_config(ADCX, 1, adcDC_TEMP_CH , ADC_SAMPLETIME_239POINT5);      // DC温度
+    adc_regular_channel_config(ADCX, 2, adcDC_CURR_CH, ADC_SAMPLETIME_239POINT5);       // DC电流
+    adc_regular_channel_config(ADCX, 3, adcDC_VOLT_CH, ADC_SAMPLETIME_239POINT5);       // DC电压
+    adc_regular_channel_config(ADCX, 4, adcKEY_POWER_CH, ADC_SAMPLETIME_239POINT5);     // 按键电源
+    adc_regular_channel_config(ADCX, 5, adcDC_IN_1_CH, ADC_SAMPLETIME_239POINT5);       // DC输入电压1
+    adc_regular_channel_config(ADCX, 6, adcDC_IN_2_CH, ADC_SAMPLETIME_239POINT5);       // DC输入电压2
 	
     /* ADC trigger config */
 	adc_external_trigger_source_config(ADCX, ADC_REGULAR_CHANNEL, ADC0_1_2_EXTTRIG_REGULAR_NONE);

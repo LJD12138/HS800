@@ -210,7 +210,7 @@ void v_sys_queue_task_init(Task_T *tp_task)
 				#endif  //boardBMS_EN
 				)
 			{
-				if(uc_tri_init_cnt > 1 && bKey_PowerIsPress() == true)
+				if(uc_tri_init_cnt && bKey_PowerIsPress() == true)
 					cSys_Switch(SO_KEY, ST_ON, false);
 				
 				uc_tri_type = 0;

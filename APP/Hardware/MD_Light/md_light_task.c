@@ -20,7 +20,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define        	LIGHT_TASK_PRIO                  		1   		//任务优先级 
-#define        	LIGHT_TASK_STK_SIZE              		128   		//任务堆栈  实际字节数 *4
+#define        	LIGHT_TASK_STK_SIZE              		64   		//任务堆栈  实际字节数 *4
 TaskHandle_t    tLightTaskHandler = NULL; 
 void           	vLight_Task(void *pvParameters);
 #endif  //boardUSE_OS

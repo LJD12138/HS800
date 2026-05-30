@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         照明灯任务                                                           *
+ *                                         散热任务                                                           *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_HeatManage/md_hm_task.h"
@@ -16,8 +16,8 @@
 
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
-#define        	HM_TASK_PRIO                  			1   //任务优先级 
-#define        	HM_TASK_STK_SIZE              			128   //任务堆栈  实际字节数 *4
+#define        	HM_TASK_PRIO                  			1    //任务优先级 
+#define        	HM_TASK_STK_SIZE              			64   //任务堆栈  实际字节数 *4
 TaskHandle_t    tHeatManageHandler = NULL; 
 void           	vHW_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -98,8 +98,10 @@ void vHW_Task(void *pvParameters)
 				Temper = 41;
 			}
 
+			#if(boardDCAC_EN)
 			if(tDcacRx.usOutPwr > 1500)
 				Temper = 55;
+			#endif  //boardDCAC_EN
 			
 			switch (tHM.eWordMode)
 			{

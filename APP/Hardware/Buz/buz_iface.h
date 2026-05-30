@@ -4,12 +4,12 @@
 #include "main.h"
 #include "board_config.h"
 
-#define    		buzPWM_GPIO_RCU     					RCU_GPIOA
-#define    		buzPWM_GPIO_PORT    					GPIOA
-#define    		buzPWM_GPIO_PIN     					GPIO_PIN_11
+#define    		buzPWM_GPIO_RCU     					RCU_GPIOC
+#define    		buzPWM_GPIO_PORT    					GPIOC
+#define    		buzPWM_GPIO_PIN     					GPIO_PIN_9
 
-#define    		buzTIMER         						TIMER0
-#define    		buzTIMER_RCU    						RCU_TIMER0
+#define    		buzTIMER         						TIMER7
+#define    		buzTIMER_RCU    						RCU_TIMER7
 #define    		buzTIMER_CH     						TIMER_CH_3
 #define    		buzTIMER_PWM_SET(x)    					TIMER_CH3CV(buzTIMER) = ((uint32_t)x)
 

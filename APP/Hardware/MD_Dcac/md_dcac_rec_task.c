@@ -23,7 +23,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define    		dcacREC_TASK_PRIO                		2       		//任务优先级receive 
-#define        	dcacREC_TASK_SIZE                		256     		//任务堆栈  实际字节数 *4
+#define        	dcacREC_TASK_SIZE                		192     		//任务堆栈  实际字节数 *4
 TaskHandle_t    tDcacRecTaskHandle;
 void           	vDcac_RecTask(void *pvParameters);
 #endif  //boardUSE_OS

@@ -94,7 +94,7 @@ s8 cBaiku_ProtoRecInit(BaikuProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 cy
 -----输出参数	none
 -----返回值		小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-s8 cBaiku_ProtoTransInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
+s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 {
 	s8 result = 1;
 	

@@ -128,17 +128,17 @@
 #define     	dcacUSART_IRQ_HANDLER   				UART4_IRQHandler
 #endif
 
-#define     	dcacPOWER_EN_RCU                   		RCU_GPIOC
-#define     	dcacPOWER_EN_GPIO                  		GPIOC
-#define     	dcacPOWER_EN_PIN                   		GPIO_PIN_7
+#define     	dcacPOWER_EN_RCU                   		RCU_GPIOB
+#define     	dcacPOWER_EN_GPIO                  		GPIOB
+#define     	dcacPOWER_EN_PIN                   		GPIO_PIN_1
 #define     	dcacPOWER_EN_ON()                  		GPIO_BOP(dcacPOWER_EN_GPIO) = dcacPOWER_EN_PIN
 #define     	dcacPOWER_EN_OFF()                 		GPIO_BC(dcacPOWER_EN_GPIO)  = dcacPOWER_EN_PIN
 #define     	dcacPOWER_EN_SATTE()               		gpio_output_bit_get(dcacPOWER_EN_GPIO,dcacPOWER_EN_PIN)
 
 #if(boardDCAC_485_IFACE_EN)
-#define     	dcacGPIO_485_TX_EN_RCU					RCU_GPIOC
-#define     	dcacGPIO_485_TX_EN_PORT					GPIOC
-#define     	dcacGPIO_485_TX_EN_PIN					GPIO_PIN_6
+#define     	dcacGPIO_485_TX_EN_RCU					RCU_GPIOB
+#define     	dcacGPIO_485_TX_EN_PORT					GPIOB
+#define     	dcacGPIO_485_TX_EN_PIN					GPIO_PIN_2
 #define     	dcacGPIO_485_TX_EN_ON()					GPIO_BOP(dcacGPIO_485_TX_EN_PORT) = dcacGPIO_485_TX_EN_PIN   //使能发送
 #define     	dcacGPIO_485_TX_EN_OFF()				GPIO_BC(dcacGPIO_485_TX_EN_PORT)  = dcacGPIO_485_TX_EN_PIN   //使能接收
 #endif //boardDCAC_485_IFACE_EN

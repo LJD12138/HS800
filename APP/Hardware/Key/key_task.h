@@ -4,7 +4,11 @@
 #include "board_config.h"
 
 #if(boardKEY_EN)
+
+#if(boardADC_EN)
 #include "Adc/adc_task.h"
+#endif  //boardADC_EN
+
 //#define		//4Tab									//10Tab
 #define     	keyTASK_CYCLE_TIME                		10  //按键任务更新时间
 #define     	keyNUM                            		5   //按键的数量
@@ -15,46 +19,50 @@
 #define     	keyNUPRESS_MAX_TIME               		35  //组合按键最大的等待时间*10ms
 #define     	keyADD_SPACE_TIME                 		20  //长按累加间隔
 
-
-#define     	keyGPIO_POWER_RCU       				RCU_GPIOC
-#define     	keyGPIO_POWER_PORT      				GPIOC
-#define     	keyGPIO_POWER_PIN       				GPIO_PIN_4
+#if(!boardADC_EN)
+#define     	keyGPIO_POWER_RCU       				RCU_GPIOCA
+#define     	keyGPIO_POWER_PORT      				GPIOA
+#define     	keyGPIO_POWER_PIN       				GPIO_PIN_0
+#endif  //boardADC_EN
 
 #define     	keyGPIO_AC_RCU          				RCU_GPIOC
 #define     	keyGPIO_AC_PORT         				GPIOC
-#define     	keyGPIO_AC_PIN          				GPIO_PIN_5
+#define     	keyGPIO_AC_PIN          				GPIO_PIN_2
 
 #define     	keyGPIO_LIGHT_RCU       				RCU_GPIOA
 #define     	keyGPIO_LIGHT_PORT      				GPIOA
-#define     	keyGPIO_LIGHT_PIN       				GPIO_PIN_15
+#define     	keyGPIO_LIGHT_PIN       				GPIO_PIN_11
 
-#define     	keyGPIO_USB_RCU        					RCU_GPIOB
-#define     	keyGPIO_USB_PORT        				GPIOB
+#define     	keyGPIO_USB_RCU        					RCU_GPIOA
+#define     	keyGPIO_USB_PORT        				GPIOA
 #define     	keyGPIO_USB_PIN        					GPIO_PIN_12
 
-#define     	keyGPIO_DC_RCU          				RCU_GPIOB
+#define     	keyGPIO_DC_RCU          				RCU_GPIOB 
 #define     	keyGPIO_DC_PORT         				GPIOB
-#define     	keyGPIO_DC_PIN          				GPIO_PIN_14
+#define     	keyGPIO_DC_PIN          				GPIO_PIN_12
 
 //#define     	keyGPIO_WP_RCU          				RCU_GPIOA
 //#define    	keyGPIO_WP_GPIO         				GPIOA
 //#define     	keyGPIO_WP_PIN          				GPIO_PIN_0
 
-
+#if(!boardADC_EN)
 __STATIC_INLINE bool bKey_PowerIsPress(void)          
 {    
-   if((GPIO_ISTAT(keyGPIO_POWER_PORT)&(keyGPIO_POWER_PIN)) == 0)//读取按键
-       return false;
-   else
-       return true;
+    if((GPIO_ISTAT(keyGPIO_POWER_PORT)&(keyGPIO_POWER_PIN)) == 0)//读取按键
+        return false;
+    else
+        return true;
 }
-// __STATIC_INLINE bool bKey_PowerIsPress(void)          
-// {    
-//     if(usAdc_GetChannelValue(adcKEY_POWER) > 200)//读取按键
-//         return true;
-//     else
-//         return false;
-// }
+
+#else
+__STATIC_INLINE bool bKey_PowerIsPress(void)          
+{    
+    if(usAdc_GetChannelValue(adcKEY_POWER) > 200)//读取按键
+        return true;
+    else
+        return false;
+}
+#endif  //boardADC_EN
 
 __STATIC_INLINE bool bKey_AcIsPress(void)
 {

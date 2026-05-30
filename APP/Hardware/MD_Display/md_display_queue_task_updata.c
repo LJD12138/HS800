@@ -8,7 +8,7 @@
 #include "MD_Display/md_display_api.h"
 #include "Print/print_task.h"
 
-#define     dispTASK_UPDATA_CYCLE_TIME          100
+#define     dispTASK_UPDATA_CYCLE_TIME          10
 
 void v_disp_queue_task_updata(Task_T *tp_task)
 {

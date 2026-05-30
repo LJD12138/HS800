@@ -15,9 +15,7 @@ typedef enum
 
 
 void vDisp_EnginModeDis(void);
-void bDisp_SetLightness(void);
 void vDisp_MemParamSet(bool add);
-bool bDisp_ExitSetLightness(void);
 void vDisp_TypeSelect(void);
 
 #endif  //boardENG_MODE_EN && boardDISPLAY_EN

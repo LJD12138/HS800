@@ -10,7 +10,7 @@ virtualFolder:
   folders:
     - name: StartUp
       files:
-        - path: Firmware/CMSIS/GD/GD32F30x/Source/ARM/startup_gd32f30x_hd.s
+        - path: Firmware/CMSIS/GD/GD32F30x/Source/ARM/startup_gd32f30x_xd.s
       folders: []
     - name: CMSIS
       files:
@@ -231,8 +231,6 @@ virtualFolder:
         - path: Hardware/MD_Display/md_display_err.c
         - path: Hardware/MD_Display/lv_port_disp.c
         - path: Hardware/MD_Display/lv_port_disp.h
-        - path: Hardware/MD_Display/lv_port_timer.c
-        - path: Hardware/MD_Display/lv_port_timer.h
         - path: Hardware/MD_Display/md_display_queue_task.c
         - path: Hardware/MD_Display/md_display_queue_task.h
         - path: Hardware/MD_Display/md_display_queue_task_booting.c
@@ -241,9 +239,49 @@ virtualFolder:
         - path: Hardware/MD_Display/md_display_queue_task_err.c
         - path: Hardware/MD_Display/md_display_queue_task_init.c
         - path: Hardware/MD_Display/md_display_queue_task_shut_down.c
-        - path: Hardware/MD_Display/md_display_queue_task_updata.c
         - path: Hardware/MD_Display/md_display_queue_task_work.c
-      folders: []
+        - path: Hardware/MD_Display/md_display_queue_task_updata.c
+      folders:
+        - name: eez_ui
+          files:
+            - path: Hardware/MD_Display/eez_ui/actions.h
+            - path: Hardware/MD_Display/eez_ui/fonts.h
+            - path: Hardware/MD_Display/eez_ui/images.c
+            - path: Hardware/MD_Display/eez_ui/images.h
+            - path: Hardware/MD_Display/eez_ui/screens.c
+            - path: Hardware/MD_Display/eez_ui/screens.h
+            - path: Hardware/MD_Display/eez_ui/structs.h
+            - path: Hardware/MD_Display/eez_ui/styles.c
+            - path: Hardware/MD_Display/eez_ui/styles.h
+            - path: Hardware/MD_Display/eez_ui/ui.c
+            - path: Hardware/MD_Display/eez_ui/ui.h
+            - path: Hardware/MD_Display/eez_ui/vars.h
+            - path: Hardware/MD_Display/eez_ui/ui_font_barlow_condensed_regular_26.c
+            - path: Hardware/MD_Display/eez_ui/ui_font_barlow_condensed_regular_50.c
+            - path: Hardware/MD_Display/eez_ui/ui_font_barlow_condensed_regular_66.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon__.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_ac.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_bat_ot.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_dc.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_in.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_ot.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_out.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_time.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_tx60.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_usb.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_w.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_out.c
+            - path: Hardware/MD_Display/eez_ui/vars.c
+          folders: []
+        - name: user_ui
+          files:
+            - path: Hardware/MD_Display/user_ui/energy_ring.c
+            - path: Hardware/MD_Display/user_ui/energy_ring.h
+            - path: Hardware/MD_Display/user_ui/img_breath.c
+            - path: Hardware/MD_Display/user_ui/img_breath.h
+            - path: Hardware/MD_Display/user_ui/main_1_ui.c
+            - path: Hardware/MD_Display/user_ui/main_1_ui.h
+          folders: []
     - name: HW-MD_Light
       files:
         - path: Hardware/MD_Light/md_light_task.c
@@ -297,6 +335,8 @@ virtualFolder:
         - path: Hardware/MD_Mppt/md_mppt_rec_data_proc.h
         - path: Hardware/MD_Mppt/md_mppt_prot_frame.c
         - path: Hardware/MD_Mppt/md_mppt_prot_frame.h
+        - path: Hardware/MD_Mppt/md_mppt_iface.c
+        - path: Hardware/MD_Mppt/md_mppt_iface.h
       folders: []
     - name: HW-MD_Dcac
       files:
@@ -339,6 +379,8 @@ virtualFolder:
         - path: Middlewares/LVGL/src/core/lv_obj_tree.c
         - path: Middlewares/LVGL/src/core/lv_refr.c
         - path: Middlewares/LVGL/src/display/lv_display.c
+        - path: Middlewares/LVGL/src/drivers/display/lcd/lv_lcd_generic_mipi.c
+        - path: Middlewares/LVGL/src/drivers/display/st7789/lv_st7789.c
         - path: Middlewares/LVGL/src/draw/convert/lv_draw_buf_convert.c
         - path: Middlewares/LVGL/src/draw/lv_draw.c
         - path: Middlewares/LVGL/src/draw/lv_draw_arc.c
@@ -418,6 +460,7 @@ virtualFolder:
         - path: Middlewares/LVGL/src/others/observer/lv_observer.c
         - path: Middlewares/LVGL/src/osal/lv_os.c
         - path: Middlewares/LVGL/src/stdlib/lv_mem.c
+        - path: Middlewares/LVGL/src/osal/lv_freertos.c
         - path: Middlewares/LVGL/src/stdlib/builtin/lv_mem_core_builtin.c
         - path: Middlewares/LVGL/src/stdlib/builtin/lv_sprintf_builtin.c
         - path: Middlewares/LVGL/src/stdlib/builtin/lv_string_builtin.c
@@ -427,7 +470,6 @@ virtualFolder:
         - path: Middlewares/LVGL/src/themes/mono/lv_theme_mono.c
         - path: Middlewares/LVGL/src/themes/simple/lv_theme_simple.c
         - path: Middlewares/LVGL/src/tick/lv_tick.c
-        - path: Middlewares/LVGL/src/widgets/animimg/lv_animimg.c
         - path: Middlewares/LVGL/src/widgets/arc/lv_arc.c
         - path: Middlewares/LVGL/src/widgets/bar/lv_bar.c
         - path: Middlewares/LVGL/src/widgets/button/lv_button.c
@@ -460,6 +502,7 @@ virtualFolder:
         - path: Middlewares/LVGL/src/widgets/textarea/lv_textarea.c
         - path: Middlewares/LVGL/src/widgets/tileview/lv_tileview.c
         - path: Middlewares/LVGL/src/widgets/win/lv_win.c
+        - path: Middlewares/LVGL/src/widgets/animimage/lv_animimage.c
       folders: []
 dependenceList: []
 outDir: build
@@ -471,6 +514,7 @@ targets:
       defineList:
         - USE_STDPERIPH_DRIVER
         - GD32F30X_HD
+        - LV_LVGL_H_INCLUDE_SIMPLE
       incList:
         - .
         - Firmware/CMSIS/GD/GD32F30x/Include
@@ -494,6 +538,8 @@ targets:
         - RTE/_APP
         - Middlewares/LVGL
         - Middlewares/LVGL/src
+        - Hardware/MD_Display/eez_ui
+        - Hardware/MD_Display/user_ui
       libList: []
     excludeList: []
     settings:

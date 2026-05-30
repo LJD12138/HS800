@@ -11,9 +11,9 @@
 //#define       gpioVCC21_EN_OFF()         				GPIO_BC(gpioVCC21_EN_GPIO) = (uint32_t)gpioVCC21_EN_PIN
 //#define       gpioVCC21_EN_IsON()        				(GPIO_ISTAT(gpioVCC21_EN_GPIO) & (gpioVCC21_EN_PIN))
 
-#define     	gpioASSIST_OPEN_RCU               		RCU_GPIOB
-#define     	gpioASSIST_OPEN_PORT              		GPIOB
-#define     	gpioASSIST_OPEN_PIN               		GPIO_PIN_8
+#define     	gpioASSIST_OPEN_RCU               		RCU_GPIOC
+#define     	gpioASSIST_OPEN_PORT              		GPIOC
+#define     	gpioASSIST_OPEN_PIN               		GPIO_PIN_0
 #define     	gpioASSIST_OPEN_ON()              		GPIO_BOP(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN  
 #define     	gpioASSIST_OPEN_OFF()             		GPIO_BC(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN
 #define     	gpioASSIST_GET_STATE()             		gpio_output_bit_get(gpioASSIST_OPEN_PORT, gpioASSIST_OPEN_PIN)

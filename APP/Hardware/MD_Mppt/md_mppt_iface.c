@@ -1,29 +1,8 @@
 #include "MD_Mppt/md_mppt_iface.h"
 
 #if(boardMPPT_IFACE)
-#include "MD_Mppt/md_mppt_rec_task.h"
-#include "MD_Mppt/md_mppt_prot_frame.h"
-#include "Print/print_task.h"
 
-#include "lwrb.h"
 
-#if(boardMPPT_485_IFACE_EN)
-#if(boardUSE_OS)
-#include "timer_task.h"
-#else
-#include "systick.h"
-#endif
-#endif  //boardMPPT_485_IFACE_EN
-
-#define    		mpptRX_DMA_BUFF_SIZE   					256
-#define    		mpptTX_DMA_BUFF_SIZE        			256      	//DMAÊý×é´óÐ¡
-
-static vu16  	S_DataSendSize = 0;
-static vu16  	S_DataSendCnt = 0;
-#if(boardMPPT_IFACE_DMA_EN)
-static __ALIGNED(4) u8 ucaMpptRxDmaBuffData[mpptRX_DMA_BUFF_SIZE];   //ÓÃÓÚ°ÑÊý¾Ý×°ÔØµ½DMA·¢ËÍ 
-#endif
-static __ALIGNED(4) u8 ucaMpptTxDmaBuffData[mpptTX_DMA_BUFF_SIZE];     //È¡³ö½ÓÊÕ»º´æÆ÷ÖÐµÄÊý¾Ý,ÓÃÓÚDMA·¢ËÍ
 
 /*****************************************************************************************************************
 -----º¯Êý¹¦ÄÜ    ´®¿ÚÏà¹ØIO³õÊ¼»¯
@@ -34,136 +13,16 @@ static __ALIGNED(4) u8 ucaMpptTxDmaBuffData[mpptTX_DMA_BUFF_SIZE];     //È¡³ö½ÓÊ
 ******************************************************************************************************************/
 static void v_mppt_io_init(void)//IOÉèÖÃ
 {
-	/*Ê¹ÄÜ¸´ÓÃÊ±ÖÓ*/
-	rcu_periph_clock_enable(RCU_AF); 
-	
-    /* enable COM GPIO clock */
-    rcu_periph_clock_enable(mpptUSART_GPIO_TX_RCU);
-    /* connect port to USARTx_Tx */
-    gpio_init(mpptUSART_GPIO_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, mpptUSART_GPIO_TX_PIN);	
-	
-	/* enable COM GPIO clock */
-    rcu_periph_clock_enable(mpptUSART_GPIO_RX_RCU);
-    /* connect port to USARTx_Rx */
-    gpio_init(mpptUSART_GPIO_RX_PORT, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ,mpptUSART_GPIO_RX_PIN);	
-	
-	#if(boardMPPT_485_IFACE_EN)
-    //-------MPPT 458 ·¢ÉäÊ¹ÄÜ --------------------------------------------------------
-	rcu_periph_clock_enable(mpptGPIO_485_TX_EN_RCU);
-	gpio_init(mpptGPIO_485_TX_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, mpptGPIO_485_TX_EN_PIN);
-	mpptGPIO_485_TX_EN_OFF();  //Ä¬ÈÏ½ÓÊÕ
-	#endif
+	rcu_periph_clock_enable(mpptGPIO_DC_EN_RCU);
+	gpio_init(mpptGPIO_DC_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, mpptGPIO_DC_EN_PIN);
+	mpptGPIO_DC_EN_OFF();  //Ä¬ÈÏ½ÓÊÕ
+
+	rcu_periph_clock_enable(mpptGPIO_XT60_EN_RCU);
+	gpio_init(mpptGPIO_XT60_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, mpptGPIO_XT60_EN_PIN);
+	mpptGPIO_XT60_EN_OFF();  //Ä¬ÈÏ½ÓÊÕ
 }
 
 
-/*****************************************************************************************************************
------º¯Êý¹¦ÄÜ    ´®¿ÚÅäÖÃ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
-******************************************************************************************************************/
-static void v_mppt_usart_config(void)
-{
-    /* enable USART clock */
-    rcu_periph_clock_enable(mpptUSART_RCU);
-
-    /* USART configure */
-    usart_deinit(mpptUSART);
-    usart_baudrate_set(mpptUSART, mpptUSART_BAUD);
-    usart_word_length_set(mpptUSART, USART_WL_8BIT);
-    usart_stop_bit_set(mpptUSART, USART_STB_1BIT);
-    usart_parity_config(mpptUSART, USART_PM_NONE);
-    usart_hardware_flow_rts_config(mpptUSART, USART_RTS_DISABLE);
-    usart_hardware_flow_cts_config(mpptUSART, USART_CTS_DISABLE);
-	
-	usart_receive_config(mpptUSART, USART_RECEIVE_ENABLE);
-    usart_transmit_config(mpptUSART, USART_TRANSMIT_ENABLE);
-	
-	#if(!boardMPPT_IFACE_DMA_EN)
-	/* USART interrupt configuration */
-    nvic_irq_enable(mpptUSART_IRQ, 2, 0);
-    
-    usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_RBNE);
-    usart_interrupt_enable(mpptUSART, USART_INT_RBNE);   /* ½ÓÊÕÖÐ¶Ï */
-    
-    usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_TBE);
-    usart_interrupt_disable(mpptUSART, USART_INT_TBE); 
-	#endif
-
-    usart_enable(mpptUSART);
-}
-
-
-/***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    DMA³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
-************************************************************************************************************************/
-#if(boardMPPT_IFACE_DMA_EN)
-static void v_mppt_dma_init(void)
-{
-	/* USART interrupt configuration */
-	nvic_irq_enable(mpptUSART_DMA_TX_IRQ, 2, 0);
-	nvic_irq_enable(mpptUSART_IRQ, 2, 0);
-	
-	dma_parameter_struct dma_init_struct;
-	
-	/* enable DMA0 clock */
-	rcu_periph_clock_enable(mpptUSART_DMA_RCU);
-	
-    /* initialize DMA channel(USART TX) */
-    dma_deinit(mpptUSART_DMA, mpptUSART_DMA_TX_CH);
-	/* initialize DMA parameters */
-    dma_struct_para_init(&dma_init_struct);
-	
-    dma_init_struct.direction    = DMA_MEMORY_TO_PERIPHERAL;            /* ÍâÉèµ½ÄÚ´æ */              
-    dma_init_struct.memory_addr  = (uint32_t)ucaMpptTxDmaBuffData;       /* ÉèÖÃÄÚ´æ½ÓÊÕ»ùµØÖ· */
-    dma_init_struct.memory_inc   = DMA_MEMORY_INCREASE_ENABLE;          /* ÄÚ´æµØÖ·µÝÔö */
-	dma_init_struct.memory_width = DMA_MEMORY_WIDTH_8BIT;               /* 8Î»ÄÚ´æÊý¾Ý */
-    dma_init_struct.number       = 0 /*ARRAYNUM(ESP_TxBuff.pMemory)*/;  /* BuffÊý×éµÄ´óÐ¡ */
-    dma_init_struct.periph_addr  = (uint32_t)(&USART_DATA(mpptUSART));  /* ÍâÉè»ùµØÖ·,USARTÊý¾Ý¼Ä´æÆ÷µØÖ· */
-    dma_init_struct.periph_inc   = DMA_PERIPH_INCREASE_DISABLE;         /* ÍâÉèµØÖ·²»µÝÔö */
-	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;           /* 8Î»ÍâÉèÊý¾Ý */
-    dma_init_struct.priority     = DMA_PRIORITY_ULTRA_HIGH;             /* ×î¸ßDMAÍ¨µÀÓÅÏÈ¼¶ */
-    dma_init(mpptUSART_DMA, mpptUSART_DMA_TX_CH, &dma_init_struct);
-    
-    
-	/* initialize DMA channel(USART RX) */
-    dma_deinit(mpptUSART_DMA, mpptUSART_DMA_RX_CH);
-
-    dma_init_struct.direction = DMA_PERIPHERAL_TO_MEMORY;
-    dma_init_struct.number = mpptRX_DMA_BUFF_SIZE;
-    dma_init_struct.memory_addr = (uint32_t)ucaMpptRxDmaBuffData;
-    dma_init(mpptUSART_DMA, mpptUSART_DMA_RX_CH, &dma_init_struct);
-	
-	
-	dma_circulation_disable(mpptUSART_DMA, mpptUSART_DMA_TX_CH);                    /* ¹Ø±ÕDMA_TXÑ­»·Ä£Ê½ */
-	dma_memory_to_memory_disable(mpptUSART_DMA, mpptUSART_DMA_TX_CH);               /* DMAÄÚ´æµ½ÄÚ´æÄ£Ê½²»¿ªÆô */
-	dma_circulation_disable(mpptUSART_DMA, mpptUSART_DMA_RX_CH);                    /* ¹Ø±ÕDMA_RXÑ­»·Ä£Ê½ */
-    dma_memory_to_memory_disable(mpptUSART_DMA, mpptUSART_DMA_RX_CH);               /* DMAÄÚ´æµ½ÄÚ´æÄ£Ê½²»¿ªÆô */
-	
-	/* enable USART DMA for reception */
-    usart_dma_receive_config(mpptUSART, USART_RECEIVE_DMA_ENABLE);
-    /* enable DMA0 channel4 transfer complete interrupt */
-//    dma_interrupt_enable(mpptUSART_DMA, mpptUSART_DMA_RX_CH, DMA_INT_FTF);
-    /* enable DMA0 channel4 */
-    dma_channel_enable(mpptUSART_DMA, mpptUSART_DMA_RX_CH);
-	
-    /* enable USART DMA for transmission */
-    usart_dma_transmit_config(mpptUSART,USART_TRANSMIT_DMA_ENABLE);;
-    /* enable DMA0 channel3 transfer complete interrupt */
-    dma_interrupt_enable(mpptUSART_DMA, mpptUSART_DMA_TX_CH, DMA_INT_FTF);
-    /* enable DMA0 channel3 */
-    dma_channel_disable(mpptUSART_DMA, mpptUSART_DMA_TX_CH);
-    
-	//´®¿Ú¿ÕÏÐÖÐ¶Ï
-    usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_IDLE);
-    usart_interrupt_enable(mpptUSART, USART_INT_IDLE); 
-}
-#endif
 
 /*****************************************************************************************************************
 -----º¯Êý¹¦ÄÜ    ´®¿Ú³õÊ¼»¯
@@ -175,12 +34,6 @@ static void v_mppt_dma_init(void)
 void vMppt_IfaceInit(void)
 {
     v_mppt_io_init();
-	
-    v_mppt_usart_config();
-	
-	#if(boardMPPT_IFACE_DMA_EN)
-	v_mppt_dma_init();
-	#endif
 }
 
 /*****************************************************************************************************************
@@ -192,202 +45,8 @@ void vMppt_IfaceInit(void)
 ******************************************************************************************************************/
 void vMppt_IfaceDeInit(void)
 {
-     usart_deinit(mpptUSART);
-	
-	#if(boardMPPT_IFACE_DMA_EN)
-	/* initialize DMA channel(USART TX) */
-    dma_deinit(mpptUSART_DMA, mpptUSART_DMA_TX_CH);
-	/* initialize DMA channel(USART RX) */
-    dma_deinit(mpptUSART_DMA, mpptUSART_DMA_RX_CH);
-	#endif
-}
-
-/*****************************************************************************************************************
------º¯Êý¹¦ÄÜ    ´®¿Ú·¢Éäº¯Êý
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    data:Òª·¢ËÍÊý¾ÝµÄµØÖ·
-				len:Êý¾ÝµÄ³¤¶È
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      true:³É¹¦    false:Ê§°Ü
-******************************************************************************************************************/
-bool bMppt_DataSendStart(u8* data,u16 len)
-{
-	#if(boardMPPT_485_IFACE_EN)
-	vMppt_485TransEnable(true);
-	#endif
-	
-	if(data == NULL || len == 0)
-		return false;
-	
-	if(len > mpptTX_DMA_BUFF_SIZE)
-		len = mpptTX_DMA_BUFF_SIZE;
-	
-	memcpy(ucaMpptTxDmaBuffData, data, len);
-	
-	#if(boardMPPT_IFACE_DMA_EN)
-	//Çå³ýÈ«²¿·¢ËÍÍê³É±êÖ¾Î»
-	dma_flag_clear(mpptUSART_DMA, mpptUSART_DMA_TX_CH, DMA_FLAG_FTF); 
-	//×°ÔØÊý¾Ý
-	dma_memory_address_config(mpptUSART_DMA, mpptUSART_DMA_TX_CH,(uint32_t)ucaMpptTxDmaBuffData);
-	//×°ÔØ³¤¶È
-	dma_transfer_number_config(mpptUSART_DMA,mpptUSART_DMA_TX_CH,len);
-	//¿ªÊ¼DMA·¢ËÍ
-	dma_channel_enable(mpptUSART_DMA, mpptUSART_DMA_TX_CH);
-	return true;
-	
-	#else
-	if(S_DataSendCnt) //·¢ËÍÖÐ
-        return false; 
     
-    S_DataSendSize = len;
-    S_DataSendCnt = 0; 
-	usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_TBE);
-	//¿ÕÏÐ¾Í²úÉúÖÐ¶Ï
-	usart_interrupt_enable(mpptUSART, USART_INT_TBE);           
-    return true;
-	
-	#endif
 }
-
-/*****************************************************************************************************************
------º¯Êý¹¦ÄÜ    485·¢ËÍÊ¹ÄÜ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    en true:¿ªÆô    false:¹Ø±Õ
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
-******************************************************************************************************************/
-#if(boardMPPT_485_IFACE_EN)
-void vMppt_485TransEnable(bool en)
-{
-	if(en == true)
-		mpptGPIO_485_TX_EN_ON();  //ÇÐ»»Îª·¢ËÍÄ£Ê½
-	else 
-	{
-		mpptGPIO_485_TX_EN_OFF();  //ÇÐ»»Îª½ÓÊÕÄ£Ê½
-		#if(!boardUSE_OS)
-		bSysTick_MpptSendFinish = false;
-		#endif  //boardUSE_OS
-	}
-}
-#endif
-
-#if(boardMPPT_IFACE_DMA_EN)
-/***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    DMA·¢ËÍÍê³ÉÖÐ¶Ï
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
-************************************************************************************************************************/
-void mpptUSART_DMA_TX_IRQ_HANDLER(void)
-{
-    if(dma_interrupt_flag_get(mpptUSART_DMA, mpptUSART_DMA_TX_CH, DMA_INT_FLAG_FTF)) 
-	{
-        dma_interrupt_flag_clear(mpptUSART_DMA, mpptUSART_DMA_TX_CH, DMA_INT_FLAG_G);
-		//¹Ø±ÕDMA·¢ËÍ
-	    dma_channel_disable(mpptUSART_DMA, mpptUSART_DMA_TX_CH);
-		//·¢ËÍÍê³É
-		S_DataSendSize = 0;
-		
-		//ÑÓÊ±¹Ø±Õ
-		#if(boardMPPT_485_IFACE_EN)
-		#if(boardUSE_OS)
-		xTimerResetFromISR(tMpptRxEnTimer,0);
-		#else
-		bSysTick_MpptSendFinish = true;
-		#endif  //boardUSE_OS
-		#endif  //boardMPPT_485_IFACE_EN
-    }
-}
-
-
-/***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    ´®¿Ú½ÓÊÕÍê³ÉÖÐ¶Ï
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
-************************************************************************************************************************/
-static u8 uc_read_buff_len=0;
-void mpptUSART_IRQ_HANDLER(void)
-{
-    if(RESET != usart_interrupt_flag_get(mpptUSART, USART_INT_FLAG_IDLE)) 
-	{
-		//Çå³ýÖÐ¶Ï
-        usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_IDLE);
-		//Çå³ý¿ÕÏÐ±êÖ¾Î»
-		usart_data_receive(mpptUSART);
-		//¹Ø±ÕDMA´«Êä
-		dma_channel_disable(mpptUSART_DMA, mpptUSART_DMA_RX_CH); 
-		
-		//»ñÈ¡½ÓÊÕµ½µÄÊý¾Ý³¤¶È£¬µ¥Î»£º×Ö½Ú
-		uc_read_buff_len = mpptRX_DMA_BUFF_SIZE - dma_transfer_number_get(mpptUSART_DMA,mpptUSART_DMA_RX_CH);
-		//×ª´æÊý¾Ýµ½´ý´¦ÀíÊý¾Ý»º³åÇø
-		if(tpMpptProtoRx != NULL)
-			lwrb_write(&tpMpptProtoRx->tRxBuff, ucaMpptRxDmaBuffData, uc_read_buff_len);
-		//Í¨Öª½ÓÊÕÈÎÎñ
-		#if(boardUSE_OS)
-        vTaskNotifyGiveFromISR(tMpptRecTaskHandle,NULL);
-		#endif  //boardUSE_OS
-
-		//ÖØÐÂÉèÖÃDMA´«Êä
-		//×°ÔØ³¤¶È
-		dma_transfer_number_config(mpptUSART_DMA,mpptUSART_DMA_RX_CH,mpptRX_DMA_BUFF_SIZE);
-		//¿ªÆôDMA´«Êä
-		dma_channel_enable(mpptUSART_DMA, mpptUSART_DMA_RX_CH);    
-    }
-}
-#else
-/*****************************************************************************************************************
------º¯Êý¹¦ÄÜ    ´®¿ÚÖÐ¶Ïº¯Êý
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
-******************************************************************************************************************/
-void mpptUSART_IRQ_HANDLER(void)
-{
-
-    if(RESET != usart_interrupt_flag_get(mpptUSART, USART_INT_FLAG_RBNE))
-    {
-		if(tpMpptProtoRx != NULL)
-			lwrb_write(&tpMpptProtoRx->tRxBuff, (u8)USART_DATA(mpptUSART), 1);  
-
-        usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_RBNE);//Çå³ý´®¿Ú½ÓÊÕÖÐ¶Ï 
-
-		//Í¨Öª½ÓÊÕÈÎÎñ
-		#if(boardUSE_OS)
-        vTaskNotifyGiveFromISR(tMpptRecTaskHandle,NULL);
-		#endif  //boardUSE_OS
-    }
-
-    if(RESET != usart_interrupt_flag_get(mpptUSART, USART_INT_FLAG_TBE))
-    {
-        usart_interrupt_flag_clear(mpptUSART, USART_INT_FLAG_TBE);
-        
-        if(S_DataSendCnt < S_DataSendSize)
-        {    
-            USART_DATA(mpptUSART) = ucaMpptTxDmaBuffData[S_DataSendCnt];
-			S_DataSendCnt++;
-        }
-        else
-        {
-            usart_interrupt_disable(mpptUSART, USART_INT_TBE);
-            S_DataSendCnt = 0;
-            S_DataSendSize = 0;
-
-			//ÑÓÊ±¹Ø±Õ
-			#if(boardMPPT_485_IFACE_EN)
-			#if(boardUSE_OS)
-			xTimerResetFromISR(tMpptRxEnTimer,0);
-			#else
-			bSysTick_MpptSendFinish = true;
-			#endif  //boardUSE_OS
-			#endif  //boardMPPT_485_IFACE_EN
-        }               
-    }    
-}
-#endif  //boardMPPT_IFACE_DMA_EN
 
 #endif  //boardMPPT_IFACE
 

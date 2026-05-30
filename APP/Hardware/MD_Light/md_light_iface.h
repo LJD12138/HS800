@@ -11,9 +11,9 @@
 #define 		lightPWM_FULL_VALUE                  	550
 
 //ÕÕÃ÷LED
-#define 		lightPWM_GPIO_RCU                    	RCU_GPIOA 
+#define 		lightPWM_GPIO_RCU                    	RCU_GPIOA
 #define 		lightPWM_GPIO_PORT                  	GPIOA
-#define 		lightPWM_PIN                         	GPIO_PIN_1
+#define 		lightPWM_PIN                         	GPIO_PIN_8
 
 //#define 		lightPWM_EN_GPIO_RCU                 	RCU_GPIOA 
 //#define 		lightPWM_EN_GPIO_PORT                	GPIOA
@@ -23,11 +23,11 @@
 #define 		lightPWM_EN_ON()                     	__NOP;
 #define 		lightPWM_EN_OFF()                    	__NOP;
 
-#define 		lightTIMER                           	TIMER1
-#define 		lightTIMER_RCU                       	RCU_TIMER1
-#define 		lightTIMER_CH                        	TIMER_CH_1
+#define 		lightTIMER                           	TIMER0
+#define 		lightTIMER_RCU                       	RCU_TIMER0
+#define 		lightTIMER_CH                        	TIMER_CH_0
 
-#define 		lightPWM_SET(x)                      	TIMER_CH1CV(lightTIMER) = ((uint32_t)x)
+#define 		lightPWM_SET(x)                      	TIMER_CH0CV(lightTIMER) = ((uint32_t)x)
 
 void vLight_IfaceInit(void);
 

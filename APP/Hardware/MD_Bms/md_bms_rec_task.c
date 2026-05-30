@@ -27,7 +27,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define			bmsREC_TASK_PRIO                    	2        //任务优先级 
-#define			bmsREC_TASK_SIZE                    	256      //任务堆栈  实际字节数 *4
+#define			bmsREC_TASK_SIZE                    	192      //任务堆栈  实际字节数 *4
 TaskHandle_t	tBmsRecTaskHandle;
 void			vBms_RecTask(void *pvParameters);
 #endif  //boardUSE_OS
@@ -58,7 +58,7 @@ static void v_rec_task_param_init(void)
 	tBms.sMaxTemp = 25;
 	tBms.sMinTemp = 25;
 	
-	cModbus1_ResetRxBuff(tpBmsProtoRx);
+	cBaiku_ResetRxBuff(tpBmsProtoRx);
 }
 
 
@@ -126,14 +126,30 @@ void vBms_RecTask(void *pvParameters)
 
 		//******************************************协议处理****************************************************
 		//协议解析
-        c_result = cModbus1_ProtoCheck(tpBmsProtoRx);
+		#if(boardUPDATE)
+		if(tBms.eDevState == DS_UPDATE_MODE)
+		{
+			c_result = cUpdate_ProtoCheck(tpBmsProtoRx, &tpPrintTask->tReplyBuff);
+
+			//协议适配
+			if(c_result == PT_BAIKU || c_result == PT_XMODEM)
+				cUpdate_ProtoSelect(UO_BMS, (ProtoType_E)c_result);
+			//其他未适配或未定义
+			else
+				cUpdate_ProtoSelect(UO_BMS, PT_NULL);
+
+			if(c_result != PT_BAIKU)
+				c_result = 0;
+		}
+		else
+		#endif  //boardUPDATE
+        	c_result = cBaiku_ProtoCheck(tpBmsProtoRx);
 
 		//数据处理
 		if(c_result > 0)
         {
 			c_check_conn_state();
-			c_result = c_bms_rec_proc_data(tpBmsProtoRx, tpBmsProtoTx);
-			vModbus1_RecEnd(tpBmsProtoRx);
+			c_result = c_bms_rec_proc_data(tpBmsProtoRx);
 			if(c_result <= 0)
 			{
 				if(uPrint.tFlag.bBmsRecTask || uPrint.tFlag.bImportant)
@@ -145,6 +161,14 @@ void vBms_RecTask(void *pvParameters)
 				xTaskNotifyGive(tBmsTaskHandler);//通知发送任务
 				#endif  //boardUSE_OS
 			}
+
+			#if(boardUPDATE)
+			if(tBms.eDevState == DS_UPDATE_MODE)
+			{
+				if(tUpdate.eChType == CT_PRINT)
+					xTaskNotifyGive(tPrintTaskHandler);
+			}
+			#endif  //boardUPDATE
         }
 		else 
 		{
@@ -216,7 +240,7 @@ void vBms_RecTickTimer(void)
 	
 		if(tpBmsProtoRx->usRecOverTimeCnt == 0)        
 		{
-			cModbus1_StepWaitOutTime(tpBmsProtoRx);
+			cBaiku_StepWaitOutTime(tpBmsProtoRx);
 		}
 	}
 	

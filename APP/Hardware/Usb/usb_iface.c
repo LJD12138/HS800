@@ -15,8 +15,12 @@ I2cObj_T  		tUSB_IC2_I2C;
 static void v_usb_gpio_init(void)
 {
     rcu_periph_clock_enable(usbPD_EN_RCU);
-	gpio_init(usbPD_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPD_EN_PIN);
+    gpio_init(usbPD_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPD_EN_PIN);
     usbPD_EN_OFF();	
+
+    rcu_periph_clock_enable(usbPD2_EN_RCU);
+    gpio_init(usbPD2_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPD2_EN_PIN);
+    usbPD2_EN_OFF();	
 	
 	// rcu_periph_clock_enable(usbPOWER_EN_RCU);
 	// gpio_init(usbPOWER_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPOWER_EN_PIN);
@@ -38,17 +42,17 @@ static void v_usb_gpio_init(void)
     tUSB_IC1_I2C.usDelay = 70;
     vI2C_ObjInit(&tUSB_IC1_I2C);
 	
-	//USB充电 IIC初始化
-	// rcu_periph_clock_enable(usbIC2_SCL_RCU);
-	// rcu_periph_clock_enable(usbIC2_SDA_RCU);
-	// tUSB_IC2_I2C.ulGPIO_PORT_SCL = usbIC2_SCL_PORT;
-    // tUSB_IC2_I2C.ulGPIO_PIN_SCL  = usbIC2_SCL_PIN;
-    // tUSB_IC2_I2C.ulGPIO_PORT_SDA = usbIC2_SDA_PORT;
-    // tUSB_IC2_I2C.ulGPIO_PIN_SDA  = usbIC2_SDA_PIN;
-    // tUSB_IC2_I2C.Addr = 0x45;
-    // tUSB_IC2_I2C.AddrType = AddrType_7bit;
-    // tUSB_IC2_I2C.usDelay = 500;
-    // vI2C_ObjInit(&tUSB_IC2_I2C);
+	// USB充电 IIC初始化
+	rcu_periph_clock_enable(usbIC2_SCL_RCU);
+	rcu_periph_clock_enable(usbIC2_SDA_RCU);
+	tUSB_IC2_I2C.ulGPIO_PORT_SCL = usbIC2_SCL_PORT;
+    tUSB_IC2_I2C.ulGPIO_PIN_SCL  = usbIC2_SCL_PIN;
+    tUSB_IC2_I2C.ulGPIO_PORT_SDA = usbIC2_SDA_PORT;
+    tUSB_IC2_I2C.ulGPIO_PIN_SDA  = usbIC2_SDA_PIN;
+    tUSB_IC2_I2C.Addr = 0x3C;
+    tUSB_IC2_I2C.AddrType = AddrType_7bit;
+    tUSB_IC2_I2C.usDelay = 70;
+    vI2C_ObjInit(&tUSB_IC2_I2C);
 }
 
 

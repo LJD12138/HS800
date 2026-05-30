@@ -48,7 +48,6 @@ void v_bms_queue_task_update(Task_T *tp_task)
 				cQueue_GotoStep(tp_task, STEP_END);  //结束
 				break;
 			}
-			
 			cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
 		}
 		

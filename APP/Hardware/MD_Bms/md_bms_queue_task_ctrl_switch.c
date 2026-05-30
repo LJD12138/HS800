@@ -116,7 +116,7 @@ void v_bms_queue_task_clt_switch(Task_T *tp_task)
 				//系统
 				case 0:
 				{
-					if(u_reply_param.tTaskParam.ucParam > 1)
+					if(u_reply_param.tTaskParam.ucParam > DS_UPDATE_MODE)
 					{
 						if(uPrint.tFlag.bBmsTask && uPrint.tFlag.bImportant)
 							log_w("bBmsTask:BMS返回对象%d的参数%d超范围", 
@@ -127,7 +127,7 @@ void v_bms_queue_task_clt_switch(Task_T *tp_task)
 
 					if(e_sw_type == ST_ON)
 					{
-						if(u_reply_param.tTaskParam.ucParam)
+						if(u_reply_param.tTaskParam.ucParam >= DS_BOOTING)
 						{
 							bBms_SetDevState(DS_WORK);
 							cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
@@ -136,7 +136,7 @@ void v_bms_queue_task_clt_switch(Task_T *tp_task)
 					}
 					else 
 					{
-						if(!u_reply_param.tTaskParam.ucParam)
+						if(u_reply_param.tTaskParam.ucParam <= DS_SHUT_DOWN)
 						{
 							bBms_SetDevState(DS_SHUT_DOWN);
 							cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步

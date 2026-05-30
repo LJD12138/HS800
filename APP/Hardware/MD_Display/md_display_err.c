@@ -778,7 +778,7 @@ u16 usDisp_ErrCodeDisplay(void)
 	}
 	
 	us_err_disp_cnt++;
-	if(us_err_disp_cnt >= (1000/boardDISP_REFRESH_TMIE))
+	if(us_err_disp_cnt >= (1000/boardDISP_REFRESH_TIME))
 	{
 		us_err_disp_cnt = 0;
 		us_err_step++;

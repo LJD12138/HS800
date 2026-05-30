@@ -11,7 +11,7 @@
 #include "MD_Display/md_display_api.h"
 #include "Print/print_task.h"
 
-#define     dispTASK_ENG_CYCLE_TIME             200
+#define     dispTASK_ENG_CYCLE_TIME             10
 
 void v_disp_queue_task_eng(Task_T *tp_task)
 {

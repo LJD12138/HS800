@@ -254,14 +254,15 @@ static void v_usb_check_prote(void)
 static void v_usb_param_update(void)
 {
 	tUsb.usAutoOffTime = tAppMemParam.tUSB.usAutoOffTime;
-	tUsb.sMaxTemp = tAdcSamp.sUsbTemp;
+	// tUsb.sMaxTemp = tAdcSamp.sUsbTemp;
+	tUsb.sMaxTemp = 25;//πÃ∂®25…„ œ∂»
 	tUsb.usInVolt = tAdcSamp.usSysInVolt;//0.1V
 	
 	if(tUsb.eDevState == DS_WORK)
 	{
 		tUsb.usInCurr = 0;//0.1A
-		tUsb.usPdPwr = tAdcSamp.fUsbPdCurr * tAdcSamp.usUsbPdVolt / 10;//W
-		tUsb.usWcPwr = tAdcSamp.fUsbWcCurr * tAdcSamp.usUsbWcVolt / 10;//W
+		// tUsb.usPdPwr = tAdcSamp.fUsbPdCurr * tAdcSamp.usUsbPdVolt / 10;//W
+		// tUsb.usWcPwr = tAdcSamp.fUsbWcCurr * tAdcSamp.usUsbWcVolt / 10;//W
 	}
 	else
 	{
@@ -394,18 +395,21 @@ void bUsb_SetDevState(DevState_E stat)
 	{
 		// usbPOWER_EN_ON();
 		usbPD_EN_ON();
+		usbPD2_EN_ON();
 		// usbA_EN_ON();
 	}
 	else if(stat == DS_CLOSING)
 	{
 		// usbPOWER_EN_OFF();
 		usbPD_EN_OFF();
+		usbPD2_EN_OFF();
 		// usbA_EN_OFF();
 	}
 	else if(stat == DS_SHUT_DOWN)
 	{
 		// usbPOWER_EN_OFF();
 		usbPD_EN_OFF();
+		usbPD2_EN_OFF();
 		// usbA_EN_OFF();
 	}
 		

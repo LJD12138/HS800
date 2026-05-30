@@ -11,6 +11,8 @@
 static void v_fan_gpio_init(void)
 {
 	//IO config
+   rcu_periph_clock_enable(RCU_AF);//开启复用外设时钟使能
+   gpio_pin_remap_config(GPIO_TIMER1_FULL_REMAP,ENABLE);//重映射
 	rcu_periph_clock_enable(fanPWM_GPIO_RCU);
 	gpio_init(fanPWM_GPIO_PORT,GPIO_MODE_AF_PP,GPIO_OSPEED_50MHZ,fanPWM_PIN);  //配置为外设引脚
 	
@@ -59,7 +61,7 @@ static void v_fan_timer_init(uint16_t arr,uint16_t psc)
    timer_ocintpara.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
 
    timer_channel_output_config(fanTIMER, fanTIMER_CH, &timer_ocintpara);
-   timer_channel_output_config(fanTIMER, fanLED_TIMER_CH, &timer_ocintpara);
+   // timer_channel_output_config(fanTIMER, fanLED_TIMER_CH, &timer_ocintpara);
 
    /*LED CH2 configuration in PWM mode1*/
    timer_channel_output_pulse_value_config(fanTIMER, fanTIMER_CH, 0);
@@ -67,9 +69,9 @@ static void v_fan_timer_init(uint16_t arr,uint16_t psc)
    timer_channel_output_shadow_config(fanTIMER, fanTIMER_CH, TIMER_OC_SHADOW_DISABLE);
 	
 	 /*LED CH2 configuration in PWM mode1*/
-   timer_channel_output_pulse_value_config(fanTIMER, fanLED_TIMER_CH, 0);
-   timer_channel_output_mode_config(fanTIMER, fanLED_TIMER_CH, TIMER_OC_MODE_PWM0);
-   timer_channel_output_shadow_config(fanTIMER, fanLED_TIMER_CH, TIMER_OC_SHADOW_DISABLE);
+   // timer_channel_output_pulse_value_config(fanTIMER, fanLED_TIMER_CH, 0);
+   // timer_channel_output_mode_config(fanTIMER, fanLED_TIMER_CH, TIMER_OC_MODE_PWM0);
+   // timer_channel_output_shadow_config(fanTIMER, fanLED_TIMER_CH, TIMER_OC_SHADOW_DISABLE);
 
    /* auto-reload preload enable */
    timer_auto_reload_shadow_enable(fanTIMER);

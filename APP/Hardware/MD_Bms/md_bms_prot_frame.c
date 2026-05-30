@@ -3,9 +3,7 @@
 #include "MD_Bms/md_bms_prot_frame.h"
 
 #if(boardBMS_EN)
-#include "MD_Bms/md_bms_task.h"
 #include "MD_Bms/md_bms_iface.h"
-#include "MD_Bms/md_bms_rec_task.h"
 #include "Print/print_task.h"
 
 #if(boardUSE_OS)
@@ -14,15 +12,15 @@
 #endif  //boardUSE_OS
 
 #define       	bmsTX_PROTO_BUFF_LEN                   	128
-#define       	bmsRX_PROTO_BUFF_LEN                   	256
+#define       	bmsRX_PROTO_BUFF_LEN                   	128
 
-#define     	bmsDEV_ADRR								0x01
+#define     	bmsDEV_ADRR								0x10
 #define    		bmsWAIT_NOTIFY_OUTTIME     				1000     //任务通知超时时间 MS
 
 
 //****************************************************参数初始化**************************************************//
-__ALIGNED(4) ModbusProtoTx1_t *tpBmsProtoTx = NULL;	//发送协议
-__ALIGNED(4) ModbusProtoRx1_t *tpBmsProtoRx = NULL;
+__ALIGNED(4) BaikuProtoTx_t *tpBmsProtoTx = NULL;	//发送协议
+__ALIGNED(4) BaikuProtoRx_t *tpBmsProtoRx = NULL;
 
 /*创建互斥量*/
 #if(boardUSE_OS)
@@ -31,7 +29,7 @@ SemaphoreHandle_t bmsSemaphoreMutex = NULL;
 
 
 //****************************************************函数声明****************************************************//
-static s8 c_bms_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len);
+static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len);
 
 
 
@@ -44,7 +42,7 @@ static s8 c_bms_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len);
 ************************************************************************************************************************/
 bool bBms_SendProtInit(void)
 {
-	s8 c_result = cModbus1_TransProtoInit(&tpBmsProtoTx, 
+	s8 c_result = cBaiku_ProtoSendInit(&tpBmsProtoTx, 
 								bmsTX_PROTO_BUFF_LEN, 
 								bmsDEV_ADRR);
 	if(c_result <= 0)
@@ -65,7 +63,7 @@ bool bBms_SendProtInit(void)
 
 bool bBms_RecProtInit(void)
 {
-	s8 c_result = cModbus1_RecProtoInit(&tpBmsProtoRx, 	//协议指针
+	s8 c_result = cBaiku_ProtoRecInit(&tpBmsProtoRx, 	//协议指针
 								bmsRX_PROTO_BUFF_LEN,	//协议缓存器大小
 								bmsDEV_ADRR,			//协议设备ID
 								boardREPET_TIMER_CYCLE_TMIE);//计数器采样时间
@@ -94,9 +92,7 @@ bool bBms_RecProtInit(void)
 ******************************************************************************************************************/
 s8 c_bms_cs_get_param(u8 num)
 {
-	BmsParam_T t_param;
-	num = sizeof(t_param) / 2;  //寄存器数量 = 数据长度/寄存器长度(2字节)
-	return c_bms_data_trans(modbusREAD_MULTI_REG, bmsREG_ADDR_GET_PARAM, 0, num);
+	return c_bms_data_trans(baikuCMD_GET_PARAM, &num, 1);
 }
 
 /*****************************************************************************************************************
@@ -108,12 +104,7 @@ s8 c_bms_cs_get_param(u8 num)
 ******************************************************************************************************************/
 s8 c_bms_cs_switch(TaskInParam_U u_in_param)
 {
-	u16 temp = 0x0000;
-	
-	if(u_in_param.tTaskParam.ucParam == ST_ON)
-		temp = 0x0001;
-
-	return c_bms_data_trans(modbusWRITE_MULTI_REG, bmsREG_ADDR_CTRL_SWITCH, (u8*)&temp, 1);
+	return c_bms_data_trans(baikuCMD_SWITCH, (u8*)&u_in_param.usTaskInParam, 2);
 }
 
 /*****************************************************************************************************************
@@ -125,8 +116,7 @@ s8 c_bms_cs_switch(TaskInParam_U u_in_param)
 ******************************************************************************************************************/
 s8 c_bms_cs_set_cali(u8 num)
 {
-	// return c_bms_data_trans(baikuCMD_CALI, &num, 1);
-	return 0;
+	return c_bms_data_trans(baikuCMD_CALI, &num, 1);
 }
 
 /*****************************************************************************************************************
@@ -138,13 +128,12 @@ s8 c_bms_cs_set_cali(u8 num)
 ******************************************************************************************************************/
 s8 c_bms_cs_get_app_info(u16 num)
 {
-	// u8 buff[3] = {0};
+	u8 buff[3] = {0};
 	
-	// buff[0] = MO_BMS;
-	// memcpy(&buff[1], (u8*)&num, 2);
+	buff[0] = MO_BMS;
+	memcpy(&buff[1], (u8*)&num, 2);
 	
-	// return c_bms_data_trans(baikuCMD_GET_MEM_PARAM, buff, sizeof(buff));
-	return 0;
+	return c_bms_data_trans(baikuCMD_GET_MEM_PARAM, buff, sizeof(buff));
 }
 
 /*****************************************************************************************************************
@@ -156,9 +145,8 @@ s8 c_bms_cs_get_app_info(u16 num)
 ******************************************************************************************************************/
 s8 c_bms_cs_sys_set(tSysSetParam *tparam)
 {	
-	// tSysSetParam tparam1 = *tparam;
-	// return c_bms_data_trans(baikuCMD_SYS_SET, (u8*)&tparam1, sizeof(tparam1));
-	return 0;
+	tSysSetParam tparam1 = *tparam;
+	return c_bms_data_trans(baikuCMD_SYS_SET, (u8*)&tparam1, sizeof(tparam1));
 }
 
 /*****************************************************************************************************************
@@ -170,9 +158,8 @@ s8 c_bms_cs_sys_set(tSysSetParam *tparam)
 ******************************************************************************************************************/
 s8 c_bms_cs_req_chg(void)
 {
-	// u8 obj = 0;
-	// return c_bms_data_trans(baikuCMD_REQ_CHG, &obj, 1);
-	return 0;
+	u8 obj = 0;
+	return c_bms_data_trans(baikuCMD_REQ_CHG, &obj, 1);
 }
 
 /***********************************************************************************************************************
@@ -188,7 +175,7 @@ s8 c_bms_cs_req_chg(void)
 				0:无操作
 				1:操作成功
 ************************************************************************************************************************/
-static s8 c_bms_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
+static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len)
 {
 	s8 result = 0;
 	
@@ -208,7 +195,7 @@ static s8 c_bms_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
 	}
 	#endif  //boardUSE_OS
 	
-	result = cModbus1_ProtoCreate(tpBmsProtoTx, cmd, reg_addr, data, len);
+	result = cBaiku_ProtoCreate(tpBmsProtoTx, cmd, data, len);
 	if(result > 0)
 	{
 		//BMS
@@ -220,8 +207,8 @@ static s8 c_bms_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
 			#if(boardUSE_OS)
 			if(ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(bmsWAIT_NOTIFY_OUTTIME)) <= 0)
 			{
-				if((uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant) && tBms.eDevState != DS_LOST)
-					log_w("bBmsTask:等待指令0x%x,地址0x%x回复超时", cmd, reg_addr);
+				if(uPrint.tFlag.bBmsTask)
+					log_w("bBmsTask:等待指令0x%x回复超时",cmd);
 				
 				result = -2;
 			}
@@ -230,8 +217,6 @@ static s8 c_bms_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
 		else 
 			result = -3;
 	}
-
-	cModbus1_ResetTx(tpBmsProtoTx, bmsTX_PROTO_BUFF_LEN);
 
 	//释放互斥量
 	#if(boardUSE_OS)

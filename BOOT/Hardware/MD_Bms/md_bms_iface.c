@@ -256,7 +256,7 @@ bool bBms_DataSendStart(u8* data,u16 len)
     if(S_DataSendCnt) //发送中
         return false; 
     
-    S_DataSendSize = length;
+    S_DataSendSize = len;
     S_DataSendCnt = 0; 
 	usart_interrupt_flag_clear(bmsUSART, USART_INT_FLAG_TBE);
 	//空闲就产生中断
@@ -386,8 +386,10 @@ void bmsUSART_IRQ_HANDLER(void)
 
     if(RESET != usart_interrupt_flag_get(bmsUSART, USART_INT_FLAG_RBNE))
     {
-		if(tpBmsProtoRx != NULL)
-			lwrb_write(&tpBmsProtoRx->tRxBuff, USART_DATA(bmsUSART), 1);  
+		if(tpBmsProtoRx != NULL) {
+			uint8_t data = (uint8_t)USART_DATA(bmsUSART);
+			lwrb_write(&tpBmsProtoRx->tRxBuff, &data, 1);
+		}
 
         usart_interrupt_flag_clear(bmsUSART, USART_INT_FLAG_RBNE);//清除串口接收中断 
 

@@ -73,7 +73,7 @@
 //´®¿Ú
 #define     	bmsUSART_RCU           					RCU_USART2
 #define     	bmsUSART               					USART2
-#define     	bmsUSART_BAUD          					9600
+#define     	bmsUSART_BAUD          					115200
 #define     	bmsUSART_IRQ           					USART2_IRQn
 #define     	bmsUSART_IRQ_HANDLER   					USART2_IRQHandler
 //DMA
@@ -99,7 +99,7 @@
 //´®¿Ú
 #define     	bmsUSART_RCU           					RCU_UART3
 #define     	bmsUSART               					UART3
-#define     	bmsUSART_BAUD          					9600
+#define     	bmsUSART_BAUD          					115200
 #define     	bmsUSART_IRQ           					UART3_IRQn
 #define     	bmsUSART_IRQ_HANDLER   					UART3_IRQHandler
 //DMA
@@ -125,7 +125,7 @@
 //´®¿Ú
 #define     	bmsUSART_RCU          					RCU_UART4
 #define     	bmsUSART              					UART4
-#define     	bmsUSART_BAUD         					9600
+#define     	bmsUSART_BAUD         					115200
 #define     	bmsUSART_IRQ          					UART4_IRQn
 #define     	bmsUSART_IRQ_HANDLER  					UART4_IRQHandler
 #endif

@@ -76,12 +76,14 @@ SysTaskId_E eBoot_InfoInit(bool init)
 	//读取参数
 	c_ret = cBoot_GetMemParam(p_obj_str);
 	//读取参数失败
-	if(c_ret <= 0)
+	if(c_ret < 0)
 	{
 		if(uPrint.tFlag.bBootInfo)
 			sMyPrint("bBootInfo:参数读取失败 代码%d\r\n",c_ret);
 		return STI_ERR;
 	}
+	if(c_ret == 0)
+		goto init_loop;
 	
 	//--------------------------------------校验消息-------------------------------------------
 	//---------初始化----------
@@ -281,24 +283,42 @@ s16 cBoot_GetMemParam(const char* id_str)
 		read_len = sizeof(tBootMemParam.tVerInfo);
 		return_len = ef_get_env_blob(tBootVerInfoStr, &tBootMemParam.tVerInfo, read_len, NULL);
 		if(return_len != read_len)
-		return -2;
+		{
+			if(return_len == 0)
+			{
+				tBootMemParam.tParam.ulCmd = 0;
+				return 0;
+			}
+			return -2;
+		}
 		
 		read_len = sizeof(tBootMemParam.tParam);
 		return_len = ef_get_env_blob(tBootParamStr, &tBootMemParam.tParam, read_len, NULL);
 		if(return_len != read_len)
-		return -3;
+		{
+			if(return_len == 0)
+			{
+				tBootMemParam.tParam.ulCmd = 0;
+				return 0;
+			}
+			return -3;
+		}
 	}
 	//读取版本信息
 	else if (strcmp(id_str, tBootVerInfoStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tVerInfo);
 		return_len = ef_get_env_blob(tBootVerInfoStr, &tBootMemParam.tVerInfo, read_len, NULL);
+		if(return_len == 0)
+			return 0;
 	}
 	//读取参数
 	else if (strcmp(id_str, tBootParamStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tParam);
 		return_len = ef_get_env_blob(tBootParamStr, &tBootMemParam.tParam, read_len, NULL);
+		if(return_len == 0)
+			return 0;
 	}
 	else
 		return -99;
