@@ -27,6 +27,7 @@ void v_mppt_queue_task_init(Task_T *tp_task)
     {
 		case 0:
         {
+			tp_task->usTaskWaitCnt = 0;
 			if(tSysInfo.uInit.tFinish.bIF_DcacTask)
 				cQueue_GotoStep(tp_task, STEP_NEXT);  	//обр╩╡╫
 			else

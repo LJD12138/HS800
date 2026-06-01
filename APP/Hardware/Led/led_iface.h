@@ -20,11 +20,11 @@
 //#define     	ledPWR_SW_ON()     						GPIO_BOP(ledPWR_SW_PORT) = ledPWR_SW_PIN
 //#define     	ledPWR_SW_OFF()    						GPIO_BC(ledPWR_SW_PORT)  = ledPWR_SW_PIN
 
-#define     	ledAC_SW_RCU      						RCU_GPIOB
-#define     	ledAC_SW_PORT      						GPIOB
-#define     	ledAC_SW_PIN      						GPIO_PIN_1
-#define     	ledAC_SW_ON()      						GPIO_BOP(ledAC_SW_PORT) = ledAC_SW_PIN
-#define     	ledAC_SW_OFF()     						GPIO_BC(ledAC_SW_PORT)  = ledAC_SW_PIN
+// #define     	ledAC_SW_RCU      						RCU_GPIOB
+// #define     	ledAC_SW_PORT      						GPIOB
+// #define     	ledAC_SW_PIN      						GPIO_PIN_1
+// #define     	ledAC_SW_ON()      						GPIO_BOP(ledAC_SW_PORT) = ledAC_SW_PIN
+// #define     	ledAC_SW_OFF()     						GPIO_BC(ledAC_SW_PORT)  = ledAC_SW_PIN
 
 //#define     	ledUSB_SW_RCU      						RCU_GPIOB
 //#define     	ledUSB_SW_PORT     						GPIOB

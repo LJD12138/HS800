@@ -240,7 +240,7 @@ static s8 c_relay08_param(BaikuProtoRx_t* proto)
 	vs16 s_temp_min = tBmsRx.tDevInfo[0].sMinTemp;
 	if(tBmsRx.tDevNum.ucOnlineNum > 0)
 	{
-		for(int i = 1; i < (tBmsRx.tDevNum.ucOnlineNum + 1); i++)
+		for(int i = 1; i < tBmsRx.tDevNum.ucOnlineNum; i++)
 		{
 			s_temp_max = MAX2(s_temp_max, tBmsRx.tDevInfo[i].sMaxTemp);
 			s_temp_min = MIN2(s_temp_min, tBmsRx.tDevInfo[i].sMinTemp);

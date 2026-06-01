@@ -24,38 +24,41 @@ void v_disp_queue_task_init(Task_T *tp_task)
 {
     switch (tp_task->ucStep)
     {
-    case 0: {
-        if (tDisp.eDevState != DS_INIT)
-            bDisp_SetDevState(DS_INIT);
-
-        bDisp_Switch(ST_OFF, false);
-        cQueue_GotoStep(tp_task, STEP_NEXT);
-        break;
-    }
-
-    case 1: {
-        vDisp_Init();
-        cQueue_GotoStep(tp_task, STEP_NEXT);
-    }
-    break;
-
-    case 2: {
-        if (true)
+        case 0: 
         {
-            tSysInfo.uInit.tFinish.bIF_DispTask = 1;
-            cQueue_GotoStep(tp_task, STEP_END);
+            if (tDisp.eDevState != DS_INIT)
+                bDisp_SetDevState(DS_INIT);
+
+            bDisp_Switch(ST_OFF, false);
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+            break;
         }
-    }
-    break;
 
-    default:
-        cQueue_GotoStep(tp_task, STEP_END);
+        case 1: 
+        {
+            vDisp_Init();
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
         break;
+
+        case 2: 
+        {
+            if (true)
+            {
+                tSysInfo.uInit.tFinish.bIF_DispTask = 1;
+                cQueue_GotoStep(tp_task, STEP_END);
+            }
+        }
+        break;
+
+        default:
+            cQueue_GotoStep(tp_task, STEP_END);
+            break;
     }
 
-#if (boardUSE_OS)
+    #if (boardUSE_OS)
     vTaskDelay(dispTASK_INIT_CYCLE_TIME);
-#endif
+    #endif
 }
 
 #endif /*boardDISPLAY_EN*/

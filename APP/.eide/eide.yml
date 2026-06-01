@@ -270,7 +270,9 @@ virtualFolder:
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_tx60.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_usb.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_w.c
-            - path: Hardware/MD_Display/eez_ui/ui_image_out.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_1.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_2.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_3.c
             - path: Hardware/MD_Display/eez_ui/vars.c
           folders: []
         - name: user_ui
@@ -458,6 +460,7 @@ virtualFolder:
         - path: Middlewares/LVGL/src/misc/lv_utils.c
         - path: Middlewares/LVGL/src/libs/bin_decoder/lv_bin_decoder.c
         - path: Middlewares/LVGL/src/others/observer/lv_observer.c
+        - path: Middlewares/LVGL/src/others/sysmon/lv_sysmon.c
         - path: Middlewares/LVGL/src/osal/lv_os.c
         - path: Middlewares/LVGL/src/stdlib/lv_mem.c
         - path: Middlewares/LVGL/src/osal/lv_freertos.c

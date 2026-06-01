@@ -17,9 +17,9 @@
 
 //****************************************************任务参数初始化**********************************************//
 #if(boardUSE_OS)
-#define			dispTASK_PRIO                   2       //任务优先级 
-#define			dispTASK_STK_SIZE               1024     //任务堆栈  实际字节数 *4
-#define         DISP_TASK_SLEEP_WHEN_OFF_MS       100U
+#define			dispTASK_PRIO                   	2       //任务优先级 
+#define			dispTASK_STK_SIZE               	1024	//任务堆栈  实际字节数 *4
+#define         DISP_TASK_SLEEP_WHEN_OFF_MS       	100U
 TaskHandle_t tDispTaskHandler = NULL; 
 void vDisp_Task(void *pvParameters);
 #endif  //boardUSE_OS

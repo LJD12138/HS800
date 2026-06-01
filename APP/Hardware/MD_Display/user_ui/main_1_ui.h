@@ -23,6 +23,7 @@ extern "C" {
 #include "board_config.h"
 
 #if(boardDISPLAY_EN)
+#include "MD_Display/user_ui/img_breath.h"
 /* ==========================================macros======================================*/
 // 设备类型枚举
 typedef enum
@@ -46,7 +47,7 @@ void vDisp_Main1UiStart(void);
 void vDisp_Main1Exit(void);
 bool bDisp_Main1DataUpdate(void);
 void vDisp_SetDevStateIcon(DevType_E devType, bool bState);
-
+void vDisp_SetAcWorkMode(ImgAnimMode_E eMode);
 
 /* ==========================================types=======================================*/
 

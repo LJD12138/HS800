@@ -51,6 +51,7 @@ KeyHandler_t 	tKeyUSB;
 KeyHandler_t 	tKeyDC;
 #endif  //boardDC_EN
 
+bool b_key_lock = false;
 u8 Key_TriTypeBuff[ keyGROUP_NUM ] = {0};      	//按键功能
 vu16 Key_UnPressTim = 0 , Key_TriTypeCnt = 0;
 
@@ -191,6 +192,8 @@ void vKey_Task(void *pvParameters)
 		//GPIO初始化未完成
 		if(tSysInfo.uInit.tFinish.bIF_Gpio == 0)
 		{
+			b_key_lock = bKey_PowerIsPress();
+
 			#if(boardUSE_OS)
 			vTaskDelay(500);
 			continue;
@@ -198,6 +201,19 @@ void vKey_Task(void *pvParameters)
 			return;
 			#endif
 		}
+
+		//长按开启不松开
+		if(b_key_lock == true && bKey_PowerIsPress() == true)
+		{
+			#if(boardUSE_OS)
+			vTaskDelay(keyTASK_CYCLE_TIME);
+			continue;
+			#else
+			return;
+			#endif
+		}
+
+		b_key_lock = false;
 		
 		//更改按键触发方式
 		#if(boardENG_MODE_EN)

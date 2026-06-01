@@ -102,7 +102,7 @@ extern uint32_t SystemCoreClock;
 //<i> 1:默认,FreeRTOS 支持使用动态方式管理内存.
 //-------------------------------------------------------------------
 //          	<o0> 总的堆栈大小
-#define 		configTOTAL_HEAP_SIZE					 ((size_t)(38 * 1024))
+#define 		configTOTAL_HEAP_SIZE					 ((size_t)(42 * 1024))
 //<i>	RTOS动态内存管理的内存大小(RAM总量)，即RTOS的内存堆，单位为 Byte
 //-------------------------------------------------------------------
 //          	<q0> 使能手动分配RTOS内存堆(ucHeap).

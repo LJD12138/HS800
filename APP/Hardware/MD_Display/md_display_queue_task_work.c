@@ -7,14 +7,13 @@
 #include "Print/print_api.h"
 
 #if (boardDISPLAY_EN)
-#include "MD_Display/eez_ui/vars.h"
 #include "MD_Display/eez_ui/ui.h"
+#include "MD_Display/eez_ui/vars.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "Print/print_task.h"
 #include "Sys/sys_task.h"
-
 
 #include "MD_Bms/md_bms_rec_task.h"
 #include "MD_Bms/md_bms_task.h"
@@ -60,6 +59,7 @@ void v_disp_queue_task_work(Task_T *tp_task)
     {
         vDisp_Main1Exit();
         cQueue_GotoStep(tp_task, STEP_END);
+        return;
     }
 
     switch (tp_task->ucStep)
@@ -70,10 +70,8 @@ void v_disp_queue_task_work(Task_T *tp_task)
             if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
 
-            ui_init();
-
             vDisp_Main1UiStart();
-
+            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
@@ -82,6 +80,8 @@ void v_disp_queue_task_work(Task_T *tp_task)
         case 1: 
         {
             bDisp_Switch(ST_ON, true);
+            vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHG_DISCHG);
+            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
@@ -101,10 +101,10 @@ void v_disp_queue_task_work(Task_T *tp_task)
         default:
             vDisp_Main1Exit();
             cQueue_GotoStep(tp_task, STEP_END);
-            break;
+            return;
     }
 
-    sMyPrint("显示刷新 \r\n");
+    // sMyPrint("显示刷新 \r\n");
 
     vTaskDelay(dispTASK_WORK_CYCLE_TIME);
 }

@@ -231,7 +231,7 @@ void vDisp_IfaceInit(void)
 
     dispTFT_CS_H();
     dispTFT_A0_H();
-    dispTFT_BL_H();
+    dispTFT_BL_L();
 
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
     dispTFT_SCK_H();

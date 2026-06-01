@@ -19,9 +19,9 @@ static void v_led_gpio_init(void)
 //	gpio_init(ledPWR_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,ledPWR_SW_PIN);
 
 	
-	rcu_periph_clock_enable(ledAC_SW_RCU);
-	gpio_init(ledAC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledAC_SW_PIN);
-	ledAC_SW_OFF();
+	// rcu_periph_clock_enable(ledAC_SW_RCU);
+	// gpio_init(ledAC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledAC_SW_PIN);
+	// ledAC_SW_OFF();
 	
 //	rcu_periph_clock_enable(ledUSB_SW_RCU);
 //	gpio_init(ledUSB_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledUSB_SW_PIN);

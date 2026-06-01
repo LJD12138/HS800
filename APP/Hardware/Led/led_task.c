@@ -100,7 +100,7 @@ void vLed_Task(void *pvParameters)
 			case DS_SHUT_DOWN:
 			{	
 				ledPWR_SW_OFF();
-				ledAC_SW_OFF();
+				// ledAC_SW_OFF();
 				ledLight_SW_OFF();
 				// ledUSB_SW_OFF();
 				// ledDC_SW_OFF();
@@ -131,10 +131,10 @@ void vLed_Task(void *pvParameters)
 					v_led_breathing();
 				
 				#if(boardDCAC_EN)
-				if(tDcac.eDisChgState >= IOS_STARTING)
-					ledAC_SW_ON();
-				else 
-					ledAC_SW_OFF();
+				// if(tDcac.eDisChgState >= IOS_STARTING)
+				// 	ledAC_SW_ON();
+				// else 
+				// 	ledAC_SW_OFF();
 				
 				
 				

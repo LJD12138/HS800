@@ -86,7 +86,6 @@ void create_screen_main() {
             objects.b_dev_pv_state = obj;
             lv_obj_set_pos(obj, 20, 102);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_tx60);
         }
         {
             // b_dev_ac_in_state
@@ -94,7 +93,6 @@ void create_screen_main() {
             objects.b_dev_ac_in_state = obj;
             lv_obj_set_pos(obj, 53, 101);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_ac);
         }
         {
             // b_dev_ac_out_state
@@ -102,7 +100,6 @@ void create_screen_main() {
             objects.b_dev_ac_out_state = obj;
             lv_obj_set_pos(obj, 285, 76);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_ac);
         }
         {
             // b_dev_usb_state
@@ -110,7 +107,6 @@ void create_screen_main() {
             objects.b_dev_usb_state = obj;
             lv_obj_set_pos(obj, 254, 105);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_usb);
         }
         {
             // b_dev_dc_state
@@ -118,7 +114,6 @@ void create_screen_main() {
             objects.b_dev_dc_state = obj;
             lv_obj_set_pos(obj, 285, 101);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_dc);
         }
         {
             lv_obj_t *obj = lv_image_create(parent_obj);
@@ -148,7 +143,6 @@ void create_screen_main() {
             lv_obj_t *obj = lv_image_create(parent_obj);
             lv_obj_set_pos(obj, 1, 29);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_out);
         }
     }
     

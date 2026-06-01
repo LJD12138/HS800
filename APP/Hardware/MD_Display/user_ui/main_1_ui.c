@@ -23,7 +23,6 @@
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/user_ui/energy_ring.h"
-#include "MD_Display/user_ui/img_breath.h"
 #include "Sys/sys_task.h"
 
 #include "lvgl.h"
@@ -44,7 +43,6 @@ bool S_bDevUsbState;    // USB设备状态
 bool S_bDevDcState;     // DC设备状态
 
 static EnergyRing_T s_tEnergyRing;
-static ImgBreath_T s_tImgOutBreath;
 static bool S_bMain1InitialFinish = false;
 
 //****************************************************Function Declaration****************************************************//
@@ -153,7 +151,23 @@ void vDisp_Main1UiStart(void)
 	if(S_bMain1InitialFinish == false)
 	{
 		EnergyRing_Start(&s_tEnergyRing);
-		ImgBreath_StartImgOut(&s_tImgOutBreath, 500, 30, 255);
+
+		// 1. 初始化（全局执行一次即可）
+		vImgAnim_Init(objects.main);
+
+		// 2. 为各模式分别注入专属的 X/Y 拼接对齐坐标点
+		ImgAnimPosConfig_T slow_pos = { .lLeftX = 30, .lLeftY = 30 }; // 慢充只需对齐2.png的左图位置
+		vImgAnim_SetPosConfig(IMG_ANIM_MODE_CHARGE_SLOW, &slow_pos);
+
+		ImgAnimPosConfig_T fast_pos = { .lLeftX = 30, .lLeftY = 30, .lRightX = 50, .lRightY = 30 }; // 快充对齐2和3
+		vImgAnim_SetPosConfig(IMG_ANIM_MODE_CHARGE_FAST, &fast_pos);
+
+		ImgAnimPosConfig_T discharge_pos = { .lLeftX = 30, .lLeftY = 30, .lRightX = 45, .lRightY = 30 };
+		vImgAnim_SetPosConfig(IMG_ANIM_MODE_DISCHARGE, &discharge_pos);
+
+		ImgAnimPosConfig_T chg_dischg_pos = { .lLeftX = 30, .lLeftY = 30, .lRightX = 50, .lRightY = 30 };
+		vImgAnim_SetPosConfig(IMG_ANIM_MODE_CHG_DISCHG, &chg_dischg_pos);
+
 		S_bMain1InitialFinish = true;
 	}
 
@@ -170,7 +184,7 @@ void vDisp_Main1UiStart(void)
 void vDisp_Main1Exit(void)
 {
 	EnergyRing_Stop(&s_tEnergyRing);
-	ImgBreath_StopImgOut(&s_tImgOutBreath);
+	vImgAnim_Stop(); /* 全部关闭并隐藏 */
 	S_bMain1InitialFinish = false;
 }
 
@@ -219,6 +233,42 @@ void vDisp_SetDevStateIcon(DevType_E devType, bool bState)
 		
 		case DEV_TYPE_DC:
 			S_bDevDcState = bState;
+			break;
+		
+		default:
+			break;
+	}
+}
+
+/*****************************************************************************************************************
+-----函数功能    设置AC工作模式
+-----说明(备注)  设置AC工作模式标志，实际的UI更新在displaytask中处理
+-----传入参数    eMode: AC工作模式
+-----输出参数    none
+-----返回值      none
+*****************************************************************************************************************/
+void vDisp_SetAcWorkMode(ImgAnimMode_E eMode)
+{
+	switch(eMode)
+	{
+		case IMG_ANIM_MODE_NONE:
+			vImgAnim_SetMode(IMG_ANIM_MODE_NONE, 800);
+			break;
+		
+		case IMG_ANIM_MODE_CHARGE_SLOW:
+			vImgAnim_SetMode(IMG_ANIM_MODE_CHARGE_SLOW, 800);
+			break;
+		
+		case IMG_ANIM_MODE_CHARGE_FAST:
+			vImgAnim_SetMode(IMG_ANIM_MODE_CHARGE_FAST, 800);
+			break;
+		
+		case IMG_ANIM_MODE_DISCHARGE:
+			vImgAnim_SetMode(IMG_ANIM_MODE_DISCHARGE, 800);
+			break;
+		
+		case IMG_ANIM_MODE_CHG_DISCHG:
+			vImgAnim_SetMode(IMG_ANIM_MODE_CHG_DISCHG, 800);
 			break;
 		
 		default:

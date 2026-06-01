@@ -42,7 +42,7 @@
 
 //****************************************************局部变量定义**********************************************//
 /* 刷屏缓冲区 - 用于纯色填充 */
-__align(4) static uint8_t S_tft_fill_buf[dispTFT_BUF_SIZE];
+// __align(4) static uint8_t S_tft_fill_buf[dispTFT_BUF_SIZE];
 
 //****************************************************局部函数声明****************************************************//
 static void v_disp_delay_ms(u16 ms);
@@ -127,20 +127,20 @@ static void v_disp_set_window(u16 x1, u16 y1, u16 x2, u16 y2)
  ************************************************************************************************************************/
 static void v_disp_fill_color(uint16_t us_xs, uint16_t us_ys, uint16_t us_xe, uint16_t us_ye, uint16_t us_color)
 {
-    uint32_t pixel_count = (uint32_t)(us_xe - us_xs + 1) * (us_ye - us_ys + 1);
-    uint32_t byte_count = pixel_count * 2;
+    // uint32_t pixel_count = (uint32_t)(us_xe - us_xs + 1) * (us_ye - us_ys + 1);
+    // uint32_t byte_count = pixel_count * 2;
     
-    v_disp_set_window(us_xs, us_ys, us_xe, us_ye);
+    // v_disp_set_window(us_xs, us_ys, us_xe, us_ye);
 
-    /* 预填充缓冲区 */
-    memset(S_tft_fill_buf, us_color, sizeof(S_tft_fill_buf));
+    // /* 预填充缓冲区 */
+    // memset(S_tft_fill_buf, us_color, sizeof(S_tft_fill_buf));
     
-    /* 分批次发送数据 */
-    while (byte_count > 0) {
-        uint32_t bytes_to_send = (byte_count > dispTFT_BUF_SIZE) ? dispTFT_BUF_SIZE : byte_count;
-        vDisp_TftWriteBuffer(S_tft_fill_buf, bytes_to_send);
-        byte_count -= bytes_to_send;
-    }
+    // /* 分批次发送数据 */
+    // while (byte_count > 0) {
+    //     uint32_t bytes_to_send = (byte_count > dispTFT_BUF_SIZE) ? dispTFT_BUF_SIZE : byte_count;
+    //     vDisp_TftWriteBuffer(S_tft_fill_buf, bytes_to_send);
+    //     byte_count -= bytes_to_send;
+    // }
 }
 
 /***********************************************************************************************************************
@@ -344,6 +344,8 @@ void vDisp_UiRefresh(void)
         return;
 
     ui_tick();
+    
+    vImgAnim_ManualTick();
 
     lv_timer_handler();
 }

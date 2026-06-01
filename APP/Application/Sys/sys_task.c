@@ -1047,9 +1047,9 @@ s8 cSys_Switch(SwitchObject_E obj,SwitchType_E type, bool fore_en)
 				}
 			}
 
-			#if(boardDISPLAY_EN)
-			bDisp_Switch(ST_ON, false);
-			#endif
+			// #if(boardDISPLAY_EN)
+			// bDisp_Switch(ST_ON, false);
+			// #endif
 		}
 		break;
 	 }

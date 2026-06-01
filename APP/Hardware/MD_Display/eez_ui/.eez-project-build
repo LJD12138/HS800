@@ -14,6 +14,9 @@
     "ui_font_barlow_condensed_regular_26.c",
     "ui_font_barlow_condensed_regular_50.c",
     "ui_font_barlow_condensed_regular_66.c",
+    "ui_image_1.c",
+    "ui_image_2.c",
+    "ui_image_3.c",
     "ui_image_icon__.c",
     "ui_image_icon_ac.c",
     "ui_image_icon_bat_ot.c",
@@ -25,7 +28,6 @@
     "ui_image_icon_tx60.c",
     "ui_image_icon_usb.c",
     "ui_image_icon_w.c",
-    "ui_image_out.c",
     "vars.h"
   ]
 }
