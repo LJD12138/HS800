@@ -113,27 +113,47 @@ static void v_key_gpio_init(void)
 {
 	#if(!boardADC_EN)
 	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_POWER_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, keyGPIO_POWER_PIN);
+	#else
 	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
+	#endif
 	#endif  //boardADC_EN
 	
 	#if(boardDCAC_EN)
 	rcu_periph_clock_enable(keyGPIO_AC_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_AC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_AC_PIN);
+	#else
 	gpio_init(keyGPIO_AC_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_AC_PIN);
+	#endif
 	#endif  //boardDCAC_EN
 
 	#if(boardLIGHT_EN)
 	rcu_periph_clock_enable(keyGPIO_LIGHT_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_LIGHT_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_LIGHT_PIN);
+	#else
 	gpio_init(keyGPIO_LIGHT_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_LIGHT_PIN);
+	#endif
 	#endif  //boardLIGHT_EN
 
 	#if(boardUSB_EN)
 	rcu_periph_clock_enable(keyGPIO_USB_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_USB_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_USB_PIN);
+	#else
 	gpio_init(keyGPIO_USB_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_USB_PIN);
+	#endif
 	#endif  //boardUSB_EN
 
 	#if(boardDC_EN)
 	rcu_periph_clock_enable(keyGPIO_DC_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_DC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_DC_PIN);
+	#else
 	gpio_init(keyGPIO_DC_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_DC_PIN);
+	#endif
 	#endif  //boardDC_EN
 
 	//true:长按累加功能                 false:关闭
@@ -569,9 +589,15 @@ void vKey_EnterLowPower(void)
 	rcu_periph_clock_enable(keyGPIO_WP_RCU);
 	rcu_periph_clock_enable(RCU_AF);
 	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_POWER_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, keyGPIO_POWER_PIN);
+	gpio_mode_set(keyGPIO_WP_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, keyGPIO_WP_PIN);
+	gpio_mode_set(keyGPIO_AC_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, keyGPIO_AC_PIN);
+	#else
 	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
 	gpio_init(keyGPIO_WP_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_WP_PIN);
 	gpio_init(keyGPIO_AC_PORT,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,keyGPIO_AC_PIN);
+	#endif
 	
 	/* enable and set key EXTI interrupt to the lowest priority */
 	nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
@@ -603,10 +629,17 @@ void vKey_ExitLowPower(void)
 	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
 	rcu_periph_clock_enable(keyGPIO_AC_RCU);
 	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(keyGPIO_POWER_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_POWER_PIN);
+	gpio_mode_set(keyGPIO_AC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_AC_PIN);
+	gpio_mode_set(keyGPIO_LIGHT_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_LIGHT_PIN);
+	gpio_mode_set(keyGPIO_USB_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_USB_PIN);
+	#else
 	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
 	gpio_init(keyGPIO_AC_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_AC_PIN);
 	gpio_init(keyGPIO_LIGHT_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_LIGHT_PIN);
 	gpio_init(keyGPIO_USB_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_USB_PIN);
+	#endif
 
 	vTaskResume(tKeyTaskHandler);  //恢复任务
 }

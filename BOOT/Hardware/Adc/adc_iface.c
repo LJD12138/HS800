@@ -14,28 +14,60 @@ u16 adc_value[ADC_CHANNEL_NUM];
 static void gpio_config(void)
 {
     rcu_periph_clock_enable(adcSYS_IN_VOLT_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcSYS_IN_VOLT_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcSYS_IN_VOLT_PIN);
+	#else
 	gpio_init(adcSYS_IN_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcSYS_IN_VOLT_PIN);
+	#endif
 	
     rcu_periph_clock_enable(adcDC_TEMP_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcDC_TEMP_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_TEMP_PIN);
+	#else
 	gpio_init(adcDC_TEMP_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_TEMP_PIN);
+	#endif
 
     rcu_periph_clock_enable(adcDC_CURR_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcDC_CURR_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_CURR_PIN);
+	#else
 	gpio_init(adcDC_CURR_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_CURR_PIN);
+	#endif
 
     rcu_periph_clock_enable(adcDC_VOLT_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcDC_VOLT_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_VOLT_PIN);
+	#else
 	gpio_init(adcDC_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_VOLT_PIN);
+	#endif
 	
 	rcu_periph_clock_enable(adcUSB_TEMP_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcUSB_TEMP_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcUSB_TEMP_PIN);
+	#else
 	gpio_init(adcUSB_TEMP_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_TEMP_PIN);
+	#endif
 	
 	rcu_periph_clock_enable(adcUSB_PD_CURR_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcUSB_PD_CURR_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcUSB_PD_CURR_PIN);
+	#else
 	gpio_init(adcUSB_PD_CURR_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_PD_CURR_PIN);
+	#endif
 	
 	rcu_periph_clock_enable(adcUSB_PD_VOLT_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcUSB_PD_VOLT_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcUSB_PD_VOLT_PIN);
+	#else
 	gpio_init(adcUSB_PD_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcUSB_PD_VOLT_PIN);
+	#endif
 	
 	rcu_periph_clock_enable(adcKEY_POWER_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcKEY_POWER_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcKEY_POWER_PIN);
+	#else
 	gpio_init(adcKEY_POWER_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcKEY_POWER_PIN);
+	#endif
 }
 
 
@@ -163,7 +195,11 @@ void vAdc_DeInit(void)
 #if(boardLOW_POWER)
 void vAdc_IoEnterLowPower(void)
 {
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(adcMppt_TEMP_EN_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcMppt_TEMP_EN_PIN);
+	#else
 	gpio_init(adcMppt_TEMP_EN_GPIO, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, adcMppt_TEMP_EN_PIN);
+	#endif
 	
 	adc_disable(ADCX);
 	dma_channel_disable(ADCX, adcDMA_CH);

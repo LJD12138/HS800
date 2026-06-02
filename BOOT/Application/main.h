@@ -38,7 +38,18 @@ OF SUCH DAMAGE.
 #ifndef __MAIN_H
 #define __MAIN_H
 
+/* IC型号选择(与board_config.h保持一致) */
+#define			boardIC_TYPE						 	 3
+#define			boardIC_GD32F30X						 0
+#define			boardIC_STM32H7XX						 1
+#define			boardIC_STM32G4XX						 2
+#define			boardIC_GD32F50X						 3
+
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#include "gd32f50x.h"
+#else
 #include "gd32f30x.h"
+#endif
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>

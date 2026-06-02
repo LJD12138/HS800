@@ -146,10 +146,12 @@
 //														<0=> GD32F30X
 //														<1=> STM32H7XX
 //														<2=> STM32G4XX
-#define			boardIC_TYPE						 	 0
+//														<3=> GD32F50X
+#define			boardIC_TYPE						 	 3
 #define			boardIC_GD32F30X						 0
 #define			boardIC_STM32H7XX						 1
 #define			boardIC_STM32G4XX						 2
+#define			boardIC_GD32F50X						 3
 //-------------------------------------------------------------------
 //          	<q0> 使用OS Debug输出
 //                                          			<i> 勾选为开启

@@ -12,7 +12,7 @@ typedef enum
 
 typedef struct  
 {
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
     vu8              Addr;
     I2C_AddrType     AddrType;
     vu32             ulGPIO_PORT_SCL;

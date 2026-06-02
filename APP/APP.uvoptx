@@ -73,7 +73,7 @@
         <LExpSel>0</LExpSel>
       </OPTXL>
       <OPTFL>
-        <tvExp>1</tvExp>
+        <tvExp>0</tvExp>
         <tvExpOptDlg>0</tvExpOptDlg>
         <IsCurrentTarget>1</IsCurrentTarget>
       </OPTFL>
@@ -161,7 +161,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Mppt\md_mppt_task.c</Filename>
+          <Filename>G:\1-Baiku_Projects\25-HS800\1.software\HS800\BOOT\Hardware\MD_Mppt\md_mppt_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Mppt/md_mppt_task.c\218</Expression>
         </Bp>
@@ -177,7 +177,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Mppt\md_mppt_queue_task_main.c</Filename>
+          <Filename>G:\1-Baiku_Projects\25-HS800\1.software\HS800\BOOT\Hardware\MD_Mppt\md_mppt_queue_task_main.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Mppt/md_mppt_queue_task_main.c\100</Expression>
         </Bp>

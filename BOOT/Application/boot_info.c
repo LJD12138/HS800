@@ -20,7 +20,7 @@
 //在option for ...中勾选 always build
 
 //****************************************************参数初始化**************************************************//
-__align(4) BootMemParam_T  	tBootMemParam;
+__ALIGNED(4) BootMemParam_T  	tBootMemParam;
 
 const char tBootMemParamStr[]	= "tBootMemParam";
 const char tBootVerInfoStr[]	= "tBootVerInfo";
@@ -28,7 +28,11 @@ const char tBootParamStr[] 	= "tBootParam";
 
 //把版本信息写入BOOT的Flash中
 //tBootInfo 指向的地址是Flash区,当对其Flash区擦除后,tBootInfo也被清空了
+#if (boardIC_TYPE == boardIC_GD32F50X)
+__attribute__((section(".ARM.__at_0x08000800"))) const VerInfo_T tBootDefaultVer = {
+#else
 __attribute__((at(flashBOOT_START + FLASH_PAGE_SIZE))) const VerInfo_T tBootDefaultVer = {
+#endif
 	boardSOFTWARE_VERSION,
 	__DATE__,
 	__TIME__,

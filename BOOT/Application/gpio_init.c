@@ -16,8 +16,25 @@ void vGPIO_Init(void)
 	rcu_periph_clock_enable(RCU_GPIOC);
 	rcu_periph_clock_enable(RCU_GPIOD);
 	rcu_periph_clock_enable(RCU_GPIOE);
+	#if (boardIC_TYPE != boardIC_GD32F50X)
 	rcu_periph_clock_enable(RCU_GPIOF);
 	rcu_periph_clock_enable(RCU_GPIOG);
+	#endif
+	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	/* GD32F50x: gpio_mode_set + gpio_output_options_set */
+	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	gpio_mode_set(GPIOB, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	gpio_mode_set(GPIOD, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	gpio_mode_set(GPIOE, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	#else
+	/* GD32F30x: gpio_init */
 	gpio_init(GPIOA, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
 	gpio_init(GPIOB, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
 	gpio_init(GPIOC, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
@@ -25,13 +42,23 @@ void vGPIO_Init(void)
 	gpio_init(GPIOE, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
 	gpio_init(GPIOF, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
 	gpio_init(GPIOG, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+	#endif
 	
 	
 	rcu_periph_clock_enable(KEY_POWER_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(KEY_POWER_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, KEY_POWER_PIN);
+	#else
 	gpio_init(KEY_POWER_GPIO,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);
+	#endif
 	
 	rcu_periph_clock_enable(gpioASSIST_OPEN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(gpioASSIST_OPEN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpioASSIST_OPEN_PIN);
+	gpio_output_options_set(gpioASSIST_OPEN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, gpioASSIST_OPEN_PIN);
+	#else
 	gpio_init(gpioASSIST_OPEN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, gpioASSIST_OPEN_PIN);
+	#endif
 	gpioASSIST_OPEN_ON();
 }
 
@@ -76,8 +103,10 @@ void vKey_EnterLowPower(void)
 	rcu_periph_clock_disable(RCU_GPIOB);
 	rcu_periph_clock_disable(RCU_GPIOD); 
 	rcu_periph_clock_disable(RCU_GPIOE);
+	#if (boardIC_TYPE != boardIC_GD32F50X)
 	rcu_periph_clock_disable(RCU_GPIOF);
 	rcu_periph_clock_disable(RCU_GPIOG);
+	#endif
 	
 	/* enable clock */
     rcu_periph_clock_enable(RCU_PMU);
@@ -87,11 +116,19 @@ void vKey_EnterLowPower(void)
 	rcu_periph_clock_enable(PRINT_RX_RCU);      //D
 	rcu_periph_clock_enable(RCU_AF);
 	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(KEY_POWER_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, KEY_POWER_PIN);
+	gpio_mode_set(KEY_WP_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, KEY_WP_PIN);
+	gpio_mode_set(KEY_KEY1_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, KEY_KEY1_PIN);
+	gpio_mode_set(attiSENSOR_INT_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, attiSENSOR_INT_PIN);
+	gpio_mode_set(PRINT_RX_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, PRINT_RX_PIN);
+	#else
 	gpio_init(KEY_POWER_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //中断 电源按键 PC13
 	gpio_init(KEY_WP_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //中断 唤醒脚 PA0
 	gpio_init(KEY_KEY1_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_KEY1_PIN);
 	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //中断 状态传感器 PA9
 	gpio_init(PRINT_RX_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //中断 串口接收   PD2
+	#endif
 	
 	/* enable and set key EXTI interrupt to the lowest priority */
 	nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
@@ -143,11 +180,19 @@ void vGPIO_ExitLowPower(void)
 ************************************************************************************************************************/ 
 void vGPIO_EnterApp(void)
 {
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(KEY_POWER_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, KEY_POWER_PIN);
+	gpio_mode_set(KEY_WP_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, KEY_WP_PIN);
+	gpio_mode_set(KEY_KEY1_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, KEY_KEY1_PIN);
+	gpio_mode_set(attiSENSOR_INT_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, attiSENSOR_INT_PIN);
+//	gpio_mode_set(PRINT_RX_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, PRINT_RX_PIN);
+	#else
 	gpio_init(KEY_POWER_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //中断 电源按键   PC13
 	gpio_init(KEY_WP_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //中断 唤醒脚     PA0
 	gpio_init(KEY_KEY1_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_KEY1_PIN);
 	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //中断 状态传感器 PA9
 //	gpio_init(PRINT_RX_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //中断 串口接收   PD2
+	#endif
 	
 	nvic_irq_disable(EXTI10_15_IRQn);
 	nvic_irq_disable(EXTI5_9_IRQn);

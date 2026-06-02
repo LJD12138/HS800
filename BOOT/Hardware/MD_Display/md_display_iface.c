@@ -363,18 +363,27 @@ void delay_us(vu16 us)
 
 void HT_SDA_OUT(void)
 {
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispHT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispHT_SDA_PIN);
+    gpio_output_options_set(dispHT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispHT_SDA_PIN);
+	#else
     gpio_init( dispHT_SDA_PORT,
 	           GPIO_MODE_OUT_PP,
 	           GPIO_OSPEED_50MHZ,
 	           dispHT_SDA_PIN);
+	#endif
 }
 
 void HT_SDA_IN(void)
 {
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispHT_SDA_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, dispHT_SDA_PIN);
+	#else
     gpio_init( dispHT_SDA_PORT,
 	           GPIO_MODE_IPU,
 	           GPIO_OSPEED_50MHZ,
 	           dispHT_SDA_PIN);
+	#endif
 }
 
 void HT_IIC_Start(void)
@@ -544,22 +553,39 @@ void HT1621_IfaceInit(void)
 { 	
 	rcu_periph_clock_enable(dispLIGHT_POWER_RCU);
 	rcu_periph_clock_enable(RCU_AF);
+	#if (boardIC_TYPE != boardIC_GD32F50X)
 	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP,ENABLE);
+	#endif
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispLIGHT_POWER_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispLIGHT_POWER_PIN);
+    gpio_output_options_set(dispLIGHT_POWER_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispLIGHT_POWER_PIN);
+	#else
     gpio_init( dispLIGHT_POWER_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,dispLIGHT_POWER_PIN);
+	#endif
 	dispLIGHT_POWER_OFF();
  
 	rcu_periph_clock_enable(dispHT_SDA_RCU);
 	rcu_periph_clock_enable(dispHT_SCL_RCU);
 	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispHT_SCL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispHT_SCL_PIN);
+    gpio_output_options_set(dispHT_SCL_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispHT_SCL_PIN);
+	#else
     gpio_init( dispHT_SCL_PORT,
 	           GPIO_MODE_OUT_PP,
 	           GPIO_OSPEED_50MHZ,
 	           dispHT_SCL_PIN);
+	#endif
 	 
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispHT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispHT_SDA_PIN);
+    gpio_output_options_set(dispHT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispHT_SDA_PIN);
+	#else
     gpio_init( dispHT_SDA_PORT,
 	           GPIO_MODE_OUT_PP,
 	           GPIO_OSPEED_50MHZ,
 	           dispHT_SDA_PIN);
+	#endif
 	
 	gpio_bit_set(dispHT_SCL_PORT,dispHT_SCL_PIN);
 	gpio_bit_set(dispHT_SDA_PORT,dispHT_SDA_PIN); 

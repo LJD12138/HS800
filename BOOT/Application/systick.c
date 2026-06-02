@@ -32,7 +32,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 OF SUCH DAMAGE.
 */
 
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#include "gd32f50x.h"
+#else
 #include "gd32f30x.h"
+#endif
 #include "systick.h"
 
 #if(boardUPDATE)
