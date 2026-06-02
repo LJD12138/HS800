@@ -15,6 +15,7 @@ virtualFolder:
     - name: CMSIS
       files:
         - path: Firmware/CMSIS/GD/GD32F50x/Source/system_gd32f50x.c
+        - path: Firmware/CMSIS/GD/GD32F50x/Source/gd32f50x_err_report.c
       folders: []
     - name: Peripherals
       files:

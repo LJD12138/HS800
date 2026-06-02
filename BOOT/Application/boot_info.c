@@ -59,6 +59,7 @@ static void v_print_info(void);
 
 
 
+
 /*****************************************************************************************************************
 -----函数功能    读取记忆参数去初始化任务
 -----说明(备注)  none
@@ -431,5 +432,3 @@ static void v_print_info(void)
 	sMyPrint("Boot: eAppState       : %d\r\n", tBootMemParam.tParam.eAppState);
 	sMyPrint("Boot: ucAppFaultCnt	: %d\r\n", tBootMemParam.tParam.ucAppFaultCnt);
 }
-
-
