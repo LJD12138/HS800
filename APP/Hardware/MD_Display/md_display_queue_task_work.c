@@ -62,6 +62,9 @@ void v_disp_queue_task_work(Task_T *tp_task)
         return;
     }
 
+    v_update_dev_param();
+    bDisp_Main1DataUpdate();
+
     switch (tp_task->ucStep)
     {
         // 初始化
@@ -69,7 +72,8 @@ void v_disp_queue_task_work(Task_T *tp_task)
         {
             if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
-
+            
+             vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
@@ -87,8 +91,7 @@ void v_disp_queue_task_work(Task_T *tp_task)
         // 更新数据
         case 2: 
         {
-            v_update_dev_param();
-            bDisp_Main1DataUpdate();
+           
 
             // 背光打开时才更新 UI
             if (tDisp.bLight == true)

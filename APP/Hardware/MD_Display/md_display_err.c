@@ -367,7 +367,12 @@ u16 usDisp_ErrCodeDisplay(void)
 				us_err_step++;
 		
 		case 44:
-			us_err_step++;
+			#if(boardMPPT_EN)
+			if(tMppt.uErrCode.tCode.bMpptInUP)
+				break;
+			else
+			#endif  //boardMPPT_EN
+				us_err_step++;
 			
 		case 45:
 			#if(boardMPPT_EN)

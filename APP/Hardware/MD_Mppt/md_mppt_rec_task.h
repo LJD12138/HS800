@@ -44,19 +44,21 @@ typedef union
 {
 	struct
 	{
-		vu16 bInOC:1;		//输入过流
 		vu16 bInOV:1;		//输入过压
-		// vu16 bInUV:1;		//输入欠压
-		// vu16 bInSC:1;		//输入短路
-		// vu16 bOutOV:1;		//输出过压
-		// vu16 bOutUV:1;		//输出欠压
+		vu16 bInUV:1;		//输入欠压
+		vu16 bInUP:1;		//输入欠功率
+		vu16 bOutOV:1;		//输出过压
+		vu16 bReserved:1;	//预留
+		vu16 bInSC:1;		//输入短路
+		vu16 bInOC:1;		//输入过流
+		vu16 bOutUV:1;		//输出欠压
+
 		// vu16 bOutOC:1;		//输出过流
 		// vu16 bOutSC:1;		//输出短路
-
 		// vu16 bOL:1;			//过载
 		// vu16 bOT:1;			//过温
 		// vu16 bEnFault:1;	//使能故障
-		// vu16 :5;
+		vu16 :8;
 	}tCode;
 	vu16 usCode;   
 }MpptRecErrCode_U;

@@ -324,6 +324,7 @@ static void energy_ring_reset_runtime(EnergyRing_T *p_ring)
         return;
 
     p_ring->usActiveSeg = 0U;
+    p_ring->bAnimDirDec = false;
 }
 
 static u16 energy_ring_normalize_angle(u16 us_angle)
@@ -573,15 +574,39 @@ static void energy_ring_timer_cb(lv_timer_t *tp_timer)
     /* 充电模式下执行充电动画 */
     if(tp_ring->eSocMode == ENERGY_RING_SOC_CHARGING)
     {
-        /* 计算SOC基点对应的segment数量 */
+        /* 获取SOC对应segment数 */
         us_soc_base_seg = energy_ring_soc_to_seg_count(tp_ring, tp_ring->ucSocValue);
         
-        /* 递增活动segment索引 */
-        tp_ring->usActiveSeg++;
-        
-        /* 当索引超过segment总数时，重置回SOC基点实现循环动画 */
-        if(tp_ring->usActiveSeg > tp_ring->usSegCount)
-            tp_ring->usActiveSeg = us_soc_base_seg;
+        if(tp_ring->bAnimDirDec)
+        {
+            /* 递减阶段：逐步减少活动segment数 */
+            if(tp_ring->usActiveSeg > us_soc_base_seg)
+            {
+                tp_ring->usActiveSeg--;
+            }
+            else
+            {
+                tp_ring->usActiveSeg = us_soc_base_seg;
+            }
+            
+            /* 到达或低于起始SOC对应的segment数时，切换为递增阶段 */
+            if(tp_ring->usActiveSeg <= us_soc_base_seg)
+            {
+                tp_ring->bAnimDirDec = false;
+            }
+        }
+        else
+        {
+            /* 递增阶段：逐步增加活动segment数 */
+            tp_ring->usActiveSeg++;
+            
+            /* 到达或超过总segment数时，切换为递减阶段 */
+            if(tp_ring->usActiveSeg >= tp_ring->usSegCount)
+            {
+                tp_ring->usActiveSeg = tp_ring->usSegCount;
+                tp_ring->bAnimDirDec = true;
+            }
+        }
     }
 
     /* 仅重绘发生变化的segment区域，避免整环反复刷新 */
@@ -1073,16 +1098,19 @@ void EnergyRing_UpdateSoc(EnergyRing_T *p_ring, u8 uc_soc, bool b_charging)
     /* 根据充电状态设置显示模式 */
     if(b_charging)
     {
-        /* 充电模式：启用充电动画 */
+        /* 充电模式下为动态 */
         p_ring->eSocMode = ENERGY_RING_SOC_CHARGING;
         
-        /* 计算SOC对应的segment数量 */
+        /* 计算SOC对应的segment数 */
         us_soc_seg_count = energy_ring_soc_to_seg_count(p_ring, uc_soc);
         
-        /* 设置active_seg为SOC对应的segment数量 */
+        /* 缓存active_seg为SOC对应的segment数 */
         p_ring->usActiveSeg = us_soc_seg_count;
         
-        /* 启用动画定时器 */
+        /* 重置动画方向为递增 */
+        p_ring->bAnimDirDec = false;
+        
+        /* 使能定时器 */
         energy_ring_set_enable(p_ring, true);
     }
     else

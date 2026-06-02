@@ -106,17 +106,17 @@ __STATIC_INLINE void v_proc_rec_param(void)
 			bMppt_SetErrCode(MEC_MPPT_IN_OV, false);
 	}
 
-	// //输入欠压
-	// if(tMpptRx.uErrCode.tCode.bInUV)
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptInUV == false)
-	// 		bMppt_SetErrCode(MEC_MPPT_IN_UV, true);
-	// }
-	// else 
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptInUV == true)
-	// 		bMppt_SetErrCode(MEC_MPPT_IN_UV, false);
-	// }
+	//输入欠压
+	if(tMpptRx.uErrCode.tCode.bInUV)
+	{
+		if(tMppt.uErrCode.tCode.bMpptInUV == false)
+			bMppt_SetErrCode(MEC_MPPT_IN_UV, true);
+	}
+	else 
+	{
+		if(tMppt.uErrCode.tCode.bMpptInUV == true)
+			bMppt_SetErrCode(MEC_MPPT_IN_UV, false);
+	}
 
 	//输入过流
 	if(tMpptRx.uErrCode.tCode.bInOC)
@@ -130,43 +130,43 @@ __STATIC_INLINE void v_proc_rec_param(void)
 			bMppt_SetErrCode(MEC_MPPT_IN_OC, false);
 	}
 
-	// //输入短路
-	// if(tMpptRx.uErrCode.tCode.bInSC)
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptInSC == false)
-	// 		bMppt_SetErrCode(MEC_MPPT_IN_SC, true);
-	// }
-	// else 
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptInSC == true)
-	// 		bMppt_SetErrCode(MEC_MPPT_IN_SC, false);
-	// }
+	//输入短路
+	if(tMpptRx.uErrCode.tCode.bInSC)
+	{
+		if(tMppt.uErrCode.tCode.bMpptInSC == false)
+			bMppt_SetErrCode(MEC_MPPT_IN_SC, true);
+	}
+	else 
+	{
+		if(tMppt.uErrCode.tCode.bMpptInSC == true)
+			bMppt_SetErrCode(MEC_MPPT_IN_SC, false);
+	}
 
-	// //输出过压
-	// if(tMpptRx.uErrCode.tCode.bOutOV)
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptOutOV == false)
-	// 		bMppt_SetErrCode(MEC_MPPT_OUT_OV, true);
-	// }
-	// else 
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptOutOV == true)
-	// 		bMppt_SetErrCode(MEC_MPPT_OUT_OV, false);
-	// }
+	//输出过压
+	if(tMpptRx.uErrCode.tCode.bOutOV)
+	{
+		if(tMppt.uErrCode.tCode.bMpptOutOV == false)
+			bMppt_SetErrCode(MEC_MPPT_OUT_OV, true);
+	}
+	else 
+	{
+		if(tMppt.uErrCode.tCode.bMpptOutOV == true)
+			bMppt_SetErrCode(MEC_MPPT_OUT_OV, false);
+	}
 
-	// //输出欠压
-	// if(tMpptRx.uErrCode.tCode.bOutUV)
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptOutUV == false)
-	// 		bMppt_SetErrCode(MEC_MPPT_OUT_UV, true);
-	// }
-	// else 
-	// {
-	// 	if(tMppt.uErrCode.tCode.bMpptOutUV == true)
-	// 		bMppt_SetErrCode(MEC_MPPT_OUT_UV, false);
-	// }
+	//输出欠压
+	if(tMpptRx.uErrCode.tCode.bOutUV)
+	{
+		if(tMppt.uErrCode.tCode.bMpptOutUV == false)
+			bMppt_SetErrCode(MEC_MPPT_OUT_UV, true);
+	}
+	else 
+	{
+		if(tMppt.uErrCode.tCode.bMpptOutUV == true)
+			bMppt_SetErrCode(MEC_MPPT_OUT_UV, false);
+	}
 
-	// //输出过流
+	//输出过流
 	// if(tMpptRx.uErrCode.tCode.bOutOC)
 	// {
 	// 	if(tMppt.uErrCode.tCode.bMpptOutOC == false)
@@ -190,7 +190,7 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	// 		bMppt_SetErrCode(MEC_MPPT_OUT_SC, false);
 	// }
 
-	// //过温
+	//过温
 	// if(tMpptRx.uErrCode.tCode.bOT)
 	// {
 	// 	if(tMppt.uErrCode.tCode.bMpptOT == false)
@@ -202,7 +202,7 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	// 		bMppt_SetErrCode(MEC_MPPT_OT, false);
 	// }
 
-	// //过载
+	//过载
 	// if(tMpptRx.uErrCode.tCode.bOL)
 	// {
 	// 	if(tMppt.uErrCode.tCode.bMpptOL == false)
@@ -213,6 +213,18 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	// 	if(tMppt.uErrCode.tCode.bMpptOL == true)
 	// 		bMppt_SetErrCode(MEC_MPPT_OL, false);
 	// }
+
+	//输入欠功率
+	if(tMpptRx.uErrCode.tCode.bInUP)
+	{
+		if(tMppt.uErrCode.tCode.bMpptInUP == false)
+			bMppt_SetErrCode(MEC_MPPT_IN_UP, true);
+	}
+	else 
+	{
+		if(tMppt.uErrCode.tCode.bMpptInUP == true)
+			bMppt_SetErrCode(MEC_MPPT_IN_UP, false);
+	}
 }
 
 /*****************************************************************************************************************
@@ -233,6 +245,7 @@ __STATIC_INLINE void v_check_chg_perm(void)
 		tMppt.uErrCode.tCode.bMpptOT		== 1	||
 		tMppt.uErrCode.tCode.bMpptOL		== 1	||
 		tMppt.uErrCode.tCode.bSysOL			== 1	||
+		tMppt.uErrCode.tCode.bMpptInUP		== 1	||
 		tSysInfo.uPerm.tPerm.bChgPerm == false)
 	{
 		if(tMppt.bChgPerm == true)

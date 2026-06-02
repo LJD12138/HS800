@@ -57,6 +57,7 @@ typedef struct
     u8 ucSocValue;              /* SOC值(0-100) */
     bool bCharging;             /* 充电状态标志 */
     EnergyRing_SocMode_T eSocMode; /* SOC显示模式 */
+    bool bAnimDirDec;           /* 动画递减方向标志：true-递减，false-递增 */
 } EnergyRing_T;
 
 /**

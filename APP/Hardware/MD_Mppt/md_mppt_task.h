@@ -53,6 +53,7 @@ typedef enum
 	MEC_MPPT_OT = 9,		//过载
 	MEC_MPPT_OL,			//过温
 	MEC_MPPT_EN_FAULT,		//使能故障
+	MEC_MPPT_IN_UP,			//输入欠功率
 	
 	MEC_SYS_DEV_LOST= 17,   //设备丢失
 	MEC_SYS_OVER_TEMP,      //过温
@@ -78,7 +79,8 @@ typedef union
 		vu32 			bMpptOL:1;			//过载
 		vu32 			bMpptOT:1;			//过温
 		vu32 			bMpptEnFault:1;		//使能故障
-		vu32 			:5;
+		vu32 			bMpptInUP:1;		//输入欠功率
+		vu32 			:4;
 
 		vu32 			bDevLost:1;
 		vu32 			bSysOT:1;
