@@ -6722,14 +6722,24 @@
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_w.c</FilePath>
             </File>
             <File>
-              <FileName>ui_image_out.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_out.c</FilePath>
-            </File>
-            <File>
               <FileName>vars.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\eez_ui\vars.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_image_1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_1.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_image_2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_2.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_image_3.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_3.c</FilePath>
             </File>
           </Files>
         </Group>

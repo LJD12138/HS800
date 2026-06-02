@@ -70,8 +70,6 @@ void v_disp_queue_task_work(Task_T *tp_task)
             if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
 
-            vDisp_Main1UiStart();
-            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;

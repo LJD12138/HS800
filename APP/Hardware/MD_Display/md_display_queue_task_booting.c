@@ -31,7 +31,7 @@ void v_disp_queue_task_booting(Task_T *tp_task)
             bDisp_SetDevState(DS_BOOTING);
             bDisp_Switch(ST_OFF, false);
             ui_init();
-            lv_timer_handler();
+            vDisp_Main1UiStart();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
@@ -46,6 +46,8 @@ void v_disp_queue_task_booting(Task_T *tp_task)
             cQueue_GotoStep(tp_task, STEP_END);
             break;
     }
+
+    vDisp_UiRefresh();
 
     #if(boardUSE_OS)
     vTaskDelay(dispTASK_BOOTING_CYCLE_TIME);

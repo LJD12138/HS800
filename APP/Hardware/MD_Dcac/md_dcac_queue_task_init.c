@@ -31,7 +31,7 @@ void v_dcac_queue_task_init(Task_T *tp_task)
     {
 		case 0:
         {
-			if(b_dcac_cs_init() == true)
+			if(b_dcac_cs_get_param1() == true)
 				cQueue_GotoStep(tp_task, STEP_NEXT);
 			else
 			{

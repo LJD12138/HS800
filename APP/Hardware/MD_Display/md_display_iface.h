@@ -57,7 +57,7 @@
 #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
 #define         dispTFT_SPI_PERIPH                      SPI1
 #define         dispTFT_SPI_RCU                         RCU_SPI1
-#define         dispTFT_SPI_PRESCALE                    SPI_PSC_8
+#define         dispTFT_SPI_PRESCALE                    SPI_PSC_2
 #define         dispTFT_DMA_PERIPH                      DMA0
 #define         dispTFT_DMA_CH                          DMA_CH4
 #define         dispTFT_DMA_RCU                         RCU_DMA0
