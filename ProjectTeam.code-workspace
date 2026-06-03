@@ -11,6 +11,7 @@
     ],
     "settings": {
         "cortex-debug.variableUseNaturalFormat": true,
-        "git.ignoreLimitWarning": true
+        "git.ignoreLimitWarning": true,
+        "powershell.cwd": "BOOT"
     }
 }

@@ -182,7 +182,9 @@ s8 cSys_JumpToApp(void)
 	vAdc_DeInit();
 	#endif  //boardADC_EN
 	
+	#if(boardLED_EN)
 	vLed_IfaceDeInit();
+	#endif  //boardLED_EN
 	
 	#if(boardLOW_POWER)
 	vPrint_EnterLowPower();                                 //¹Ø±Õ´®¿Ú

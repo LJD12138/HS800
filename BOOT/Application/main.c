@@ -77,27 +77,35 @@ int main(void)
 
     while(1) 
 	{
-		if(bSystick_10MsFlag == true || tpSysTask->ucID == STI_UPDATE)
-		{
-			vSys_Task(NULL);
-		}
+//		if(bSystick_10MsFlag == true
+//			#if(boardUPDATE)
+//			|| tpSysTask->ucID == STI_UPDATE
+//			#endif  //boardUPDATE
+//		)
+//		{
+//			vSys_Task(NULL);
+//		}
 		
 		if(bSystick_10MsFlag == true)
 		{
 			bSystick_10MsFlag = false;
 			
-			#if(boardKEY_EN)
-			vKey_Task(NULL);
-			#endif  //boardKEY_EN
+			sMyPrint("SYS RUN \r\n");
 			
-			vLed_Task(NULL);
+//			#if(boardKEY_EN)
+//			vKey_Task(NULL);
+//			#endif  //boardKEY_EN
+//			
+//			#if(boardLED_EN)
+//			vLed_Task(NULL);
+//			#endif  //boardLED_EN
 		}
 
 		if(bSystick_100MsFlag)
 		{
 			bSystick_100MsFlag = false;
 			
-			vTimer_Task();
+//			vTimer_Task();
 			
 			#if(boardDISPLAY_EN)
 			vDisp_Task(NULL);

@@ -339,7 +339,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F503, FW_DEBUG_ERR_REPORT</Define>
+              <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT</Define>
               <Undefine></Undefine>
               <IncludePath>.\Firmware\CMSIS;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Application;.\ComFunc;.\Middlewares\SeggerRtt;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Hardware</IncludePath>
             </VariousControls>

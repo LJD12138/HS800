@@ -88,7 +88,11 @@ static void v_print_gpio_init(void)
 	#if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(printUSART_GPIO_TX_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, printUSART_GPIO_TX_PIN);
     gpio_output_options_set(printUSART_GPIO_TX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, printUSART_GPIO_TX_PIN);
-    gpio_af_set(printUSART_GPIO_TX_PORT, GPIO_AF_7, printUSART_GPIO_TX_PIN);
+	#if (boardPRINT_IFACE >= 4)
+    gpio_af_set(printUSART_GPIO_TX_PORT, GPIO_AF_8, printUSART_GPIO_TX_PIN);   //UART3/4/5使用AF8
+	#else
+    gpio_af_set(printUSART_GPIO_TX_PORT, GPIO_AF_7, printUSART_GPIO_TX_PIN);   //USART0/1/2使用AF7(USART0也可用AF0)
+	#endif
 	#else
     gpio_init(printUSART_GPIO_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, printUSART_GPIO_TX_PIN);
 	#endif
@@ -97,6 +101,11 @@ static void v_print_gpio_init(void)
     rcu_periph_clock_enable(printUSART_GPIO_RX_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(printUSART_GPIO_RX_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, printUSART_GPIO_RX_PIN);
+	#if (boardPRINT_IFACE >= 4)
+    gpio_af_set(printUSART_GPIO_RX_PORT, GPIO_AF_8, printUSART_GPIO_RX_PIN);   //UART3/4/5使用AF8
+	#else
+    gpio_af_set(printUSART_GPIO_RX_PORT, GPIO_AF_7, printUSART_GPIO_RX_PIN);   //USART0/1/2使用AF7(USART0也可用AF0)
+	#endif
 	#else
     gpio_init(printUSART_GPIO_RX_PORT, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, printUSART_GPIO_RX_PIN);
 	#endif
@@ -474,7 +483,8 @@ void printUSART_IRQ_HANDLER(void)
         
         if(S_DataSendCnt < S_DataSendSize)
         {    
-            USART_DATA(printUSART) = ucaPrintTxDmaBuffData[S_DataSendCnt];
+//            USART_DATA(printUSART) = ucaPrintTxDmaBuffData[S_DataSendCnt];
+			usart_data_transmit(printUSART, S_DataSendCnt);
 			S_DataSendCnt++;
         }
         else

@@ -204,7 +204,7 @@ targets:
       defineList:
         - USE_STDPERIPH_DRIVER
         - GD32F50X
-        - GD32F503
+        - GD32F502
         - FW_DEBUG_ERR_REPORT
       incList:
         - .

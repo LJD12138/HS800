@@ -42,7 +42,7 @@ OF SUCH DAMAGE.
 
 /* select a system clock by uncommenting the following line */
 #if (defined(GD32F502) || defined(GD32F503) || defined(GD32F505))
-//#define __SYSTEM_CLOCK_IRC8M                    (uint32_t)(__IRC8M)
+#define __SYSTEM_CLOCK_IRC8M                    (uint32_t)(__IRC8M)
 //#define __SYSTEM_CLOCK_HXTAL                    (uint32_t)(__HXTAL)
 //#define __SYSTEM_CLOCK_200M_PLL_IRC8M           (uint32_t)(200000000)
 //#define __SYSTEM_CLOCK_200M_PLL_HXTAL           (uint32_t)(200000000)

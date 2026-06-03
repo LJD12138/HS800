@@ -10,39 +10,39 @@
 ************************************************************************************************************************/ 
 void vGPIO_Init(void)
 {
-	//	//初始化所有IO,已达到最低功耗.
-	rcu_periph_clock_enable(RCU_GPIOA);
-	rcu_periph_clock_enable(RCU_GPIOB);
-	rcu_periph_clock_enable(RCU_GPIOC);
-	rcu_periph_clock_enable(RCU_GPIOD);
-	rcu_periph_clock_enable(RCU_GPIOE);
-	#if (boardIC_TYPE != boardIC_GD32F50X)
-	rcu_periph_clock_enable(RCU_GPIOF);
-	rcu_periph_clock_enable(RCU_GPIOG);
-	#endif
-	
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	/* GD32F50x: gpio_mode_set + gpio_output_options_set */
-	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-	gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-	gpio_mode_set(GPIOB, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-	gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-	gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-	gpio_mode_set(GPIOD, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-	gpio_mode_set(GPIOE, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-	gpio_output_options_set(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-	#else
-	/* GD32F30x: gpio_init */
-	gpio_init(GPIOA, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	gpio_init(GPIOB, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	gpio_init(GPIOC, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	gpio_init(GPIOD, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	gpio_init(GPIOE, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	gpio_init(GPIOF, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	gpio_init(GPIOG, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-	#endif
+//	//	//初始化所有IO,已达到最低功耗.
+//	rcu_periph_clock_enable(RCU_GPIOA);
+//	rcu_periph_clock_enable(RCU_GPIOB);
+//	rcu_periph_clock_enable(RCU_GPIOC);
+//	rcu_periph_clock_enable(RCU_GPIOD);
+//	rcu_periph_clock_enable(RCU_GPIOE);
+//	#if (boardIC_TYPE != boardIC_GD32F50X)
+//	rcu_periph_clock_enable(RCU_GPIOF);
+//	rcu_periph_clock_enable(RCU_GPIOG);
+//	#endif
+//	
+//	#if (boardIC_TYPE == boardIC_GD32F50X)
+//	/* GD32F50x: gpio_mode_set + gpio_output_options_set */
+//	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+//	gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+//	gpio_mode_set(GPIOB, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+//	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+//	gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+//	gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+//	gpio_mode_set(GPIOD, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+//	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+//	gpio_mode_set(GPIOE, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+//	gpio_output_options_set(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+//	#else
+//	/* GD32F30x: gpio_init */
+//	gpio_init(GPIOA, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	gpio_init(GPIOB, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	gpio_init(GPIOC, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	gpio_init(GPIOD, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	gpio_init(GPIOE, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	gpio_init(GPIOF, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	gpio_init(GPIOG, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+//	#endif
 	
 	
 	rcu_periph_clock_enable(KEY_POWER_RCU);
