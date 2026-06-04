@@ -10,38 +10,43 @@ virtualFolder:
   folders:
     - name: StartUp
       files:
-        - path: Firmware/CMSIS/GD/GD32F30x/Source/ARM/startup_gd32f30x_xd.s
+        - path: Firmware/CMSIS/GD/GD32F50x/Source/ARM/startup_gd32f50x.s
       folders: []
     - name: CMSIS
       files:
-        - path: Firmware/CMSIS/GD/GD32F30x/Source/system_gd32f30x.c
+        - path: Firmware/CMSIS/GD/GD32F50x/Source/gd32f50x_err_report.c
+        - path: Firmware/CMSIS/GD/GD32F50x/Source/system_gd32f50x.c
       folders: []
     - name: Peripherals
       files:
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_adc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_bkp.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_can.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_crc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_ctc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_dac.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_dbg.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_dma.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_enet.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_exmc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_exti.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_fmc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_fwdgt.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_gpio.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_i2c.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_misc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_pmu.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_rcu.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_rtc.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_sdio.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_spi.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_timer.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_usart.c
-        - path: Firmware/GD32F30x_standard_peripheral/Source/gd32f30x_wwdgt.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_adc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_bkp.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_can.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_cau.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_cmp.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_crc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_ctc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_dac.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_dbg.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_dma.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_exmc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_exti.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_fmc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_fwdgt.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_gpio.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_hau.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_i2c.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_misc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_pmu.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_rcu.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_rtc.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_spi.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_syscfg.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_timer.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_trigsel.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_trng.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_usart.c
+        - path: Firmware/GD32F50x_standard_peripheral/Source/gd32f50x_wwdgt.c
       folders: []
     - name: MW-FreeRTOS
       files:
@@ -516,12 +521,14 @@ targets:
     cppPreprocessAttrs:
       defineList:
         - USE_STDPERIPH_DRIVER
-        - GD32F30X_HD
+        - GD32F50X
         - LV_LVGL_H_INCLUDE_SIMPLE
+        - GD32F502
+        - FW_DEBUG_ERR_REPORT
       incList:
         - .
-        - Firmware/CMSIS/GD/GD32F30x/Include
-        - Firmware/GD32F30x_standard_peripheral/Include
+        - Firmware/CMSIS/GD/GD32F50x/Include
+        - Firmware/GD32F50x_standard_peripheral/Include
         - Firmware/CMSIS
         - Middlewares/FreeRTOS/portable/RVDS/ARM_CM4F
         - Middlewares/FreeRTOS/include
@@ -547,7 +554,7 @@ targets:
     excludeList: []
     settings:
       debugger: cortex-debug
-    toolchain: AC5
+    toolchain: AC6
     toolchainConfigMap:
       AC5:
         archExtensions: ""
@@ -655,6 +662,49 @@ targets:
               mem:
                 size: "0x0"
                 startAddr: "0x0"
+              tag: IROM
+        useCustomScatterFile: false
+      AC6:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: single
+        options:
+          version: 3
+          afterBuildTasks: []
+          asm-compiler:
+            $use: asm-auto
+            misc-controls: ""
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            language-c: c99
+            language-cpp: c++11
+            link-time-optimization: false
+            optimization: level-0
+          global:
+            output-debug-info: enable
+            use-microLIB: false
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            misc-controls: --diag_suppress=L6329
+            output-format: elf
+        scatterFilePath: <YOUR_SCATTER_FILE>.sct
+        storageLayout:
+          RAM:
+            - id: 1
+              isChecked: true
+              mem:
+                size: "0x5000"
+                startAddr: "0x20000000"
+              noInit: false
+              tag: IRAM
+          ROM:
+            - id: 1
+              isChecked: true
+              isStartup: true
+              mem:
+                size: "0x10000"
+                startAddr: "0x08000000"
               tag: IROM
         useCustomScatterFile: false
     uploadConfigMap:

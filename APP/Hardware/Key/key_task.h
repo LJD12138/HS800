@@ -20,7 +20,7 @@
 #define     	keyADD_SPACE_TIME                 		20  //长按累加间隔
 
 #if(!boardADC_EN)
-#define     	keyGPIO_POWER_RCU       				RCU_GPIOCA
+#define     	keyGPIO_POWER_RCU       				RCU_GPIOA
 #define     	keyGPIO_POWER_PORT      				GPIOA
 #define     	keyGPIO_POWER_PIN       				GPIO_PIN_0
 #endif  //boardADC_EN

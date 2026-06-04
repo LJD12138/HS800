@@ -54,9 +54,9 @@ static void v_bms_io_init(void)//IO设置
     rcu_periph_clock_enable(bmsUSART_GPIO_TX_RCU);
     /* connect port to USARTx_Tx */
 	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_af_set(bmsUSART_GPIO_TX_GPIO, bmsUSART_GPIO_TX_AF, bmsUSART_GPIO_TX_PIN);
     gpio_mode_set(bmsUSART_GPIO_TX_GPIO, GPIO_MODE_AF, GPIO_PUPD_NONE, bmsUSART_GPIO_TX_PIN);
     gpio_output_options_set(bmsUSART_GPIO_TX_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_TX_PIN);
-    gpio_af_set(bmsUSART_GPIO_TX_GPIO, GPIO_AF_7, bmsUSART_GPIO_TX_PIN);
 	#else
     gpio_init(bmsUSART_GPIO_TX_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, bmsUSART_GPIO_TX_PIN);
 	#endif
@@ -65,7 +65,9 @@ static void v_bms_io_init(void)//IO设置
     rcu_periph_clock_enable(bmsUSART_GPIO_RX_RCU);
     /* connect port to USARTx_Rx */
 	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_af_set(bmsUSART_GPIO_RX_GPIO, bmsUSART_GPIO_RX_AF, bmsUSART_GPIO_RX_PIN);
     gpio_mode_set(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, bmsUSART_GPIO_RX_PIN);
+	gpio_output_options_set(bmsUSART_GPIO_RX_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_RX_PIN);
 	#else
     gpio_init(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ,bmsUSART_GPIO_RX_PIN);
 	#endif
@@ -96,6 +98,9 @@ static void v_bms_usart_init(void)
     /* enable USART clock */
     rcu_periph_clock_enable(bmsUSART_RCU);
 
+	/* USART interrupt configuration */
+    nvic_irq_enable(bmsUSART_IRQ, 2, 0);
+
     /* USART configure */
     usart_deinit(bmsUSART);
     usart_baudrate_set(bmsUSART, bmsUSART_BAUD);
@@ -108,10 +113,8 @@ static void v_bms_usart_init(void)
     usart_receive_config(bmsUSART, USART_RECEIVE_ENABLE);
     usart_transmit_config(bmsUSART, USART_TRANSMIT_ENABLE);
 	
-	#if(!boardBMS_IFACE_DMA_EN)
-	/* USART interrupt configuration */
-    nvic_irq_enable(bmsUSART_IRQ, 2, 0);
 	
+	#if(!boardBMS_IFACE_DMA_EN)
     usart_interrupt_flag_clear(bmsUSART, USART_INT_FLAG_RBNE);
     usart_interrupt_enable(bmsUSART, USART_INT_RBNE);   /* 接收中断 */
     
@@ -120,8 +123,6 @@ static void v_bms_usart_init(void)
 	#endif
 
     usart_enable(bmsUSART);
-	
-	
 }
 
 
@@ -144,12 +145,18 @@ static void v_bms_dma_init(void)
 	
 	/* enable DMA0 clock */
 	rcu_periph_clock_enable(bmsUSART_DMA_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	rcu_periph_clock_enable(RCU_DMAMUX);
+	#endif //
 	
     /* initialize DMA channel(USART TX) */
     dma_deinit(bmsUSART_DMA, bmsUSART_DMA_TX_CH);
 	/* initialize DMA parameters */
     dma_struct_para_init(&dma_init_struct);
 	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_init_struct.request = DMA_REQUEST_USART0_TX;
+	#endif	//boardIC_GD32F50X
     dma_init_struct.direction    = DMA_MEMORY_TO_PERIPHERAL;            /* 外设到内存 */              
     dma_init_struct.memory_addr  = (uint32_t)ucaBmsTxDmaBuffData;       /* 设置内存接收基地址 */
     dma_init_struct.memory_inc   = DMA_MEMORY_INCREASE_ENABLE;          /* 内存地址递增 */
@@ -165,6 +172,9 @@ static void v_bms_dma_init(void)
 	/* initialize DMA channel(USART RX) */
     dma_deinit(bmsUSART_DMA, bmsUSART_DMA_RX_CH);
 
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_init_struct.request = DMA_REQUEST_USART0_RX;
+	#endif  //boardIC_GD32F50X
     dma_init_struct.direction = DMA_PERIPHERAL_TO_MEMORY;
     dma_init_struct.number = bmsRX_DMA_BUFF_SIZE;
     dma_init_struct.memory_addr = (uint32_t)ucaBmsRxDmaBuffData;
@@ -177,14 +187,22 @@ static void v_bms_dma_init(void)
     dma_memory_to_memory_disable(bmsUSART_DMA, bmsUSART_DMA_RX_CH);		/* DMA内存到内存模式不开启 */
 	
 	/* enable USART DMA for reception */
+	#if (boardIC_TYPE == boardIC_GD32F30X)
     usart_dma_receive_config(bmsUSART, USART_RECEIVE_DMA_ENABLE);
     /* enable DMA0 channel4 transfer complete interrupt */
 //    dma_interrupt_enable(bmsUSART_DMA, bmsUSART_DMA_RX_CH, DMA_INT_FTF);
+	#elif (boardIC_TYPE == boardIC_GD32F50X)
+	usart_dma_receive_config(bmsUSART, USART_DENR_ENABLE);
+	#endif
     /* enable DMA0 channel4 */
     dma_channel_enable(bmsUSART_DMA, bmsUSART_DMA_RX_CH);
 	
     /* enable USART DMA for transmission */
-    usart_dma_transmit_config(bmsUSART,USART_TRANSMIT_DMA_ENABLE);;
+	#if (boardIC_TYPE == boardIC_GD32F30X)
+    usart_dma_transmit_config(bmsUSART,USART_TRANSMIT_DMA_ENABLE);
+	#elif (boardIC_TYPE == boardIC_GD32F50X)
+	usart_dma_transmit_config(bmsUSART, USART_DENT_ENABLE);
+	#endif
     /* enable DMA0 channel3 transfer complete interrupt */
     dma_interrupt_enable(bmsUSART_DMA, bmsUSART_DMA_TX_CH, DMA_INT_FTF);
     /* enable DMA0 channel3 */
@@ -317,7 +335,11 @@ void bmsUSART_DMA_TX_IRQ_HANDLER(void)
 {
     if(dma_interrupt_flag_get(bmsUSART_DMA, bmsUSART_DMA_TX_CH, DMA_INT_FLAG_FTF)) 
 	{
+		#if (boardIC_TYPE == boardIC_GD32F30X)
         dma_interrupt_flag_clear(bmsUSART_DMA, bmsUSART_DMA_TX_CH, DMA_INT_FLAG_G);
+		#elif (boardIC_TYPE == boardIC_GD32F50X)
+		dma_interrupt_flag_clear(bmsUSART_DMA, bmsUSART_DMA_TX_CH, DMA_INT_FLAG_GIF);
+		#endif  //boardIC_GD32F30X
 		//关闭DMA发送
 	    dma_channel_disable(bmsUSART_DMA, bmsUSART_DMA_TX_CH);
 		//发送完成
@@ -402,8 +424,8 @@ void bmsUSART_IRQ_HANDLER(void)
     if(RESET != usart_interrupt_flag_get(bmsUSART, USART_INT_FLAG_RBNE))
     {
 		if(tpBmsProtoRx != NULL) {
-			uint8_t data = (uint8_t)USART_DATA(bmsUSART);
-			lwrb_write(&tpBmsProtoRx->tRxBuff, &data, 1);
+			u8 ucData = (u8)USART_DATA(bmsUSART);
+			lwrb_write(&tpBmsProtoRx->tRxBuff, &ucData, 1);
 		}
 
         usart_interrupt_flag_clear(bmsUSART, USART_INT_FLAG_RBNE);//清除串口接收中断 

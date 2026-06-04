@@ -51,6 +51,8 @@
 #include "Update/update_main.h"
 #endif  //boardUPDATE
 
+#include "MD_Bms/md_bms_prot_frame.h"
+
 //****************************************************参数初始化**************************************************//
 
 
@@ -77,35 +79,35 @@ int main(void)
 
     while(1) 
 	{
-//		if(bSystick_10MsFlag == true
-//			#if(boardUPDATE)
-//			|| tpSysTask->ucID == STI_UPDATE
-//			#endif  //boardUPDATE
-//		)
-//		{
-//			vSys_Task(NULL);
-//		}
+		if(bSystick_10MsFlag == true
+			#if(boardUPDATE)
+			|| tpSysTask->ucID == STI_UPDATE
+			#endif  //boardUPDATE
+		)
+		{
+			vSys_Task(NULL);
+		}
 		
 		if(bSystick_10MsFlag == true)
 		{
 			bSystick_10MsFlag = false;
 			
-			sMyPrint("SYS RUN \r\n");
+			#if(boardKEY_EN)
+			vKey_Task(NULL);
+			#endif  //boardKEY_EN
 			
-//			#if(boardKEY_EN)
-//			vKey_Task(NULL);
-//			#endif  //boardKEY_EN
-//			
-//			#if(boardLED_EN)
-//			vLed_Task(NULL);
-//			#endif  //boardLED_EN
+			#if(boardLED_EN)
+			vLed_Task(NULL);
+			#endif  //boardLED_EN
 		}
 
 		if(bSystick_100MsFlag)
 		{
 			bSystick_100MsFlag = false;
 			
-//			vTimer_Task();
+			vTimer_Task();
+			
+			vAdc_Task(NULL);//测试
 			
 			#if(boardDISPLAY_EN)
 			vDisp_Task(NULL);

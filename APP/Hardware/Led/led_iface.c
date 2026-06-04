@@ -14,21 +14,35 @@ static void v_led_gpio_init(void)
 	rcu_periph_clock_enable(RCU_AF);//开启复用外设时钟使能
 //    gpio_pin_remap_config(GPIO_TIMER2_FULL_REMAP,ENABLE);//重映射T2_H0
 	rcu_periph_clock_enable(ledPWR_SW_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(ledPWR_SW_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, ledPWR_SW_PIN);
+	gpio_output_options_set(ledPWR_SW_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, ledPWR_SW_PIN);
+	gpio_af_set(ledPWR_SW_PORT, ledTIMER_AF, ledPWR_SW_PIN); /* TIM0_CH0 = AF1 */
+	#else
 	gpio_init(ledPWR_SW_PORT,GPIO_MODE_AF_PP,GPIO_OSPEED_50MHZ,ledPWR_SW_PIN);
-//	rcu_periph_clock_enable(ledPWR_SW_RCU);
-//	gpio_init(ledPWR_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,ledPWR_SW_PIN);
+	#endif
 
 	
-	// rcu_periph_clock_enable(ledAC_SW_RCU);
-	// gpio_init(ledAC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledAC_SW_PIN);
-	// ledAC_SW_OFF();
+//	rcu_periph_clock_enable(ledAC_SW_RCU);
+//	#if (boardIC_TYPE == boardIC_GD32F50X)
+//	gpio_mode_set(ledAC_SW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, ledAC_SW_PIN);
+//	gpio_output_options_set(ledAC_SW_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, ledAC_SW_PIN);
+//	#else
+//	gpio_init(ledAC_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledAC_SW_PIN);
+//	#endif
+//	ledAC_SW_OFF();
 	
 //	rcu_periph_clock_enable(ledUSB_SW_RCU);
 //	gpio_init(ledUSB_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledUSB_SW_PIN);
 //	ledUSB_SW_OFF();
 	
 	rcu_periph_clock_enable(ledLight_SW_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(ledLight_SW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, ledLight_SW_PIN);
+	gpio_output_options_set(ledLight_SW_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, ledLight_SW_PIN);
+	#else
 	gpio_init(ledLight_SW_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,ledLight_SW_PIN);
+	#endif
 	ledLight_SW_OFF();
 	
 //	rcu_periph_clock_enable(ledDC_SW_RCU);
@@ -126,7 +140,11 @@ void vLed_IfaceDeInit(void)
 void vLed_IoEnterLowPower(void)
 {
     rcu_periph_clock_enable(TIMRT_LED_RCU);    /*使能端口时钟*/
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(TIMRT_LED_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, TIMRT_LED_PIN);
+	#else
     gpio_init(TIMRT_LED_GPIO, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, TIMRT_LED_PIN); //配置为外设引脚
+	#endif
 
     rcu_periph_clock_disable(LED_TIMTER_RCU);
 

@@ -14,10 +14,12 @@
 #define     	bmsUSART_GPIO_RX_RCU           			gpioUSART0_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO          			gpioUSART0_GPIO_RX_PORT 
 #define     	bmsUSART_GPIO_RX_PIN           			gpioUSART0_GPIO_RX_PIN
+#define     	bmsUSART_GPIO_RX_AF           			gpioUSART0_GPIO_RX_AF
 //TX
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUSART0_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART0_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART0_GPIO_TX_PIN
+#define     	bmsUSART_GPIO_TX_AF           			gpioUSART0_GPIO_TX_AF
 //´®¿Ú
 #define     	bmsUSART_RCU           					RCU_USART0
 #define     	bmsUSART               					USART0

@@ -53,7 +53,7 @@ int fputc(int ch, FILE *f)
 	vPrint_485TransEnable(true);
 	#endif
 
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	usart_data_transmit(printUSART, (uint8_t) ch);
     while(RESET == usart_flag_get(printUSART, USART_FLAG_TBE));
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
@@ -78,29 +78,51 @@ static void v_print_gpio_init(void)
 {
 	/*使能复用时钟*/
 	rcu_periph_clock_enable(RCU_AF); //开启复用外设时钟使能
-	#if(gpioUSART0_REMAP_EN)
+	#if(gpioUSART0_REMAP_EN && boardIC_TYPE != boardIC_GD32F50X)
 	//重映射串口0
 	gpio_pin_remap_config(GPIO_USART0_REMAP,ENABLE);
 	#endif
 	
 	//TX
     rcu_periph_clock_enable(printUSART_GPIO_TX_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_af_set(printUSART_GPIO_TX_PORT, printUSART_GPIO_TX_AF, printUSART_GPIO_TX_PIN);
+    gpio_mode_set(printUSART_GPIO_TX_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, printUSART_GPIO_TX_PIN);
+    gpio_output_options_set(printUSART_GPIO_TX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, printUSART_GPIO_TX_PIN);
+	#else
     gpio_init(printUSART_GPIO_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, printUSART_GPIO_TX_PIN);
+	#endif
     
 	//RX
     rcu_periph_clock_enable(printUSART_GPIO_RX_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_af_set(printUSART_GPIO_RX_PORT, printUSART_GPIO_RX_AF, printUSART_GPIO_RX_PIN);
+    gpio_mode_set(printUSART_GPIO_RX_PORT, GPIO_MODE_AF, GPIO_PUPD_PULLUP, printUSART_GPIO_RX_PIN);
+	gpio_output_options_set(printUSART_GPIO_RX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, printUSART_GPIO_RX_PIN);
+	#else
     gpio_init(printUSART_GPIO_RX_PORT, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, printUSART_GPIO_RX_PIN);
-	
+	#endif
+
+	//458 发射使能 
 	#if(boardPRINT_485_IFACE_EN)
-    //458 发射使能 
 	rcu_periph_clock_enable(printGPIO_485_TX_EN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(printGPIO_485_TX_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, printGPIO_485_TX_EN_PIN);
+	gpio_output_options_set(printGPIO_485_TX_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, printGPIO_485_TX_EN_PIN);
+	#else
 	gpio_init(printGPIO_485_TX_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, printGPIO_485_TX_EN_PIN);
+	#endif
 	printGPIO_485_TX_EN_OFF();  //默认接收
 	#endif
 	
 	//接口使能
 	rcu_periph_clock_enable(printIFACE_EN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(printIFACE_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, printIFACE_EN_PIN);
+	gpio_output_options_set(printIFACE_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, printIFACE_EN_PIN);
+	#else
 	gpio_init(printIFACE_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, printIFACE_EN_PIN);
+	#endif
 	printIFACE_EN_ON();  //默认接收
 }
 
@@ -338,10 +360,18 @@ bool bPrint_CheckSendFinish(void)
 void vPrint_EnterLowPower( void )
 {
 	rcu_periph_clock_enable(printUSART_GPIO_TX_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(printUSART_GPIO_TX_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, printUSART_GPIO_TX_PIN);
+	#else
     gpio_init(printUSART_GPIO_TX_PORT, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, printUSART_GPIO_TX_PIN);
+	#endif
 
     rcu_periph_clock_enable(printUSART_GPIO_RX_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(printUSART_GPIO_RX_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, printUSART_GPIO_RX_PIN);
+	#else
     gpio_init(printUSART_GPIO_RX_PORT, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, printUSART_GPIO_RX_PIN);
+	#endif
 	
 	rcu_periph_clock_disable(printUSART_GPIO_RX_RCU);
 	rcu_periph_clock_disable(printUSART_GPIO_TX_RCU);
@@ -436,8 +466,9 @@ void printUSART_IRQ_HANDLER(void)
 	{
 		usart_interrupt_flag_clear(printUSART, USART_INT_FLAG_RBNE);
 
+		u8 ucData = USART_DATA(printUSART);
 		if(tpPrintProtoRx != NULL)
-			lwrb_write(&tpPrintProtoRx->tRxBuff, (u8*)&USART_DATA(printUSART), 1); 
+			lwrb_write(&tpPrintProtoRx->tRxBuff, (u8*)&ucData, 1); 
     } 
 
 	if(RESET != usart_interrupt_flag_get(printUSART, USART_INT_FLAG_TBE))
@@ -446,7 +477,7 @@ void printUSART_IRQ_HANDLER(void)
         
         if(S_DataSendCnt < S_DataSendSize)
         {    
-            USART_DATA(printUSART) = ucaPrintTxDmaBuffData[S_DataSendCnt];
+           	USART_DATA(printUSART) = ucaPrintTxDmaBuffData[S_DataSendCnt];
 			S_DataSendCnt++;
         }
         else

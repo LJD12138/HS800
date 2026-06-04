@@ -121,10 +121,14 @@
 #define     	printUSART_GPIO_RX_RCU          		gpioUART4_GPIO_RX_RCU
 #define     	printUSART_GPIO_RX_PORT         		gpioUART4_GPIO_RX_PORT
 #define     	printUSART_GPIO_RX_PIN          		gpioUART4_GPIO_RX_PIN
+#define     	printUSART_GPIO_RX_AF          		    gpioUART4_GPIO_RX_AF
+
 //TX 
 #define     	printUSART_GPIO_TX_RCU          		gpioUART4_GPIO_TX_RCU
 #define     	printUSART_GPIO_TX_PORT         		gpioUART4_GPIO_TX_PORT
 #define     	printUSART_GPIO_TX_PIN          		gpioUART4_GPIO_TX_PIN
+#define     	printUSART_GPIO_TX_AF          		    gpioUART4_GPIO_TX_AF
+
 //´®¿Ú
 #define     	printUSART_IRQ_EN       				1
 #define     	printUSART_RCU          				RCU_UART4

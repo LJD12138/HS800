@@ -88,15 +88,16 @@
 #define     	adcDMA_RCU                    			RCU_DMA1
 #define     	adcDMA                        			DMA1
 #define     	adcDMA_CH                     			DMA_CH4
-
-#define     	DMA_SUBPERIX                			DMA_SUBPERI0
+// #define     	DMA_SUBPERIX                			DMA_SUBPERI0
 #elif (ADC_DMAX == 2)
 #define     	ADCX_RCU                    			RCU_ADC0
 #define     	ADCX                        			ADC0
 #define     	adcDMA_RCU                    			RCU_DMA0
 #define     	adcDMA                        			DMA0
 #define     	adcDMA_CH                     			DMA_CH0
-//#define     	DMA_SUBPERIX                			DMA_SUBPERI0
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	adcDMA_REQUEST                     		DMA_REQUEST_ADC0_ROUTINE
+#endif  /* boardIC_TYPE */
 #endif
 
 extern u16 adc_value[];

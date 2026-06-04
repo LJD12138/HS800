@@ -14,7 +14,7 @@
 #define  	ACK     					1
 #define  	NACK    					0
 
-#if(boardIC_TYPE == boardIC_GD32F30X)
+#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 #define   		I2C_LOW(GPIO, PIN)   					GPIO_BC(GPIO) = (uint32_t)PIN  
 #define   		I2C_HIGH(GPIO, PIN)  					GPIO_BOP(GPIO) = (uint32_t)PIN
 #elif(boardIC_TYPE == boardIC_STM32H7XX)
@@ -47,7 +47,10 @@ static void v_delay_low(u16 X)      //°ëÑÓÊ±
 ******************************************************************************************************************/
 __STATIC_INLINE void v_i2c_set_scl_gpio_output(const I2cObj_T *p_i2c_obj)
 { 
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(p_i2c_obj->ulGPIO_PORT_SCL, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, p_i2c_obj->ulGPIO_PIN_SCL);
+	gpio_output_options_set(p_i2c_obj->ulGPIO_PORT_SCL, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, p_i2c_obj->ulGPIO_PIN_SCL);
+	#elif(boardIC_TYPE == boardIC_GD32F30X)
 	gpio_init(p_i2c_obj->ulGPIO_PORT_SCL, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, p_i2c_obj->ulGPIO_PIN_SCL);
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
 	gpio_init_struct.Pin = p_i2c_obj->ulGPIO_PIN_SCL;               /* PIN¿Ú */
@@ -70,7 +73,10 @@ __STATIC_INLINE void v_i2c_set_scl_gpio_output(const I2cObj_T *p_i2c_obj)
 ******************************************************************************************************************/
 __STATIC_INLINE void v_i2c_set_sda_gpio_output(const I2cObj_T *p_i2c_obj)
 {  
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(p_i2c_obj->ulGPIO_PORT_SDA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, p_i2c_obj->ulGPIO_PIN_SDA);
+	gpio_output_options_set(p_i2c_obj->ulGPIO_PORT_SDA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, p_i2c_obj->ulGPIO_PIN_SDA);
+	#elif(boardIC_TYPE == boardIC_GD32F30X)
 	gpio_init(p_i2c_obj->ulGPIO_PORT_SDA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, p_i2c_obj->ulGPIO_PIN_SDA);
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
 	gpio_init_struct.Pin = p_i2c_obj->ulGPIO_PIN_SDA;               /* PIN¿Ú */
@@ -92,7 +98,9 @@ __STATIC_INLINE void v_i2c_set_sda_gpio_output(const I2cObj_T *p_i2c_obj)
 ******************************************************************************************************************/
 __STATIC_INLINE void v_i2c_set_sda_gpio_input(const I2cObj_T *p_i2c_obj)
 {
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(p_i2c_obj->ulGPIO_PORT_SDA, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, p_i2c_obj->ulGPIO_PIN_SDA);
+	#elif(boardIC_TYPE == boardIC_GD32F30X)
 	 gpio_init(p_i2c_obj->ulGPIO_PORT_SDA, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, p_i2c_obj->ulGPIO_PIN_SDA);
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
 	gpio_init_struct.Pin = p_i2c_obj->ulGPIO_PIN_SDA;
@@ -113,7 +121,7 @@ __STATIC_INLINE void v_i2c_set_sda_gpio_input(const I2cObj_T *p_i2c_obj)
 ******************************************************************************************************************/
 __STATIC_INLINE bool b_i2c_read_sda_gpio(const I2cObj_T *p_i2c_obj)   
 {
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	if((uint32_t)RESET != (GPIO_ISTAT(p_i2c_obj->ulGPIO_PORT_SDA)&(p_i2c_obj->ulGPIO_PIN_SDA)))
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
 	if((HAL_GPIO_ReadPin(p_i2c_obj->ulGPIO_PORT_SDA, p_i2c_obj->ulGPIO_PIN_SDA)) != GPIO_PIN_RESET)

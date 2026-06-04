@@ -7,6 +7,9 @@
 #define 		ledTIMER                           		TIMER3
 #define 		ledTIMER_RCU                       		RCU_TIMER3
 #define 		ledTIMER_CH                        		TIMER_CH_3
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define 		ledTIMER_AF                        		GPIO_AF_2
+#endif  //boardIC_TYPE
 
 #define 		ledPWR_SW_PWM_SET(x)                  	TIMER_CH3CV(ledTIMER) = ((uint32_t)x)
 #define 		ledPWM_MAX_VALUE     					1000
@@ -20,11 +23,11 @@
 //#define     	ledPWR_SW_ON()     						GPIO_BOP(ledPWR_SW_PORT) = ledPWR_SW_PIN
 //#define     	ledPWR_SW_OFF()    						GPIO_BC(ledPWR_SW_PORT)  = ledPWR_SW_PIN
 
-#define     	ledAC_SW_RCU      						RCU_GPIOB
-#define     	ledAC_SW_PORT      						GPIOB
-#define     	ledAC_SW_PIN      						GPIO_PIN_1
-#define     	ledAC_SW_ON()      						GPIO_BOP(ledAC_SW_PORT) = ledAC_SW_PIN
-#define     	ledAC_SW_OFF()     						GPIO_BC(ledAC_SW_PORT)  = ledAC_SW_PIN
+// #define     	ledAC_SW_RCU      						RCU_GPIOB
+// #define     	ledAC_SW_PORT      						GPIOB
+// #define     	ledAC_SW_PIN      						GPIO_PIN_1
+// #define     	ledAC_SW_ON()      						GPIO_BOP(ledAC_SW_PORT) = ledAC_SW_PIN
+// #define     	ledAC_SW_OFF()     						GPIO_BC(ledAC_SW_PORT)  = ledAC_SW_PIN
 
 //#define     	ledUSB_SW_RCU      						RCU_GPIOB
 //#define     	ledUSB_SW_PORT     						GPIOB

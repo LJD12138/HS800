@@ -38,7 +38,7 @@ OF SUCH DAMAGE.
 #ifndef __MAIN_H
 #define __MAIN_H
 
-#include "gd32f30x.h"
+#include "gd32f50x.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>

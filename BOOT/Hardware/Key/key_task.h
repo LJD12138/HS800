@@ -57,7 +57,7 @@ __STATIC_INLINE bool bKey_PowerIsPress(void)
 #else
 __STATIC_INLINE bool bKey_PowerIsPress(void)          
 {    
-    if(usAdc_GetChannelValue(adcKEY_POWER) > 200)//读取按键
+    if(usAdc_GetChannelValue(adcKEY_POWER) > 1000)//读取按键
         return true;
     else
         return false;

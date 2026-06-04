@@ -27,6 +27,10 @@
 #define     	gpioUSART0_GPIO_TX_RCU                 	RCU_GPIOA
 #define     	gpioUSART0_GPIO_TX_PORT                	GPIOA
 #define     	gpioUSART0_GPIO_TX_PIN                 	GPIO_PIN_9
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	gpioUSART0_GPIO_RX_AF                   GPIO_AF_0
+#define     	gpioUSART0_GPIO_TX_AF                   GPIO_AF_0
+#endif //(boardIC_TYPE == boardIC_GD32F50X)
 #else
 //´®¿Ú0ÖØÓ³Éä
 #define     	gpioUSART0_GPIO_RX_RCU                 	RCU_GPIOB
@@ -51,6 +55,10 @@
 #define     	gpioUSART1_GPIO_TX_RCU                 	RCU_GPIOA
 #define     	gpioUSART1_GPIO_TX_PORT                	GPIOA
 #define     	gpioUSART1_GPIO_TX_PIN                 	GPIO_PIN_2
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	gpioUSART1_GPIO_RX_AF                   GPIO_AF_0
+#define     	gpioUSART1_GPIO_TX_AF                   GPIO_AF_0
+#endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 //DMA 
 #define     	gpioUSART1_DMA                    		DMA0
@@ -67,6 +75,10 @@
 #define     	gpioUSART2_GPIO_TX_RCU                 	RCU_GPIOB
 #define     	gpioUSART2_GPIO_TX_PORT                	GPIOB
 #define     	gpioUSART2_GPIO_TX_PIN                 	GPIO_PIN_10
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	gpioUSART2_GPIO_RX_AF                   GPIO_AF_1
+#define     	gpioUSART2_GPIO_TX_AF                   GPIO_AF_1
+#endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 //DMA 
 #define     	gpioUSART2_DMA                    		DMA0
@@ -83,6 +95,10 @@
 #define     	gpioUART3_GPIO_TX_RCU                  	RCU_GPIOC
 #define     	gpioUART3_GPIO_TX_PORT                 	GPIOC
 #define     	gpioUART3_GPIO_TX_PIN                  	GPIO_PIN_10
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	gpioUART3_GPIO_RX_AF                   	GPIO_AF_1
+#define     	gpioUART3_GPIO_TX_AF                   	GPIO_AF_1
+#endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 //DMA 
 #define     	gpioUART3_DMA                     		DMA1
@@ -99,6 +115,10 @@
 #define     	gpioUART4_GPIO_TX_RCU                  	RCU_GPIOC
 #define     	gpioUART4_GPIO_TX_PORT                 	GPIOC
 #define     	gpioUART4_GPIO_TX_PIN                  	GPIO_PIN_12
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	gpioUART4_GPIO_RX_AF                   	GPIO_AF_1
+#define     	gpioUART4_GPIO_TX_AF                   	GPIO_AF_1
+#endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 
 void vGPIO_Init(void);

@@ -1,5 +1,5 @@
 #include "SEGGER_RTT.h" 
-#include "main.h"
+#include "board_config.h"
 
 #if (boardIC_TYPE == boardIC_GD32F30X)
 //标准库需要的支持函数(ARMCC编译器需要,ARMClang已内置定义)
