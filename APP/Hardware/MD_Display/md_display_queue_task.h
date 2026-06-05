@@ -1,11 +1,11 @@
 #ifndef MD_DISPLAY_QUEUE_TASK_H_
 #define MD_DISPLAY_QUEUE_TASK_H_
 
-#include "main.h"
+
 #include "board_config.h"
-#include "queue_task.h"
 
 #if(boardDISPLAY_EN)
+#include "queue_task.h"
 
 #if(boardUSE_OS)
 #include "freertos.h"

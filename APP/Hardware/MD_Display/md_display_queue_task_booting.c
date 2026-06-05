@@ -9,6 +9,7 @@
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/eez_ui/ui.h"
+#include "MD_Display/user_ui/main_1_ui.h"
 #include "Print/print_task.h"
 
 #define dispTASK_BOOTING_CYCLE_TIME         33

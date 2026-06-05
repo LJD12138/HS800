@@ -31,7 +31,7 @@ static void tft_hw_spi_wait_idle(void);
 
 #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
 static void tft_spi_send_byte(u8 data);
-#endif
+#endif //boardDISP_SPI_MODE
 
 /***********************************************************************************************************************
  -----函数功能    TFT延时函数
@@ -66,8 +66,20 @@ static void tft_hw_spi_dma_init(void)
     rcu_periph_clock_enable(dispTFT_SPI_RCU);
     rcu_periph_clock_enable(dispTFT_DMA_RCU);
 
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    /* enable DMAMUX clock */
+    rcu_periph_clock_enable(RCU_DMAMUX);
+
+    gpio_mode_set(dispTFT_SCK_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, dispTFT_SCK_PIN);
+    gpio_output_options_set(dispTFT_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SCK_PIN);
+    gpio_af_set(dispTFT_SCK_PORT, dispTFT_SPI_SCK_AF, dispTFT_SCK_PIN);
+    gpio_mode_set(dispTFT_SDA_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, dispTFT_SDA_PIN);
+    gpio_output_options_set(dispTFT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SDA_PIN);
+    gpio_af_set(dispTFT_SDA_PORT, dispTFT_SPI_SDA_AF, dispTFT_SDA_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
     gpio_init(dispTFT_SCK_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, dispTFT_SCK_PIN);
     gpio_init(dispTFT_SDA_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
+    #endif  //boardIC_TYPE
 
     spi_i2s_deinit(dispTFT_SPI_PERIPH);
     spi_struct_para_init(&spi_init_struct);
@@ -85,6 +97,10 @@ static void tft_hw_spi_dma_init(void)
 
     dma_deinit(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
     dma_struct_para_init(&dma_init_struct);
+
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    dma_init_struct.request = dispTFT_SPI_DMA_REQUEST;
+    #endif  //boardIC_TYPE
     dma_init_struct.periph_addr = (uint32_t)(&SPI_DATA(dispTFT_SPI_PERIPH));
     dma_init_struct.memory_addr = 0U;
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
@@ -98,7 +114,12 @@ static void tft_hw_spi_dma_init(void)
     dma_circulation_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
     dma_memory_to_memory_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
     dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
-    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif (boardIC_TYPE == boardIC_GD32F30X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif  //boardIC_TYPE
 
     /* 不要全局开启 DMA 中断！ */
     // dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
@@ -123,7 +144,11 @@ static void v_tft_spi_dma_send_bytes(const u8 *data, u32 len)
 
     dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
     dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif (boardIC_TYPE == boardIC_GD32F30X)
     dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif  //boardIC_TYPE
 
     dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
 
@@ -133,7 +158,11 @@ static void v_tft_spi_dma_send_bytes(const u8 *data, u32 len)
         timeout--;
 
     dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif (boardIC_TYPE == boardIC_GD32F30X)
     dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif  //boardIC_TYPE
     
     /* 确保 SPI 移位完全结束 */
     tft_hw_spi_wait_idle(); 
@@ -162,7 +191,7 @@ static void tft_hw_spi_wait_idle(void)
         timeout--;
     }
 }
-#endif
+#endif  //boardDISP_SPI_MODE
 
 /***********************************************************************************************************************
 -----函数功能    软件SPI发送单字节
@@ -185,7 +214,7 @@ static void tft_spi_send_byte(u8 data)
         data <<= 1;
     }
 }
-#endif
+#endif  //boardDISP_SPI_MODE
 
 
 
@@ -217,17 +246,35 @@ void vDisp_IfaceInit(void)
     rcu_periph_clock_enable(dispTFT_SCK_RCU);
     rcu_periph_clock_enable(dispTFT_SDA_RCU);
 
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispTFT_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_CS_PIN);
+    gpio_output_options_set(dispTFT_CS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_CS_PIN);
+    gpio_mode_set(dispTFT_RES_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_RES_PIN);
+    gpio_output_options_set(dispTFT_RES_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_RES_PIN);
+    gpio_mode_set(dispTFT_A0_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_A0_PIN);
+    gpio_output_options_set(dispTFT_A0_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_A0_PIN);
+    gpio_mode_set(dispTFT_BL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_BL_PIN);
+    gpio_output_options_set(dispTFT_BL_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_BL_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
     gpio_init(dispTFT_CS_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_CS_PIN);
     gpio_init(dispTFT_RES_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_RES_PIN);
     gpio_init(dispTFT_A0_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_A0_PIN);
     gpio_init(dispTFT_BL_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_BL_PIN);
+    #endif  //boardIC_TYPE
 
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
     tft_hw_spi_dma_init();
     #else
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispTFT_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SCK_PIN);
+    gpio_output_options_set(dispTFT_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SCK_PIN);
+    gpio_mode_set(dispTFT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SDA_PIN);
+    gpio_output_options_set(dispTFT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SDA_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
     gpio_init(dispTFT_SCK_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SCK_PIN);
     gpio_init(dispTFT_SDA_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
-    #endif
+    #endif  //boardIC_TYPE
+    #endif  //boardDISP_SPI_MODE
 
     dispTFT_CS_H();
     dispTFT_A0_H();
@@ -236,7 +283,7 @@ void vDisp_IfaceInit(void)
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
     dispTFT_SCK_H();
     dispTFT_SDA_H();
-    #endif
+    #endif  //boardDISP_SPI_MODE
 
     dispTFT_RES_L();
     tft_delay_ms(20);
@@ -300,7 +347,7 @@ void vDisp_TftWriteCommand(u8 cmd)
     tft_hw_spi_wait_idle();
     #else
     tft_spi_send_byte(cmd);
-    #endif
+    #endif  //boardDISP_SPI_MODE
     
     dispTFT_CS_H();
 }
@@ -323,7 +370,7 @@ void vDisp_TftWriteData8(u8 data)
     tft_hw_spi_wait_idle();
     #else
     tft_spi_send_byte(data);
-    #endif
+    #endif  //boardDISP_SPI_MODE
     
     dispTFT_CS_H();
 }
@@ -349,7 +396,7 @@ void vDisp_TftWriteData16(u16 data)
     #else
     tft_spi_send_byte((u8)(data >> 8));
     tft_spi_send_byte((u8)(data & 0xFF));
-    #endif
+    #endif  //boardDISP_SPI_MODE
     
     dispTFT_CS_H();
 }
@@ -379,7 +426,7 @@ void vDisp_TftWriteBuffer(const u8 *data, u32 len)
         for(u32 i = 0U; i < byte_len; i++)
             tft_spi_send_byte(byte_data[i]);
     }
-    #endif
+    #endif  //boardDISP_SPI_MODE
     
     dispTFT_CS_H();
 }
@@ -400,13 +447,18 @@ void vDisp_TftWriteColorAsync(const u8 *data, u32 len)
     dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
     dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
     dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
+	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif  (boardIC_TYPE == boardIC_GD32F30X)
     dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif //boardIC_TYPE
 
     /* 专属异步通道，动态开启 DMA 中断！ */
     dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
     
     dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
-    #endif
+    #endif  //boardDISP_SPI_MODE
 }
 
 /***********************************************************************************************************************
@@ -424,7 +476,11 @@ void DMA0_Channel4_IRQHandler(void)
         dma_interrupt_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
 
         /* 必须明确清除 FTF 标志位，只清 G 标志可能不够 */
+		#if (boardIC_TYPE == boardIC_GD32F50X)
+		dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_GIF);
+		#elif (boardIC_TYPE == boardIC_GD32F30X)
         dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_G);
+		#endif  //boardIC_TYPE
         dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_FTF);
 
         // 1. 关闭 DMA

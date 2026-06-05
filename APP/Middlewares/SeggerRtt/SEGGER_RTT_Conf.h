@@ -79,6 +79,11 @@ Revision: $Rev: 24316 $
 // Up-channel 0: RTT
 // Up-channel 1: SystemView
 //
+/* ARMCLANG下禁用RTT汇编优化,使用C实现替代 */
+#ifndef   RTT_USE_ASM
+  #define RTT_USE_ASM (0)
+#endif
+
 #ifndef   SEGGER_RTT_MAX_NUM_UP_BUFFERS
   #define SEGGER_RTT_MAX_NUM_UP_BUFFERS             (3)     // Max. number of up-buffers (T->H) available on this target    (Default: 3)
 #endif

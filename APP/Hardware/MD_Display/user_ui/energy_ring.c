@@ -49,6 +49,8 @@
  */
 
 #include "MD_Display/user_ui/energy_ring.h"
+
+#if(boardDISPLAY_EN)
 #include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/md_display_iface.h"  /* 包含dispTFT_WIDTH和dispTFT_HEIGHT的定义 */
 
@@ -1141,3 +1143,4 @@ void EnergyRing_UpdateSoc(EnergyRing_T *p_ring, u8 uc_soc, bool b_charging)
     else
         energy_ring_invalidate_seg_range(p_ring, us_old_active_seg, p_ring->usActiveSeg);
 }
+#endif  //boardDISPLAY_EN

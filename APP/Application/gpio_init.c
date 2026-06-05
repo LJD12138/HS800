@@ -20,7 +20,12 @@ void vGPIO_Init(void)
 //    gpioVCC21_EN_OFF();
 	
 	rcu_periph_clock_enable(gpioASSIST_OPEN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(gpioASSIST_OPEN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpioASSIST_OPEN_PIN);
+	gpio_output_options_set(gpioASSIST_OPEN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, gpioASSIST_OPEN_PIN);
+	#else
 	gpio_init(gpioASSIST_OPEN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, gpioASSIST_OPEN_PIN);
+	#endif
 	gpioASSIST_OPEN_OFF();
 }
 

@@ -10,21 +10,21 @@
       <TargetName>APP</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pArmCC>5060960::V5.06 update 7 (build 960)::.\ARMCC</pArmCC>
-      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
-      <uAC6>0</uAC6>
+      <pArmCC>6240000::V6.24::ARMCLANG</pArmCC>
+      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
+      <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
-          <Device>GD32F303RG</Device>
+          <Device>GD32F502RG</Device>
           <Vendor>GigaDevice</Vendor>
-          <PackID>GigaDevice.GD32F30x_DFP.2.5.0</PackID>
+          <PackID>GigaDevice.GD32F50x_DFP.1.0.1</PackID>
           <PackURL>https://gd32mcu.com/data/documents/pack/</PackURL>
-          <Cpu>IRAM(0x20000000,0x018000) IROM(0x08000000,0x0100000) CPUTYPE("Cortex-M4") FPU2 CLOCK(12000000) ELITTLE</Cpu>
+          <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x0100000) CPUTYPE("Cortex-M33") FPU3(SFPU) DSP CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC1000 -FN1 -FF0GD32F30x_XD -FS08000000 -FL0100000 -FP0($$Device:GD32F303RG$Flash\GD32F30x_XD.FLM))</FlashDriverDll>
+          <FlashDriverDll>UL2V8M(-S0 -C0 -P0 -FD20000000 -FC1000 -FN1 -FF0GD32F50x -FS08000000 -FL0100000 -FP0($$Device:GD32F502RG$Flash\GD32F50x.FLM))</FlashDriverDll>
           <DeviceId>0</DeviceId>
-          <RegisterFile>$$Device:GD32F303RG$Device\Include\gd32f30x.h</RegisterFile>
+          <RegisterFile></RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -34,7 +34,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:GD32F303RG$SVD\GD32F30x_XD.svd</SFDFile>
+          <SFDFile>$$Device:GD32F502RG$SVD\GD32F50x.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -110,14 +110,14 @@
           <ComprImg>1</ComprImg>
         </CommonProperty>
         <DllOption>
-          <SimDllName>SARMCM3.DLL</SimDllName>
-          <SimDllArguments> -REMAP -MPU</SimDllArguments>
-          <SimDlgDll>DCM.DLL</SimDlgDll>
-          <SimDlgDllArguments>-pCM4</SimDlgDllArguments>
-          <TargetDllName>SARMCM3.DLL</TargetDllName>
+          <SimDllName></SimDllName>
+          <SimDllArguments></SimDllArguments>
+          <SimDlgDll></SimDlgDll>
+          <SimDlgDllArguments></SimDlgDllArguments>
+          <TargetDllName>SARMV8M.DLL</TargetDllName>
           <TargetDllArguments> -MPU</TargetDllArguments>
           <TargetDlgDll>TCM.DLL</TargetDlgDll>
-          <TargetDlgDllArguments>-pCM4</TargetDlgDllArguments>
+          <TargetDlgDllArguments>-pCM33</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
           <OPTHX>
@@ -135,10 +135,10 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>4096</DriverSelection>
+            <DriverSelection>4102</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
-          <Flash2>BIN\UL2CM3.DLL</Flash2>
+          <Flash2>BIN\UL2V8M.DLL</Flash2>
           <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
@@ -175,7 +175,7 @@
             <AdsLsxf>1</AdsLsxf>
             <RvctClst>0</RvctClst>
             <GenPPlst>0</GenPPlst>
-            <AdsCpuType>"Cortex-M4"</AdsCpuType>
+            <AdsCpuType>"Cortex-M33"</AdsCpuType>
             <RvctDeviceName></RvctDeviceName>
             <mOS>0</mOS>
             <uocRom>0</uocRom>
@@ -248,7 +248,7 @@
               <IRAM>
                 <Type>0</Type>
                 <StartAddress>0x20000000</StartAddress>
-                <Size>0x18000</Size>
+                <Size>0x20000</Size>
               </IRAM>
               <IROM>
                 <Type>1</Type>
@@ -277,7 +277,7 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x800d000</StartAddress>
+                <StartAddress>0x8010000</StartAddress>
                 <Size>0x64000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
@@ -303,7 +303,7 @@
               <OCR_RVCT9>
                 <Type>0</Type>
                 <StartAddress>0x20000000</StartAddress>
-                <Size>0x18000</Size>
+                <Size>0x20000</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
@@ -315,7 +315,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -324,7 +324,7 @@
             <PlainCh>0</PlainCh>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <wLevel>2</wLevel>
+            <wLevel>3</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
@@ -339,9 +339,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_STDPERIPH_DRIVER,GD32F30X_XD</Define>
+              <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT,LV_LVGL_H_INCLUDE_SIMPLE</Define>
               <Undefine></Undefine>
-              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F30x\Include;.\Firmware\GD32F30x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\RVDS\ARM_CM4F;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui</IncludePath>
+              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -386,9 +386,9 @@
           <GroupName>StartUp</GroupName>
           <Files>
             <File>
-              <FileName>startup_gd32f30x_xd.s</FileName>
+              <FileName>startup_gd32f50x.s</FileName>
               <FileType>2</FileType>
-              <FilePath>.\Firmware\CMSIS\GD\GD32F30x\Source\ARM\startup_gd32f30x_xd.s</FilePath>
+              <FilePath>.\Firmware\CMSIS\GD\GD32F50x\Source\ARM\startup_gd32f50x.s</FilePath>
             </File>
           </Files>
         </Group>
@@ -396,9 +396,14 @@
           <GroupName>CMSIS</GroupName>
           <Files>
             <File>
-              <FileName>system_gd32f30x.c</FileName>
+              <FileName>gd32f50x_err_report.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\CMSIS\GD\GD32F30x\Source\system_gd32f30x.c</FilePath>
+              <FilePath>.\Firmware\CMSIS\GD\GD32F50x\Source\gd32f50x_err_report.c</FilePath>
+            </File>
+            <File>
+              <FileName>system_gd32f50x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Firmware\CMSIS\GD\GD32F50x\Source\system_gd32f50x.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -406,124 +411,144 @@
           <GroupName>Peripherals</GroupName>
           <Files>
             <File>
-              <FileName>gd32f30x_adc.c</FileName>
+              <FileName>gd32f50x_adc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_adc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_adc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_bkp.c</FileName>
+              <FileName>gd32f50x_bkp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_bkp.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_bkp.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_can.c</FileName>
+              <FileName>gd32f50x_can.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_can.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_can.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_crc.c</FileName>
+              <FileName>gd32f50x_cau.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_crc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_cau.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_ctc.c</FileName>
+              <FileName>gd32f50x_cmp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_ctc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_cmp.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_dac.c</FileName>
+              <FileName>gd32f50x_crc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_dac.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_crc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_dbg.c</FileName>
+              <FileName>gd32f50x_ctc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_dbg.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_ctc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_dma.c</FileName>
+              <FileName>gd32f50x_dac.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_dma.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_dac.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_enet.c</FileName>
+              <FileName>gd32f50x_dbg.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_enet.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_dbg.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_exmc.c</FileName>
+              <FileName>gd32f50x_dma.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_exmc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_dma.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_exti.c</FileName>
+              <FileName>gd32f50x_exmc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_exti.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_exmc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_fmc.c</FileName>
+              <FileName>gd32f50x_exti.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_fmc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_exti.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_fwdgt.c</FileName>
+              <FileName>gd32f50x_fmc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_fwdgt.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_fmc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_gpio.c</FileName>
+              <FileName>gd32f50x_fwdgt.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_gpio.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_fwdgt.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_i2c.c</FileName>
+              <FileName>gd32f50x_gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_i2c.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_gpio.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_misc.c</FileName>
+              <FileName>gd32f50x_hau.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_misc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_hau.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_pmu.c</FileName>
+              <FileName>gd32f50x_i2c.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_pmu.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_i2c.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_rcu.c</FileName>
+              <FileName>gd32f50x_misc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_rcu.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_misc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_rtc.c</FileName>
+              <FileName>gd32f50x_pmu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_rtc.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_pmu.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_sdio.c</FileName>
+              <FileName>gd32f50x_rcu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_sdio.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_rcu.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_spi.c</FileName>
+              <FileName>gd32f50x_rtc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_spi.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_rtc.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_timer.c</FileName>
+              <FileName>gd32f50x_spi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_timer.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_spi.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_usart.c</FileName>
+              <FileName>gd32f50x_syscfg.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_usart.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_syscfg.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_wwdgt.c</FileName>
+              <FileName>gd32f50x_timer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Firmware\GD32F30x_standard_peripheral\Source\gd32f30x_wwdgt.c</FilePath>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>gd32f50x_trigsel.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_trigsel.c</FilePath>
+            </File>
+            <File>
+              <FileName>gd32f50x_trng.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_trng.c</FilePath>
+            </File>
+            <File>
+              <FileName>gd32f50x_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>gd32f50x_wwdgt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Firmware\GD32F50x_standard_peripheral\Source\gd32f50x_wwdgt.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -573,7 +598,12 @@
             <File>
               <FileName>port.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Middlewares\FreeRTOS\portable\RVDS\ARM_CM4F\port.c</FilePath>
+              <FilePath>.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure\port.c</FilePath>
+            </File>
+            <File>
+              <FileName>portasm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure\portasm.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -6132,14 +6162,14 @@
               <FilePath>.\Application\fwdgt.c</FilePath>
             </File>
             <File>
-              <FileName>gd32f30x_it.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Application\gd32f30x_it.c</FilePath>
-            </File>
-            <File>
               <FileName>timer_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Application\timer_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>gd32f50x_it.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Application\gd32f50x_it.c</FilePath>
             </File>
           </Files>
         </Group>

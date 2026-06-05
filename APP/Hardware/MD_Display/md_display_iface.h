@@ -58,6 +58,12 @@
 #define         dispTFT_SPI_PERIPH                      SPI1
 #define         dispTFT_SPI_RCU                         RCU_SPI1
 #define         dispTFT_SPI_PRESCALE                    SPI_PSC_2
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define         dispTFT_SPI_SCK_AF                      GPIO_AF_1
+#define         dispTFT_SPI_SDA_AF                      GPIO_AF_0
+#define         dispTFT_SPI_DMA_REQUEST                 DMA_REQUEST_SPI1_TX
+#endif  //boardIC_TYPE
+
 #define         dispTFT_DMA_PERIPH                      DMA0
 #define         dispTFT_DMA_CH                          DMA_CH4
 #define         dispTFT_DMA_RCU                         RCU_DMA0

@@ -10,7 +10,7 @@
 #define 		lightPWM_SEMI_VALUE                  	200
 #define 		lightPWM_FULL_VALUE                  	550
 
-//ÕÕÃ÷LED
+//???¡ÂLED
 #define 		lightPWM_GPIO_RCU                    	RCU_GPIOA
 #define 		lightPWM_GPIO_PORT                  	GPIOA
 #define 		lightPWM_PIN                         	GPIO_PIN_8
@@ -26,10 +26,14 @@
 #define 		lightTIMER                           	TIMER0
 #define 		lightTIMER_RCU                       	RCU_TIMER0
 #define 		lightTIMER_CH                        	TIMER_CH_0
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define 		lightTIMER_AF                        	GPIO_AF_1
+#endif  //boardIC_TYPE
 
 #define 		lightPWM_SET(x)                      	TIMER_CH0CV(lightTIMER) = ((uint32_t)x)
 
 void vLight_IfaceInit(void);
+void vLight_IfaceDeInit(void);
 
 #if(boardLOW_POWER)
 void vLight_IoEnterLowPower(void);

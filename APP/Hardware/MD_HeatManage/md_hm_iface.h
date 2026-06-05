@@ -7,7 +7,7 @@
 #define 		fanPWM_SEMI_VALUE    					200
 #define 		fanPWM_FULL_VALUE    					550
 
-//∑Á…»
+//°§???
 #define 		fanPWM_GPIO_RCU                    		RCU_GPIOA
 #define 		fanPWM_GPIO_PORT                   		GPIOA
 #define 		fanPWM_PIN                         		GPIO_PIN_15
@@ -26,11 +26,15 @@
 #define 		fanTIMER_RCU                       		RCU_TIMER1
 #define 		fanTIMER_CH                        		TIMER_CH_0
 // #define 		fanLED_TIMER_CH                    		TIMER_CH_2
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define 		fanTIMER_AF                        		GPIO_AF_1
+#endif  //boardIC_TYPE
 
 #define 		fanPWM_SET(x)                      		TIMER_CH0CV(fanTIMER) = ((uint32_t)x)
 // #define 		fanLED_PWM_SET(x)                  		TIMER_CH2CV(fanTIMER) = ((uint32_t)x)
 
-void vFan_PwmInit(void);
+void vFan_IfaceInit(void);
+void vFan_IfaceDeInit(void);
 
 #if(boardLOW_POWER)
 void vFan_IoEnterLowPower(void);

@@ -728,24 +728,30 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 		}
 		else if(tSysInfo.eDevState == DS_CLOSING)  //关闭中
 		{
+			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_CLOSING)
 				cQueue_AddQueueTask(tpDispTask, DISPTI_CLOSING, 0, false);
+			#endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为关闭中\r\n");
 		}
 		else if(tSysInfo.eDevState == DS_SHUT_DOWN)  //关闭
 		{
+			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_SHUT_DOWN)
 				cQueue_AddQueueTask(tpDispTask, DISPTI_SHUT_DOWN, 0, false);
+			#endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为关闭\r\n");
 		}
 		else if(tSysInfo.eDevState == DS_ERR)  //错误
 		{
+			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_ERR)
 				cQueue_AddQueueTask(tpDispTask, DISPTI_ERR, 0, false);
+			#endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为错误\r\n");
@@ -756,8 +762,10 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 			vGPIO_12VPowerSwitch(true);
 			#endif
 
+			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_BOOTING)
 				cQueue_AddQueueTask(tpDispTask, DISPTI_BOOTING, 0, false);
+			#endif  //boardDISPLAY_EN
 
 			vSys_RefreshAllOffTime(true);
 			if(uPrint.tFlag.bSysTask)
@@ -765,8 +773,10 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 		}
 		else if(tSysInfo.eDevState == DS_WORK)    //工作
 		{
+			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_WORK)
 				cQueue_AddQueueTask(tpDispTask, DISPTI_WORK, 0, false);
+			#endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为工作\r\n");
@@ -774,8 +784,10 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 		#if(boardENG_MODE_EN)
 		else if(tSysInfo.eDevState == DS_ENG_MODE)  //工程模式
 		{
+			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_ENG_MODE)
 				cQueue_AddQueueTask(tpDispTask, DTI_ENG, 0, false);
+			#endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----更新系统任务状态为工程模式----\r\n");

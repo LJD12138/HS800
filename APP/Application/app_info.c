@@ -14,8 +14,8 @@
 //在option for ...中勾选 always build
 
 //****************************************************参数初始化**************************************************//		
-__align(4) AppMemParam_T  	tAppMemParam;
-__align(4) BootMemParam_T  	tBootMemParam;
+__ALIGNED(4) AppMemParam_T  	tAppMemParam;
+__ALIGNED(4) BootMemParam_T  	tBootMemParam;
 
 const char tBootMemParamStr[]	= "tBootMemParam";
 const char tBootVerInfoStr[]	= "tBootVerInfo";
@@ -46,7 +46,14 @@ const char tDcacMemParamStr[]	= "tDCAC";
 const char tSysMemParamStr[]	= "tSYS";
 
 //把版本信息写入APP的Falsh中,要加偏移,flashAPP_START是NVIC中断向量表
+#if defined(__CC_ARM)
 const __attribute__((at(flashAPP_START + FLASH_PAGE_SIZE)))  VerInfo_T tAppDefaultVer = {
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+/* ARMCLANG不支持at属性,使用section放置到固定地址 */
+const __attribute__((section(".ARM.__at_0x08010800"))) __attribute__((used)) VerInfo_T tAppDefaultVer = {
+#else
+const VerInfo_T tAppDefaultVer = {
+#endif
 	boardSOFTWARE_VERSION,
 	__DATE__,
 	__TIME__,

@@ -91,7 +91,7 @@ typedef struct
 #pragma pack()
 
 s8 cBaiku_ProtoRecInit(BaikuProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 cycle_time);
-s8 cBaiku_ProtoTransInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr);
+s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr);
 s8 cBaiku_ProtoCreate(BaikuProtoTx_t* proto,u8 cmd, u8* data, u8 len);
 s8 cBaiku_ProtoCheck(BaikuProtoRx_t* proto);
 s8 cBaiku_UpdateCheck(BaikuProtoRx_t* proto, u8* ucp_data, u16 len);

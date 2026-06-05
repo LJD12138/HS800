@@ -17,16 +17,16 @@
 
 
 //****************************************************参数初始化**************************************************//
-const u8 ucaModbusCmdBuff[5] = {modbusWRITE_MULTI_REG, 
+static const u8 ucaModbusCmdBuff[5] = {modbusWRITE_MULTI_REG, 
 								modbusWRITE_SINGLE_REG,
 								modbusREAD_MULTI_REG,
 								modbusREAD_MULTI_BIT,
 								modbusWRITE_SINGLE_BIT};
 
 //****************************************************函数声明****************************************************//
-bool b_modbus_jump_step(ModbusProtoRx_t* proto, ModbusRxStep_E step);
-s8 c_check_cmd_exist(u8 cmd);
-s8 c_proto_decrypt(ModbusProtoRx_t* proto);
+static bool b_modbus_jump_step(ModbusProtoRx_t* proto, ModbusRxStep_E step);
+static s8 c_check_cmd_exist(u8 cmd);
+static s8 c_proto_decrypt(ModbusProtoRx_t* proto);
 
 /*****************************************************************************************************************
 -----函数功能	接受协议初始化
@@ -41,6 +41,11 @@ s8 c_proto_decrypt(ModbusProtoRx_t* proto);
 s8 cModbus_RecProtoInit(ModbusProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 cycle_time)
 {
 	s8 result = 1;
+	ModbusProtoRx_t* new_proto = NULL;
+	u8* frame_data = NULL;
+	
+	if(proto == NULL)
+		return -3;
 	
 	if(buff_len < 6) 
 		return -1;
@@ -54,20 +59,26 @@ s8 cModbus_RecProtoInit(ModbusProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 
 	// 动态分配内存
     size_t total_size = sizeof(ModbusProtoRx_t) + buff_len;
 	#if(boardUSE_OS)
-	*proto = (ModbusProtoRx_t*)pvPortMalloc(total_size);
-	(*proto)->ucpFrameData = (u8*)pvPortMalloc(buff_len);
+	new_proto = (ModbusProtoRx_t*)pvPortMalloc(total_size);
+	if(new_proto != NULL)
+		frame_data = (u8*)pvPortMalloc(buff_len);
 	#else
-	*proto = (ModbusProtoRx_t*)malloc(total_size);
-	(*proto)->ucpFrameData = (u8*)malloc(buff_len);
+	new_proto = (ModbusProtoRx_t*)malloc(total_size);
+	if(new_proto != NULL)
+		frame_data = (u8*)malloc(buff_len);
 	#endif
     
-	
-	if(*proto != NULL && (*proto)->ucpFrameData != NULL)
+	if(new_proto != NULL && frame_data != NULL)
 	{
+		*proto = new_proto;
+		(*proto)->ucpFrameData = frame_data;
+		(*proto)->usFrameDataSize = buff_len;
 		(*proto)->ucAddr = dev_addr;
 		(*proto)->usTaskCycleTime = cycle_time;
 		(*proto)->usRecOverTimeCnt = 0;
 		(*proto)->usLostOverTimeCnt = 0;
+		(*proto)->ucpValidData = NULL;
+		(*proto)->ucValidLen = 0;
 		
 		lwrb_init(&(*proto)->tRxBuff, (*proto)->ucaData, buff_len);
 		lwrb_reset(&(*proto)->tRxBuff);
@@ -77,12 +88,17 @@ s8 cModbus_RecProtoInit(ModbusProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 
 	else 
 	{
 		#if(boardUSE_OS)
-		vPortFree((*proto)->ucpFrameData);  //先释放子内存,要不会导致崩溃
-		vPortFree((*proto));
+		if(frame_data != NULL)
+			vPortFree(frame_data);
+		if(new_proto != NULL)
+			vPortFree(new_proto);
 		#else
-		free((*proto)->ucpFrameData);  //先释放子内存,要不会导致崩溃
-		free((*proto));
+		if(frame_data != NULL)
+			free(frame_data);
+		if(new_proto != NULL)
+			free(new_proto);
 		#endif
+		*proto = NULL;
 		result =  -2;
 	}
 	#if(boardUSE_OS)
@@ -104,6 +120,10 @@ s8 cModbus_RecProtoInit(ModbusProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 
 s8 cModbus_TransProtoInit(ModbusProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 {
 	s8 result = 1;
+	ModbusProtoTx_t* new_proto = NULL;
+	
+	if(proto == NULL)
+		return -3;
 	
 	if(buff_len < 6) 
 		return -1;
@@ -114,20 +134,26 @@ s8 cModbus_TransProtoInit(ModbusProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 	// 动态分配内存
 	size_t total_size = sizeof(ModbusProtoTx_t) + buff_len;
 	#if(boardUSE_OS)
-    *proto = (ModbusProtoTx_t*)pvPortMalloc(total_size);
+    new_proto = (ModbusProtoTx_t*)pvPortMalloc(total_size);
 	#else
-    *proto = (ModbusProtoTx_t*)malloc(total_size);
+    new_proto = (ModbusProtoTx_t*)malloc(total_size);
 	#endif
 	
-	(*proto)->ucAddr = dev_addr;
-	
-	if(*proto == NULL)
+	if(new_proto != NULL)
 	{
-		#if(boardUSE_OS)
-		vPortFree((*proto));
-		#else
-		free((*proto));
-		#endif
+		*proto = new_proto;
+		(*proto)->ucAddr = dev_addr;
+		(*proto)->usFrameDataSize = buff_len;
+		(*proto)->ucCharLen = 0;
+		(*proto)->ucFrameLen = 0;
+		(*proto)->usRegSize = 0;
+		(*proto)->usRegAddr = 0;
+		(*proto)->usRegData = 0;
+		memset((*proto)->ucaFrameData, 0, buff_len);
+	}
+	else
+	{
+		*proto = NULL;
 		result =  -2;
 	}
 	#if(boardUSE_OS)
@@ -157,17 +183,19 @@ s8 cModbus_ProtoCreate(ModbusProtoTx_t* proto, u8 cmd, u16 reg_addr, u8* data, u
 	s8 result = 1;
 	u8 uc_char_len = 0;
 	u16 us_total_len = 0;  //不包含校验
+	u16 us_total_frame_len = 0;
 	u16 us_tx_crc = 0;
-	
-	//总长度不可以超过256(250+6)
-    if(len > 250)   
-        return -1;
 	
 	if(proto == NULL)
 		return -2;
 	
 	if(c_check_cmd_exist(cmd) <= 0)
 		return -3;
+	
+	if((cmd == modbusWRITE_MULTI_REG && len > 123) ||
+	   (cmd == modbusREAD_MULTI_REG && len > 125) ||
+	   (cmd == modbusREAD_MULTI_BIT && len > 2000))
+		return -1;
 	
 	switch(cmd)
 	{
@@ -234,7 +262,7 @@ s8 cModbus_ProtoCreate(ModbusProtoTx_t* proto, u8 cmd, u16 reg_addr, u8* data, u
 			us_total_len = 6;
 			
 			proto->usRegAddr = reg_addr;
-			proto->ucCharLen = len / 8;
+			proto->ucCharLen = (len + 7) / 8;
 		}
 		break;
 		
@@ -284,13 +312,17 @@ s8 cModbus_ProtoCreate(ModbusProtoTx_t* proto, u8 cmd, u16 reg_addr, u8* data, u
 			return -4;
 	}
 	
+	us_total_frame_len = us_total_len + 2;
+	if(proto->usFrameDataSize != 0 && us_total_frame_len > proto->usFrameDataSize)
+		return -5;
+	
 	//计算数据帧CRC码
 	us_tx_crc = usCheck_CRC16(proto->ucaFrameData, us_total_len);
 	
 	proto->ucaFrameData[us_total_len] = us_tx_crc & 0x00ff;
 	proto->ucaFrameData[us_total_len + 1] = us_tx_crc >> 8;
 	
-	proto->ucFrameLen = us_total_len + 2;
+	proto->ucFrameLen = us_total_frame_len;
 	
     return result;
 }
@@ -336,14 +368,15 @@ s8 cModbus_ProtoCheck(ModbusProtoRx_t* proto)
 					//故障码
 					if(c_result < 0)
 					{
+						proto->ucWaitRecLen = 3;
 						b_modbus_jump_step(proto, MRS_ERR);
 						return 0;
 					}
 					else if(proto->ucCmd == modbusWRITE_MULTI_REG)
 						proto->ucWaitRecLen = sizeof(proto->usRegAddr) + sizeof(proto->usRegSize);
-					else if(proto->ucCmd == modbusREAD_MULTI_REG)
+					else if(proto->ucCmd == modbusREAD_MULTI_REG || proto->ucCmd == modbusREAD_MULTI_BIT)
 						proto->ucWaitRecLen = sizeof(proto->ucCharLen);
-					else if(proto->ucCmd == modbusWRITE_SINGLE_REG)
+					else if(proto->ucCmd == modbusWRITE_SINGLE_REG || proto->ucCmd == modbusWRITE_SINGLE_BIT)
 						proto->ucWaitRecLen = sizeof(proto->usRegAddr);
 					else
 						proto->ucWaitRecLen = 2;
@@ -387,17 +420,22 @@ s8 cModbus_ProtoCheck(ModbusProtoRx_t* proto)
 					
 					proto->ucWaitRecLen = 2;
 				}
-				else if(proto->ucCmd == modbusREAD_MULTI_REG)
+				else if(proto->ucCmd == modbusREAD_MULTI_REG || proto->ucCmd == modbusREAD_MULTI_BIT)
 				{
 					lwrb_read(&proto->tRxBuff, temp, 1);
 					
 					proto->ucCharLen = temp[0];
+					if(((u16)proto->ucCharLen + 5) > proto->usFrameDataSize)
+					{
+						b_modbus_jump_step(proto, MRS_ADDR);
+						return -5;
+					}
 					
 					memcpy(&proto->ucpFrameData[2], temp, 1);
 					
 					proto->ucWaitRecLen = proto->ucCharLen + 2;
 				}
-				else if(proto->ucCmd == modbusWRITE_SINGLE_REG)
+				else if(proto->ucCmd == modbusWRITE_SINGLE_REG || proto->ucCmd == modbusWRITE_SINGLE_BIT)
 				{
 					lwrb_read(&proto->tRxBuff, temp, 2);
 	
@@ -405,7 +443,7 @@ s8 cModbus_ProtoCheck(ModbusProtoRx_t* proto)
 					
 					memcpy(&proto->ucpFrameData[2], temp, 2);
 					
-					proto->ucWaitRecLen = 2;
+					proto->ucWaitRecLen = sizeof(u16) + 2;
 				}
 				else
 					proto->ucWaitRecLen = 2;
@@ -420,27 +458,40 @@ s8 cModbus_ProtoCheck(ModbusProtoRx_t* proto)
 		{
 			if(lwrb_get_full(&proto->tRxBuff) >= proto->ucWaitRecLen)
 			{
-				if(c_proto_decrypt(proto) <= 0)
-					return -2;  //校验出错
+				c_result = c_proto_decrypt(proto);
+				if(c_result <= 0)
+				{
+					b_modbus_jump_step(proto, MRS_ADDR);
+					return (-10 + c_result);  //校验出错
+				}
 				
-				c_result = 1;
 				b_modbus_jump_step(proto, MRS_ADDR);
+				return 1;
 			}
 		}
 		break;
 		
 		case MRS_ERR: //错误
 		{
-			c_result = 1;
+			if(lwrb_get_full(&proto->tRxBuff) < proto->ucWaitRecLen)
+				break;
+			
+			c_result = c_proto_decrypt(proto);
+			if(c_result <= 0)
+			{
+				b_modbus_jump_step(proto, MRS_ADDR);
+				return (-20 + c_result);
+			}
+			
 			b_modbus_jump_step(proto, MRS_ADDR);
+			return -29;
 		}
-		break;
 		
 		default:
 			b_modbus_jump_step(proto, MRS_ADDR);
 		break; 
 	}
-	return c_result;
+	return 0;
 }
 
 /*****************************************************************************************************************
@@ -473,6 +524,7 @@ s8 cModbus_ResetRxBuff(ModbusProtoRx_t* proto)
 		return -1;
 	
 	lwrb_reset(&proto->tRxBuff);
+	vModbus_RecEnd(proto);
 	b_modbus_jump_step(proto, MRS_ADDR);
 	
 	return 1;
@@ -491,7 +543,12 @@ s8 cModbus_ResetTx(ModbusProtoTx_t* proto, u16 len)
 	if(proto == NULL)
 		return -1;
 	
-	memset(&proto[1], 0, len - 1);
+	proto->ucCharLen = 0;
+	proto->ucFrameLen = 0;
+	proto->usRegSize = 0;
+	proto->usRegAddr = 0;
+	proto->usRegData = 0;
+	memset(proto->ucaFrameData, 0, len);
 	
 	return 1;
 }
@@ -512,6 +569,7 @@ void vModbus_RecEnd(ModbusProtoRx_t* proto)
 	proto->usRegSize = 0;
 	proto->usRegAddr = 0;
 	proto->ucValidLen = 0;
+	proto->ucpValidData = NULL;
 }
 
 /*****************************************************************************************************************
@@ -521,7 +579,7 @@ void vModbus_RecEnd(ModbusProtoRx_t* proto)
 -----输出参数    none
 -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-bool b_modbus_jump_step(ModbusProtoRx_t* proto, ModbusRxStep_E step)
+static bool b_modbus_jump_step(ModbusProtoRx_t* proto, ModbusRxStep_E step)
 {
 	if(proto == NULL)
 		return false;
@@ -548,6 +606,12 @@ bool b_modbus_jump_step(ModbusProtoRx_t* proto, ModbusRxStep_E step)
 		}
 		break;
 		
+		case MRS_ERR: //错误
+		{
+			proto->usRecOverTimeCnt = (1000/proto->usTaskCycleTime);
+		}
+		break;
+		
 		default:
 			
 		break; 
@@ -566,7 +630,7 @@ bool b_modbus_jump_step(ModbusProtoRx_t* proto, ModbusRxStep_E step)
 -----输出参数    none
 -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-s8 c_check_cmd_exist(u8 cmd)
+static s8 c_check_cmd_exist(u8 cmd)
 {
 	//去除错误bit
 	u8 temp_cmd = cmd & 0x7F;
@@ -593,25 +657,37 @@ s8 c_check_cmd_exist(u8 cmd)
 -----输出参数    none
 -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-s8 c_proto_decrypt(ModbusProtoRx_t* proto)
+static s8 c_proto_decrypt(ModbusProtoRx_t* proto)
 {
 	s8 result = 1;
 	u16 us_rx_crc = 0;
 	u16 us_total_len = 0;  //不包含校验
+	u8 uc_cmd = 0;
 	
 	if(proto == NULL || proto->ucpFrameData == NULL)
 		return -1;
 	
-	switch(proto->ucCmd)
+	uc_cmd = proto->ucCmd & 0x7F;
+	if(uc_cmd != proto->ucCmd)
+	{
+		us_total_len = 3;
+		proto->ucCharLen = 1;
+		lwrb_read(&proto->tRxBuff, &proto->ucpFrameData[2], 1);
+		proto->ucpValidData = &proto->ucpFrameData[2];
+		proto->ucValidLen = 1;
+	}
+	else switch(uc_cmd)
 	{
 		case modbusWRITE_MULTI_REG:
 		{
 			us_total_len = 6;
 			proto->ucValidLen = 0;
+			proto->ucpValidData = NULL;
 		}
 		break;
 		
 		case modbusWRITE_SINGLE_REG:
+		case modbusWRITE_SINGLE_BIT:
 		{
 			us_total_len = 6;
 			proto->ucCharLen = 2;
@@ -623,6 +699,7 @@ s8 c_proto_decrypt(ModbusProtoRx_t* proto)
 		break;
 		
 		case modbusREAD_MULTI_REG:
+		case modbusREAD_MULTI_BIT:
 		{
 			us_total_len = 3 + proto->ucCharLen;
 			
@@ -631,19 +708,19 @@ s8 c_proto_decrypt(ModbusProtoRx_t* proto)
 			proto->ucValidLen = proto->ucCharLen;
 		}
 		break;
+		
+		default:
+			return -2;
 	}
 	
 	//取出校验   
 	lwrb_read(&proto->tRxBuff, (u8*)&us_rx_crc, 2);
 	
-	u8 buff[50] = {0};
-	memcpy(buff, proto->ucpFrameData, us_total_len);
-	
 	//计算校验位
 	u16 us_crc = usCheck_GetModbusCrc16(proto->ucpFrameData, us_total_len);
 	
 	if(us_rx_crc != us_crc)
-		return -2;
+		return -3;
 	
     return result;
 }

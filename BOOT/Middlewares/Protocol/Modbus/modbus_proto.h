@@ -25,7 +25,7 @@ typedef struct
 	//数据帧开始
 	u8*             	ucpFrameData;
 	//数据帧结束
-						
+	u16            		usFrameDataSize;						
         
     vu8             	ucAddr;
 	vu8             	ucCmd;
@@ -50,6 +50,7 @@ typedef struct
 	vu8             	ucAddr;
 	vu8             	ucCharLen;
 	vu8             	ucFrameLen;    //数据帧总长度
+	u16            		usFrameDataSize;
 	vu16            	usRegSize;
 	vu16            	usRegAddr;
 	vu16            	usRegData;

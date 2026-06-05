@@ -83,8 +83,8 @@ static bool b_disp_flush_area_is_valid(const lv_area_t *area);                  
 void lv_port_disp_init(void)
 {
     /* 按硬件分辨率与行数分配两块对齐缓存（双缓冲），提高渲染效率 */
-    __align(4) static lv_color_t buf_1[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
-    __align(4) static lv_color_t buf_2[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
+    __ALIGNED(4) static lv_color_t buf_1[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
+    __ALIGNED(4) static lv_color_t buf_2[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
 
 /* 初始化底层显示控制器与同步对象 */
 #if (boardUSE_OS)

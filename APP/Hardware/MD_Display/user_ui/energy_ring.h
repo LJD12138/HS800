@@ -8,8 +8,11 @@
 #ifndef __ENERGY_RING_H
 #define __ENERGY_RING_H
 
+
+#include "board_config.h"
+
+#if(boardDISPLAY_EN)
 #include "lvgl.h"
-#include "main.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,5 +92,7 @@ void EnergyRing_UpdateSoc(EnergyRing_T *p_ring, u8 uc_soc, bool b_charging);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  //boardDISPLAY_EN
 
 #endif /* __ENERGY_RING_H */

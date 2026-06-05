@@ -4,6 +4,8 @@
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
+
+#if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
@@ -194,3 +196,4 @@ static void v_add_task_return_func_cb(Task_T *tp_task, u8 num)
 			break;
 	}
 }
+#endif  //boardDISPLAY_EN

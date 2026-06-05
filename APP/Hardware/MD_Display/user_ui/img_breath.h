@@ -20,9 +20,10 @@ extern "C" {
 #endif
 
 /* ==========================================includes====================================*/
-#include "lvgl.h"
+#include "board_config.h"
 
-#if (1)
+#if (boardDISPLAY_EN)
+#include "lvgl.h"
 /* ==========================================macros======================================*/
 
 
@@ -114,6 +115,6 @@ void vImgAnim_ManualTick(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif  //boardDISPLAY_EN
 
 #endif /* __IMG_BREATH_H */

@@ -51,26 +51,51 @@ static __ALIGNED(4) u8 ucaDcacTxDmaBuffData[dcacTX_DMA_BUFF_SIZE];         //È¡³
 static void v_dcac_io_init(void)//IOÉèÖÃ
 {
 	/*Ê¹ÄÜ¸´ÓÃÊ±ÖÓ*/
-	rcu_periph_clock_enable(RCU_AF);       
-	/* connect port to USARTx_Tx */
-	rcu_periph_clock_enable(dcacUSART_GPIO_TX_RCU);
-	gpio_init(dcacUSART_GPIO_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, dcacUSART_GPIO_TX_PIN);
+	rcu_periph_clock_enable(RCU_AF); 
 	
-	/* connect port to USARTx_Rx */
-	rcu_periph_clock_enable(dcacUSART_GPIO_RX_RCU);
-	gpio_init(dcacUSART_GPIO_RX_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, dcacUSART_GPIO_RX_PIN);
+    /* enable COM GPIO clock */
+    rcu_periph_clock_enable(dcacUSART_GPIO_TX_RCU);
+    /* connect port to USARTx_Tx */
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_af_set(dcacUSART_GPIO_TX_PORT, dcacUSART_GPIO_TX_AF, dcacUSART_GPIO_TX_PIN);
+    gpio_mode_set(dcacUSART_GPIO_TX_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, dcacUSART_GPIO_TX_PIN);
+    gpio_output_options_set(dcacUSART_GPIO_TX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacUSART_GPIO_TX_PIN);
+	#else
+    gpio_init(dcacUSART_GPIO_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, dcacUSART_GPIO_TX_PIN);
+	#endif
+	
+	/* enable COM GPIO clock */
+    rcu_periph_clock_enable(dcacUSART_GPIO_RX_RCU);
+    /* connect port to USARTx_Rx */
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_af_set(dcacUSART_GPIO_RX_PORT, dcacUSART_GPIO_RX_AF, dcacUSART_GPIO_RX_PIN);
+    gpio_mode_set(dcacUSART_GPIO_RX_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, dcacUSART_GPIO_RX_PIN);
+	gpio_output_options_set(dcacUSART_GPIO_RX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacUSART_GPIO_RX_PIN);
+	#else
+    gpio_init(dcacUSART_GPIO_RX_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, dcacUSART_GPIO_RX_PIN);
+	#endif
 	
 	//Äæ±äµçÔ´Ê¹ÄÜ
 	rcu_periph_clock_enable(dcacPOWER_EN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(dcacPOWER_EN_GPIO, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dcacPOWER_EN_PIN);
+	gpio_output_options_set(dcacPOWER_EN_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacPOWER_EN_PIN);
+	#else
 	gpio_init(dcacPOWER_EN_GPIO, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, dcacPOWER_EN_PIN);
+	#endif  //boardIC_TYPE
 	dcacPOWER_EN_ON();
 	
+    //-------485 ·¢ÉäÊ¹ÄÜ --------------------------------------------------------
 	#if(boardDCAC_485_IFACE_EN)
-    //-------458 ·¢ÉäÊ¹ÄÜ --------------------------------------------------------
 	rcu_periph_clock_enable(dcacGPIO_485_TX_EN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(dcacGPIO_485_TX_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dcacGPIO_485_TX_EN_PIN);
+	gpio_output_options_set(dcacGPIO_485_TX_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacGPIO_485_TX_EN_PIN);
+	#else
 	gpio_init(dcacGPIO_485_TX_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dcacGPIO_485_TX_EN_PIN);
+	#endif  //boardIC_TYPE
 	dcacGPIO_485_TX_EN_OFF();  //Ä¬ÈÏ½ÓÊÕ
-	#endif
+	#endif  //boardDCAC_485_IFACE_EN
 }
 
 
@@ -131,12 +156,18 @@ static void v_dcac_dma_init(void)
 	
 	/* enable DMA0 clock */
 	rcu_periph_clock_enable(dcacUSART_DMA_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	rcu_periph_clock_enable(RCU_DMAMUX);
+	#endif //
 	
     /* initialize DMA channel(USART TX) */
     dma_deinit(dcacUSART_DMA, dcacUSART_DMA_TX_CH);
 	/* initialize DMA parameters */
     dma_struct_para_init(&dma_init_struct);
 	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_init_struct.request = dcacUSART_DMA_TX_REQUEST;
+	#endif	//boardIC_GD32F50X
     dma_init_struct.direction    = DMA_MEMORY_TO_PERIPHERAL;            /* ÍâÉèµ½ÄÚ´æ */              
     dma_init_struct.memory_addr  = (uint32_t)ucaDcacTxDmaBuffData;		/* ÉèÖÃÄÚ´æ½ÓÊÕ»ùµØÖ· */
     dma_init_struct.memory_inc   = DMA_MEMORY_INCREASE_ENABLE;          /* ÄÚ´æµØÖ·µÝÔö */
@@ -152,6 +183,9 @@ static void v_dcac_dma_init(void)
 	/* initialize DMA channel(USART RX) */
     dma_deinit(dcacUSART_DMA, dcacUSART_DMA_RX_CH);
 
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_init_struct.request = dcacUSART_DMA_RX_REQUEST;
+	#endif  //boardIC_GD32F50X
     dma_init_struct.direction = DMA_PERIPHERAL_TO_MEMORY;
     dma_init_struct.number = dcacRX_DMA_BUFF_SIZE;
     dma_init_struct.memory_addr = (uint32_t)ucaDcacRxDmaBuffData;
@@ -164,14 +198,22 @@ static void v_dcac_dma_init(void)
     dma_memory_to_memory_disable(dcacUSART_DMA, dcacUSART_DMA_RX_CH);               /* DMAÄÚ´æµ½ÄÚ´æÄ£Ê½²»¿ªÆô */
 	
 	/* enable USART DMA for reception */
+	#if (boardIC_TYPE == boardIC_GD32F30X)
     usart_dma_receive_config(dcacUSART, USART_RECEIVE_DMA_ENABLE);
     /* enable DMA0 channel4 transfer complete interrupt */
 //    dma_interrupt_enable(dcacUSART_DMA, dcacUSART_DMA_RX_CH, DMA_INT_FTF);
+	#elif (boardIC_TYPE == boardIC_GD32F50X)
+	usart_dma_receive_config(dcacUSART, USART_DENR_ENABLE);
+	#endif
     /* enable DMA0 channel4 */
     dma_channel_enable(dcacUSART_DMA, dcacUSART_DMA_RX_CH);
 	
     /* enable USART DMA for transmission */
-    usart_dma_transmit_config(dcacUSART,USART_TRANSMIT_DMA_ENABLE);;
+	#if (boardIC_TYPE == boardIC_GD32F30X)
+    usart_dma_transmit_config(dcacUSART,USART_TRANSMIT_DMA_ENABLE);
+	#elif (boardIC_TYPE == boardIC_GD32F50X)
+	usart_dma_transmit_config(dcacUSART, USART_DENT_ENABLE);
+	#endif
     /* enable DMA0 channel3 transfer complete interrupt */
     dma_interrupt_enable(dcacUSART_DMA, dcacUSART_DMA_TX_CH, DMA_INT_FTF);
     /* enable DMA0 channel3 */
@@ -286,7 +328,7 @@ bool bDcac_DataSendStart(u8* data,u16 len)
     if(S_DataSendCnt) //·¢ËÍÖÐ
         return false; 
     
-    S_DataSendSize = length;
+    S_DataSendSize = len;
     S_DataSendCnt = 0; 
 	usart_interrupt_flag_clear(dcacUSART, USART_INT_FLAG_TBE);
 	//¿ÕÏÐ¾Í²úÉúÖÐ¶Ï
@@ -333,7 +375,11 @@ void dcacUSART_DMA_TX_IRQ_HANDLER(void)
 {
     if(dma_interrupt_flag_get(dcacUSART_DMA, dcacUSART_DMA_TX_CH, DMA_INT_FLAG_FTF)) 
 	{
+		#if (boardIC_TYPE == boardIC_GD32F30X)
         dma_interrupt_flag_clear(dcacUSART_DMA, dcacUSART_DMA_TX_CH, DMA_INT_FLAG_G);
+		#elif (boardIC_TYPE == boardIC_GD32F50X)
+		dma_interrupt_flag_clear(dcacUSART_DMA, dcacUSART_DMA_TX_CH, DMA_INT_FLAG_GIF);
+		#endif  //boardIC_GD32F30X
 		//¹Ø±ÕDMA·¢ËÍ
 	    dma_channel_disable(dcacUSART_DMA, dcacUSART_DMA_TX_CH);
 		//·¢ËÍÍê³É
@@ -415,8 +461,10 @@ void dcacUSART_IRQ_HANDLER(void)
 {
     if(RESET != usart_interrupt_flag_get(dcacUSART, USART_INT_FLAG_RBNE))
     {
-		if(tpDcacProtoRx != NULL)
-			lwrb_write(&tpDcacProtoRx->tRxBuff, USART_DATA(dcacUSART), 1);  
+		if(tpDcacProtoRx != NULL) {
+			u8 ucData = (u8)USART_DATA(dcacUSART);
+			lwrb_write(&tpDcacProtoRx->tRxBuff, &ucData, 1);
+		}
 		
         usart_interrupt_flag_clear(dcacUSART, USART_INT_FLAG_RBNE);//Çå³ý´®¿Ú½ÓÊÕÖÐ¶Ï 
 

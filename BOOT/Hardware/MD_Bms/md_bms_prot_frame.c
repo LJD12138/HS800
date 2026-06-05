@@ -14,7 +14,7 @@
 #define       	bmsTX_PROTO_BUFF_LEN                   	128
 #define       	bmsRX_PROTO_BUFF_LEN                   	256
 
-#define     	bmsDEV_ADRR								0x01
+#define     	bmsDEV_ADRR								0x10
 #define    		bmsWAIT_NOTIFY_OUTTIME     				1000     //任务通知超时时间 MS
 
 
@@ -42,7 +42,7 @@ static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len);
 ************************************************************************************************************************/
 bool bBms_SendProtInit(void)
 {
-	s8 c_result = cBaiku_ProtoTransInit(&tpBmsProtoTx, 
+	s8 c_result = cBaiku_ProtoSendInit(&tpBmsProtoTx, 
 								bmsTX_PROTO_BUFF_LEN, 
 								bmsDEV_ADRR);
 	if(c_result <= 0)
@@ -140,13 +140,17 @@ static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len)
 	if(tpBmsProtoTx == NULL)
 		return 0;
 
-	//开始互斥
 	#if(boardUSE_OS)
+	// 检查互斥锁是否已创建，并获取互斥锁保护共享资源（最多等待1秒）
 	if(bmsSemaphoreMutex == NULL)
 		return 0;
-		
 	if(xSemaphoreTake(bmsSemaphoreMutex, pdMS_TO_TICKS(1000)) == pdFAIL)
 		return -99;
+
+	// 清除任务通知，避免历史通知干扰本次通信
+	while(ulTaskNotifyTake(pdTRUE, 0) > 0)
+	{
+	}
 	#endif  //boardUSE_OS
 	
 	result = cBaiku_ProtoCreate(tpBmsProtoTx, cmd, data, len);
@@ -174,6 +178,8 @@ static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len)
 
 	//释放互斥量
 	#if(boardUSE_OS)
+	vTaskDelay(2);
+	
 	xSemaphoreGive(bmsSemaphoreMutex);
 	#endif  //boardUSE_OS
 

@@ -4,6 +4,8 @@
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
+
+#if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "Sys/sys_task.h"
@@ -52,3 +54,5 @@ void v_disp_queue_task_shut_down(Task_T *tp_task)
     vTaskDelay(dispTASK_SHUT_DOWN_CYCLE_TIME);
     #endif  //boardUSE_OS
 }
+
+#endif  //boardDISPLAY_EN

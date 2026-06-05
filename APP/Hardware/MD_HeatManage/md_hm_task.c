@@ -43,7 +43,7 @@ static u16 us_fan_set_work_mode(FanWorkMode_E mode);
 ******************************************************************************************************************/
 bool bHM_TaskInit(void)
 {
-	vFan_PwmInit ();
+	vFan_IfaceInit ();
 	
 	#if(boardUSE_OS)
     xTaskCreate((TaskFunction_t )vHW_Task,              //ÈÎÎñº¯Êý

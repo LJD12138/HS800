@@ -1,10 +1,12 @@
 #ifndef MD_DISPLAY_TASK_H_
 #define MD_DISPLAY_TASK_H_
 
+
 #include "board_config.h"
-#include "MD_Display/md_display_api.h"
 
 #if(boardDISPLAY_EN)
+#include "MD_Display/md_display_api.h"
+
 #include "queue_task.h"
 
 #if(boardKEY_EN)

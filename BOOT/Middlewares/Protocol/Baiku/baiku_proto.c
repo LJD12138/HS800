@@ -17,8 +17,8 @@
 #define      	protoHEAD_CODE         					0xAA  //头码
 
 //****************************************************函数声明****************************************************//
-bool b_baiku_jump_step(BaikuProtoRx_t* proto, BaikuRxStep_E step);
-s8 c_baiku_proto_decrypt(BaikuProtoRx_t* proto);
+static bool b_baiku_jump_step(BaikuProtoRx_t* proto, BaikuRxStep_E step);
+static s8 c_baiku_proto_decrypt(BaikuProtoRx_t* proto);
 
 /*****************************************************************************************************************
 -----函数功能	接受协议初始化
@@ -94,7 +94,7 @@ s8 cBaiku_ProtoRecInit(BaikuProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 cy
 -----输出参数	none
 -----返回值		小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-s8 cBaiku_ProtoTransInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
+s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 {
 	s8 result = 1;
 	
@@ -397,7 +397,7 @@ s8 cProto_ResetTxBuff(BaikuProtoTx_t* proto)
 -----输出参数    none
 -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-bool b_baiku_jump_step(BaikuProtoRx_t* proto, BaikuRxStep_E step)
+static bool b_baiku_jump_step(BaikuProtoRx_t* proto, BaikuRxStep_E step)
 {
 	if(proto == NULL)
 		return false;
@@ -441,7 +441,7 @@ bool b_baiku_jump_step(BaikuProtoRx_t* proto, BaikuRxStep_E step)
 -----输出参数    none
 -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
 ******************************************************************************************************************/
-s8 c_baiku_proto_decrypt(BaikuProtoRx_t* proto)
+static s8 c_baiku_proto_decrypt(BaikuProtoRx_t* proto)
 {
 	s8 result = 1;
 	

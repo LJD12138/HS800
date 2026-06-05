@@ -126,7 +126,7 @@ void vKey_ProcKeyFunc(u8* pKeyTriTypeBuff)
 		{
 			bSys_SetPerm(SPO_FORCE_CLOSE, true);
 
-			#if(boardKEY_EN)
+			#if(boardBUZ_EN)
 			bBuz_Tweet(LONG_1);
 			#endif  //boardKEY_EN
 

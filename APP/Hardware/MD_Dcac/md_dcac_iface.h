@@ -12,10 +12,12 @@
 #define     	dcacUSART_GPIO_RX_RCU           		gpioUSART0_GPIO_RX_RCU
 #define     	dcacUSART_GPIO_RX_PORT          		gpioUSART0_GPIO_RX_PORT 
 #define     	dcacUSART_GPIO_RX_PIN           		gpioUSART0_GPIO_RX_PIN
+#define     	dcacUSART_GPIO_RX_AF           		gpioUSART0_GPIO_RX_AF
 //TX
 #define     	dcacUSART_GPIO_TX_RCU           		gpioUSART0_GPIO_TX_RCU
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUSART0_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUSART0_GPIO_TX_PIN
+#define     	dcacUSART_GPIO_TX_AF           		gpioUSART0_GPIO_TX_AF
 //串口
 #define     	dcacUSART_RCU           				RCU_USART0
 #define     	dcacUSART               				USART0
@@ -30,6 +32,10 @@
 #define     	dcacUSART_DMA_TX_CH           			gpioUSART0_DMA_TX_CH
 #define     	dcacUSART_DMA_TX_IRQ          			gpioUSART0_DMA_TX_IRQ
 #define     	dcacUSART_DMA_TX_IRQ_HANDLER  			gpioUSART0_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART0_TX
+#define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART0_RX
+#endif
 #endif  //dcacUSART_DMA_EN
 
 
@@ -38,10 +44,12 @@
 #define     	dcacUSART_GPIO_RX_RCU           		gpioUSART1_GPIO_RX_RCU
 #define     	dcacUSART_GPIO_RX_PORT          		gpioUSART1_GPIO_RX_PORT 
 #define     	dcacUSART_GPIO_RX_PIN           		gpioUSART1_GPIO_RX_PIN
+#define     	dcacUSART_GPIO_RX_AF           		gpioUSART1_GPIO_RX_AF
 //TX
 #define     	dcacUSART_GPIO_TX_RCU           		gpioUSART1_GPIO_TX_RCU
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUSART1_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUSART1_GPIO_TX_PIN
+#define     	dcacUSART_GPIO_TX_AF           		gpioUSART1_GPIO_TX_AF
 //串口
 #define     	dcacUSART_RCU           				RCU_USART1
 #define     	dcacUSART               				USART1
@@ -56,6 +64,10 @@
 #define     	dcacUSART_DMA_TX_CH           			gpioUSART1_DMA_TX_CH
 #define     	dcacUSART_DMA_TX_IRQ          			gpioUSART1_DMA_TX_IRQ
 #define     	dcacUSART_DMA_TX_IRQ_HANDLER  			gpioUSART1_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART1_TX
+#define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART1_RX
+#endif
 #endif  //dcacUSART_DMA_EN
 
 
@@ -64,10 +76,12 @@
 #define     	dcacUSART_GPIO_RX_RCU           		gpioUSART2_GPIO_RX_RCU
 #define     	dcacUSART_GPIO_RX_PORT          		gpioUSART2_GPIO_RX_PORT
 #define     	dcacUSART_GPIO_RX_PIN           		gpioUSART2_GPIO_RX_PIN
+#define     	dcacUSART_GPIO_RX_AF           		gpioUSART2_GPIO_RX_AF
 //TX
 #define     	dcacUSART_GPIO_TX_RCU           		gpioUSART2_GPIO_TX_RCU
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUSART2_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUSART2_GPIO_TX_PIN
+#define     	dcacUSART_GPIO_TX_AF           		gpioUSART2_GPIO_TX_AF
 //串口
 #define     	dcacUSART_RCU           				RCU_USART2
 #define     	dcacUSART               				USART2
@@ -82,6 +96,10 @@
 #define     	dcacUSART_DMA_TX_CH           			gpioUSART2_DMA_TX_CH
 #define     	dcacUSART_DMA_TX_IRQ          			gpioUSART2_DMA_TX_IRQ
 #define     	dcacUSART_DMA_TX_IRQ_HANDLER  			gpioUSART2_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART2_TX
+#define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART2_RX
+#endif
 #endif  //dcacUSART_DMA_EN
 
 
@@ -90,10 +108,12 @@
 #define     	dcacUSART_GPIO_RX_RCU           		gpioUART3_GPIO_RX_RCU
 #define     	dcacUSART_GPIO_RX_PORT          		gpioUART3_GPIO_RX_PORT
 #define     	dcacUSART_GPIO_RX_PIN           		gpioUART3_GPIO_RX_PIN
+#define     	dcacUSART_GPIO_RX_AF           		gpioUART3_GPIO_RX_AF
 //TX
 #define     	dcacUSART_GPIO_TX_RCU           		gpioUART3_GPIO_TX_RCU
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUART3_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUART3_GPIO_TX_PIN
+#define     	dcacUSART_GPIO_TX_AF           		gpioUART3_GPIO_TX_AF
 //串口
 #define     	dcacUSART_RCU           				RCU_UART3
 #define     	dcacUSART               				UART3
@@ -108,6 +128,10 @@
 #define     	dcacUSART_DMA_TX_CH           			gpioUART3_DMA_TX_CH
 #define     	dcacUSART_DMA_TX_IRQ          			gpioUART3_DMA_TX_IRQ
 #define     	dcacUSART_DMA_TX_IRQ_HANDLER  			gpioUART3_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_UART3_TX
+#define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_UART3_RX
+#endif
 #endif  //dcacUSART_DMA_EN
 
 
@@ -116,10 +140,12 @@
 #define     	dcacUSART_GPIO_RX_RCU           		gpioUART4_GPIO_RX_RCU
 #define     	dcacUSART_GPIO_RX_PORT          		gpioUART4_GPIO_RX_PORT
 #define     	dcacUSART_GPIO_RX_PIN           		gpioUART4_GPIO_RX_PIN
+#define     	dcacUSART_GPIO_RX_AF           		gpioUART4_GPIO_RX_AF
 //TX
 #define     	dcacUSART_GPIO_TX_RCU           		gpioUART4_GPIO_TX_RCU
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUART4_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUART4_GPIO_TX_PIN
+#define     	dcacUSART_GPIO_TX_AF           		gpioUART4_GPIO_TX_AF
 //串口
 #define     	dcacUSART_RCU           				RCU_UART4
 #define     	dcacUSART               				UART4

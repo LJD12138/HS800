@@ -16,7 +16,7 @@
 #include "img_breath.h"
 #include <string.h>
 
-#if (1)
+#if (boardDISPLAY_EN)
 //****************************************************Macros*******************************************************************//
 
 
@@ -338,4 +338,4 @@ void vImgAnim_Resume(void)
     }
 }
 
-#endif  /* img_breath.c */
+#endif  //boardDISPLAY_EN

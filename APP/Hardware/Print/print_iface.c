@@ -33,6 +33,7 @@ static __ALIGNED(4) u8 ucaPrintTxDmaBuffData[printTX_DMA_BUFF_SIZE];   	//用于把
 -----返回值      none
 ************************************************************************************************************************/
 #if boardCM_BACKTRACE
+#if defined(__CC_ARM)
 #pragma import(__use_no_semihosting)             
 //标准库需要的支持函数                 
 struct __FILE 
@@ -46,6 +47,13 @@ void _sys_exit(int x)
 { 
 	x = x; 
 } 
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+/* ARMCLANG: 使用链接器选项 --specs=nosys.specs 替代半主机模式 */
+__attribute__((used)) void _sys_exit(int x) 
+{ 
+	(void)x; 
+}
+#endif  /* __CC_ARM / __ARMCC_VERSION */
 //重定义fputc函数 
 int fputc(int ch, FILE *f)
 {

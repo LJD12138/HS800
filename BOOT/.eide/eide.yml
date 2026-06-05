@@ -80,6 +80,8 @@ virtualFolder:
         - path: Middlewares/Protocol/Modbus/modbus_proto.h
         - path: Middlewares/Protocol/Baiku/baiku_proto.c
         - path: Middlewares/Protocol/Baiku/baiku_proto.h
+        - path: Middlewares/Protocol/proto_update.c
+        - path: Middlewares/Protocol/proto_update.h
       folders: []
     - name: ComFunc
       files:
@@ -116,14 +118,13 @@ virtualFolder:
         - path: Application/Sys/sys_queue_task_err.c
         - path: Application/Sys/sys_queue_task_reset.c
         - path: Application/Sys/sys_queue_task_update.c
-        - path: Application/Sys/sys_queue_task_update.h
       folders: []
     - name: HW-Updata
       files:
-        - path: Hardware/Update/update_main.c
-        - path: Hardware/Update/update_main.h
         - path: Hardware/Update/baiku_proto.c
         - path: Hardware/Update/baiku_proto.h
+        - path: Hardware/Update/update_main.c
+        - path: Hardware/Update/update_main.h
         - path: Hardware/Update/xmodem_proto.c
         - path: Hardware/Update/xmodem_proto.h
       folders: []
@@ -185,7 +186,7 @@ virtualFolder:
         - path: Hardware/MD_Bms/md_bms_iface.c
         - path: Hardware/MD_Bms/md_bms_iface.h
       folders: []
-    - name: HW-MD_Display
+    - name: HW-MD_Disp
       files:
         - path: Hardware/MD_Display/md_display_iface.c
         - path: Hardware/MD_Display/md_display_iface.h
@@ -230,39 +231,7 @@ targets:
         archExtensions: ""
         cpuType: Cortex-M33
         floatingPointHardware: single
-        options:
-          version: 4
-          afterBuildTasks:
-            - name: "[Copy linker output for Keil User Commands]"
-              abortAfterFailed: true
-              command: mkdir ${KEIL_OUTPUT_DIR} & copy "${OutDir}\${ProjectName}.axf" "${KEIL_OUTPUT_DIR}\${ProjectName}.axf"
-              disable: false
-            - name: $K\ARM\ARMCC\bin\fromelf.exe --bin --output=@L.bin !L
-              abortAfterFailed: true
-              command: ${K}\ARM\ARMCC\bin\fromelf.exe --bin --output=${ProjectName}.bin ${KEIL_OUTPUT_DIR}\${ProjectName}.axf
-              disable: false
-            - name: .\Keil5_disp_size_bar_v0.4.exe
-              abortAfterFailed: true
-              command: .\Keil5_disp_size_bar_v0.4.exe
-              disable: false
-          asm-compiler: {}
-          beforeBuildTasks: []
-          c/cpp-compiler:
-            CXX_FLAGS: --diag_suppress=1 --diag_suppress=1295
-            C_FLAGS: --diag_suppress=1 --diag_suppress=1295
-            c99-mode: true
-            one-elf-section-per-function: true
-            optimization: level-0
-            warnings: all-warnings
-          global:
-            output-debug-info: enable
-            use-microLIB: true
-          linker:
-            $outputTaskExcludes:
-              - .bin
-            output-format: elf
-            ro-base: "0x08000000"
-            rw-base: "0x20000000"
+        options: ""
         scatterFilePath: Objects/API.sct
         storageLayout:
           RAM:
@@ -351,7 +320,11 @@ targets:
               disable: false
             - name: $K\ARM\ARMCC\bin\fromelf.exe --bin --output=@L.bin !L
               abortAfterFailed: true
-              command: ${K}\ARM\ARMCC\bin\fromelf.exe --bin --output=${ProjectName}.bin ${KEIL_OUTPUT_DIR}\${ProjectName}.axf
+              command: ${ToolchainRoot}\bin\fromelf.exe --bin --output=${ProjectName}.bin ${KEIL_OUTPUT_DIR}\${ProjectName}.axf
+              disable: false
+            - name: .\Keil5_disp_size_bar_v0.4.exe
+              abortAfterFailed: true
+              command: .\Keil5_disp_size_bar_v0.4.exe
               disable: false
           asm-compiler:
             $use: asm-auto
@@ -360,32 +333,92 @@ targets:
             language-c: c99
             language-cpp: c++11
             one-elf-section-per-function: true
-            optimization: size
+            optimization: level-0
+            short-enums#wchar: true
             warnings: ac5-like-warnings
           global:
             output-debug-info: enable
+            use-microLIB: true
           linker:
             $outputTaskExcludes:
               - .bin
-            misc-controls: --diag_suppress=L6329 --remove
+            misc-controls: --diag_suppress=L6329
             output-format: elf
-        scatterFilePath: <YOUR_SCATTER_FILE>.sct
+            ro-base: "0x08000000"
+            rw-base: "0x20000000"
+        scatterFilePath: Objects/API.sct
         storageLayout:
           RAM:
             - id: 1
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 3
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 1
               isChecked: true
               mem:
-                size: "0x5000"
+                size: "0x20000"
                 startAddr: "0x20000000"
               noInit: false
               tag: IRAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: IRAM
           ROM:
+            - id: 1
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 3
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
             - id: 1
               isChecked: true
               isStartup: true
               mem:
                 size: "0x10000"
-                startAddr: "0x08000000"
+                startAddr: "0x8000000"
+              tag: IROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
               tag: IROM
         useCustomScatterFile: false
     uploadConfigMap:
@@ -393,7 +426,7 @@ targets:
         baseAddr: ""
         bin: ""
         cpuInfo:
-          cpuName: GD32F502RG
+          cpuName: GD32F502RGT6
           vendor: GigaDevice
         otherCmds: ""
         proType: 1

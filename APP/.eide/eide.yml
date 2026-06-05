@@ -1,8 +1,8 @@
 version: "4.1"
 name: APP
 type: ARM
-deviceName: GD32F303RG
-packDir: .pack/GigaDevice/GD32F30x_DFP.2.0.0
+deviceName: GD32F502RG
+packDir: .pack/GigaDevice/GD32F50x_DFP.1.0.1
 srcDirs: []
 virtualFolder:
   name: <virtual_root>
@@ -58,7 +58,8 @@ virtualFolder:
         - path: Middlewares/FreeRTOS/tasks.c
         - path: Middlewares/FreeRTOS/timers.c
         - path: Middlewares/FreeRTOS/portable/MemMang/heap_4.c
-        - path: Middlewares/FreeRTOS/portable/RVDS/ARM_CM4F/port.c
+        - path: Middlewares/FreeRTOS/portable/GCC/ARM_CM33_NTZ/non_secure/port.c
+        - path: Middlewares/FreeRTOS/portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c
       folders: []
     - name: MW-EasyFlash
       files:
@@ -127,8 +128,8 @@ virtualFolder:
         - path: Application/app_info.c
         - path: Application/gpio_init.c
         - path: Application/fwdgt.c
-        - path: Application/gd32f30x_it.c
         - path: Application/timer_task.c
+        - path: Application/gd32f50x_it.c
       folders: []
     - name: App-Sys
       files:
@@ -530,7 +531,7 @@ targets:
         - Firmware/CMSIS/GD/GD32F50x/Include
         - Firmware/GD32F50x_standard_peripheral/Include
         - Firmware/CMSIS
-        - Middlewares/FreeRTOS/portable/RVDS/ARM_CM4F
+        - Middlewares/FreeRTOS/portable/GCC/ARM_CM33_NTZ/non_secure
         - Middlewares/FreeRTOS/include
         - Middlewares/SeggerRtt
         - ComFunc
@@ -666,7 +667,7 @@ targets:
         useCustomScatterFile: false
       AC6:
         archExtensions: ""
-        cpuType: Cortex-M4
+        cpuType: Cortex-M33
         floatingPointHardware: single
         options:
           version: 3
@@ -694,7 +695,7 @@ targets:
             - id: 1
               isChecked: true
               mem:
-                size: "0x5000"
+                size: "0x20000"
                 startAddr: "0x20000000"
               noInit: false
               tag: IRAM
@@ -703,8 +704,8 @@ targets:
               isChecked: true
               isStartup: true
               mem:
-                size: "0x10000"
-                startAddr: "0x08000000"
+                size: "0x64000"
+                startAddr: "0x08010000"
               tag: IROM
         useCustomScatterFile: false
     uploadConfigMap:
@@ -712,7 +713,7 @@ targets:
         baseAddr: ""
         bin: ""
         cpuInfo:
-          cpuName: GD32F303RG
+          cpuName: GD32F502RGT6
           vendor: GigaDevice
         otherCmds: ""
         proType: 1

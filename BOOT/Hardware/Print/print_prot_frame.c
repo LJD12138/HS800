@@ -46,7 +46,7 @@ static s8 c_print_data_trans(u8 cmd, u8* data, u8 len);
 ************************************************************************************************************************/
 bool bPrint_SendProtInit(void)
 {
-	s8 c_result = cBaiku_ProtoTransInit(&tpPrintProtoTx,//协议指针
+	s8 c_result = cBaiku_ProtoSendInit(&tpPrintProtoTx,//协议指针
 								printTX_FRAME_SIZE, 	//协议缓存器大小
 								printDEV_ADRR);			//协议设备ID
 	if(c_result <= 0)

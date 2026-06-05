@@ -10,8 +10,13 @@
 static void v_buz_gpio_init(void)
 {
     rcu_periph_clock_enable(buzPWM_GPIO_RCU);    /*使能端口时钟*/
-	
-	gpio_init(buzPWM_GPIO_PORT,GPIO_MODE_AF_PP,GPIO_OSPEED_50MHZ,buzPWM_GPIO_PIN);  //配置为外设引脚
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(buzPWM_GPIO_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, buzPWM_GPIO_PIN);
+	gpio_output_options_set(buzPWM_GPIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, buzPWM_GPIO_PIN);
+	gpio_af_set(buzPWM_GPIO_PORT, buzTIMER_AF, buzPWM_GPIO_PIN);
+	#else
+	gpio_init(buzPWM_GPIO_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, buzPWM_GPIO_PIN);  //配置为外设引脚
+	#endif
 }
 
 /***********************************************************************************************************************
@@ -89,10 +94,14 @@ void vBuz_Init(void)
 void vBuz_IoEnterLowPower(void)
 {
 	rcu_periph_clock_enable(buzPWM_GPIO_RCU);    /*使能端口时钟*/
-	gpio_init(buzPWM_GPIO_PORT,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,buzPWM_GPIO_PIN);  //配置为外设引脚
-	
-	rcu_periph_clock_disable(buzTIMER_RCU); 
-	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(buzPWM_GPIO_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, buzPWM_GPIO_PIN);
+	#else
+	gpio_init(buzPWM_GPIO_PORT, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, buzPWM_GPIO_PIN);  //配置为外设引脚
+	#endif
+
+	rcu_periph_clock_disable(buzTIMER_RCU);
+
 	timer_disable(buzTIMER);
 }
 #endif

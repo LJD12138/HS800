@@ -17,7 +17,7 @@
 
 
 //****************************************************Includes******************************************************************//
-#include "main_1_ui.h"
+#include "MD_Display/user_ui/main_1_ui.h"
 
 #if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"

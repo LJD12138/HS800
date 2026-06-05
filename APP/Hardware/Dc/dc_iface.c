@@ -13,8 +13,13 @@
 static void v_dc_gpio_init(void)
 {
 	rcu_periph_clock_enable(dcPOWER_EN_RCU);
-	gpio_init(dcPOWER_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,dcPOWER_EN_PIN);
-    dcPOWER_EN_OFF();	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(dcPOWER_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dcPOWER_EN_PIN);
+	gpio_output_options_set(dcPOWER_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, dcPOWER_EN_PIN);
+	#else
+	gpio_init(dcPOWER_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, dcPOWER_EN_PIN);
+	#endif
+	dcPOWER_EN_OFF();
 }
 
 

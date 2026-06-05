@@ -15,12 +15,22 @@ I2cObj_T  		tUSB_IC2_I2C;
 static void v_usb_gpio_init(void)
 {
     rcu_periph_clock_enable(usbPD_EN_RCU);
-    gpio_init(usbPD_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPD_EN_PIN);
-    usbPD_EN_OFF();	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(usbPD_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, usbPD_EN_PIN);
+	gpio_output_options_set(usbPD_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, usbPD_EN_PIN);
+	#else
+    gpio_init(usbPD_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, usbPD_EN_PIN);
+	#endif
+    usbPD_EN_OFF();
 
     rcu_periph_clock_enable(usbPD2_EN_RCU);
-    gpio_init(usbPD2_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPD2_EN_PIN);
-    usbPD2_EN_OFF();	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(usbPD2_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, usbPD2_EN_PIN);
+	gpio_output_options_set(usbPD2_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, usbPD2_EN_PIN);
+	#else
+    gpio_init(usbPD2_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, usbPD2_EN_PIN);
+	#endif
+    usbPD2_EN_OFF();
 	
 	// rcu_periph_clock_enable(usbPOWER_EN_RCU);
 	// gpio_init(usbPOWER_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ,usbPOWER_EN_PIN);

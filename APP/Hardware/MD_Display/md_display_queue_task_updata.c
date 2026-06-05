@@ -4,6 +4,8 @@
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
+
+#if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "Print/print_task.h"
@@ -35,7 +37,8 @@ void v_disp_queue_task_updata(Task_T *tp_task)
             break;
     }
 
-#if(boardUSE_OS)
+    #if(boardUSE_OS)
     vTaskDelay(dispTASK_UPDATA_CYCLE_TIME);
-#endif
+    #endif
 }
+#endif  //boardDISPLAY_EN

@@ -4,7 +4,6 @@
  *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
-#include "Print/print_api.h"
 
 #if (boardDISPLAY_EN)
 #include "MD_Display/eez_ui/ui.h"
@@ -13,6 +12,7 @@
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "Print/print_task.h"
+#include "Print/print_api.h"
 #include "Sys/sys_task.h"
 
 #include "MD_Bms/md_bms_rec_task.h"
