@@ -259,7 +259,7 @@ void vBms_IfaceDeInit(void)
 -----输出参数    none
 -----返回值      true:成功    false:失败
 ******************************************************************************************************************/
-bool bBms_DataSendStart(u8* data,u16 len)
+bool bBms_DataSendStart(u8* data, u16 len)
 {
 	#if(boardBMS_485_IFACE_EN)
 	vBms_485TransEnable(true);

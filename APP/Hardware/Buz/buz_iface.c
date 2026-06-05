@@ -37,7 +37,7 @@ static void v_buz_timer_init(void)
 
     timer_struct_para_init(&timer_initpara);                 /*默认值初始化*/
     /* TIMER0 configuration */
-    timer_initpara.prescaler         = 60;                   /*分频数*/
+    timer_initpara.prescaler         = 49;                   /*分频数*/
     timer_initpara.alignedmode       = TIMER_COUNTER_EDGE;   /*边沿对齐模式*/
     timer_initpara.counterdirection  = TIMER_COUNTER_UP;     /*向上计时*/
     timer_initpara.period            = 999;                  /*重装值*/

@@ -66,33 +66,41 @@ __STATIC_INLINE bool bKey_PowerIsPress(void)
 
 __STATIC_INLINE bool bKey_AcIsPress(void)
 {
+	#if(boardDCAC_EN)
     if((GPIO_ISTAT(keyGPIO_AC_PORT)&(keyGPIO_AC_PIN)) == 0)//读取按键
         return true;
     else
+	#endif  //boardDCAC_EN
         return false;
 }
 
 __STATIC_INLINE bool bKey_LightIsPress(void)
 {
+	#if(boardLIGHT_EN)
     if((GPIO_ISTAT(keyGPIO_LIGHT_PORT)&(keyGPIO_LIGHT_PIN)) == 0)//读取按键
         return true;
     else
+	#endif  //boardLIGHT_EN
         return false;
 }
 
 __STATIC_INLINE bool bKey_UsbIsPress(void)
 {
+	#if(boardUSB_EN)
     if((GPIO_ISTAT(keyGPIO_USB_PORT)&(keyGPIO_USB_PIN)) == 0)//读取按键
         return true;
     else
+	#endif //boardUSB_EN
         return false;
 }
 
 __STATIC_INLINE bool bKey_DcIsPress(void)
 {
+	#if(boardDC_EN)
     if((GPIO_ISTAT(keyGPIO_DC_PORT)&(keyGPIO_DC_PIN)) == 0)//读取按键
         return true;
     else
+	#endif  //#if(boardDC_EN)
         return false;
 }
 

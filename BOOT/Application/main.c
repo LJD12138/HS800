@@ -107,8 +107,8 @@ int main(void)
 			
 			vTimer_Task();
 			
-			vAdc_Task(NULL);//≤‚ ‘
-			
+//			vAdc_Task(NULL);//≤‚ ‘
+//			c_bms_cs_get_param(1);
 			#if(boardDISPLAY_EN)
 			vDisp_Task(NULL);
 			#endif

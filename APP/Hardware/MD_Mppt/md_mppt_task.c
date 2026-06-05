@@ -12,6 +12,7 @@
 #include "MD_Mppt/md_mppt_iface.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
+#include "Adc/adc_task.h"
 
 #include "app_info.h"
 
