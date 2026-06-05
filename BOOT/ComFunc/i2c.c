@@ -28,14 +28,20 @@ static GPIO_InitTypeDef 		gpio_init_struct;
 
 static void v_delay(u16 X)      //延时，可以降低 IIC的速度
 { 
-	while(X--);
+	while(X--)
+	{
+		__asm volatile("nop");
+	}
 }
 
 
 static void v_delay_low(u16 X)      //半延时
 { 
 	X >>= 1; 
-	while(X--);
+	while(X--)
+	{
+		__asm volatile("nop");
+	}
 }
 
 /*****************************************************************************************************************

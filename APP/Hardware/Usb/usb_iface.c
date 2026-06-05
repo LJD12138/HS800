@@ -49,7 +49,7 @@ static void v_usb_gpio_init(void)
     tUSB_IC1_I2C.ulGPIO_PIN_SDA  = usbIC1_SDA_PIN;
     tUSB_IC1_I2C.Addr = 0x3C;
     tUSB_IC1_I2C.AddrType = AddrType_7bit;
-    tUSB_IC1_I2C.usDelay = 70;
+    tUSB_IC1_I2C.usDelay = 150;
     vI2C_ObjInit(&tUSB_IC1_I2C);
 	
 	// USB≥‰µÁ IIC≥ı ºªØ
@@ -61,7 +61,7 @@ static void v_usb_gpio_init(void)
     tUSB_IC2_I2C.ulGPIO_PIN_SDA  = usbIC2_SDA_PIN;
     tUSB_IC2_I2C.Addr = 0x3C;
     tUSB_IC2_I2C.AddrType = AddrType_7bit;
-    tUSB_IC2_I2C.usDelay = 70;
+    tUSB_IC2_I2C.usDelay = 150;
     vI2C_ObjInit(&tUSB_IC2_I2C);
 }
 

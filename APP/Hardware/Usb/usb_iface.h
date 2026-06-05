@@ -34,7 +34,7 @@
 
 #define     	usbPD2_EN_RCU          					RCU_GPIOC
 #define     	usbPD2_EN_PORT     						GPIOC
-#define     	usbPD2_EN_PIN          					GPIO_PIN_14
+#define     	usbPD2_EN_PIN          					GPIO_PIN_11
 #define     	usbPD2_EN_ON()         					GPIO_BOP(usbPD2_EN_PORT) = (uint32_t)usbPD2_EN_PIN
 #define     	usbPD2_EN_OFF()        					GPIO_BC(usbPD2_EN_PORT) = (uint32_t)usbPD2_EN_PIN
 

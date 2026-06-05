@@ -187,6 +187,10 @@ static void v_light_set_state(LightWorkMode_E mode)
 	else                 //´ò¿ª
 	{
 		timer_enable(lightTIMER);
+		#if (boardIC_TYPE == boardIC_GD32F50X)
+		timer_primary_output_config(lightTIMER, ENABLE);
+		timer_channel_primary_output_config(lightTIMER, lightTIMER_CH, ENABLE);
+		#endif
 		tLight.eDevState = DS_WORK;
 	}
 	

@@ -145,12 +145,12 @@ void vPrint_Task(void *pvParameters)
 			#endif  //boardUSE_OS
 		}
 
-		#if(boardUSB_EN)
-		if(tUsb.eDevState == DS_SHUT_DOWN)
+		// #if(boardUSB_EN)
+		// if(tUsb.eDevState == DS_SHUT_DOWN)
 			printIFACE_EN_ON();
-		else
-			printIFACE_EN_OFF();
-		#endif  //boardUSB_EN
+		// else
+		// 	printIFACE_EN_OFF();
+		// #endif  //boardUSB_EN
 		
 		if(tp_task->vp_func != NULL && tp_task ->bNowRun == false)
 			tp_task->vp_func(tp_task);

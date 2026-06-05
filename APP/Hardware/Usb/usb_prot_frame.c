@@ -108,14 +108,14 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 {
 	static u8 uc_index[2] = {0};
 	static u8 uc_lost_cnt[2] = {0};
+	static u8 s_uca_buff[2][6] = {0};
 	u8 ch = (p_i2c_obj == &tUSB_IC1_I2C) ? 0 : 1;
-	u8 buff[6] = {0};
 	u8 data[1] = {0};
 	USB_IC_T *p_ic = &tUsbIc[ch];
 
 	switch (uc_index[ch])
 	{
-		//开始温度ADC转换
+		/* 初始化温度ADC转换 */
 		case 0:
 		{
 			data[0] = 0x06;
@@ -130,7 +130,7 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 			uc_index[ch]++;
 		}
 
-		//获取温度AD
+		/* 读取温度AD */
 		case 1:
 		{
 			memset(&data, 0, sizeof(data));
@@ -142,7 +142,7 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 			else 
 				uc_lost_cnt[ch] = 0;
 
-			buff[0] = data[0];
+			s_uca_buff[ch][0] = data[0];
 			
 			memset(&data, 0, sizeof(data));
 			if(cI2C_ReadBytes(p_i2c_obj, SW3516_ADC_DATA_L_ADDR, data, sizeof(data)) <= 0)
@@ -153,11 +153,11 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 			else 
 				uc_lost_cnt[ch] = 0;
 
-			buff[1] = data[0];
+			s_uca_buff[ch][1] = data[0];
 			uc_index[ch]++;
 		}
 		
-		//获取功率
+		/* 读取电压与Type-C电流 */
 		case 2:
 		{
 			memset(&data, 0, sizeof(data));
@@ -169,7 +169,7 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 			else 
 				uc_lost_cnt[ch] = 0;
 
-			buff[2] = data[0];
+			s_uca_buff[ch][2] = data[0];
 			
 			memset(&data, 0, sizeof(data));
 			if(cI2C_ReadBytes(p_i2c_obj, SW3516_IOUT_C_ADDR, data, sizeof(data)) <= 0)
@@ -180,30 +180,47 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 			else 
 				uc_lost_cnt[ch] = 0;
 
-			buff[3] = data[0];
+			s_uca_buff[ch][3] = data[0];
 			uc_index[ch]++;
 		}
 
-		//数据处理
+		/* 读取Type-A (QC)电流 */
+		case 3:
+		{
+			memset(&data, 0, sizeof(data));
+			if(cI2C_ReadBytes(p_i2c_obj, SW3516_IOUT_A_ADDR, data, sizeof(data)) <= 0)
+			{
+				if(uc_lost_cnt[ch] < 0xff) uc_lost_cnt[ch]++;
+				break;
+			}
+			else 
+				uc_lost_cnt[ch] = 0;
+
+			s_uca_buff[ch][4] = data[0];
+			uc_index[ch]++;
+		}
+
+		/* 结算 */
 		case 4:
 		{
-			//***************************************处理数据******************************************
-			s32 temp = (buff[0] << 4) | (buff[1] & 0x0f);  //温度AD值
+			/* ********************************************************************************* */
+			s32 temp = (s_uca_buff[ch][0] << 4) | (s_uca_buff[ch][1] & 0x0f);  /* 温度AD值 */
 			temp = lFilter_MadianAverage(&tAdc_PDTempFilterMadAvg, &temp);
-			//避免没通讯上
-//			if(buff[0] > 100 )  
+			/* 用户通讯 */
+//			if(s_uca_buff[ch][0] > 100 )  
 				p_ic->cTemp = LIMIT((307 - (37 * log((float)temp))), -128, 127) / 2;
 			
-			p_ic->usVolt = buff[2] * 96;    //mV
-			// if(p_ic->usVolt >= 100)
-			// 	p_ic->usVolt -= 100;
+			p_ic->usVolt = s_uca_buff[ch][2] * 96;    /* mV */
+			/* if(p_ic->usVolt >= 100) */
+			/* 	p_ic->usVolt -= 100; */
 			
-			p_ic->usPdCurr = buff[3] * 40;    //mA
-			// if(p_ic->usPdCurr >= 255)
-			// 	p_ic->usPdCurr -= 255;
+			p_ic->usPdCurr = s_uca_buff[ch][3] * 40;    /* mA */
+			/* if(p_ic->usPdCurr >= 255) */
+			/* 	p_ic->usPdCurr -= 255; */
 			
+			p_ic->usQcCurr = s_uca_buff[ch][4] * 40;    /* mA */
 
-			//***************************************处理数据******************************************
+			/* ********************************************************************************* */
 			p_ic->usPdPwr = (p_ic->usPdCurr / 1000.0f) * (p_ic->usVolt / 1000.0f);
 			p_ic->usQcPwr = (p_ic->usQcCurr / 1000.0f) * (p_ic->usVolt / 1000.0f);
 			p_ic->sPower = p_ic->usPdPwr + p_ic->usQcPwr;
@@ -221,9 +238,10 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 			break ;
 	}
 
-	//处理状态
-	if(uc_lost_cnt[ch] >= 16)  //标志
+	/* 状态 */
+	if(uc_lost_cnt[ch] >= 16)  /* 丢失 */
 	{
+		uc_lost_cnt[ch] = 0;
 		if(ch == 0)
 		{
 			if(tUsb.uErrCode.tCode.bIc1Lost == 0)
@@ -246,7 +264,7 @@ s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj)
 		}
 		return -1;
 	}
-	else if(!uc_lost_cnt[ch])  //清除
+	else if(!uc_lost_cnt[ch])  /* 正常 */
 	{
 		if(ch == 0)
 		{

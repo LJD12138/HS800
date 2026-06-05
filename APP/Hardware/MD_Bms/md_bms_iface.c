@@ -66,7 +66,7 @@ static void v_bms_io_init(void)//IO…Ë÷√
     /* connect port to USARTx_Rx */
 	#if (boardIC_TYPE == boardIC_GD32F50X)
 	gpio_af_set(bmsUSART_GPIO_RX_GPIO, bmsUSART_GPIO_RX_AF, bmsUSART_GPIO_RX_PIN);
-    gpio_mode_set(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, bmsUSART_GPIO_RX_PIN);
+    gpio_mode_set(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_AF, GPIO_PUPD_PULLUP, bmsUSART_GPIO_RX_PIN);
 	gpio_output_options_set(bmsUSART_GPIO_RX_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_RX_PIN);
 	#else
     gpio_init(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ,bmsUSART_GPIO_RX_PIN);

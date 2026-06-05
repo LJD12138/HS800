@@ -53,7 +53,7 @@ lv_display_t *disp;
 
 //****************************************************配置与宏**************************************************//
 /* 渲染缓冲区按行数分配：每次交由 LVGL 提交的刷新行数 */
-#define DISP_DRAW_BUF_LINE_COUNT 10U
+#define DISP_DRAW_BUF_LINE_COUNT 15U
 
 //****************************************************局部函数定义************************************************//
 
@@ -86,18 +86,18 @@ void lv_port_disp_init(void)
     __ALIGNED(4) static lv_color_t buf_1[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
     __ALIGNED(4) static lv_color_t buf_2[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
 
-/* 初始化底层显示控制器与同步对象 */
-#if (boardUSE_OS)
+    /* 初始化底层显示控制器与同步对象 */
+    #if (boardUSE_OS)
     if (DispSemaphoreBinary == NULL)
     {
         DispSemaphoreBinary = xSemaphoreCreateBinary();
         if (DispSemaphoreBinary != NULL)
             xSemaphoreGive(DispSemaphoreBinary);
     }
-#endif
+    #endif
 
-/* 使用 LVGL 内置 ST7789 驱动 */
-#if (LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
+    /* 使用 LVGL 内置 ST7789 驱动 */
+    #if (LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
     /* 创建 ST7789 LCD 驱动 */
     disp = lv_st7789_create(DISP_HOR_RES, DISP_VER_RES, DISP_ST7789_FLAGS, st7789_send_cmd, st7789_send_color);
     lv_st7789_send_cmd_list(disp, disp_st7789_panel_cmds);
@@ -105,11 +105,11 @@ void lv_port_disp_init(void)
     lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
 /* 使用自定义 ST7789 驱动 */
-#else
+    #else
     disp = lv_display_create(DISP_HOR_RES, DISP_VER_RES);
     lv_display_set_flush_cb(disp, disp_flush);
     lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
-#endif
+    #endif
 }
 
 #if (boardUSE_OS)
@@ -154,10 +154,10 @@ static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_s
 {
     LV_UNUSED(disp);
 
-#if (boardUSE_OS)
+    #if (boardUSE_OS)
     if (!b_disp_bus_take(pdMS_TO_TICKS(100U)))
         return;
-#endif
+    #endif
 
     /* 发送命令字节 */
     for (size_t i = 0; i < cmd_size; i++)
@@ -167,9 +167,9 @@ static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_s
     if ((param != NULL) && (param_size != 0U))
         vDisp_TftWriteBuffer(param, (u32)param_size);
 
-#if (boardUSE_OS)
+    #if (boardUSE_OS)
     v_disp_bus_give();
-#endif
+    #endif
 }
 
 /***********************************************************************************************************************
@@ -181,13 +181,13 @@ static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_s
  ************************************************************************************************************************/
 static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, uint8_t *param, size_t param_size)
 {
-#if (boardUSE_OS)
+    #if (boardUSE_OS)
     if (!b_disp_bus_take(pdMS_TO_TICKS(100U)))
     {
         lv_display_flush_ready(disp);
         return;
     }
-#endif
+    #endif
 
     /* 发送命令字节 */
     for (size_t i = 0; i < cmd_size; i++)
@@ -195,15 +195,13 @@ static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd
 
     /* 发送像素块（调用我们新写的异步接口） */
     if ((param != NULL) && (param_size != 0U))
-    {
         vDisp_TftWriteColorAsync(param, (u32)param_size);
-    }
     else
     {
-/* 如果没数据，别忘了自己释放信号量和 flush */
-#if (boardUSE_OS)
+        /* 如果没数据，别忘了自己释放信号量和 flush */
+        #if (boardUSE_OS)
         v_disp_bus_give();
-#endif
+        #endif
 
         lv_display_flush_ready(disp);
     }

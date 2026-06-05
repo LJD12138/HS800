@@ -35,6 +35,8 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART0_TX
 #define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART0_RX
+#define     	dcacUSART_DMAMUX_TX_CH       			gpioUSART0_DMAMUX_TX_CH
+#define     	dcacUSART_DMAMUX_RX_CH       			gpioUSART0_DMAMUX_RX_CH
 #endif
 #endif  //dcacUSART_DMA_EN
 
@@ -67,6 +69,8 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART1_TX
 #define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART1_RX
+#define     	dcacUSART_DMAMUX_TX_CH       			gpioUSART1_DMAMUX_TX_CH
+#define     	dcacUSART_DMAMUX_RX_CH       			gpioUSART1_DMAMUX_RX_CH
 #endif
 #endif  //dcacUSART_DMA_EN
 
@@ -99,6 +103,8 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	dcacUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART2_TX
 #define     	dcacUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART2_RX
+#define     	dcacUSART_DMAMUX_TX_CH       			gpioUSART2_DMAMUX_TX_CH
+#define     	dcacUSART_DMAMUX_RX_CH       			gpioUSART2_DMAMUX_RX_CH
 #endif
 #endif  //dcacUSART_DMA_EN
 

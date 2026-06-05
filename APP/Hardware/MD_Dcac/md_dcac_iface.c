@@ -69,7 +69,7 @@ static void v_dcac_io_init(void)//IO设置
     /* connect port to USARTx_Rx */
 	#if (boardIC_TYPE == boardIC_GD32F50X)
 	gpio_af_set(dcacUSART_GPIO_RX_PORT, dcacUSART_GPIO_RX_AF, dcacUSART_GPIO_RX_PIN);
-    gpio_mode_set(dcacUSART_GPIO_RX_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, dcacUSART_GPIO_RX_PIN);
+    gpio_mode_set(dcacUSART_GPIO_RX_PORT, GPIO_MODE_AF, GPIO_PUPD_PULLUP, dcacUSART_GPIO_RX_PIN);
 	gpio_output_options_set(dcacUSART_GPIO_RX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacUSART_GPIO_RX_PIN);
 	#else
     gpio_init(dcacUSART_GPIO_RX_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, dcacUSART_GPIO_RX_PIN);
@@ -111,6 +111,9 @@ static void v_dcac_uasrt_config(void)
     /* enable USART clock */
     rcu_periph_clock_enable(dcacUSART_RCU);
 
+	 /* USART interrupt configuration */
+    nvic_irq_enable(dcacUSART_IRQ, 2, 0);
+
     /* USART configure */
     usart_deinit(dcacUSART);
     usart_baudrate_set(dcacUSART, dcacUSART_BAUD);
@@ -124,8 +127,6 @@ static void v_dcac_uasrt_config(void)
     usart_transmit_config(dcacUSART, USART_TRANSMIT_ENABLE);
 
     #if(!boardDCAC_IFACE_DMA_EN)
-    /* USART interrupt configuration */
-    nvic_irq_enable(dcacUSART_IRQ, 2, 0);
     
     usart_interrupt_flag_clear(dcacUSART, USART_INT_FLAG_RBNE);
     usart_interrupt_enable(dcacUSART, USART_INT_RBNE);   /* 接收中断 */
@@ -150,7 +151,6 @@ static void v_dcac_dma_init(void)
 {
 	/* USART interrupt configuration */
 	nvic_irq_enable(dcacUSART_DMA_TX_IRQ, 2, 0);
-	nvic_irq_enable(dcacUSART_IRQ, 2, 0);
 	
 	dma_parameter_struct dma_init_struct;
 	

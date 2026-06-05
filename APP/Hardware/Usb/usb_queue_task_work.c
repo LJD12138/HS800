@@ -58,13 +58,15 @@ void v_usb_queue_task_work(Task_T *tp_task)
 		case 0:
         {
 			us_usb_total_out_pwr = 0;
-			c_usb_cs_get_ic_param(&tUSB_IC1_I2C);
+			if(tUsb.uErrCode.tCode.bIc1Lost == false)
+				c_usb_cs_get_ic_param(&tUSB_IC1_I2C);
 			cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
         }
 
 		case 1:
         {
-			c_usb_cs_get_ic_param(&tUSB_IC2_I2C);
+			if(tUsb.uErrCode.tCode.bIc2Lost == false)
+				c_usb_cs_get_ic_param(&tUSB_IC2_I2C);
 			cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
         }
 

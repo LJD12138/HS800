@@ -26,16 +26,22 @@ static GPIO_InitTypeDef 		gpio_init_struct;
 #endif
 
 
-static void v_delay(u16 X)      //延时，可以降低 IIC的速度
+static void v_delay(volatile u16 X)      //延时，可以降低 IIC的速度
 { 
-	while(X--);
+	while(X--)
+	{
+		__asm volatile("nop");
+	}
 }
 
 
-static void v_delay_low(u16 X)      //半延时
+static void v_delay_low(volatile u16 X)      //半延时
 { 
 	X >>= 1; 
-	while(X--);
+	while(X--)
+	{
+		__asm volatile("nop");
+	}
 }
 
 /*****************************************************************************************************************
@@ -93,7 +99,7 @@ __STATIC_INLINE void v_i2c_set_sda_gpio_output(const I2cObj_T *p_i2c_obj)
 -----函数功能    设置sda为输入
 -----说明(备注)  数据接收用的
 -----传入参数    p_i2c_obj:发送对象
------输出参数    none
+-----输出参数    none0
 -----返回值      none
 ******************************************************************************************************************/
 __STATIC_INLINE void v_i2c_set_sda_gpio_input(const I2cObj_T *p_i2c_obj)

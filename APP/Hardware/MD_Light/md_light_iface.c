@@ -69,7 +69,10 @@ static void v_light_timer_init(uint16_t arr, uint16_t psc)
 
 	/* Enable TIMER0 output */
 	timer_primary_output_config(lightTIMER, ENABLE);
-
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	timer_channel_primary_output_config(lightTIMER, lightTIMER_CH, ENABLE);
+	#endif
+;
 	/* Enable timer auto reload shadow */
 	timer_auto_reload_shadow_enable(lightTIMER);
 
