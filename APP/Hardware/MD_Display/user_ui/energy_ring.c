@@ -329,6 +329,14 @@ static void energy_ring_reset_runtime(EnergyRing_T *p_ring)
     p_ring->bAnimDirDec = false;
 }
 
+/***********************************************************************************************************************
+-----函数功能    角度归一化
+-----说明(备注)  将输入角度限制在 [0, 360) 范围内，通过循环减去360度消除多圈旋转
+                  用于后续角度比较和区间判断，确保角度值始终处于有效范围
+-----传入参数    us_angle:待归一化的角度值（可大于360）
+-----输出参数    none
+-----返回值      归一化后的角度值（0~359）
+************************************************************************************************************************/
 static u16 energy_ring_normalize_angle(u16 us_angle)
 {
     while(us_angle >= 360U)
@@ -337,6 +345,14 @@ static u16 energy_ring_normalize_angle(u16 us_angle)
     return us_angle;
 }
 
+/***********************************************************************************************************************
+-----函数功能    判断角度是否在指定角度区间内
+-----说明(备注)  判断 us_test_angle 是否位于 [us_start_angle, us_end_angle] 区间内
+                  自动处理跨0度（360度回绕）的情况，例如区间[350, 10]会正确包含355度和5度
+-----传入参数    us_start_angle:区间起始角度  us_end_angle:区间结束角度  us_test_angle:待测试角度
+-----输出参数    none
+-----返回值      true:角度在区间内  false:角度不在区间内
+************************************************************************************************************************/
 static bool energy_ring_angle_in_span(u16 us_start_angle, u16 us_end_angle, u16 us_test_angle)
 {
     us_start_angle = energy_ring_normalize_angle(us_start_angle);
@@ -349,6 +365,13 @@ static bool energy_ring_angle_in_span(u16 us_start_angle, u16 us_end_angle, u16 
     return (us_test_angle >= us_start_angle) || (us_test_angle <= us_end_angle);
 }
 
+/***********************************************************************************************************************
+-----函数功能    计算能量环外侧包围半径
+-----说明(备注)  根据能量环的外半径和环宽计算视觉包围范围（含2像素抗锯齿余量），用于确定对象区域大小
+-----传入参数    tp_ring:能量环结构体指针
+-----输出参数    none
+-----返回值      能量环外侧包围半径（像素），结构体为NULL时返回0
+************************************************************************************************************************/
 static lv_coord_t energy_ring_get_outer_extent(const EnergyRing_T *tp_ring)
 {
     if(tp_ring == NULL)
@@ -357,6 +380,14 @@ static lv_coord_t energy_ring_get_outer_extent(const EnergyRing_T *tp_ring)
     return (lv_coord_t)(tp_ring->tRadius + tp_ring->tWidth + 2);
 }
 
+/***********************************************************************************************************************
+-----函数功能    获取能量环挂载的父屏幕对象
+-----说明(备注)  优先返回EEZ主屏对象(objects.main)，若不可用则回退到LVGL当前活动屏幕
+                  确保能量环始终挂载到正确的屏幕，避免屏幕切换窗口期创建到错误screen
+-----传入参数    none
+-----输出参数    none
+-----返回值      父屏幕lv_obj_t指针
+************************************************************************************************************************/
 static lv_obj_t *energy_ring_get_parent_screen(void)
 {
     if(objects.main != NULL)
@@ -365,6 +396,14 @@ static lv_obj_t *energy_ring_get_parent_screen(void)
     return lv_screen_active();
 }
 
+/***********************************************************************************************************************
+-----函数功能    计算能量环对象的包围矩形区域
+-----说明(备注)  根据父屏幕尺寸和能量环参数（外半径、环宽、Y偏移）计算能量环在屏幕上的包围盒
+                  确定lv_obj对象的精确位置和大小，使能量环居中显示且最小化对象面积
+-----传入参数    tp_parent:父屏幕对象指针  tp_ring:能量环结构体指针
+-----输出参数    tp_area:输出的包围矩形区域
+-----返回值      none
+************************************************************************************************************************/
 static void energy_ring_get_object_area(lv_obj_t *tp_parent, const EnergyRing_T *tp_ring, lv_area_t *tp_area)
 {
     lv_area_t t_parent_coords;
@@ -405,6 +444,14 @@ static void energy_ring_get_object_area(lv_obj_t *tp_parent, const EnergyRing_T 
                 (int32_t)(t_center_y + t_extent - 1));
 }
 
+/***********************************************************************************************************************
+-----函数功能    将点纳入包围区域
+-----说明(备注)  将给定坐标点纳入矩形包围区域，自动扩展区域边界以包含该点
+                  用于逐步计算segment的精确包围盒
+-----传入参数    tp_area:当前包围区域指针  t_x:点的X坐标  t_y:点的Y坐标
+-----输出参数    tp_area:扩展后的包围区域
+-----返回值      none
+************************************************************************************************************************/
 static void energy_ring_extend_area_with_point(lv_area_t *tp_area, lv_coord_t t_x, lv_coord_t t_y)
 {
     if(tp_area == NULL)
@@ -420,6 +467,15 @@ static void energy_ring_extend_area_with_point(lv_area_t *tp_area, lv_coord_t t_
         tp_area->y2 = t_y;
 }
 
+/***********************************************************************************************************************
+-----函数功能    计算单个segment的包围矩形区域
+-----说明(备注)  通过三角函数计算指定segment在圆弧上的精确包围盒，采样起始/中间/结束角度及
+                  跨越的基点角度（0/90/180/270度），对内外半径各点取并集后扩展2像素余量
+                  用于局部脏区域失效（invalidate），避免整环刷新
+-----传入参数    tp_ring:能量环结构体指针  us_seg_index:segment索引（0起始）
+-----输出参数    tp_area:输出的segment包围矩形
+-----返回值      true:计算成功  false:参数无效或计算失败
+************************************************************************************************************************/
 static bool energy_ring_get_seg_area(const EnergyRing_T *tp_ring, u16 us_seg_index, lv_area_t *tp_area)
 {
     static const u16 s_us_cardinal_angles[] = {0U, 90U, 180U, 270U};
@@ -509,6 +565,14 @@ static bool energy_ring_get_seg_area(const EnergyRing_T *tp_ring, u16 us_seg_ind
     return true;
 }
 
+/***********************************************************************************************************************
+-----函数功能    局部失效指定范围的segment区域
+-----说明(备注)  计算新旧active_seg之间变化的segment范围，逐个计算包围盒并调用lv_obj_invalidate_area
+                  实现局部重绘，避免整环刷新带来的性能开销
+-----传入参数    tp_ring:能量环结构体指针  us_old_active_seg:变化前的活动段数  us_new_active_seg:变化后的活动段数
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
 static void energy_ring_invalidate_seg_range(EnergyRing_T *tp_ring, u16 us_old_active_seg, u16 us_new_active_seg)
 {
     lv_area_t t_seg_area;

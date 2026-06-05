@@ -20,12 +20,27 @@
 //****************************************************Macros*******************************************************************//
 #define TFT_SPI_TIMEOUT                    0x10000U
 
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+typedef enum
+{
+    DISP_TFT_DMA_XFER_NONE = 0,
+    DISP_TFT_DMA_XFER_LVGL_COLOR
+} disp_tft_dma_xfer_t;
+
+static volatile disp_tft_dma_xfer_t s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
+#endif
+
 //****************************************************Function Declaration****************************************************//
 static void tft_delay_ms(vu16 ms);
 
 #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
 static void tft_hw_spi_dma_init(void);
 static void v_tft_spi_dma_send_bytes(const u8 *data, u32 len);
+#if(boardUSE_OS)
+static void v_tft_spi_dma_finish_isr(BaseType_t *px_higher_priority_task_woken);
+#else
+static void v_tft_spi_dma_finish_isr(void);
+#endif
 static void tft_hw_spi_wait_idle(void);
 #endif //boardDISP_SPI_MODE
 
@@ -435,16 +450,17 @@ void vDisp_TftWriteBuffer(const u8 *data, u32 len)
 -----函数功能    异步发送颜色数据 (专供 LVGL 刷屏使用)
 -----说明(备注)  开启 DMA 后立刻返回，片选拉高交由 DMA 中断处理
 ************************************************************************************************************************/
-void vDisp_TftWriteColorAsync(const u8 *data, u32 len)
+bool bDisp_TftWriteColorAsync(const u8 *data, u32 len)
 {
     if((data == NULL) || (len == 0U))
-        return;
+        return false;
 
     dispTFT_A0_H();
     dispTFT_CS_L();
     
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
     dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    s_eDmaXferType = DISP_TFT_DMA_XFER_LVGL_COLOR;
     dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
     dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
 	
@@ -454,57 +470,85 @@ void vDisp_TftWriteColorAsync(const u8 *data, u32 len)
     dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
 	#endif //boardIC_TYPE
 
-    /* 专属异步通道，动态开启 DMA 中断！ */
     dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
-    
     dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    return true;
+    #else
+    {
+        const u8 *byte_data = (const u8 *)data;
+        u32 byte_len = len;
+
+        for(u32 i = 0U; i < byte_len; i++)
+            tft_spi_send_byte(byte_data[i]);
+    }
+
+    dispTFT_CS_H();
+    return false;
     #endif  //boardDISP_SPI_MODE
 }
 
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+#if(boardUSE_OS)
+static void v_tft_spi_dma_finish_isr(BaseType_t *px_higher_priority_task_woken)
+#else
+static void v_tft_spi_dma_finish_isr(void)
+#endif
+{
+    dma_interrupt_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_GIF);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_G);
+    #endif
+    dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_FTF);
+
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    while(SET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TRANS));
+
+    dispTFT_CS_H();
+
+    if(s_eDmaXferType == DISP_TFT_DMA_XFER_LVGL_COLOR)
+    {
+        s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
+
+        #if(boardUSE_OS)
+        if(DispSemaphoreBinary != NULL)
+            xSemaphoreGiveFromISR(DispSemaphoreBinary, px_higher_priority_task_woken);
+
+        if(DispFlushDoneSemaphore != NULL)
+            xSemaphoreGiveFromISR(DispFlushDoneSemaphore, px_higher_priority_task_woken);
+        #endif
+
+        if(disp != NULL)
+            lv_display_flush_ready(disp);
+    }
+}
+#endif
 /***********************************************************************************************************************
 -----函数功能    DMA0 通道4中断处理函数
 -----说明(备注)  处理DMA传输完成的中断
 -----日期        2026-05-29
 ************************************************************************************************************************/
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
 void DMA0_Channel4_IRQHandler(void)
 {
+    #if(boardUSE_OS)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    #endif
 
     if(dma_interrupt_flag_get(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_FTF))
     {
-        /* 触发后立刻关闭中断使能，用完即弃，不干扰别人 */
-        dma_interrupt_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
-
-        /* 必须明确清除 FTF 标志位，只清 G 标志可能不够 */
-		#if (boardIC_TYPE == boardIC_GD32F50X)
-		dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_GIF);
-		#elif (boardIC_TYPE == boardIC_GD32F30X)
-        dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_G);
-		#endif  //boardIC_TYPE
-        dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_FTF);
-
-        // 1. 关闭 DMA
-        dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
-
-        // 2. 致命修复：死等 SPI 移位寄存器把最后几个 bit 发送完毕
-        while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
-        while(SET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TRANS));
-
-        // 3. 数据真正发完后，安全拉高片选
-        dispTFT_CS_H();
-
-        // 4. 释放总线信号量
-        if(DispSemaphoreBinary != NULL) {
-            xSemaphoreGiveFromISR(DispSemaphoreBinary, &xHigherPriorityTaskWoken);
-        }
-
-        // 5. 通知 LVGL 可以开始渲染下一块缓冲了
-        if(disp) {
-            lv_display_flush_ready(disp);
-        }
-
+        #if(boardUSE_OS)
+        v_tft_spi_dma_finish_isr(&xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        #else
+        v_tft_spi_dma_finish_isr();
+        #endif
     }
 }
+#endif
 
 #endif  //boardDISPLAY_EN

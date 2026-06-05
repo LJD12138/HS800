@@ -278,24 +278,43 @@ void vImgAnim_SetMode(ImgAnimMode_E e_mode, uint32_t us_period_ms)
  ************************************************************************************************************************/
 void vImgAnim_ManualTick(void)
 {
+    static uint32_t s_us_progress = 0;
+    static uint32_t s_ul_last_tick = 0;
+
     if (S_tImgAnimCtrl.pContainer == NULL || S_tImgAnimCtrl.pImgLeft == NULL || S_tImgAnimCtrl.pImgRight == NULL)
     {
+        s_ul_last_tick = 0U;
         return;
     }
     if (S_tImgAnimCtrl.eCurrentMode == IMG_ANIM_MODE_NONE || S_tImgAnimCtrl.bIsPaused)
     {
+        s_ul_last_tick = 0U;
+        return;
+    }
+    uint32_t ul_now_tick = lv_tick_get();
+    uint32_t ul_period = S_tImgAnimCtrl.usCurrentPeriod;
+    uint32_t ul_elapsed;
+    uint32_t ul_step;
+
+    if (ul_period == 0U)
+        ul_period = 800U;
+
+    if (s_ul_last_tick == 0U)
+    {
+        s_ul_last_tick = ul_now_tick;
         return;
     }
 
-    /* 每次动画刷新调用时的步长设置为 8，保证渐变柔和匀速 */
-    static uint32_t s_us_progress = 0;
-    
-    s_us_progress += 8;
-    if (s_us_progress > 255)
-    {
-        s_us_progress = 0;
-    }
+    ul_elapsed = lv_tick_elaps(s_ul_last_tick);
+    if (ul_elapsed == 0U)
+        return;
 
+    s_ul_last_tick = ul_now_tick;
+    ul_step = (ul_elapsed * 256U) / ul_period;
+    if (ul_step == 0U)
+        ul_step = 1U;
+
+    s_us_progress = (s_us_progress + ul_step) & 0xFFU;
     v_exec_cb(&S_tImgAnimCtrl, s_us_progress);
 }
 

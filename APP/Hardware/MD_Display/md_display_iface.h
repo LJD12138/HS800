@@ -78,7 +78,7 @@ void vDisp_TftWriteCommand(u8 cmd);
 void vDisp_TftWriteData8(u8 data);
 void vDisp_TftWriteData16(u16 data);
 void vDisp_TftWriteBuffer(const u8 *data, u32 len);
-void vDisp_TftWriteColorAsync(const u8 *data, u32 len);
+bool bDisp_TftWriteColorAsync(const u8 *data, u32 len);
 
 #endif  /*boardDISPLAY_EN*/
 #endif  //MD_DISPLAY_IFACE_H_

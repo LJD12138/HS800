@@ -49,6 +49,7 @@ extern lv_display_t *disp;
 
 #if(boardUSE_OS)
 extern SemaphoreHandle_t DispSemaphoreBinary;
+extern SemaphoreHandle_t DispFlushDoneSemaphore;
 #endif  //boardUSE_OS
 
 void lv_port_disp_init(void);

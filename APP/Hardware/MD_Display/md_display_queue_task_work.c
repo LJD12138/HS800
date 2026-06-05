@@ -30,11 +30,13 @@
 #include <string.h>
 
 //****************************************************局部宏定义初始化*********************************************//
-#define dispTASK_WORK_CYCLE_TIME boardDISP_REFRESH_TIME
+#define dispTASK_WORK_DATA_UPDATE_MS boardDISP_REFRESH_TIME
+#define dispTASK_WORK_LVGL_PERIOD_MS 20U
 #define dispTASK_WORK_SLEEP_OFF_MS 100U
 
 //****************************************************局部变量定义************************************************//
-/* s_ucDispWorkUpdateIndex removed: all params updated in one pass */
+static TickType_t s_tDispWorkLastDataUpdateTick = 0U;
+static bool s_bDispWorkDataUpdateTickValid = false;
 
 //****************************************************局部函数定义************************************************//
 static void v_update_dev_param(void);
@@ -57,13 +59,11 @@ void v_disp_queue_task_work(Task_T *tp_task)
     // 存在新任务,退出当前任务
     if (lwrb_get_full(&tp_task->tQueueBuff) > 0U)
     {
+        s_bDispWorkDataUpdateTickValid = false;
         vDisp_Main1Exit();
         cQueue_GotoStep(tp_task, STEP_END);
         return;
     }
-
-    v_update_dev_param();
-    bDisp_Main1DataUpdate();
 
     switch (tp_task->ucStep)
     {
@@ -73,7 +73,7 @@ void v_disp_queue_task_work(Task_T *tp_task)
             if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
             
-             vDisp_UiRefresh();
+            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
@@ -83,6 +83,10 @@ void v_disp_queue_task_work(Task_T *tp_task)
         {
             bDisp_Switch(ST_ON, true);
             vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHG_DISCHG);
+            v_update_dev_param();
+            bDisp_Main1DataUpdate();
+            s_tDispWorkLastDataUpdateTick = xTaskGetTickCount();
+            s_bDispWorkDataUpdateTickValid = true;
             vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
@@ -91,15 +95,32 @@ void v_disp_queue_task_work(Task_T *tp_task)
         // 更新数据
         case 2: 
         {
-           
+            TickType_t t_now_tick = xTaskGetTickCount();
 
-            // 背光打开时才更新 UI
             if (tDisp.bLight == true)
+            {
+                if ((s_bDispWorkDataUpdateTickValid == false) ||
+                    ((t_now_tick - s_tDispWorkLastDataUpdateTick) >= pdMS_TO_TICKS(dispTASK_WORK_DATA_UPDATE_MS)))
+                {
+                    s_tDispWorkLastDataUpdateTick = t_now_tick;
+                    s_bDispWorkDataUpdateTickValid = true;
+                    v_update_dev_param();
+                    bDisp_Main1DataUpdate();
+                }
+
                 vDisp_UiRefresh();
+                vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_LVGL_PERIOD_MS));
+                return;
+            }
+
+            s_bDispWorkDataUpdateTickValid = false;
+            vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_SLEEP_OFF_MS));
+            return;
         }
         break;
 
         default:
+            s_bDispWorkDataUpdateTickValid = false;
             vDisp_Main1Exit();
             cQueue_GotoStep(tp_task, STEP_END);
             return;
@@ -107,7 +128,7 @@ void v_disp_queue_task_work(Task_T *tp_task)
 
     // sMyPrint("显示刷新 \r\n");
 
-    vTaskDelay(dispTASK_WORK_CYCLE_TIME);
+    vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_LVGL_PERIOD_MS));
 }
 
 /***********************************************************************************************************************

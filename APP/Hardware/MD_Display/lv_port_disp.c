@@ -1,7 +1,7 @@
 /***********************************************************************************************************************
  -----文件说明    LVGL显示端口适配层
  -----说明(备注)  将LVGL显示刷新回调与底层TFT控制器绑定，支持FreeRTOS信号量保护和双缓冲渲染模式
- -----文件版本    V1.0
+ -----文件版本    V1.1
  -----作者        HS800开发团队
  -----日期        2024
  ************************************************************************************************************************/
@@ -41,36 +41,35 @@ static const uint8_t disp_st7789_panel_cmds[] = {
     LV_LCD_CMD_DELAY_MS, 120,
     LV_LCD_CMD_SET_DISPLAY_ON, 0,
     LV_LCD_CMD_DELAY_MS, 10,
-    LV_LCD_CMD_EOF, LV_LCD_CMD_EOF};
+    LV_LCD_CMD_EOF, LV_LCD_CMD_EOF
+};
 #endif
 
 /* 显示访问的二值信号量（用于串行化对 TFT 的访问） */
 #if (boardUSE_OS)
 SemaphoreHandle_t DispSemaphoreBinary = NULL;
-#endif // boardUSE_OS
+SemaphoreHandle_t DispFlushDoneSemaphore = NULL;
+#endif
 
 lv_display_t *disp;
 
-//****************************************************配置与宏**************************************************//
-/* 渲染缓冲区按行数分配：每次交由 LVGL 提交的刷新行数 */
-#define DISP_DRAW_BUF_LINE_COUNT 15U
-
-//****************************************************局部函数定义************************************************//
+#define DISP_DRAW_BUF_LINE_COUNT 25U
 
 #if (boardUSE_OS)
 static bool b_disp_bus_take(TickType_t wait_ticks);
 static void v_disp_bus_give(void);
+static void v_disp_flush_done_reset(void);
+static void v_disp_flush_wait(lv_display_t *disp);
 #endif
 
-/* LVGL 内置 ST7789 驱动回调函数 */
 #if (LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
 static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, const uint8_t *param, size_t param_size);
 static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, uint8_t *param, size_t param_size);
 #endif
 
 #if !(LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
-static void disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map); /* LVGL 刷新回调 */
-static bool b_disp_flush_area_is_valid(const lv_area_t *area);                      /* 刷新区域合法性检查 */
+static void disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map);
+static bool b_disp_flush_area_is_valid(const lv_area_t *area);
 #endif
 
 /***********************************************************************************************************************
@@ -94,22 +93,30 @@ void lv_port_disp_init(void)
         if (DispSemaphoreBinary != NULL)
             xSemaphoreGive(DispSemaphoreBinary);
     }
+
+    if (DispFlushDoneSemaphore == NULL)
+        DispFlushDoneSemaphore = xSemaphoreCreateBinary();
     #endif
 
-    /* 使用 LVGL 内置 ST7789 驱动 */
     #if (LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
-    /* 创建 ST7789 LCD 驱动 */
     disp = lv_st7789_create(DISP_HOR_RES, DISP_VER_RES, DISP_ST7789_FLAGS, st7789_send_cmd, st7789_send_color);
-    lv_st7789_send_cmd_list(disp, disp_st7789_panel_cmds);
-    /* 配置双缓冲区和渲染模式 */
-    lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-/* 使用自定义 ST7789 驱动 */
+    if (disp != NULL)
+        lv_st7789_send_cmd_list(disp, disp_st7789_panel_cmds);
     #else
     disp = lv_display_create(DISP_HOR_RES, DISP_VER_RES);
-    lv_display_set_flush_cb(disp, disp_flush);
-    lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
+    if (disp != NULL)
+        lv_display_set_flush_cb(disp, disp_flush);
     #endif
+
+    if (disp != NULL)
+    {
+        lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+        #if (boardUSE_OS)
+        if (DispFlushDoneSemaphore != NULL)
+            lv_display_set_flush_wait_cb(disp, v_disp_flush_wait);
+        #endif
+    }
 }
 
 #if (boardUSE_OS)
@@ -139,6 +146,40 @@ static void v_disp_bus_give(void)
 {
     if (DispSemaphoreBinary != NULL)
         xSemaphoreGive(DispSemaphoreBinary);
+}
+
+/***********************************************************************************************************************
+ -----函数功能    复位刷新完成信号量
+ -----说明(备注)  清空DispFlushDoneSemaphore中的所有计数，使其恢复到"未完成"状态
+                  在发起新的异步刷新传输前调用，确保等待的是本次刷新完成事件
+ -----传入参数    none
+ -----输出参数    none
+ -----返回值      none
+ ************************************************************************************************************************/
+static void v_disp_flush_done_reset(void)
+{
+    if (DispFlushDoneSemaphore == NULL)
+        return;
+
+    while (xSemaphoreTake(DispFlushDoneSemaphore, 0U) == pdPASS)
+    {
+    }
+}
+
+/***********************************************************************************************************************
+ -----函数功能    等待刷新完成
+ -----说明(备注)  阻塞等待DispFlushDoneSemaphore信号量，直到底层异步刷新传输完成
+                  作为LVGL的flush_wait回调，在渲染下一帧前确保上一帧数据已全部写入TFT控制器
+ -----传入参数    disp:LVGL显示对象指针（未使用，仅为匹配回调签名）
+ -----输出参数    none
+ -----返回值      none
+ ************************************************************************************************************************/
+static void v_disp_flush_wait(lv_display_t *disp)
+{
+    LV_UNUSED(disp);
+
+    if (DispFlushDoneSemaphore != NULL)
+        (void)xSemaphoreTake(DispFlushDoneSemaphore, portMAX_DELAY);
 }
 #endif
 
@@ -189,22 +230,24 @@ static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd
     }
     #endif
 
-    /* 发送命令字节 */
     for (size_t i = 0; i < cmd_size; i++)
         vDisp_TftWriteCommand(cmd[i]);
 
-    /* 发送像素块（调用我们新写的异步接口） */
     if ((param != NULL) && (param_size != 0U))
-        vDisp_TftWriteColorAsync(param, (u32)param_size);
-    else
     {
-        /* 如果没数据，别忘了自己释放信号量和 flush */
         #if (boardUSE_OS)
-        v_disp_bus_give();
+        v_disp_flush_done_reset();
         #endif
 
-        lv_display_flush_ready(disp);
+        if (bDisp_TftWriteColorAsync(param, (u32)param_size))
+            return;
     }
+
+    #if (boardUSE_OS)
+    v_disp_bus_give();
+    #endif
+
+    lv_display_flush_ready(disp);
 }
 #endif
 
@@ -242,7 +285,7 @@ static bool b_disp_flush_area_is_valid(const lv_area_t *area)
  ************************************************************************************************************************/
 static void disp_flush(lv_display_t *disp_drv, const lv_area_t *area, uint8_t *px_map)
 {
-#if (boardUSE_OS)
+    #if (boardUSE_OS)
     if (DispSemaphoreBinary == NULL)
     {
         lv_display_flush_ready(disp_drv);
@@ -270,15 +313,13 @@ static void disp_flush(lv_display_t *disp_drv, const lv_area_t *area, uint8_t *p
     v_disp_bus_give();
 
     lv_display_flush_ready(disp_drv);
-#else
+    #else
     /* 无 RTOS：参数合法时直接执行绘制 */
     if (b_disp_flush_area_is_valid(area) && (px_map != NULL))
-    {
         vDisp_FastDrawColor((u16)area->x1, (u16)area->y1, (u16)area->x2, (u16)area->y2, (u16 *)px_map);
-    }
 
     lv_display_flush_ready(disp_drv);
-#endif
+    #endif
 }
 #endif
 
