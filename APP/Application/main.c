@@ -105,13 +105,12 @@ static void nvic_init(void)
 ******************************************************************************************************************/
 int main(void)
 {
+	SystemInit();
 	
 	#if(USER_BOOT_EXIST == 1)
 	nvic_vector_table_set(NVIC_VECTTAB_FLASH1, VECT_TAB_OFFSET);  //设置NVIC中断向量表的偏移
 	__enable_irq();	//解除中断屏蔽
 	#endif	//USER_BOOT_EXIST
-	
-	SystemInit();
 	
 	nvic_init();        //中断初始化
 	

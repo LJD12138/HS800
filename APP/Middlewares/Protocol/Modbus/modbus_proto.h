@@ -19,7 +19,7 @@ typedef enum
 	MRS_ERR,
 }ModbusRxStep_E; 
 
-#pragma pack(1)
+/* #pragma pack(1) removed to fix alignment-related UsageFault */
 typedef struct
 {
 	//数据帧开始
@@ -42,7 +42,7 @@ typedef struct
 	lwrb_t				tRxBuff;
 	u8             		ucaData[];
 }ModbusProtoRx_t;
-#pragma pack()
+/* #pragma pack() removed */
 
 #pragma pack(1)
 typedef struct

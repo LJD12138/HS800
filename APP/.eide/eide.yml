@@ -681,9 +681,10 @@ targets:
             language-cpp: c++11
             link-time-optimization: false
             optimization: level-0
+            short-enums#wchar: true
           global:
             output-debug-info: enable
-            use-microLIB: false
+            use-microLIB: true
           linker:
             $outputTaskExcludes:
               - .bin

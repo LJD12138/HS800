@@ -22,6 +22,7 @@ struct Task_T
 	vu16              	usStepRepeatCnt;	//步骤重复次数
 	vu16              	usTaskWaitCnt;		//任务等待次数
 	bool 				bNowRun;			//立刻执行
+	u8                  ucPad;              /* 填充1字节，使后续4字节成员和结构体对齐 */
 	bpTaskManageFunc    bp_task_manage_func;//任务调度函数
 	vpFunc				vp_func;			//任务函数
 	vpAddTaskReturnFunc vp_return_func;

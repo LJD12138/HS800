@@ -36,7 +36,7 @@
 #include "Print/print_task.h"
 #include "app_info.h"
 
-#if(boardIC_TYPE == boardIC_GD32F30X)
+#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 #include "Flash/flash_gd32.h"
 #elif(boardIC_TYPE == boardIC_STM32H7XX)
 #if(boardUSE_SFUD)
@@ -101,7 +101,7 @@ EfErrCode ef_port_read(uint32_t addr, uint32_t *buf, size_t size) {
     EfErrCode result = EF_NO_ERR;
 	
 	#if(boardEASY_FLASH)
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	vFlash_Gd32Read32Bit(addr, buf, size);
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
 	#if(boardUSE_SFUD)
@@ -136,7 +136,7 @@ EfErrCode ef_port_erase(uint32_t addr, size_t size) {
     EF_ASSERT(addr % EF_ERASE_MIN_SIZE == 0);
 	
 	#if(boardEASY_FLASH)
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	if(bFlash_Gd32EraseSector(addr, addr + size) == false){
         result = EF_ERASE_ERR;
     }
@@ -175,7 +175,7 @@ EfErrCode ef_port_write(uint32_t addr, const uint32_t *buf, size_t size) {
 	memcpy(buff, buf, size);
 	
 	#if(boardEASY_FLASH)
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	if(bFlash_Gd32Write32Bit(addr, buf, size) == false){
         result = EF_WRITE_ERR;
     }
