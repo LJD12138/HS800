@@ -53,7 +53,7 @@ SemaphoreHandle_t DispFlushDoneSemaphore = NULL;
 
 lv_display_t *disp;
 
-#define DISP_DRAW_BUF_LINE_COUNT 25U
+#define DISP_DRAW_BUF_LINE_COUNT 15U
 
 #if (boardUSE_OS)
 static bool b_disp_bus_take(TickType_t wait_ticks);

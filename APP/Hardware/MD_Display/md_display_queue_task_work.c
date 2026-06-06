@@ -31,7 +31,7 @@
 
 //****************************************************局部宏定义初始化*********************************************//
 #define dispTASK_WORK_DATA_UPDATE_MS boardDISP_REFRESH_TIME
-#define dispTASK_WORK_LVGL_PERIOD_MS 20U
+#define dispTASK_WORK_LVGL_PERIOD_MS 33U
 #define dispTASK_WORK_SLEEP_OFF_MS 100U
 
 //****************************************************局部变量定义************************************************//
