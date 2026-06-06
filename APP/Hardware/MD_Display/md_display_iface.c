@@ -488,6 +488,14 @@ bool bDisp_TftWriteColorAsync(const u8 *data, u32 len)
     #endif  //boardDISP_SPI_MODE
 }
 
+/***********************************************************************************************************************
+ -----函数功能    SPI DMA传输完成中断服务子函数
+ -----说明(备注)  DMA传输完成后由中断处理函数调用，清除DMA中断标志，等待SPI移位结束，
+                   拉高片选信号；若当前传输为LVGL颜色数据，则释放显示信号量并通知LVGL刷新完成
+ -----传入参数    px_higher_priority_task_woken:FreeRTOS模式下用于返回是否有更高优先级任务被唤醒，裸机模式下无参数
+ -----输出参数    none
+ -----返回值      none
+ ************************************************************************************************************************/
 #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
 #if(boardUSE_OS)
 static void v_tft_spi_dma_finish_isr(BaseType_t *px_higher_priority_task_woken)
