@@ -25,7 +25,7 @@
 extern const lv_image_dsc_t img_1;
 extern const lv_image_dsc_t img_2; 
 extern const lv_image_dsc_t img_3; 
-extern const lv_image_dsc_t img_1_mirror; /* 由 ui_image_1.c 导出的水平翻转 const 数据，不占 RAM */
+extern const lv_image_dsc_t img_1_mirror_map; /* 由 ui_image_1.c 导出的水平翻转 const 数据，不占 RAM */
 
 /* 内部控制管理结构体定义 */
 typedef struct
@@ -63,22 +63,35 @@ static void v_exec_cb(void *p_var, const int32_t l_val)
 
     /* 1. 呼吸渐暗基础逻辑：改变图片控件的 Alpha 透明度 */
     lv_opa_t current_opa = (lv_opa_t)(255 - l_val);
-    lv_obj_set_style_image_opa(p_ctrl->pImgLeft, current_opa, LV_PART_MAIN);
-    lv_obj_set_style_image_opa(p_ctrl->pImgRight, current_opa, LV_PART_MAIN);
 
     /* 2. 获取当前动画模式的专属初始坐标 */
     ImgAnimMode_E e_mode = p_ctrl->eCurrentMode;
     const ImgAnimPosConfig_T *p_pos = &p_ctrl->posConfigs[e_mode];
 
-    /* 3. 实现各模式的具体位移轨迹 */
+    /* 3. 按模式区分左右图片的不透明度：
+     *    - 快充模式(CHARGE_FAST): 左侧 img_2 固定满不透明, 仅右侧 img_3 进行呼吸渐变
+     *    - 其他模式: 左右两侧均参与呼吸渐变
+     */
+    if (e_mode == IMG_ANIM_MODE_CHARGE_FAST)
+    {
+        lv_obj_set_style_image_opa(p_ctrl->pImgLeft,  LV_OPA_COVER,  LV_PART_MAIN);
+        lv_obj_set_style_image_opa(p_ctrl->pImgRight, current_opa,   LV_PART_MAIN);
+    }
+    else
+    {
+        lv_obj_set_style_image_opa(p_ctrl->pImgLeft,  current_opa, LV_PART_MAIN);
+        lv_obj_set_style_image_opa(p_ctrl->pImgRight, current_opa, LV_PART_MAIN);
+    }
+
+    /* 4. 实现各模式的具体位移轨迹 */
     if (e_mode == IMG_ANIM_MODE_CHG_DISCHG)
     {
         /* 放电位移呼吸模式 */
         int32_t l_offset_y = (l_val * 8) / 255;
-        
+
         lv_obj_set_pos(p_ctrl->pImgLeft, p_pos->lLeftX, p_pos->lLeftY - l_offset_y);
         lv_obj_set_pos(p_ctrl->pImgRight, p_pos->lRightX, p_pos->lRightY + l_offset_y);
-    } 
+    }
     else if (e_mode == IMG_ANIM_MODE_DISCHARGE)
     {
         /* 放电呼吸模式：保持在初始位置不变，仅受透明度变化影响 */
@@ -87,7 +100,7 @@ static void v_exec_cb(void *p_var, const int32_t l_val)
     }
     else if (e_mode == IMG_ANIM_MODE_CHARGE_SLOW || e_mode == IMG_ANIM_MODE_CHARGE_FAST)
     {
-        /* 充电模式：保持位置不动，仅呼吸渐变 */
+        /* 充电模式：保持位置不动，仅呼吸渐变(快充仅右侧渐变) */
         lv_obj_set_pos(p_ctrl->pImgLeft, p_pos->lLeftX, p_pos->lLeftY);
         lv_obj_set_pos(p_ctrl->pImgRight, p_pos->lRightX, p_pos->lRightY);
     }
@@ -234,7 +247,7 @@ void vImgAnim_SetMode(ImgAnimMode_E e_mode, uint32_t us_period_ms)
     {
         /* 放电呼吸模式：左边使用原图，右边使用编译时由 img_1 自动水平翻转生成的只读 const 镜像资源 */
         lv_image_set_src(S_tImgAnimCtrl.pImgLeft, &img_1);
-        lv_image_set_src(S_tImgAnimCtrl.pImgRight, &img_1_mirror);
+        lv_image_set_src(S_tImgAnimCtrl.pImgRight, &img_1_mirror_map);
 
         lv_image_set_rotation(S_tImgAnimCtrl.pImgLeft, 0);
         lv_image_set_scale_x(S_tImgAnimCtrl.pImgLeft, 256);

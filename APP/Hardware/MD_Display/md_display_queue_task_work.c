@@ -67,33 +67,24 @@ void v_disp_queue_task_work(Task_T *tp_task)
 
     switch (tp_task->ucStep)
     {
-        // 初始化
+        // 初始化:更新数据并亮屏
         case 0: 
         {
             if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
             
-            vDisp_UiRefresh();
-            cQueue_GotoStep(tp_task, STEP_NEXT);
-        }
-        break;
-
-        // 打开背光,避免显示加载过程
-        case 1: 
-        {
-            bDisp_Switch(ST_ON, true);
-            vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHG_DISCHG);
             v_update_dev_param();
             bDisp_Main1DataUpdate();
+            vDisp_UiRefresh();
+            bDisp_Switch(ST_ON, true);
             s_tDispWorkLastDataUpdateTick = xTaskGetTickCount();
             s_bDispWorkDataUpdateTickValid = true;
-            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
 
-        // 更新数据
-        case 2: 
+        // 持续刷新显示
+        case 1: 
         {
             TickType_t t_now_tick = xTaskGetTickCount();
 
@@ -143,20 +134,17 @@ __STATIC_INLINE void v_update_dev_param(void)
 {
     char cStr[10];
 
-    /* 一次性更新所有参数, 避免分散到多个刷新周期 */
     #if (boardBMS_EN)
     snprintf(cStr, sizeof(cStr), "%d", tBmsRx.usSOC);
     set_var_uca_bat_soc_value(cStr);
 
-    {
-        u16 usTotalMinutes;
-        if (tBms.eWorkState == BWS_CHG)
-            usTotalMinutes = tBmsRx.usChgFullTime;
-        else
-            usTotalMinutes = tBmsRx.usDisChgEmptyTime;
-        v_disp_work_format_remaining_time(cStr, sizeof(cStr), usTotalMinutes);
-        set_var_uca_remaining_usage_time(cStr);
-    }
+    u16 usTotalMinutes;
+    if (tBms.eWorkState == BWS_CHG)
+        usTotalMinutes = tBmsRx.usChgFullTime;
+    else
+        usTotalMinutes = tBmsRx.usDisChgEmptyTime;
+    v_disp_work_format_remaining_time(cStr, sizeof(cStr), usTotalMinutes);
+    set_var_uca_remaining_usage_time(cStr);
     #endif // boardBMS_EN
 
     #if (boardUSB_EN)
@@ -181,6 +169,16 @@ __STATIC_INLINE void v_update_dev_param(void)
 
     snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usInPwr);
     set_var_uca_in_pwr_value(cStr);
+
+    // 故障码轮询显示: 切换间隙(返回100)时不更新错误码文本,
+    // 避免将"100"字符串显示到标签上, 同时配合 user_ui 的可见性控制实现闪烁效果
+    u16 us_err_code = usDisp_ErrCodeDisplay();
+    // u16 us_err_code = 88;//测试
+    if (us_err_code != 100)
+    {
+        snprintf(cStr, sizeof(cStr), "E%d", us_err_code);
+        set_var_uca_err_code_value(cStr);
+    }
 }
 
 /***********************************************************************************************************************

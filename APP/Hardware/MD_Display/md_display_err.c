@@ -60,7 +60,7 @@ u16 usDisp_ErrCodeDisplay(void)
 		#endif  //boardDC_EN
 
 		#if(boardBMS_EN)
-		&& tBms.uErrCode.ulCode == 0
+		&& tBms.uErrCode.ullCode == 0
 		#endif  //boardBMS_EN
 
 		#if(boardMPPT_EN)
@@ -482,7 +482,7 @@ u16 usDisp_ErrCodeDisplay(void)
 			
 		case 61:
 			#if(boardDCAC_EN)
-			if(tDcac.uErrCode.tCode.bDcacInFreq)
+			if(tDcac.uErrCode.tCode.bDcacHighVolt)
 				break;
 			else
 			#endif  //boardDCAC_EN
@@ -505,11 +505,9 @@ u16 usDisp_ErrCodeDisplay(void)
 				us_err_step++;
 			
 		case 64:
-//			if(tDcac.uErrCode.tCode.bUV1 ||
-//				tDcac.uErrCode.tCode.bUV2 ||
-//				tDcac.uErrCode.tCode.bUV3)
-//				break;
-//			else
+			if(tDcac.uErrCode.tCode.bDcacInFreq)
+				break;
+			else
 				us_err_step++;
 			
 		case 65:

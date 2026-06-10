@@ -107,16 +107,16 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	}
 
 	//输入欠压
-	if(tMpptRx.uErrCode.tCode.bInUV)
-	{
-		if(tMppt.uErrCode.tCode.bMpptInUV == false)
-			bMppt_SetErrCode(MEC_MPPT_IN_UV, true);
-	}
-	else 
-	{
-		if(tMppt.uErrCode.tCode.bMpptInUV == true)
-			bMppt_SetErrCode(MEC_MPPT_IN_UV, false);
-	}
+//	if(tMpptRx.uErrCode.tCode.bInUV)
+//	{
+//		if(tMppt.uErrCode.tCode.bMpptInUV == false)
+//			bMppt_SetErrCode(MEC_MPPT_IN_UV, true);
+//	}
+//	else 
+//	{
+//		if(tMppt.uErrCode.tCode.bMpptInUV == true)
+//			bMppt_SetErrCode(MEC_MPPT_IN_UV, false);
+//	}
 
 	//输入过流
 	if(tMpptRx.uErrCode.tCode.bInOC)
@@ -295,7 +295,7 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	{
 		us_last_chg_pwr = us_chg_pwr;
 		us_chg_pwr_err = 0;
-		// sMyPrint("设置MPPT充电功率 %d",us_chg_pwr);
+		// sMyPrint("设置MPPT充电功率 %d \r\n",us_chg_pwr);
 	}
 		
 }

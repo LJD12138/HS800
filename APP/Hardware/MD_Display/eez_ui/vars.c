@@ -53,3 +53,16 @@ void set_var_uca_remaining_usage_time(const char *value) {
     strncpy(uca_remaining_usage_time, value, sizeof(uca_remaining_usage_time) / sizeof(char));
     uca_remaining_usage_time[sizeof(uca_remaining_usage_time) / sizeof(char) - 1] = 0;
 }
+
+
+char uca_err_code_value[5] = { 0 };
+
+const char *get_var_uca_err_code_value() {
+    return uca_err_code_value;
+}
+
+void set_var_uca_err_code_value(const char *value) {
+    strncpy(uca_err_code_value, value, sizeof(uca_err_code_value) / sizeof(char));
+    uca_err_code_value[sizeof(uca_err_code_value) / sizeof(char) - 1] = 0;
+}
+

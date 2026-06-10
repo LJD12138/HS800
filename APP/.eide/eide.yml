@@ -267,7 +267,6 @@ virtualFolder:
             - path: Hardware/MD_Display/eez_ui/ui_font_barlow_condensed_regular_66.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon__.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_ac.c
-            - path: Hardware/MD_Display/eez_ui/ui_image_icon_bat_ot.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_dc.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_in.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_ot.c
@@ -280,6 +279,8 @@ virtualFolder:
             - path: Hardware/MD_Display/eez_ui/ui_image_2.c
             - path: Hardware/MD_Display/eez_ui/ui_image_3.c
             - path: Hardware/MD_Display/eez_ui/vars.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_1_mirror_map.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_ol.c
           folders: []
         - name: user_ui
           files:

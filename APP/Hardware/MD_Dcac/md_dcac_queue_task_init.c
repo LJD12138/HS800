@@ -42,13 +42,13 @@ void v_dcac_queue_task_init(Task_T *tp_task)
 
 		case 1:
 		{
-			if(b_dcac_cs_set_chg_pwr(tAppMemParam.tDCAC.usInPwrRating) == true)  //获取参数
+			// if(b_dcac_cs_set_chg_pwr(tAppMemParam.tDCAC.usInPwrRating) == true)  //获取参数
 				cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-			else
-			{
-				vTaskDelay(500);
-				break;
-			}
+			// else
+			// {
+			// 	vTaskDelay(500);
+			// 	break;
+			// }
 		}
 
 		case 2:

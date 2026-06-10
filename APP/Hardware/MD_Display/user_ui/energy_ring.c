@@ -390,8 +390,8 @@ static lv_coord_t energy_ring_get_outer_extent(const EnergyRing_T *tp_ring)
 ************************************************************************************************************************/
 static lv_obj_t *energy_ring_get_parent_screen(void)
 {
-    if(objects.main != NULL)
-        return objects.main;
+    if(objects.main_work != NULL)
+        return objects.main_work;
 
     return lv_screen_active();
 }
@@ -1064,8 +1064,8 @@ void EnergyRing_Start(EnergyRing_T *p_ring)
     if(energy_ring_create(p_ring) == false)
         return;
     
-    /* 设置初始SOC为50%，充电状态为true，启动充电动画显示 */
-    EnergyRing_UpdateSoc(p_ring, 50, true);
+    // /* 设置初始SOC为50%，充电状态为true，启动充电动画显示 */
+    // EnergyRing_UpdateSoc(p_ring, 50, true);
 }
 
 /***********************************************************************************************************************

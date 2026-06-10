@@ -1,4 +1,6 @@
 #include "MD_Dcac/md_dcac_rec_data_proc.h"
+#include "MD_Mppt/md_mppt_task.h"
+#include "main.h"
 
 #if(boardDCAC_EN)
 #include "MD_Dcac/md_dcac_rec_task.h"
@@ -97,14 +99,14 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			tDcacRx.uState.usState = tParam1.usState;
 
 			s16 fan_temp = 25;
-			if(tParam1.usFan > 10 && tParam1.usFan <25)
-				fan_temp = 40;
-			else if(tParam1.usFan > 25 && tParam1.usFan < 50)
-				fan_temp = 43;
-			else if(tParam1.usFan > 50 && tParam1.usFan < 75)
-				fan_temp = 50;
-			else if(tParam1.usFan > 75)
-				fan_temp = 55;
+			// if(tParam1.usFan > 10 && tParam1.usFan <25)
+			// 	fan_temp = 40;
+			// else if(tParam1.usFan > 25 && tParam1.usFan < 50)
+			// 	fan_temp = 43;
+			// else if(tParam1.usFan > 50 && tParam1.usFan < 75)
+			// 	fan_temp = 50;
+			// else if(tParam1.usFan > 75)
+			// 	fan_temp = 55;
 			
 			s16 temp = MAX3(tParam1.sTemp1, tParam1.sTemp2, tParam1.sTemp3);
 			temp = temp / 10;
@@ -125,7 +127,11 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			//装载参数
 			bFunc_SwapU16Array((u8*)&tParam2, proto_rx->ucpValidData, proto_rx->ucCharLen/2);
 			//更新数据
-			tDcacRx.uErrCode.usCode[0] = tParam2.uDcErrCode;
+			// if(tMppt.eDevState > DS_BOOTING && tDcac.eChgState == DS_SHUT_DOWN)
+				tDcacRx.uErrCode.usCode[0] = tParam2.uDcErrCode & (~0x0001);
+			// else
+				// tDcacRx.uErrCode.usCode[0] = tParam2.uDcErrCode;
+
 			tDcacRx.uErrCode.usCode[1] = tParam2.uAcErrCode;
 			tDcacRx.uErrCode.usCode[2] = tParam2.uInErrCode & (~0x140);
 			tDcacRx.uErrCode.usCode[3] = tParam2.usSysErr & 0x01;

@@ -2,6 +2,7 @@
 #define MD_BMS_TASK_H
 
 #include "board_config.h"
+#include "main.h"
 
 #if(boardBMS_EN)
 #include "queue_task.h"
@@ -51,16 +52,16 @@ typedef enum
 //*****************************错误状态*************************************
 typedef enum
 {						
-    BEC_CLEAR_ALL = 0,	//清所有错误
+    BEC_CLEAR_ALL = 0,		//清所有错误
 
-	BEC_BMS_ERR = 1,	//模块上报报错
+	BEC_BMS_ERR = 1,		//模块上报报错
 	
-	BEC_SYS_DEV_LOST = 18,//模块丢失
-	BEC_SYS_CHG_OT,		//充电过温
-	BEC_SYS_DISCHG_OT,	//放电过温
-	BEC_SYS_CHG_UT,		//充电低温
-	BEC_SYS_DISCHG_UT,	//放电低温
-	BEC_SYS_LOW_VOLT,	//欠压
+	BEC_SYS_DEV_LOST = 34,	//模块丢失
+	BEC_SYS_CHG_OT,			//充电过温
+	BEC_SYS_DISCHG_OT,		//放电过温
+	BEC_SYS_CHG_UT,			//充电低温
+	BEC_SYS_DISCHG_UT,		//放电低温
+	BEC_SYS_LOW_VOLT,		//欠压
 }BmsErrCode_E;
 
 typedef union
@@ -72,14 +73,14 @@ typedef union
 		//电池包器上报错误(结束)
 		
 		//系统判断的错误
-		vu32 			bSysDevLost:1;
-		vu32 			bSysChgOT:1;
-		vu32 			bSysDisChgOT:1;
-		vu32 			bSysChgUT:1;
-		vu32 			bSysDisChgUT:1;
-		vu32 			bSysLV:1;
+		vu32 			bSysDevLost:1;      //模块丢失
+		vu32 			bSysChgOT:1;        //充电过温
+		vu32 			bSysDisChgOT:1;     //放电过温
+		vu32 			bSysChgUT:1;        //充电低温
+		vu32 			bSysDisChgUT:1;     //放电低温
+		vu32 			bSysLV:1;           //欠压
 	}tCode;
-	vu32 ulCode;  
+	vu64 ullCode;  
 }BmsErrCode_N;
 
 //*********************************许可*************************************

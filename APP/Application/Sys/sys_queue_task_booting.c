@@ -47,7 +47,7 @@ void v_sys_queue_task_booting(Task_T *tp_task)
 		case 1:
 		{
 			#if(boardBMS_EN)
-			if(cBms_Switch(SO_KEY, ST_ON, true) < 0)  //²Ù×÷Ê§°Ü
+			if(cBms_Switch(SO_KEY, ST_ON, false) < 0)  //²Ù×÷Ê§°Ü
 			{
 				if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant) 
 					log_w("bSysTask:¿ªÆôBMSÊ§°Ü");

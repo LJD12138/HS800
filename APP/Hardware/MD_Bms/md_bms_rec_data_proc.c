@@ -214,15 +214,15 @@ static s8 c_relay08_param(BaikuProtoRx_t* proto)
 
 	static vu16  last_err_state=0;
 	
-	usBmsRxErrCode = 0;
+	ulBmsRxErrCode = 0;
 	for(int i = 0; i < bmsDEV_NUM; i++)
-		usBmsRxErrCode |= tBmsRx.tDevInfo[i].uErrCode.usCode;
+		ulBmsRxErrCode |= tBmsRx.tDevInfo[i].uErrCode.ulCode;
 	
 	//----------------------------»ñÈ¡¹ÊÕÏÎ»-------------------------------------------------
-	if(last_err_state != usBmsRxErrCode) 
+	if(last_err_state != ulBmsRxErrCode) 
 	{
-		last_err_state = usBmsRxErrCode;
-		if(usBmsRxErrCode)
+		last_err_state = ulBmsRxErrCode;
+		if(ulBmsRxErrCode)
 			bBms_SetErrCode(BEC_BMS_ERR,true);
 		else 
 			bBms_SetErrCode(BEC_BMS_ERR,false);

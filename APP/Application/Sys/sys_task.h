@@ -11,13 +11,13 @@
 
 
 //充电功率等级(总的,PV+AC)
-#define  		sysCHG_PWR_LEVEL1              		400	//0.2C * 40 * 28V
-#define  		sysCHG_PWR_LEVEL2              		520 //0.5C * 40 * 28V
+#define  		sysCHG_PWR_LEVEL1              		100	//0.2C * 40 * 28V
+#define  		sysCHG_PWR_LEVEL2              		200 //0.5C * 40 * 28V
 //0-100;1-110;2-120;3-220;4-230;5-240
 #if(boardDCAC_VOLT_TYPE==0)	//110V
 #define  		sysCHG_PWR_LEVEL3              		1500	
 #elif(boardDCAC_VOLT_TYPE==3) //230V
-#define  		sysCHG_PWR_LEVEL3              		1000
+#define  		sysCHG_PWR_LEVEL3              		600
 #else
 #error "DCAC类型定义有误"
 #endif

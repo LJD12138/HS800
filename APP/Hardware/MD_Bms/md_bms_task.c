@@ -238,13 +238,13 @@ bool bBms_SetErrCode(BmsErrCode_E code, bool set)
 		//上报的错误
 		if(code == BEC_BMS_ERR)
 		{
-			tBms.uErrCode.ulCode &=0xFFFF0000;//去除低位
+			tBms.uErrCode.ullCode &=0xFFFFFFFF00000000;//去除低位
 			if(set == true)
 			{
-				tBms.uErrCode.ulCode |= usBmsRxErrCode;
+				tBms.uErrCode.ullCode |= ulBmsRxErrCode;
 				if(uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)
 					log_e("bBmsTask:设备上报错误,代码:0x%x",
-				              usBmsRxErrCode);
+				              ulBmsRxErrCode);
 			}
 		}
 		//系统判断的错误
@@ -253,13 +253,13 @@ bool bBms_SetErrCode(BmsErrCode_E code, bool set)
 			//系统错误:丢失
 			if(code == BEC_SYS_DEV_LOST)
 			{
-				tBms.uErrCode.ulCode = 0;
-				usBmsRxErrCode = 0;
+				tBms.uErrCode.ullCode = 0;
+				ulBmsRxErrCode = 0;
 				if(set)
 				{
 					b_bms_task_param_init();
 					
-					ERR_SET(tBms.uErrCode.ulCode, (code - 2));
+					ERR_SET(tBms.uErrCode.ullCode, (code - 2));
 					
 					if(uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)
 						log_e("bBmsTask:任务错误_BMS模块丢失");
@@ -274,19 +274,19 @@ bool bBms_SetErrCode(BmsErrCode_E code, bool set)
 			{
 				//设置清除错误位
 				if(set)
-					ERR_SET(tBms.uErrCode.ulCode, (code - 2));
+					ERR_SET(tBms.uErrCode.ullCode, (code - 2));
 				else
-					ERR_CLR(tBms.uErrCode.ulCode, (code - 2));
+					ERR_CLR(tBms.uErrCode.ullCode, (code - 2));
 			}
 		}
 	}
 	else
 	{
-		tBms.uErrCode.ulCode = 0;
-		usBmsRxErrCode = 0;
+		tBms.uErrCode.ullCode = 0;
+		ulBmsRxErrCode = 0;
 	}
 	
-	if(tBms.uErrCode.ulCode)
+	if(tBms.uErrCode.ullCode)
 	{
 		if(set == true)
 		{

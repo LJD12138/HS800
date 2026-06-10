@@ -4,6 +4,8 @@
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
+#include "Sys/sys_task.h"
+#include <stdbool.h>
 
 #if(boardDISPLAY_EN)
 #include "MD_Display/md_display_api.h"
@@ -24,21 +26,63 @@
 ************************************************************************************************************************/
 void v_disp_queue_task_booting(Task_T *tp_task)
 {
+    static uint8_t ucLoadingStep = 0;
     switch(tp_task->ucStep)
     {
+        //初始化
         case 0:
         {
             if(tDisp.eDevState != DS_BOOTING)
-            bDisp_SetDevState(DS_BOOTING);
-            bDisp_Switch(ST_OFF, false);
+                bDisp_SetDevState(DS_BOOTING);
+            ucLoadingStep = 0;
             ui_init();
-            vDisp_Main1UiStart();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
 
+        //加载进度条
         case 1:
         {
+            bDisp_Switch(ST_ON, true);
+            
+            if(ucLoadingStep < 100)
+                ucLoadingStep += 3;
+            if(ucLoadingStep > 100)
+                ucLoadingStep = 100;
+
+            lv_bar_set_value(objects.uc_booting_bar, ucLoadingStep,LV_ANIM_ON);
+            if(tSysInfo.eDevState == DS_WORK && ucLoadingStep >= 100)
+                cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
+        break;
+
+        //进度条到100后停留50ms
+        case 2:
+        {
+            // tp_task->usStepWaitCnt++;
+            // if(tp_task->usStepWaitCnt >= (250 / dispTASK_BOOTING_CYCLE_TIME))
+            {
+                bDisp_Switch(ST_OFF, true);
+                cQueue_GotoStep(tp_task, STEP_NEXT);
+            } 
+        }
+        // break;
+
+        //关背光,切换到Work屏,初始化Work UI
+        case 3:
+        {
+            loadScreen(SCREEN_ID_MAIN_WORK);
+            vDisp_Main1UiStart();
+            vDisp_UiRefresh();
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
+        break;
+
+        //等待LVGL渲染完成后结束
+        case 4:
+        {
+            vDisp_UiRefresh();
+            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_END);
         }
         break;

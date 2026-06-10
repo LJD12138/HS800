@@ -6707,11 +6707,6 @@
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_ac.c</FilePath>
             </File>
             <File>
-              <FileName>ui_image_icon_bat_ot.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_bat_ot.c</FilePath>
-            </File>
-            <File>
               <FileName>ui_image_icon_dc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_dc.c</FilePath>
@@ -6770,6 +6765,16 @@
               <FileName>ui_image_3.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_3.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_image_1_mirror_map.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_1_mirror_map.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_image_icon_ol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_ol.c</FilePath>
             </File>
           </Files>
         </Group>

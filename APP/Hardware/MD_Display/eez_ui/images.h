@@ -15,10 +15,11 @@ extern const lv_img_dsc_t img_icon__;
 extern const lv_img_dsc_t img_icon_ac;
 extern const lv_img_dsc_t img_icon_dc;
 extern const lv_img_dsc_t img_icon_ot;
-extern const lv_img_dsc_t img_icon_bat_ot;
+extern const lv_img_dsc_t img_icon_ol;
 extern const lv_img_dsc_t img_icon_time;
 extern const lv_img_dsc_t img_icon_usb;
 extern const lv_img_dsc_t img_1;
+extern const lv_img_dsc_t img_1_mirror_map;
 extern const lv_img_dsc_t img_2;
 extern const lv_img_dsc_t img_3;
 
@@ -30,7 +31,7 @@ typedef struct _ext_img_desc_t {
 } ext_img_desc_t;
 #endif
 
-extern const ext_img_desc_t images[14];
+extern const ext_img_desc_t images[15];
 
 #ifdef __cplusplus
 }

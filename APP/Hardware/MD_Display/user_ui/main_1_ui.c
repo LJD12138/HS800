@@ -18,6 +18,8 @@
 
 //****************************************************Includes******************************************************************//
 #include "MD_Display/user_ui/main_1_ui.h"
+#include "MD_Bms/md_bms_task.h"
+#include <stdbool.h>
 
 #if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
@@ -25,7 +27,10 @@
 #include "MD_Display/user_ui/energy_ring.h"
 #include "Sys/sys_task.h"
 
+#include "MD_Dcac/md_dcac_task.h"
+
 #include "lvgl.h"
+
 //****************************************************Macros*******************************************************************//
 
 
@@ -44,6 +49,7 @@ bool S_bDevDcState;     // DC设备状态
 
 static EnergyRing_T s_tEnergyRing;
 static bool S_bMain1InitialFinish = false;
+static bool S_bTestAllParam = false;
 
 //****************************************************Function Declaration****************************************************//
 
@@ -55,14 +61,13 @@ static bool S_bMain1InitialFinish = false;
 -----备注        indent:LJD
 -----日期        2026-05-28
 ************************************************************************************************************************/
-static void v_disp_set_icon_visible(lv_obj_t *obj, const lv_img_dsc_t *img_src, bool visible)
+static void v_disp_set_icon_visible(lv_obj_t *obj, bool visible)
 {
 	if(obj == NULL)
 		return;
 
 	if(visible)
 	{
-		lv_image_set_src(obj, img_src);
 		lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
 	}
 	else
@@ -77,65 +82,207 @@ static void v_disp_set_icon_visible(lv_obj_t *obj, const lv_img_dsc_t *img_src, 
 -----输出参数    none
 -----返回值      true:更新 false:无更新
 *****************************************************************************************************************/
-bool b_disp_update_all_dev_states(void)
+bool b_disp_update_all_dev_states(bool b_force)
 {
     bool b_ret = false;
 
 	extern objects_t objects;
-	extern const lv_img_dsc_t img_icon_out;
-	extern const lv_img_dsc_t img_icon_in;
-	extern const lv_img_dsc_t img_icon_w;
-	extern const lv_img_dsc_t img_icon_usb;
-	extern const lv_img_dsc_t img_icon_dc;
 	
-	// 静态变量记录上一次的状态
-	static bool s_last_dev_ac_out_state = true;
-	static bool s_last_dev_ac_in_state = true;
-	static bool s_last_dev_pv_state = true;
-	static bool s_last_dev_usb_state = true;
-	static bool s_last_dev_dc_state = true;
-	
-	// 更新AC输出设备状态 (main屏幕)
-	if(s_last_dev_ac_out_state != S_bDevAcOutState)
+	static int8_t s_last_dev_ac_out_state = -1;
+	static int8_t s_last_dev_ac_in_state = -1;
+	static int8_t s_last_dev_pv_state = -1;
+	static int8_t s_last_dev_usb_state = -1;
+	static int8_t s_last_dev_dc_state = -1;
+
+	bool b_ac_out_state = S_bDevAcOutState;
+	bool b_ac_in_state = S_bDevAcInState;
+	bool b_pv_state = S_bDevPvState;
+	bool b_usb_state = S_bDevUsbState;
+	bool b_dc_state = S_bDevDcState;
+
+	if (S_bTestAllParam)
 	{
-		s_last_dev_ac_out_state = S_bDevAcOutState;
-		v_disp_set_icon_visible(objects.b_dev_ac_out_state, &img_icon_out, S_bDevAcOutState);
+		b_ac_out_state = true;
+		b_ac_in_state = true;
+		b_pv_state = true;
+		b_usb_state = true;
+		b_dc_state = true;
+	}
+	
+	if(s_last_dev_ac_out_state != b_ac_out_state || b_force)
+	{
+		s_last_dev_ac_out_state = b_ac_out_state;
+		v_disp_set_icon_visible(objects.b_dev_ac_out_state, b_ac_out_state);
         b_ret = true;
 	}
 
-	// 更新AC输入设备状态 (main屏幕)
-	if(s_last_dev_ac_in_state != S_bDevAcInState)
+	if(s_last_dev_ac_in_state != b_ac_in_state || b_force)
 	{
-		s_last_dev_ac_in_state = S_bDevAcInState;
-		v_disp_set_icon_visible(objects.b_dev_ac_in_state, &img_icon_in, S_bDevAcInState);
+		s_last_dev_ac_in_state = b_ac_in_state;
+		v_disp_set_icon_visible(objects.b_dev_ac_in_state, b_ac_in_state);
         b_ret = true;
 	}
 	
-	// 更新PV设备状态 (main_2, main_3屏幕)
-	if(s_last_dev_pv_state != S_bDevPvState)
+	if(s_last_dev_pv_state != b_pv_state || b_force)
 	{
-		s_last_dev_pv_state = S_bDevPvState;
-		v_disp_set_icon_visible(objects.b_dev_pv_state, &img_icon_w, S_bDevPvState);
+		s_last_dev_pv_state = b_pv_state;
+		v_disp_set_icon_visible(objects.b_dev_pv_state, b_pv_state);
         b_ret = true;
 	}
 
-	// 更新USB设备状态 (main屏幕)
-	if(s_last_dev_usb_state != S_bDevUsbState)
+	if(s_last_dev_usb_state != b_usb_state || b_force)
 	{
-		s_last_dev_usb_state = S_bDevUsbState;
-		v_disp_set_icon_visible(objects.b_dev_usb_state, &img_icon_usb, S_bDevUsbState);
+		s_last_dev_usb_state = b_usb_state;
+		v_disp_set_icon_visible(objects.b_dev_usb_state, b_usb_state);
         b_ret = true;
 	}
 	
-	// 更新DC设备状态 (main_3屏幕)
-	if(s_last_dev_dc_state != S_bDevDcState)
+	if(s_last_dev_dc_state != b_dc_state || b_force)
 	{
-		s_last_dev_dc_state = S_bDevDcState;
-		v_disp_set_icon_visible(objects.b_dev_dc_state, &img_icon_dc, S_bDevDcState);
+		s_last_dev_dc_state = b_dc_state;
+		v_disp_set_icon_visible(objects.b_dev_dc_state, b_dc_state);
         b_ret = true;
 	}
 
     return b_ret;
+}
+
+/*****************************************************************************************************************
+-----函数功能    更新所有错误状态图标UI
+-----说明(备注)  返回 0~99 错误码时 -> 标签可见; 返回 100(切换间隙)时 -> 标签隐藏
+-----传入参数    b_force: 是否强制更新
+-----输出参数    none
+-----返回值      true:更新 false:无更新
+*****************************************************************************************************************/
+static bool b_update_error_states(bool b_force)
+{
+	bool b_ret = false;
+	
+	// Determine if OT and OL are active
+	bool b_ot_active = false;
+	bool b_ol_active = false;
+	bool b_has_error = (usDisp_ErrCodeDisplay() != 100);
+	// bool b_has_error = true;//测试
+	if (S_bTestAllParam)
+	{
+		b_ot_active = true;
+		b_ol_active = true;
+		b_has_error = true;
+	}
+	else
+	{
+		// OT check
+		if (tSysInfo.uErrCode.tCode.bOT)
+			b_ot_active = true;
+
+		// OL check
+		if (tSysInfo.uErrCode.tCode.bOL)
+			b_ol_active = true;
+	}
+	
+	// Static caches
+	static int8_t s_last_ot_active = -1;
+	static int8_t s_last_ol_active = -1;
+	static int8_t s_last_has_error = -1;
+	
+	extern objects_t objects;
+
+	// OT Icon
+	if (s_last_ot_active != b_ot_active || b_force)
+	{
+		s_last_ot_active = b_ot_active;
+		v_disp_set_icon_visible(objects.b_err_icon_ot, b_ot_active);
+		b_ret = true;
+	}
+	
+	// OL Icon
+	if (s_last_ol_active != b_ol_active || b_force)
+	{
+		s_last_ol_active = b_ol_active;
+		v_disp_set_icon_visible(objects.b_err_icon_ol, b_ol_active);
+		b_ret = true;
+	}
+	
+	// Error code
+	if (s_last_has_error != b_has_error || b_force)
+	{
+		s_last_has_error = b_has_error;
+		v_disp_set_icon_visible(objects.uca_err_code, b_has_error);
+		b_ret = true;
+	}
+	
+	return b_ret;
+}
+
+/*****************************************************************************************************************
+-----函数功能    更新AC工作模式图标UI
+-----说明(备注)  在display_task中调用，根据状态标志更新AC工作模式图标显示
+-----传入参数    b_force: 是否强制更新
+-----输出参数    none
+-----返回值      true:更新 false:无更新
+*****************************************************************************************************************/
+static bool b_update_ac_work_mode(bool b_force)
+{
+	bool b_ret = false;
+	
+	//更新AC工作模式
+	static ImgAnimMode_E s_last_ac_mode = (ImgAnimMode_E)-1;
+	//充放电
+	if((cSys_IsChgState()> 0 && tDcac.eDisChgState == IOS_WORK) || S_bTestAllParam)
+	{
+		if(s_last_ac_mode != IMG_ANIM_MODE_CHG_DISCHG || b_force)
+		{
+			s_last_ac_mode = IMG_ANIM_MODE_CHG_DISCHG;
+			vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHG_DISCHG);
+			b_ret |= true;
+		}
+	}
+	//充电
+	else if(cSys_IsChgState() == 2 && tDcac.eDisChgState != IOS_WORK)
+	{
+		//快充
+		if(ucBms_GetSoc() > 2 && ucBms_GetSoc() < 90)
+		{
+			if(s_last_ac_mode != IMG_ANIM_MODE_CHARGE_FAST || b_force)
+			{
+				s_last_ac_mode = IMG_ANIM_MODE_CHARGE_FAST;
+				vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHARGE_FAST);
+				b_ret |= true;
+			}
+		}
+		//慢充
+		else
+		{
+			if(s_last_ac_mode != IMG_ANIM_MODE_CHARGE_SLOW || b_force)
+			{
+				s_last_ac_mode = IMG_ANIM_MODE_CHARGE_SLOW;
+				vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHARGE_SLOW);
+				b_ret |= true;
+			}
+		}
+	}
+	//放电
+	else if(tDcac.eChgState != IOS_WORK && tDcac.eDisChgState == IOS_WORK)
+	{
+		if(s_last_ac_mode != IMG_ANIM_MODE_DISCHARGE || b_force)
+		{
+			s_last_ac_mode = IMG_ANIM_MODE_DISCHARGE;
+			vDisp_SetAcWorkMode(IMG_ANIM_MODE_DISCHARGE);
+			b_ret |= true;
+		}
+	}
+	//未工作
+	else
+	{
+		if(s_last_ac_mode != IMG_ANIM_MODE_NONE || b_force)
+		{
+			s_last_ac_mode = IMG_ANIM_MODE_NONE;
+			vDisp_SetAcWorkMode(IMG_ANIM_MODE_NONE);
+			b_ret |= true;
+		}
+	}
+	
+	return b_ret;
 }
 
 
@@ -153,7 +300,7 @@ void vDisp_Main1UiStart(void)
 		EnergyRing_Start(&s_tEnergyRing);
 
 		// 1. 初始化（全局执行一次即可）
-		vImgAnim_Init(objects.main);
+		vImgAnim_Init(objects.main_work);
 
 		// 2. 为各模式分别注入专属的 X/Y 拼接对齐坐标点
 		ImgAnimPosConfig_T slow_pos = { .lLeftX = 30, .lLeftY = 30 }; // 慢充只需对齐2.png的左图位置
@@ -170,8 +317,6 @@ void vDisp_Main1UiStart(void)
 
 		S_bMain1InitialFinish = true;
 	}
-
-	EnergyRing_UpdateSoc(&s_tEnergyRing, 50, true);
 }
 
 /*****************************************************************************************************************
@@ -199,7 +344,24 @@ bool bDisp_Main1DataUpdate(void)
 {
     bool b_ret = false;
     
-    b_ret = b_disp_update_all_dev_states();
+	//更新设备状态
+    b_ret |= b_disp_update_all_dev_states(false);
+	//更新错误状态
+    b_ret |= b_update_error_states(false);
+	//更新AC工作模式
+	b_ret |= b_update_ac_work_mode(false);
+	//更新电池图标
+	static int16_t s_last_soc = -1;
+	static int8_t b_last_chg_flag = -1;
+	bool b_chg_flag = (cSys_IsChgState() >= 2 || S_bTestAllParam) ? true : false;
+	if(s_last_soc != ucBms_GetSoc() || b_chg_flag != b_last_chg_flag)
+	{
+		s_last_soc = ucBms_GetSoc();
+		b_last_chg_flag = b_chg_flag;
+		EnergyRing_UpdateSoc(&s_tEnergyRing, s_last_soc, b_chg_flag);
+		b_ret = true;
+	}
+	
 
     return b_ret;
 }
@@ -213,6 +375,9 @@ bool bDisp_Main1DataUpdate(void)
 *****************************************************************************************************************/
 void vDisp_SetDevStateIcon(DevType_E devType, bool bState)
 {
+	if (S_bTestAllParam)
+		bState = true;
+
 	switch(devType)
 	{
 		case DEV_TYPE_AC_OUT:

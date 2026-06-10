@@ -4,6 +4,7 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Bms/md_bms_rec_task.h"
+#include "main.h"
 
 #if(boardBMS_EN)
 #include "MD_Bms/md_bms_rec_data_proc.h"
@@ -35,7 +36,7 @@ void			vBms_RecTask(void *pvParameters);
 
 //****************************************************参数初始化**************************************************//
 __ALIGNED(4) BmsRx_T tBmsRx;
-vu16 usBmsRxErrCode = 0;
+vu32 ulBmsRxErrCode = 0;
 
 //****************************************************函数声明****************************************************//
 static u8 c_check_conn_state(void);

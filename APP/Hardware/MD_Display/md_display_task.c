@@ -135,7 +135,7 @@ void vDisp_Task(void *pvParameters)
 		else if(tp_task->vp_func == NULL || tp_task->bNowRun == true)
 		{
 			#if(boardUSE_OS)
-			if(lwrb_get_full(&tp_task->tQueueBuff) == 0)
+			if(tSysInfo.uInit.tFinish.bIF_DispTask && lwrb_get_full(&tp_task->tQueueBuff) == 0)
 				ulTaskNotifyTake(pdFALSE, 500);
 			#endif  //boardUSE_OS
 			

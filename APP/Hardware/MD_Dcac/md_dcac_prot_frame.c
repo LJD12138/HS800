@@ -29,11 +29,11 @@ struct
 	vu16 usAcOutSwitch;
 	vu16 usBatOV;//0.1V
 	vu16 usBatUV;//0.1V
-	vu16 usOutFreq;//0:50  1:60
-	vu16 usOutVolt;//0:100 1:110 2:120 3:220 4:230 5:240
+	vu16 usOutFreq;//50/60
+	vu16 usOutVolt;//100/110/120/220/230/240
 	vu16 usChgPwr;//1W
 	vu16 usDisChgPwr;
-	vu16 usChgVolt;//0.1V
+	vu16 usChgVolt;//0.001V
 	vu16 usPvOV;//0.1V
 	vs16 ucFan;
 	vu16 usPvChgPwr;//1W
@@ -187,13 +187,13 @@ bool b_dcac_cs_get_param3(void)
 ******************************************************************************************************************/
 bool b_dcac_cs_set_total_chg_pwr(u16 pwr)
 {
-	tDcacInit.usChgVolt = tAppMemParam.tBMS.usChgVolt; //0.1V
+	// tDcacInit.usChgVolt = tAppMemParam.tBMS.usChgVolt * 100; //0.1V
 	tDcacInit.usChgPwr = pwr;	//充电功率W
-	tDcacInit.usDisChgPwr = tAppMemParam.tDCAC.usOutPwrRating;
+	// tDcacInit.usDisChgPwr = tAppMemParam.tDCAC.usOutPwrRating;
 	if(c_dcac_data_trans(modbusWRITE_MULTI_REG, 
 						dcacREG_ADDR_SET_TOTAL_CHG_PWR, 
 						(u8*)&tDcacInit.usChgPwr, 
-						3) <= 0)
+						1) <= 0)
 		return false;
 	
 	return true;
@@ -230,18 +230,17 @@ bool b_dcac_cs_init(void)
 	tDcacInit.usAcOutSwitch = dcacSWITCH_REG_OFF;
 	tDcacInit.usBatOV = tAppMemParam.tBMS.usMaxVolt;	//0.1V
 	tDcacInit.usBatUV = tAppMemParam.tBMS.usMinVolt;	//0.1V
-	tDcacInit.usOutFreq = tAppMemParam.tDCAC.usAcOutFreq;	//0:50HZ 1:60HZ
+	tDcacInit.usOutFreq = (tAppMemParam.tDCAC.usAcOutFreq == 0)? 50:60;	//0:50HZ 1:60HZ
 	
-	//0-100;1-110;2-120;3-220;4-230;5-240
 	#if(boardDCAC_VOLT_TYPE==0)	//110V
-	tDcacInit.usOutVolt = 1;	
+	tDcacInit.usOutVolt = 110;	
 	#elif(boardDCAC_VOLT_TYPE==3) //230V
-	tDcacInit.usOutVolt = 4;
+	tDcacInit.usOutVolt = 230;
 	#else
     #error "DCAC类型定义有误"
 	#endif
 	
-	tDcacInit.usChgVolt = tAppMemParam.tBMS.usChgVolt; //0.1V
+	tDcacInit.usChgVolt = tAppMemParam.tBMS.usChgVolt * 100; //0.1V
 	// tDcacInit.usChgPwr = tAppMemParam.tDCAC.usInPwrRating;	//充电功率W
 	tDcacInit.usChgPwr = 0;	//充电功率W
 	tDcacInit.usDisChgPwr = tAppMemParam.tDCAC.usOutPwrRating;
@@ -249,13 +248,13 @@ bool b_dcac_cs_init(void)
 	tDcacInit.usPvOV = tAppMemParam.tMPPT.usMaxInVolt; //0.1V
 
 
-	if(strstr(boardSOFTWARE_VERSION, "G3604") != NULL)
+	// if(strstr(boardSOFTWARE_VERSION, "G3604") != NULL)
+	// 	tDcacInit.ucFan = 0;
+	// else
 		tDcacInit.ucFan = 0;
-	else
-		tDcacInit.ucFan = -1;
 	
-	tDcacInit.usPvChgPwr = 50;//1W
-	tDcacInit.usAcChgPwr = 50;//1W
+	tDcacInit.usPvChgPwr = 0;//1W
+	tDcacInit.usAcChgPwr = 0;//1W
 	tDcacInit.usMaxInCurr = tAppMemParam.tDCAC.usMaxInCurr;
 	
 	if(c_dcac_data_trans(modbusWRITE_MULTI_REG, 

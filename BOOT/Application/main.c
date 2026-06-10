@@ -51,8 +51,6 @@
 #include "Update/update_main.h"
 #endif  //boardUPDATE
 
-#include "MD_Bms/md_bms_prot_frame.h"
-
 //****************************************************参数初始化**************************************************//
 
 
@@ -68,7 +66,6 @@
 *****************************************************************************************************************/
 int main(void)
 {
-	
     vGPIO_Init();       //IO口初始化
 	
     vSys_TickConfig();   //系统tick
@@ -107,8 +104,6 @@ int main(void)
 			
 			vTimer_Task();
 			
-//			vAdc_Task(NULL);//测试
-//			c_bms_cs_get_param(1);
 			#if(boardDISPLAY_EN)
 			vDisp_Task(NULL);
 			#endif

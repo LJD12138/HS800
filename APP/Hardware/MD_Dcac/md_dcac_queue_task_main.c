@@ -725,7 +725,7 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 			us_total_chg_pwr = sysCHG_PWR_LEVEL3 / 2;
 	}
 
-	us_total_chg_pwr = us_get_total_chg_pwr_by_in_curr(us_total_chg_pwr);
+	// us_total_chg_pwr = us_get_total_chg_pwr_by_in_curr(us_total_chg_pwr);
 
 	if(abs(tDcacRx.usChgPwr - us_total_chg_pwr) > 100)
 		us_total_chg_pwr_err_cnt++;
@@ -740,7 +740,7 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	{
 		us_last_total_chg_pwr = us_total_chg_pwr;
 		us_total_chg_pwr_err_cnt = 0;
-		// sMyPrint("设置总的充电功率 %d",us_total_chg_pwr);
+		// sMyPrint("设置总的充电功率 %d\r\n",us_total_chg_pwr);
 	}
 }
 
@@ -773,28 +773,28 @@ __STATIC_INLINE void v_set_ac_chg_pwr(void)
 	else
 		bDcac_SetAcState(OO_CHG, IOS_SHUT_DOWN);
 	
-	// if(tDcac.uPerm.tPerm.bChgPerm == false)
-	// 	tSysInfo.tSetChgPwr.usDCAC = 0;
+	if(tDcac.uPerm.tPerm.bChgPerm == false)
+		tSysInfo.tSetChgPwr.usDCAC = 0;
 	
-	// us_chg_pwr = tSysInfo.tSetChgPwr.usDCAC;
+	us_chg_pwr = tSysInfo.tSetChgPwr.usDCAC;
 
-	// //AC设置的功率和采样到的不一致
-	// if(abs(tDcacRx.usInPwr - us_chg_pwr) > 200)
-	// 	us_chg_pwr_err++;
-	// else 
-	// 	us_chg_pwr_err = 0;
+	//AC设置的功率和采样到的不一致
+	if(abs(tDcacRx.usInPwr - us_chg_pwr) > 100)
+		us_chg_pwr_err++;
+	else 
+		us_chg_pwr_err = 0;
 
-	// //功率没变化,退出
-	// if(us_last_chg_pwr == us_chg_pwr && 
-	// 	(us_chg_pwr_err < (5000 / dcacTASK_GET_PARAM_CYCLE_TIME)))
-	// 	return;
+	//功率没变化,退出
+	if(us_last_chg_pwr == us_chg_pwr && 
+		(us_chg_pwr_err < (5000 / dcacTASK_GET_PARAM_CYCLE_TIME)))
+		return;
 	
-	// //设置AC充电功率
-	// if(b_dcac_cs_set_chg_pwr(us_chg_pwr) == true)
-	// {
-	// 	us_last_chg_pwr = us_chg_pwr;
-	// 	us_chg_pwr_err = 0;
-	// 	// sMyPrint("设置AC充电功率 %d",us_chg_pwr);
-	// }	
+	//设置AC充电功率
+	if(b_dcac_cs_set_chg_pwr(us_chg_pwr) == true)
+	{
+		us_last_chg_pwr = us_chg_pwr;
+		us_chg_pwr_err = 0;
+		// sMyPrint("设置AC充电功率 %d",us_chg_pwr);
+	}	
 }
 #endif  //boardDCAC_EN

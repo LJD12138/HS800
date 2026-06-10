@@ -432,3 +432,5 @@ static void v_print_info(void)
 	sMyPrint("Boot: eAppState       : %d\r\n", tBootMemParam.tParam.eAppState);
 	sMyPrint("Boot: ucAppFaultCnt	: %d\r\n", tBootMemParam.tParam.ucAppFaultCnt);
 }
+
+

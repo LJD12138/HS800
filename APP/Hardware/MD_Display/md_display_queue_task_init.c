@@ -11,7 +11,7 @@
 #include "Print/print_task.h"
 #include "Sys/sys_task.h"
 
-#define dispTASK_INIT_CYCLE_TIME 10
+#define dispTASK_INIT_CYCLE_TIME 1
 
 /***********************************************************************************************************************
 -----函数功能    初始化显示任务
@@ -29,7 +29,6 @@ void v_disp_queue_task_init(Task_T *tp_task)
             if (tDisp.eDevState != DS_INIT)
                 bDisp_SetDevState(DS_INIT);
 
-            bDisp_Switch(ST_OFF, false);
             cQueue_GotoStep(tp_task, STEP_NEXT);
             break;
         }

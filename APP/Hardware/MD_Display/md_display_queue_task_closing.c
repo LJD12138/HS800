@@ -10,6 +10,7 @@
 #include <string.h>
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_task.h"
+#include "MD_Display/eez_ui/ui.h"
 #include "Print/print_task.h"
 
 #define dispTASK_CLOSE_CYCLE_TIME           10
@@ -19,28 +20,39 @@ void v_disp_queue_task_closing(Task_T *tp_task)
     switch(tp_task->ucStep)
     {
         case 0:
+        {
             if(tDisp.eDevState != DS_CLOSING)
                 bDisp_SetDevState(DS_CLOSING);
             bDisp_Switch(ST_ON, true);
+            loadScreen(SCREEN_ID_MAIN_CLOSING);
             cQueue_GotoStep(tp_task, STEP_NEXT);
-            break;
+        }
+        break;
 
         case 1:
-            /* TFT+LVGL版本 - 关闭中状态处理 */
-            if(uPrint.tFlag.bDispTask)
-                sMyPrint("DispTask: 关闭模式运行中\r\n");
+        {
+            /* 延迟一段时间让关机画面显示完整，防止Work残影 */
+            if (tp_task->usStepWaitCnt < (1500 / dispTASK_CLOSE_CYCLE_TIME))
+            {
+                tp_task->usStepWaitCnt++;
+                break;
+            }
+
             bDisp_SetDevState(DS_SHUT_DOWN);
             cQueue_GotoStep(tp_task, STEP_END);
-            break;
+            
+        }
+        break;
 
         default:
             cQueue_GotoStep(tp_task, STEP_END);
             break;
     }
 
-#if(boardUSE_OS)
+    vDisp_UiRefresh();
+    #if(boardUSE_OS)
     vTaskDelay(dispTASK_CLOSE_CYCLE_TIME);
-#endif
+    #endif
 }
 
 #endif  /*boardDISPLAY_EN*/

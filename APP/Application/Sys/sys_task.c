@@ -41,6 +41,10 @@
 #include "MD_Display/md_display_task.h"
 #endif
 
+#if(boardBMS_EN)
+#include "MD_Bms/md_bms_task.h"
+#endif
+
 #if(boardLIGHT_EN)
 #include "MD_Light/md_light_task.h"
 #endif
@@ -67,7 +71,7 @@
 
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
-#define     	SYS_TASK_PRIO                  			3     //任务优先级 
+#define     	SYS_TASK_PRIO                  			2     //任务优先级 
 #define      	SYS_TASK_STK_SIZE              			192   //任务堆栈  实际字节数 *4
 TaskHandle_t  	tSysTaskHandler = NULL; 
 void         	vSys_Task(void *pvParameters);
@@ -748,10 +752,10 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 		}
 		else if(tSysInfo.eDevState == DS_ERR)  //错误
 		{
-			#if(boardDISPLAY_EN)
-			if(tDisp.eDevState != DS_ERR)
-				cQueue_AddQueueTask(tpDispTask, DISPTI_ERR, 0, false);
-			#endif  //boardDISPLAY_EN
+			// #if(boardDISPLAY_EN)
+			// if(tDisp.eDevState != DS_ERR)
+			// 	cQueue_AddQueueTask(tpDispTask, DISPTI_WORK, 0, false);
+			// #endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:系统任务状态为错误\r\n");
@@ -766,6 +770,10 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 			if(tDisp.eDevState != DS_BOOTING)
 				cQueue_AddQueueTask(tpDispTask, DISPTI_BOOTING, 0, false);
 			#endif  //boardDISPLAY_EN
+
+			#if(boardBMS_EN)
+			cBms_Switch(SO_KEY, ST_ON, true);
+			#endif
 
 			vSys_RefreshAllOffTime(true);
 			if(uPrint.tFlag.bSysTask)

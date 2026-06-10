@@ -111,56 +111,56 @@ s8 c_mppt_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			// 功率到温度的映射，带滞回功能防止频繁切换
 			// 最高800W，间隔200W一个档位，共4档：41, 45, 49, 55
 			// 滞回阈值：50W（上升沿和下降沿各50W）
-			s16 s_pwr_temp = 41;  // 默认温度
+			// s16 s_pwr_temp = 41;  // 默认温度
 			
 			if(tMppt.eDevState == DS_WORK)
 			{
-				u32 us_pwr = tMpptRx.usInPwr / 10;
-				u8 uc_new_level = uc_pwr_level;
+			// 	u32 us_pwr = tMpptRx.usInPwr / 10;
+			// 	u8 uc_new_level = uc_pwr_level;
 				
-				// 根据当前档位和滞回逻辑判断新档位
-				switch(uc_pwr_level)
-				{
-					case 0:  // 当前档位0 (41°C)，阈值: 0-200W
-						if(us_pwr >= 250)  // 上升沿阈值250W
-							uc_new_level = 1;
-						break;
-					case 1:  // 当前档位1 (45°C)，阈值: 200-400W
-						if(us_pwr >= 450)  // 上升沿阈值450W
-							uc_new_level = 2;
-						else if(us_pwr < 150)  // 下降沿阈值150W
-							uc_new_level = 0;
-						break;
-					case 2:  // 当前档位2 (49°C)，阈值: 400-600W
-						if(us_pwr >= 650)  // 上升沿阈值650W
-							uc_new_level = 3;
-						else if(us_pwr < 350)  // 下降沿阈值350W
-							uc_new_level = 1;
-						break;
-					case 3:  // 当前档位3 (55°C)，阈值: 600-800W
-						if(us_pwr < 550)  // 下降沿阈值550W
-							uc_new_level = 2;
-						break;
-					default:
-						uc_new_level = 0;
-						break;
-				}
+			// 	// 根据当前档位和滞回逻辑判断新档位
+			// 	switch(uc_pwr_level)
+			// 	{
+			// 		case 0:  // 当前档位0 (41°C)，阈值: 0-200W
+			// 			if(us_pwr >= 250)  // 上升沿阈值250W
+			// 				uc_new_level = 1;
+			// 			break;
+			// 		case 1:  // 当前档位1 (45°C)，阈值: 200-400W
+			// 			if(us_pwr >= 450)  // 上升沿阈值450W
+			// 				uc_new_level = 2;
+			// 			else if(us_pwr < 150)  // 下降沿阈值150W
+			// 				uc_new_level = 0;
+			// 			break;
+			// 		case 2:  // 当前档位2 (49°C)，阈值: 400-600W
+			// 			if(us_pwr >= 650)  // 上升沿阈值650W
+			// 				uc_new_level = 3;
+			// 			else if(us_pwr < 350)  // 下降沿阈值350W
+			// 				uc_new_level = 1;
+			// 			break;
+			// 		case 3:  // 当前档位3 (55°C)，阈值: 600-800W
+			// 			if(us_pwr < 550)  // 下降沿阈值550W
+			// 				uc_new_level = 2;
+			// 			break;
+			// 		default:
+			// 			uc_new_level = 0;
+			// 			break;
+			// 	}
 				
-				// 更新档位
-				uc_pwr_level = uc_new_level;
+			// 	// 更新档位
+			// 	uc_pwr_level = uc_new_level;
 				
-				// 根据档位映射温度
-				switch(uc_pwr_level)
-				{
-					case 0: s_pwr_temp = 41; break;
-					case 1: s_pwr_temp = 45; break;
-					case 2: s_pwr_temp = 49; break;
-					case 3: s_pwr_temp = 55; break;
-					default: s_pwr_temp = 41; break;
-				}
-				
+			// 	// 根据档位映射温度
+			// 	switch(uc_pwr_level)
+			// 	{
+			// 		case 0: s_pwr_temp = 41; break;
+			// 		case 1: s_pwr_temp = 45; break;
+			// 		case 2: s_pwr_temp = 49; break;
+			// 		case 3: s_pwr_temp = 55; break;
+			// 		default: s_pwr_temp = 41; break;
+			// 	}
+				s16 s_pwr_temp = 25;
 				// 取功率映射温度和sMpptMaxTemp中较大值
-				tMpptRx.sMaxTemp = (s_pwr_temp > sMpptMaxTemp) ? s_pwr_temp : sMpptMaxTemp;
+				tMpptRx.sMaxTemp = MAX2(s_pwr_temp , sMpptMaxTemp);
 			}
 			else
 			{
