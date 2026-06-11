@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Sys/sys_queue_task.h"
@@ -14,20 +14,20 @@
 #include "app_info.h"
 
 
-#define     	sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME //ÈÎÎñÊ±¼ä
+#define     	sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME //ä»»åŠ¡æ—¶é—´
 #define       	updateREC_LOST_OVERTIME                	((360 * 1000) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
 Update_T tUpdate;
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    Éı¼¶
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å‡çº§
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/ 
 void v_sys_queue_task_update(Task_T *tp_task)
 {
@@ -36,11 +36,11 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		case 0:
 		{
 			bSys_SetDevState(DS_UPDATE_MODE, true);
-			cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½
+			cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥
 		}
 		break;
 		
-		//Æô¶¯Éı¼¶¶ÔÏó
+		//å¯åŠ¨å‡çº§å¯¹è±¡
 		case 1:
 		{
 			tSysSetParam t_sys_set_param = {0};
@@ -50,7 +50,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			{
 				if(tpBmsTask->tReplyBuff.buff == NULL)
 				{
-					cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+					cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 					return;
 				}
 
@@ -61,7 +61,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 
 				if(cQueue_AddQueueTask(tpBmsTask, BTI_REQ_SET_CMD, 0, true) <= 0)
 				{
-					cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+					cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 					return;
 				}
 			}
@@ -72,10 +72,10 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			cQueue_GotoStep(tp_task, STEP_NEXT);
 		}
 		
-		//µÈ´ı¶ÔÏó½øÈëÉı¼¶Ä£Ê½
+		//ç­‰å¾…å¯¹è±¡è¿›å…¥å‡çº§æ¨¡å¼
 		case 2:
 		{
-			//³¬Ê±ÖØĞÂ·¢ËÍ
+			//è¶…æ—¶é‡æ–°å‘é€
 			tp_task->usStepWaitCnt++;
 			if(tp_task->usStepWaitCnt >= (3000 / sysTASK_UPDATE_CYCLE_TIME))
 			{
@@ -96,13 +96,13 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				break;
 		}
 		
-		//¿ªÆôÉı¼¶Í¨µÀ
+		//å¼€å¯å‡çº§é€šé“
 		case 3:
 		{
 			if(tUpdate.eChType == CT_PRINT)
 			{
 				if(cQueue_AddQueueTask(tpPrintTask, PTI_UPDATE, tUpdate.eObj, false) > 0)
-					cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½
+					cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥
 				else
 					break;
 			}
@@ -110,10 +110,10 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				break;
 		}
 		
-		//µÈ´ı½øÈëÍ¸´«Ä£Ê½
+		//ç­‰å¾…è¿›å…¥é€ä¼ æ¨¡å¼
 		case 4:
 		{
-			//³¬Ê±ÖØĞÂ·¢ËÍ
+			//è¶…æ—¶é‡æ–°å‘é€
 			tp_task->usStepWaitCnt++;
 			if(tp_task->usStepWaitCnt >= (1500 / sysTASK_UPDATE_CYCLE_TIME))
 			{
@@ -125,7 +125,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			if(tUpdate.eChType == CT_PRINT)
 			{
 				if(tpPrintTask->ucID == PTI_UPDATE)
-					cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½
+					cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥
 				else
 					break;
 			}
@@ -133,21 +133,21 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				break;
 		}
 		
-		//µÈ´ıÉı¼¶Íê³É
+		//ç­‰å¾…å‡çº§å®Œæˆ
 		case 5:
 		{
-			//Éı¼¶³¬Ê±
+			//å‡çº§è¶…æ—¶
 			if(tUpdate.usLostOverTimeCnt == 0)
 			{
 				bUpdate_Init();
 				cSys_Switch(SO_KEY, ST_OFF, false);
-				cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+				cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			}
 		}
 		break;
 		
         default:
-				cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+				cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
     }
 		
@@ -157,11 +157,11 @@ void v_sys_queue_task_update(Task_T *tp_task)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ²ÎÊı³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å‚æ•°åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 bool bUpdate_Init(void)
 {
@@ -172,12 +172,12 @@ bool bUpdate_Init(void)
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ	Éı¼¶Í¨µÀÑ¡Ôñ
------´«Èë²ÎÊı   e_obj
------´«Èë²ÎÊı   ch_type
------·µ»ØÖµ     s8
------×÷Õß       LJD
------ÈÕÆÚ       2026-03-16
+-----å‡½æ•°åŠŸèƒ½	å‡çº§é€šé“é€‰æ‹©
+-----ä¼ å…¥å‚æ•°   e_obj
+-----ä¼ å…¥å‚æ•°   ch_type
+-----è¿”å›å€¼     s8
+-----ä½œè€…       LJD
+-----æ—¥æœŸ       2026-03-16
 ************************************************************************************************************************/
 s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
 {
@@ -222,12 +222,12 @@ s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
 }
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ 	Ğ­ÒéÑ¡Ôñ
------´«Èë²ÎÊı   e_obj
------´«Èë²ÎÊı   proto_type
------·µ»ØÖµ     s8
------×÷Õß       LJD
------ÈÕÆÚ       2026-03-16
+-----å‡½æ•°åŠŸèƒ½ 	åè®®é€‰æ‹©
+-----ä¼ å…¥å‚æ•°   e_obj
+-----ä¼ å…¥å‚æ•°   proto_type
+-----è¿”å›å€¼     s8
+-----ä½œè€…       LJD
+-----æ—¥æœŸ       2026-03-16
 ************************************************************************************************************************/
 s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
 {
@@ -245,11 +245,11 @@ s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
 }
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    Éı¼¶ÈÎÎñTick¼ÆÊ±
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å‡çº§ä»»åŠ¡Tickè®¡æ—¶
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 void vUpdate_TickTimer(void)
 {

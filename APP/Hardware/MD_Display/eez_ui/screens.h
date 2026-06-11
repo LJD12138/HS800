@@ -14,13 +14,17 @@ enum ScreensEnum {
     SCREEN_ID_MAIN_BOOTING = 1,
     SCREEN_ID_MAIN_WORK = 2,
     SCREEN_ID_MAIN_CLOSING = 3,
-    _SCREEN_ID_LAST = 3
+    SCREEN_ID_MAIN_UPDATE = 4,
+    SCREEN_ID_MAIN_ENG = 5,
+    _SCREEN_ID_LAST = 5
 };
 
 typedef struct _objects_t {
     lv_obj_t *main_booting;
     lv_obj_t *main_work;
     lv_obj_t *main_closing;
+    lv_obj_t *main_update;
+    lv_obj_t *main_eng;
     lv_obj_t *uc_booting_bar;
     lv_obj_t *b_dev_pv_state;
     lv_obj_t *b_dev_ac_in_state;
@@ -34,6 +38,12 @@ typedef struct _objects_t {
     lv_obj_t *obj1;
     lv_obj_t *obj2;
     lv_obj_t *obj3;
+    lv_obj_t *obj4;
+    lv_obj_t *uc_update_spinner;
+    lv_obj_t *uc_update_waiting_label;
+    lv_obj_t *uc_update_bar;
+    lv_obj_t *obj5;
+    lv_obj_t *obj6;
 } objects_t;
 
 extern objects_t objects;
@@ -46,6 +56,12 @@ void tick_screen_main_work();
 
 void create_screen_main_closing();
 void tick_screen_main_closing();
+
+void create_screen_main_update();
+void tick_screen_main_update();
+
+void create_screen_main_eng();
+void tick_screen_main_eng();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);

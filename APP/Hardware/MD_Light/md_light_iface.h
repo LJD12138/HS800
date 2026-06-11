@@ -10,7 +10,7 @@
 #define 		lightPWM_SEMI_VALUE                  	200
 #define 		lightPWM_FULL_VALUE                  	550
 
-//???¡ÂLED
+//???Ã·LED
 #define 		lightPWM_GPIO_RCU                    	RCU_GPIOA
 #define 		lightPWM_GPIO_PORT                  	GPIOA
 #define 		lightPWM_PIN                         	GPIO_PIN_8

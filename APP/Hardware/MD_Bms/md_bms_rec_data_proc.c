@@ -12,16 +12,16 @@
 #endif  //boardUPDATE
 
 
-//****************************************************º¯ÊıÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜****************************************************//
 static s8 c_relay08_param(BaikuProtoRx_t* proto);
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ´¦Àí½ÓÊÕµ½µÄÊı¾İ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      0:Ã»ÓĞ´íÎó  ÆäËûÓĞ´íÎó
+-----å‡½æ•°åŠŸèƒ½    å¤„ç†æ¥æ”¶åˆ°çš„æ•°æ®
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      0:æ²¡æœ‰é”™è¯¯  å…¶ä»–æœ‰é”™è¯¯
 ************************************************************************************************************************/
 s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 {
@@ -30,7 +30,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
     
 	if(uPrint.tFlag.bBmsRecTask)
 	{
-		sMyPrint("bBmsRecTask:Ö¸Áî:0x%x, Êı¾İ:",proto->ucCmd);
+		sMyPrint("bBmsRecTask:æŒ‡ä»¤:0x%x, æ•°æ®:",proto->ucCmd);
 		for(int i = 0; i < proto->ucValidLen; i++)
 			sMyPrint("%x ",proto->ucpValidData[i]);
 		sMyPrint("\r\n");
@@ -38,7 +38,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 	
 	switch (proto->ucCmd)
     {
-		//»Ø¸´¿ª¹Ø
+		//å›å¤å¼€å…³
         case baikuCMD_REPLY_SWITCH:               
         {
 			if(proto->ucValidLen != 2 || proto->ucpValidData == NULL)
@@ -52,7 +52,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
         }
         break;
 		
-		//»Ø¸´²ÎÊı
+		//å›å¤å‚æ•°
 		case baikuCMD_REPLY_PARAM:                
         {
 			c_ret = c_relay08_param(proto);
@@ -61,7 +61,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
         }
         break;
 		
-		//»Ø¸´Ğ£×¼½á¹û
+		//å›å¤æ ¡å‡†ç»“æœ
 		case baikuCMD_REPLY_CALI://45            
         {
 			if(proto->ucValidLen != 2 || proto->ucpValidData == NULL)
@@ -76,14 +76,14 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
         }
         break;
 		
-		//»Ø¸´ÉèÖÃ½á¹û
+		//å›å¤è®¾ç½®ç»“æœ
 		case baikuCMD_REPLY_SYS_SET://89            
         {
             
         }
         break;
 		
-		//»Ø¸´APPĞÅÏ¢
+		//å›å¤APPä¿¡æ¯
 		case baikuCMD_REPLY_MEM_PARAM://81
         {
             if(proto->ucValidLen == 0 || proto->ucpValidData == NULL)
@@ -102,7 +102,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
         }
         break;
 
-		//»Ø¸´Ğ­ÒéÉèÖÃ
+		//å›å¤åè®®è®¾ç½®
 		#if(boardUPDATE)
 		case baikuCMD_REPLY_SET_PROTO://C3
 		{
@@ -116,7 +116,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 		}
 		break;
 		
-		//ÇëÇó¿ªÊ¼·¢ËÍ
+		//è¯·æ±‚å¼€å§‹å‘é€
 		case baikuCMD_RRQ_START_SEND://C4               
         {
 			tUpdate.usRecFrameCnt = 0;
@@ -141,28 +141,28 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
         }
         break;
 
-		//¼ÌĞø·¢ËÍ
+		//ç»§ç»­å‘é€
 		case baikuCMD_RRQ_CONT_SEND:  //C6
 		{
 			tUpdate.usRecFrameCnt++;
 		}
 		break;
 
-		//È¡Ïû·¢ËÍ
+		//å–æ¶ˆå‘é€
 		case baikuCMD_REPLY_CANEL:  //C8
 		{
 			tUpdate.usRecFrameCnt = 0;
 		}
 		break;
 		
-		//BMSÕıÔÚÉı¼¶
+		//BMSæ­£åœ¨å‡çº§
 		case baikuCMD_BMS_UPDATE://C9
         {
 			#pragma pack(1)
 			struct
 			{
-				vu16				usRecFrameCnt;		//¼ÇÂ¼µ±Ç°½ÓÊÕµÄÖ¡Êı
-				vu16 				usTotalFrmValue; 	//×ÜÖ¡Êı
+				vu16				usRecFrameCnt;		//è®°å½•å½“å‰æ¥æ”¶çš„å¸§æ•°
+				vu16 				usTotalFrmValue; 	//æ€»å¸§æ•°
 			}t_my_param;
 			#pragma pack()
 
@@ -193,11 +193,11 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 }
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    »Ø¸´²ÎÊı  0x08
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      true:·¢ËÍ³É¹¦   false:·¢ËÍÊ§°Ü
+-----å‡½æ•°åŠŸèƒ½    å›å¤å‚æ•°  0x08
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      true:å‘é€æˆåŠŸ   false:å‘é€å¤±è´¥
 ************************************************************************************************************************/
 static s8 c_relay08_param(BaikuProtoRx_t* proto)
 {
@@ -218,7 +218,7 @@ static s8 c_relay08_param(BaikuProtoRx_t* proto)
 	for(int i = 0; i < bmsDEV_NUM; i++)
 		ulBmsRxErrCode |= tBmsRx.tDevInfo[i].uErrCode.ulCode;
 	
-	//----------------------------»ñÈ¡¹ÊÕÏÎ»-------------------------------------------------
+	//----------------------------è·å–æ•…éšœä½-------------------------------------------------
 	if(last_err_state != ulBmsRxErrCode) 
 	{
 		last_err_state = ulBmsRxErrCode;
@@ -228,14 +228,14 @@ static s8 c_relay08_param(BaikuProtoRx_t* proto)
 			bBms_SetErrCode(BEC_BMS_ERR,false);
 	}
 	
-	//----------------------------»ñÈ¡³ä·Åµç×´Ì¬-----------------------------------------------
-	if(tBmsRx.sTotalCurr > 0)  //³äµç×´Ì¬
+	//----------------------------è·å–å……æ”¾ç”µçŠ¶æ€-----------------------------------------------
+	if(tBmsRx.sTotalCurr > 0)  //å……ç”µçŠ¶æ€
 		tBms.eWorkState = BWS_CHG;
 	else 
 		tBms.eWorkState = BWS_DISCHG;
-	//sMyPrint("BMSµçÁ÷%d  ³äµç×´Ì¬%d  ÎÂ¶È = %d\r\n ",tBmsRx.sTotalCurr,bBms_GetBmsChgState(),tSysInfo.sMaxTemp);
+	//sMyPrint("BMSç”µæµ%d  å……ç”µçŠ¶æ€%d  æ¸©åº¦ = %d\r\n ",tBmsRx.sTotalCurr,bBms_GetBmsChgState(),tSysInfo.sMaxTemp);
 	
-	//----------------------------»ñÈ¡ÎÂ¶È-----------------------------------------------
+	//----------------------------è·å–æ¸©åº¦-----------------------------------------------
 	vs16 s_temp_max = tBmsRx.tDevInfo[0].sMaxTemp;
 	vs16 s_temp_min = tBmsRx.tDevInfo[0].sMinTemp;
 	if(tBmsRx.tDevNum.ucOnlineNum > 0)

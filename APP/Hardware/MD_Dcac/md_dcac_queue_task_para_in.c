@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ¶ÓÁĞº¯Êı                                                  			*
+ *                                         é˜Ÿåˆ—å‡½æ•°                                                  			*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
@@ -14,16 +14,16 @@
 
 #define       	dcacTASK_PARA_IN_CYCLE_TIME               		50
 
-//****************************************************º¯ÊıÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜****************************************************//
 
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ÈÎÎñº¯Êı:³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ä»»åŠ¡å‡½æ•°:åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 void v_dcac_queue_task_para_in(Task_T *tp_task)
 {
@@ -46,13 +46,13 @@ void v_dcac_queue_task_para_in(Task_T *tp_task)
 //			}
 			
 			if(b_dcac_cs_set_para_in_pwr(us_temp) == true)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½
+				cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥
 			
 			tp_task->usStepRepeatCnt++;
 			if(tp_task->usStepRepeatCnt > 3)
 			{
 				if(uPrint.tFlag.bDcacTask)
-					log_w("bDcacTask:Êı¾İ·¢ËÍÊ§°Ü´ÎÊı¹ı¶à,ÍË³öÉèÖÃ²¢Íø·ÅµçÈÎÎñ");
+					log_w("bDcacTask:æ•°æ®å‘é€å¤±è´¥æ¬¡æ•°è¿‡å¤š,é€€å‡ºè®¾ç½®å¹¶ç½‘æ”¾ç”µä»»åŠ¡");
 				
 				goto loop_para_in_end;
 			}
@@ -62,29 +62,29 @@ void v_dcac_queue_task_para_in(Task_T *tp_task)
 		case 1:
 		{
 			if(type == ST_ON)
-				bDcac_SetAcState(OO_PARA_IN, IOS_WORK);   //¿ªÆô
+				bDcac_SetAcState(OO_PARA_IN, IOS_WORK);   //å¼€å¯
 			else 
-				bDcac_SetAcState(OO_PARA_IN, IOS_SHUT_DOWN);    //¹Ø±Õ	
-			cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½	
+				bDcac_SetAcState(OO_PARA_IN, IOS_SHUT_DOWN);    //å…³é—­	
+			cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥	
 		}
 		break;
              
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
 	}
 	
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt>(3000 / dcacTASK_PARA_IN_CYCLE_TIME))  //µÈ´ı³¬Ê±
+	if(tp_task->usTaskWaitCnt>(3000 / dcacTASK_PARA_IN_CYCLE_TIME))  //ç­‰å¾…è¶…æ—¶
 	{
 		loop_para_in_end:
 		b_dcac_cs_set_para_in_pwr(0);
-		bDcac_SetAcState(OO_PARA_IN, IOS_SHUT_DOWN);    //¹Ø±Õ	
+		bDcac_SetAcState(OO_PARA_IN, IOS_SHUT_DOWN);    //å…³é—­	
 		
 		if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
-			log_w("bDcacTask:²¢Íø¿ØÖÆÈÎÎñ´¦Àí³¬Ê±,²½Öè%d", tp_task->ucStep);
+			log_w("bDcacTask:å¹¶ç½‘æ§åˆ¶ä»»åŠ¡å¤„ç†è¶…æ—¶,æ­¥éª¤%d", tp_task->ucStep);
 		
-		cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+		cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 	}
 	
 	vTaskDelay(dcacTASK_PARA_IN_CYCLE_TIME);

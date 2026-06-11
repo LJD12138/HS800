@@ -7,9 +7,9 @@
 #include "main.h"
 #include "Modbus/modbus_proto.h"
 
-//设置充电功率		
+//璁剧疆鍏呯數鍔熺巼		
 #define  		mpptREG_ADDR_SET_PV_CHG_PWR             4059
-//获取基础参数
+//鑾峰彇鍩虹鍙傛暟
 #define  		mpptREG_ADDR_GET_PARAM1           		4017
 
 extern			ModbusProtoTx_t 						*tpMpptProtoTx;

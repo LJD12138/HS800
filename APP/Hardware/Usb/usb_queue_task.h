@@ -12,7 +12,7 @@
 #endif
 
 
-#define       	usbTASK_CYCLE_TIME               		100  //任务时间
+#define       	usbTASK_CYCLE_TIME               		100  //浠诲姟鏃堕棿
 
 
 extern s32 us_usb_total_out_pwr;
@@ -20,7 +20,7 @@ extern s32 us_usb_total_out_pwr;
 
 bool bUsb_QueueInit(void);
 
-//队列函数
+//闃熷垪鍑芥暟
 void v_usb_queue_task_init(Task_T *tp_task);
 void v_usb_queue_task_closing(Task_T *tp_task);
 void v_usb_queue_task_booting(Task_T *tp_task);

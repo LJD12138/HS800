@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Sys/sys_queue_task_update.h"
@@ -23,16 +23,16 @@
 #include "MD_Console/md_console_prot_frame.h"
 #endif
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
 Update_T  tUpdate;
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¹¤×÷
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å·¥ä½œ
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/ 
 void v_sys_queue_task_update(Task_T *tp_task)
 {
@@ -41,7 +41,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		
 		case 0:
 		{
-			//Î´¶¨Òå,³õÊ¼»¯
+			//æœªå®šä¹‰,åˆå§‹åŒ–
 			if(tUpdate.eChType == CT_NULL || tUpdate.eProtoType == PT_NULL)
 			{
 				#if(boardCONSOLE_EN)
@@ -62,8 +62,8 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				uPrint.tFlag.bUpdate = 0;
 				uPrint.tFlag.bBootInfo = 1;
 			}
-			lwrb_reset(&tp_task->tQueueBuff);//Çå¿Õ¶ÓÁĞ
-			cQueue_GotoStep( tp_task, STEP_NEXT );  //ÏÂÒ»²½
+			lwrb_reset(&tp_task->tQueueBuff);//æ¸…ç©ºé˜Ÿåˆ—
+			cQueue_GotoStep( tp_task, STEP_NEXT );  //ä¸‹ä¸€æ­¥
 		}break;
 		
 		case 1:
@@ -97,24 +97,24 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			}
 
 			
-			//¶ÓÁĞÀïÃæÓĞÈÎÎñ
+			//é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
 			if(lwrb_get_full(&tp_task->tQueueBuff))                 
-				cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+				cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 		}break;
 		
 		
         default:
-				cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+				cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
     }
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    µç³Ø°üÈÎÎñ²ÎÊı³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ç”µæ± åŒ…ä»»åŠ¡å‚æ•°åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 bool bUpdate_Init(void)
 {
@@ -124,11 +124,11 @@ bool bUpdate_Init(void)
 }
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    Éı¼¶Í¨µÀÑ¡Ôñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å‡çº§é€šé“é€‰æ‹©
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type)
 {
@@ -145,13 +145,13 @@ s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type)
 			if(tpConsoleProtoTx == NULL)
 				return -3;
 			
-			//½ÓÊÜBuff
+			//æ¥å—Buff
 			tUpdate.pRxBuff = &tpConsoleProtoRx->tRxBuff;
 			cBaiku_ResetRxBuff(tpConsoleProtoRx);
-			//½ÓÊÜĞ­Òé
+			//æ¥å—åè®®
 			tUpdate.tpProtoRx = tpConsoleProtoRx;
 			
-			//·¢ËÍĞ­Òé
+			//å‘é€åè®®
 			tUpdate.tpProtoTx = tpConsoleProtoTx;
 			
 			if(cUpdate_ProtoSelect(proto_type) == false)
@@ -166,18 +166,18 @@ s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type)
 			if(tpPrintProtoRx == NULL || tpPrintProtoRx->tRxBuff.buff == NULL)
 				return -2;
 			
-			//·¢ËÍBuff
+			//å‘é€Buff
 			tUpdate.pTxBuff = &tPrintTxBuff;
 			lwrb_reset(tUpdate.pTxBuff);
 			
-			//½ÓÊÜBuff
+			//æ¥å—Buff
 			tUpdate.pRxBuff = &tpPrintProtoRx->tRxBuff;
 			cBaiku_ResetRxBuff(tpPrintProtoRx);
 			
-			//½ÓÊÜĞ­Òé
+			//æ¥å—åè®®
 			tUpdate.tpProtoRx = tpPrintProtoRx;
 			
-			//·¢ËÍĞ­Òé
+			//å‘é€åè®®
 			tUpdate.tpProtoTx = tpPrintProtoTx;
 			
 			if(cUpdate_ProtoSelect(proto_type) == false)
@@ -195,7 +195,7 @@ s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type)
 		#endif
 		
 		default:
-			log_e("µ±Ç°Í¨µÀ%dÎ´¶¨Òå,ÇëÖØĞÂÑ¡ÔñÍ¨µÀ",ch_type);
+			log_e("å½“å‰é€šé“%dæœªå®šä¹‰,è¯·é‡æ–°é€‰æ‹©é€šé“",ch_type);
 			ch_type = CT_NULL;
 			break;
 	}
@@ -206,11 +206,11 @@ s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type)
 }
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    Ğ­ÒéÑ¡Ôñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    åè®®é€‰æ‹©
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 s8 cUpdate_ProtoSelect(ProtoType_E type)
 {
@@ -240,11 +240,11 @@ s8 cUpdate_ProtoSelect(ProtoType_E type)
 }
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    Éı¼¶ÈÎÎñTick¼ÆÊ±
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å‡çº§ä»»åŠ¡Tickè®¡æ—¶
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 void vUpdate_TickTimer(void)
 {

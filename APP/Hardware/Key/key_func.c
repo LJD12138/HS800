@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         °´¼ü¹¦ÄÜ                                                             *
+ *                                         æŒ‰é”®åŠŸèƒ½                                                             *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Key/key_func.h"
@@ -41,54 +41,54 @@
 #include "key_func_eng.h"
 #endif  //boardENG_MODE_EN
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////°´¼ü¹¦ÄÜÊı×éÒªÇó:²»ÂúÊ®¸ö´¥·¢ÀàĞÍµÄÒª¼ÓKTE_FUN_NULL×÷Îª½áÊø·û///////////////////////
+//////////////////////////////æŒ‰é”®åŠŸèƒ½æ•°ç»„è¦æ±‚:ä¸æ»¡åä¸ªè§¦å‘ç±»å‹çš„è¦åŠ KTE_FUN_NULLä½œä¸ºç»“æŸç¬¦///////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//³¤°´	¿ª¹Ø»ú
+//é•¿æŒ‰	å¼€å…³æœº
 u8 const KeyTriType_SysOnOffBuff[ 2 ] = { KTE_POWER_LONG, KTE_FUN_NULL};
-//µã°´	¿ª¹Ø»ú
+//ç‚¹æŒ‰	å¼€å…³æœº
 u8 const KeyTriType_SysOnOffBuff1[ 2 ] = { KTE_POWER_LONG, KTE_FUN_NULL};
-//Á¬»÷	¿ª¹Ø»ú
+//è¿å‡»	å¼€å…³æœº
 u8 const KeyTriType_SysProteOnOffBuff[ 4 ] = { KTE_POWER_LONG, KTE_POWER_LONG, KTE_POWER_LONG,KTE_FUN_NULL};
 
 
 #if(boardDCAC_EN)
-//µ¥»÷	¿ª¹ØAC
+//å•å‡»	å¼€å…³AC
 u8 const KeyTriType_AcOnOffBuff[ 2 ] = { KTE_AC_SHORT, KTE_FUN_NULL};
-//³¤°´	¿ª¹ØAC
+//é•¿æŒ‰	å¼€å…³AC
 u8 const KeyTriType_AcOnOffBuff1[ 2 ] = { KTE_AC_LONG, KTE_FUN_NULL};
-//Á¬»÷	¿ªÆôAC±£»¤
+//è¿å‡»	å¼€å¯ACä¿æŠ¤
 u8 const KeyTriType_AcProteOnOffBuff[ 10 ] = { KTE_AC_SHORT, KTE_AC_SHORT, KTE_AC_SHORT, KTE_AC_SHORT, KTE_AC_SHORT, 
                                                 KTE_AC_SHORT, KTE_AC_SHORT, KTE_AC_SHORT, KTE_AC_SHORT, KTE_AC_SHORT };
 #endif  //boardDCAC_EN
 													
 #if(boardLIGHT_EN)
-//³¤°´	¿ª¹ØµÆ
+//é•¿æŒ‰	å¼€å…³ç¯
 u8 const KeyTriType_LightOnOffBuff[ 2 ] = { KTE_LIGHT_LONG, KTE_FUN_NULL};  
-//µ¥»÷	ÇĞ»»µÆ
+//å•å‡»	åˆ‡æ¢ç¯
 u8 const KeyTriType_LightChargeBuff[ 2 ] = { KTE_LIGHT_SHORT, KTE_FUN_NULL}; 
 #endif  //boardLIGHT_EN
 
 #if(boardUSB_EN)
-//µ¥»÷	¿ª¹ØUSB
+//å•å‡»	å¼€å…³USB
 u8 const KeyTriType_USBOnOffBuff[ 2 ] = { KTE_USB_SHORT, KTE_FUN_NULL}; 
-//³¤»÷	¿ª¹ØUSB
+//é•¿å‡»	å¼€å…³USB
 u8 const KeyTriType_USBOnOffBuff1[ 2 ] = { KTE_USB_LONG, KTE_FUN_NULL};
 #endif  //boardUSB_EN
  
 #if(boardDC_EN)
-//µ¥»÷	¿ª¹ØDC
+//å•å‡»	å¼€å…³DC
 u8 const KeyTriType_DCOnOffBuff[ 2 ] = { KTE_DC_SHORT, KTE_FUN_NULL}; 
-//³¤»÷	¿ª¹ØDC
+//é•¿å‡»	å¼€å…³DC
 u8 const KeyTriType_DCOnOffBuff1[ 2 ] = { KTE_DC_LONG, KTE_FUN_NULL};
 #endif  //boardDC_EN
 
 #if(boardDISPLAY_EN)
-//µ¥»÷ 	¿ª¹Ø±³¹â
+//å•å‡» 	å¼€å…³èƒŒå…‰
 u8 const KeyTriType_BLOnOffBuff[ 2 ] = { KTE_POWER_SHORT, KTE_FUN_NULL};
-//×éºÏ 	Ç¿ÖÆ¿ª¹Ø±³¹â
+//ç»„åˆ 	å¼ºåˆ¶å¼€å…³èƒŒå…‰
 u8 const KeyTriType_ForceOpenBLBuff1[ 3 ] = { KTE_DC_LONG, KTE_USB_LONG,KTE_FUN_NULL};
 u8 const KeyTriType_ForceOpenBLBuff2[ 3 ] = { KTE_USB_LONG,KTE_DC_LONG ,KTE_FUN_NULL};
 #endif  //boardDISPLAY_EN
@@ -96,33 +96,33 @@ u8 const KeyTriType_ForceOpenBLBuff2[ 3 ] = { KTE_USB_LONG,KTE_DC_LONG ,KTE_FUN_
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    °´¼ü¹¦ÄÜ´¦Àíº¯Êı
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    æŒ‰é”®åŠŸèƒ½å¤„ç†å‡½æ•°
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 void vKey_ProcKeyFunc(u8* pKeyTriTypeBuff)
 {
-	//******************************************¿ª¹Ø»ú************************************************
+	//******************************************å¼€å…³æœº************************************************
 	if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_SysOnOffBuff, sizeof(KeyTriType_SysOnOffBuff)))  
 	{
 		cSys_Switch(SO_KEY, ST_NULL, false);
 		
 		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:¿ª¹Ø»ú \r\n");
+			sMyPrint("Key_Task:å¼€å…³æœº \r\n");
 	}
 	#if(boardENG_MODE_EN)
-	//******************************************¹¤³ÌÄ£Ê½************************************************************
+	//******************************************å·¥ç¨‹æ¨¡å¼************************************************************
 	else if(tSysInfo.eDevState == DS_ENG_MODE)
 	{
 		v_key_func_eng(pKeyTriTypeBuff);
 	}
 	#endif
-	//*****************************************************¹¤×÷×´Ì¬ÏÂ**************************************************//
+	//*****************************************************å·¥ä½œçŠ¶æ€ä¸‹**************************************************//
 	else if ( tSysInfo.eDevState == DS_WORK || tSysInfo.eDevState == DS_ERR)
 	{
-		if(bFun_DataCompare(pKeyTriTypeBuff, (u8*)&KeyTriType_SysProteOnOffBuff, sizeof(KeyTriType_SysProteOnOffBuff))) //Á¬»÷Power°´¼ü
+		if(bFun_DataCompare(pKeyTriTypeBuff, (u8*)&KeyTriType_SysProteOnOffBuff, sizeof(KeyTriType_SysProteOnOffBuff))) //è¿å‡»PoweræŒ‰é”®
 		{
 			bSys_SetPerm(SPO_FORCE_CLOSE, true);
 
@@ -132,49 +132,49 @@ void vKey_ProcKeyFunc(u8* pKeyTriTypeBuff)
 
 			cSys_Switch(SO_KEY, ST_OFF, false);
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:ÏµÍ³³ä·Å±£»¤\r\n");
+				sMyPrint("Key_Task:ç³»ç»Ÿå……æ”¾ä¿æŠ¤\r\n");
 		}
 		#if(boardDCAC_EN)
-		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_AcOnOffBuff, sizeof(KeyTriType_AcOnOffBuff))  )  //µ¥»÷AC°´¼ü 
+		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_AcOnOffBuff, sizeof(KeyTriType_AcOnOffBuff))  )  //å•å‡»ACæŒ‰é”® 
 		{
 			if(cDCAC_Switch(DSO_AC_OUT, ST_NULL, true) == true)
 				bDcac_SetAutoOffTime(boardDCAC_OFF_TIME);
 
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹ØÄæ±ä\r\n");
+				sMyPrint("Key_Task:å¼€å…³é€†å˜\r\n");
 		}
-		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_AcOnOffBuff1, sizeof(KeyTriType_AcOnOffBuff1))  )  //³¤°´AC°´¼ü 
+		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_AcOnOffBuff1, sizeof(KeyTriType_AcOnOffBuff1))  )  //é•¿æŒ‰ACæŒ‰é”® 
 		{
 			if(cDCAC_Switch(DSO_AC_OUT, ST_NULL, true) == true)
 				bDcac_SetAutoOffTime(0);
 
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹ØÄæ±ä1\r\n");
+				sMyPrint("Key_Task:å¼€å…³é€†å˜1\r\n");
 		}
-		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_AcProteOnOffBuff, sizeof(KeyTriType_AcProteOnOffBuff)))  //Á¬»÷AC°´¼ü 
+		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_AcProteOnOffBuff, sizeof(KeyTriType_AcProteOnOffBuff)))  //è¿å‡»ACæŒ‰é”® 
 		{
 			bDcac_InProteFuncSwitch(true);
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ªÆôÄæ±äÊäÈë±£»¤\r\n");
+				sMyPrint("Key_Task:å¼€å¯é€†å˜è¾“å…¥ä¿æŠ¤\r\n");
 		}
 		#endif  //boardDCAC_EN
 		#if(boardLIGHT_EN)
-		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_LightChargeBuff, sizeof(KeyTriType_LightChargeBuff) ) )    //µ¥»÷LIGHT°´¼ü
+		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_LightChargeBuff, sizeof(KeyTriType_LightChargeBuff) ) )    //å•å‡»LIGHTæŒ‰é”®
 		{
 			vLight_CircSelectMode();
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:ÇĞ»»ÕÕÃ÷Ä£Ê½\r\n");
+				sMyPrint("Key_Task:åˆ‡æ¢ç…§æ˜æ¨¡å¼\r\n");
 		}
-		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_LightOnOffBuff, sizeof(KeyTriType_LightOnOffBuff)) ) //³¤°´LIGHT°´¼ü¡¡
+		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_LightOnOffBuff, sizeof(KeyTriType_LightOnOffBuff)) ) //é•¿æŒ‰LIGHTæŒ‰é”®ã€€
 		{
 			bLight_Switch(ST_NULL);
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹ØÕÕÃ÷\r\n");
+				sMyPrint("Key_Task:å¼€å…³ç…§æ˜\r\n");
 		}
 		#endif //boardLIGHT_EN
 		#if(boardUSB_EN)
-		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_USBOnOffBuff, sizeof(KeyTriType_USBOnOffBuff)) ||  //µ¥»÷USB°´¼ü¡¡
-                  bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_USBOnOffBuff1, sizeof(KeyTriType_USBOnOffBuff1)))   //³¤°´USB°´¼ü¡¡ 
+		else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_USBOnOffBuff, sizeof(KeyTriType_USBOnOffBuff)) ||  //å•å‡»USBæŒ‰é”®ã€€
+                  bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_USBOnOffBuff1, sizeof(KeyTriType_USBOnOffBuff1)))   //é•¿æŒ‰USBæŒ‰é”®ã€€ 
 		{
 			
 			#if(boardDCAC_PARA_IN)
@@ -190,43 +190,43 @@ void vKey_ProcKeyFunc(u8* pKeyTriTypeBuff)
 			}
 			
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹ØDC \r\n");
+				sMyPrint("Key_Task:å¼€å…³DC \r\n");
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹ØDC \r\n");
+				sMyPrint("Key_Task:å¼€å…³DC \r\n");
 			#else
 			cUsb_Switch(ST_NULL, false);
 			#endif
 		}
 		#endif //boardUSB_EN
 		#if(boardDC_EN)
-		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_DCOnOffBuff, sizeof(KeyTriType_DCOnOffBuff))  ||  //µ¥»÷DC°´¼ü
-			     bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_DCOnOffBuff1, sizeof(KeyTriType_DCOnOffBuff1)))    //³¤°´DC°´¼ü
+		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_DCOnOffBuff, sizeof(KeyTriType_DCOnOffBuff))  ||  //å•å‡»DCæŒ‰é”®
+			     bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_DCOnOffBuff1, sizeof(KeyTriType_DCOnOffBuff1)))    //é•¿æŒ‰DCæŒ‰é”®
 		{
 			#if(boardDCAC_PARA_IN)
 			cDCAC_Switch(DSO_PARA_IN, ST_NULL, true);
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹Ø²¢Íø\r\n");
+				sMyPrint("Key_Task:å¼€å…³å¹¶ç½‘\r\n");
 			#else
 			cDc_Switch(ST_NULL, false);
 			#endif
 		}
 		#endif  //boardDC_EN
 		#if(boardDISPLAY_EN)
-		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_BLOnOffBuff, sizeof(KeyTriType_BLOnOffBuff))) //µ¥»÷POWER°´¼ü¡¡
+		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_BLOnOffBuff, sizeof(KeyTriType_BLOnOffBuff))) //å•å‡»POWERæŒ‰é”®ã€€
 		{
 			bDisp_Switch(ST_NULL, true);
 			
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:¿ª¹Ø±³¹â\r\n");
+				sMyPrint("Key_Task:å¼€å…³èƒŒå…‰\r\n");
 		}
 		else if(bFun_DataCompare(pKeyTriTypeBuff, (u8*)&KeyTriType_ForceOpenBLBuff1, sizeof(KeyTriType_ForceOpenBLBuff1)) ||
 			    bFun_DataCompare(pKeyTriTypeBuff, (u8*)&KeyTriType_ForceOpenBLBuff2, sizeof(KeyTriType_ForceOpenBLBuff2))
-		) //Á¬»÷Power°´¼ü
+		) //è¿å‡»PoweræŒ‰é”®
 		{
 			bDisp_Switch(ST_ON, true);
 			
 			if(uPrint.tFlag.bKeyTask)
-				sMyPrint("Key_Task:Ç¿ÖÆ¿ªÆô±³¹â\r\n");
+				sMyPrint("Key_Task:å¼ºåˆ¶å¼€å¯èƒŒå…‰\r\n");
 		}
 		#endif  //boardDISPLAY_EN
 	}

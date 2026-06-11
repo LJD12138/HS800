@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-//�ۼӺ�
+//累加和
 uint8_t ucCheck_Sum(uint8_t *str, int str_length);
 uint8_t ucCheck_SumReflect(uint8_t *str, int str_length);
 

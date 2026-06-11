@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         œµÕ≥µƒ∂”¡–∫Ø ˝                                                  		*
+ *                                         Á≥ªÁªüÁöÑÈòüÂàóÂáΩÊï∞                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Usb/usb_queue_task.h"
@@ -22,34 +22,34 @@
 
 s32 us_usb_total_out_pwr = 0;
 
-//PD100WŒ¬∂»¬À≤®∆˜
+//PD100WÊ∏©Â∫¶Êª§Ê≥¢Âô®
 // #define 		usbPD_TEMP_FILTER_BUFF_SIZE     		10 
 // static s32 usa_pd_temp_buff[usbPD_TEMP_FILTER_BUFF_SIZE];
 // FilterHandler_T    tAdc_PDTempFilterMadAvg = {usa_pd_temp_buff, usbPD_TEMP_FILTER_BUFF_SIZE, 0, 0, 0, 0, 0};
 
-// //Œﬁœﬂ≥‰Œ¬∂»¬À≤®∆˜
+// //Êó†Á∫øÂÖÖÊ∏©Â∫¶Êª§Ê≥¢Âô®
 // #define 		usbCHG_TEMP_FILTER_BUFF_SIZE     		10 
 // static s32 usa_chg_temp_buff[usbCHG_TEMP_FILTER_BUFF_SIZE];
 // FilterHandler_T    tAdc_ChgTempFilterMadAvg = {usa_chg_temp_buff, usbCHG_TEMP_FILTER_BUFF_SIZE, 0, 0, 0, 0, 0};
 
-//USBµÁ—π¬À≤®∆˜
+//USBÁîµÂéãÊª§Ê≥¢Âô®
 #define 		adcUSB_PWR_FILTER_BUFF_SIZE     		4 
 static s32 	usa_adc_usb_pwr_buff[adcUSB_PWR_FILTER_BUFF_SIZE];
 FilterHandler_T tAdc_UsbPwrFilterMadAvg = {usa_adc_usb_pwr_buff, adcUSB_PWR_FILTER_BUFF_SIZE, 0, 0, 0, 0, 0};
 
 /*****************************************************************************************************************
------∫Ø ˝π¶ƒ‹    »ŒŒÒ∫Ø ˝:≥ı ºªØ
------Àµ√˜(±∏◊¢)  none
------¥´»Î≤Œ ˝    none
------ ‰≥ˆ≤Œ ˝    none
------∑µªÿ÷µ      none
+-----ÂáΩÊï∞ÂäüËÉΩ    ‰ªªÂä°ÂáΩÊï∞:ÂàùÂßãÂåñ
+-----ËØ¥Êòé(Â§áÊ≥®)  none
+-----‰º†ÂÖ•ÂèÇÊï∞    none
+-----ËæìÂá∫ÂèÇÊï∞    none
+-----ËøîÂõûÂÄº      none
 ******************************************************************************************************************/
 void v_usb_queue_task_work(Task_T *tp_task)
 {
-	//”–»ŒŒÒ,ÕÀ≥ˆ
+	//Êúâ‰ªªÂä°,ÈÄÄÂá∫
 	if(lwrb_get_full(&tp_task->tQueueBuff))
 	{
-		cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+		cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 		return;
 	}
 	
@@ -60,14 +60,14 @@ void v_usb_queue_task_work(Task_T *tp_task)
 			us_usb_total_out_pwr = 0;
 			if(tUsb.uErrCode.tCode.bIc1Lost == false)
 				c_usb_cs_get_ic_param(&tUSB_IC1_I2C);
-			cQueue_GotoStep(tp_task, STEP_NEXT);  	//œ¬“ª≤Ω
+			cQueue_GotoStep(tp_task, STEP_NEXT);  	//‰∏ã‰∏ÄÊ≠•
         }
 
 		case 1:
         {
 			if(tUsb.uErrCode.tCode.bIc2Lost == false)
 				c_usb_cs_get_ic_param(&tUSB_IC2_I2C);
-			cQueue_GotoStep(tp_task, STEP_NEXT);  	//œ¬“ª≤Ω
+			cQueue_GotoStep(tp_task, STEP_NEXT);  	//‰∏ã‰∏ÄÊ≠•
         }
 
 		case 2:
@@ -88,7 +88,7 @@ void v_usb_queue_task_work(Task_T *tp_task)
 		break;
 
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+			cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 			break;
     }
 

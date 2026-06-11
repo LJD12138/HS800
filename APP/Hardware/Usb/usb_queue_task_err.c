@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Usb/usb_queue_task.h"
@@ -19,17 +19,17 @@
 #define       	usbTASK_ERR_CYCLE_TIME               		1000
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ÈÎÎñº¯Êı:³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ä»»åŠ¡å‡½æ•°:åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 void v_usb_queue_task_err(Task_T *tp_task)
 {
 	switch (tp_task->ucStep)
     {
-		//³õÊ¼»¯
+		//åˆå§‹åŒ–
 		case 0:
         {
 			bUsb_SetDevState(DS_ERR);
@@ -40,14 +40,14 @@ void v_usb_queue_task_err(Task_T *tp_task)
 				tUsb.uErrCode.tCode.bIc1Lost ||
 				tUsb.uErrCode.tCode.bIc2Lost ||
 				tUsb.uErrCode.tCode.bBatUV)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  	//ÏÂÒ»²½
+				cQueue_GotoStep(tp_task, STEP_NEXT);  	//ä¸‹ä¸€æ­¥
 			else
 				cQueue_GotoStep(tp_task, 2);
 			
 			return;
         }
 
-		//µÈ´ı»Ö¸´
+		//ç­‰å¾…æ¢å¤
 		case 1:
         {
 			// if(tUsb.uErrCode.tCode.bOT)
@@ -55,39 +55,39 @@ void v_usb_queue_task_err(Task_T *tp_task)
 			// else
 			// 	usbPOWER_EN_ON();
 			
-			//ÓĞÈÎÎñ,ÍË³ö
+			//æœ‰ä»»åŠ¡,é€€å‡º
 			if(lwrb_get_full(&tp_task->tQueueBuff))
 			{
-				cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+				cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 				return;
 			}
 
-			//´íÎóÇå³ı,ÖØĞÂ¿ª»ú
+			//é”™è¯¯æ¸…é™¤,é‡æ–°å¼€æœº
 			if(tUsb.uErrCode.ucErrCode == 0)
 				cUsb_Switch(ST_ON, true);
         }
 		break;
 
-		//µÈ´ı¹Ø±Õ
+		//ç­‰å¾…å…³é—­
 		case 2:
 		{
 			// usbPOWER_EN_OFF();
 
-			//ÓĞÈÎÎñ,ÍË³ö
+			//æœ‰ä»»åŠ¡,é€€å‡º
 			if(lwrb_get_full(&tp_task->tQueueBuff))
 			{
-				cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+				cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 				return;
 			}
 			
-			//´íÎóÇå³ı,¹Ø±Õ
+			//é”™è¯¯æ¸…é™¤,å…³é—­
 			if(tUsb.uErrCode.ucErrCode == 0)
 				cUsb_Switch(ST_OFF, true);
 		}
 		break;
 
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
     }
 

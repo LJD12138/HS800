@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³×ÜÈÎÎñµÄ¶ÓÁĞº¯Êı                                                  *
+ *                                         ç³»ç»Ÿæ€»ä»»åŠ¡çš„é˜Ÿåˆ—å‡½æ•°                                                  *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Mppt/md_mppt_queue_task.h"
@@ -11,40 +11,40 @@
 #include "Sys/sys_task.h"
 
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//
-__ALIGNED(4) 	Task_T *tpMpptTask = NULL;  	//¶ÓÁĞÈÎÎñ
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
+__ALIGNED(4) 	Task_T *tpMpptTask = NULL;  	//é˜Ÿåˆ—ä»»åŠ¡
 
 
-//****************************************************º¯ÊıÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜****************************************************//
 static bool b_task_manage_func_cb(Task_T *tp_task);
 static void v_add_task_return_func_cb(Task_T *tp_task, u8 num);
 
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¶ÓÁĞ³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    é˜Ÿåˆ—åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 bool bMppt_QueueInit(void)
 {
 	s8 c_result = 1;
 	
-	//ÈÎÎñ¶ÓÁĞ³õÊ¼»¯£¬¶ÓÁĞ´óĞ¡Îª8£¬»Ø¸´»º´æÆ÷´óĞ¡Îª0
+	//ä»»åŠ¡é˜Ÿåˆ—åˆå§‹åŒ–ï¼Œé˜Ÿåˆ—å¤§å°ä¸º8ï¼Œå›å¤ç¼“å­˜å™¨å¤§å°ä¸º0
 	c_result = cQueue_TaskInit(&tpMpptTask, 8, 12, b_task_manage_func_cb, v_add_task_return_func_cb);
 	if(c_result <= 0)
 	{
 		if(uPrint.tFlag.bMpptTask || uPrint.tFlag.bImportant)
-			log_e("bMpptTask:tpMpptTaskÈÎÎñ¶ÔÏó³õÊ¼»¯Ê§°Ü,´úÂë&d",c_result);
+			log_e("bMpptTask:tpMpptTaskä»»åŠ¡å¯¹è±¡åˆå§‹åŒ–å¤±è´¥,ä»£ç &d",c_result);
 		
 		return false;
 	}
 	else if(tpMpptTask == NULL)
 	{
 		if(uPrint.tFlag.bMpptTask || uPrint.tFlag.bImportant)
-			log_e("bMpptTask:tpMpptTaskÈÎÎñ¶ÔÏó´´½¨Ê§°Ü");
+			log_e("bMpptTask:tpMpptTaskä»»åŠ¡å¯¹è±¡åˆ›å»ºå¤±è´¥");
 		
 		return false;
 	}
@@ -54,11 +54,11 @@ bool bMppt_QueueInit(void)
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ×°ÔØÈÎÎñº¯Êı
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      true:³É¹¦   false:Ê§°Ü 
+-----å‡½æ•°åŠŸèƒ½    è£…è½½ä»»åŠ¡å‡½æ•°
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      true:æˆåŠŸ   false:å¤±è´¥ 
 ******************************************************************************************************************/
 static bool b_task_manage_func_cb(Task_T *tp_task)
 {
@@ -77,7 +77,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 	if(uc_temp%3 != 0 && uc_temp != 0)
 	{
 		if(uPrint.tFlag.bMpptTask || uPrint.tFlag.bImportant)
-			log_e("bMpptTask:ÈÎÎñ¶ÓÁĞ³¤¶ÈÒì³£ ³¤¶È%d",uc_temp);
+			log_e("bMpptTask:ä»»åŠ¡é˜Ÿåˆ—é•¿åº¦å¼‚å¸¸ é•¿åº¦%d",uc_temp);
 		lwrb_reset(&tp_task->tQueueBuff);
 		return false;
 	}
@@ -105,7 +105,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
             tp_task->vp_func = v_mppt_queue_task_init;
 			
 			if(uPrint.tFlag.bMpptTask)
-				sMyPrint("bMpptTask:----×°ÔØ³õÊ¼»¯ÈÎÎñ----\r\n");
+				sMyPrint("bMpptTask:----è£…è½½åˆå§‹åŒ–ä»»åŠ¡----\r\n");
         }break;
         
         case MTI_MAIN:
@@ -113,7 +113,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
             tp_task->vp_func = v_mppt_queue_task_main;
 			
 			if(uPrint.tFlag.bMpptTask)
-				sMyPrint("bMpptTask:----×°ÔØÖ÷ÈÎÎñ----\r\n");
+				sMyPrint("bMpptTask:----è£…è½½ä¸»ä»»åŠ¡----\r\n");
         }break; 
            
         case MTI_SET_CHG_PWR:
@@ -121,7 +121,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 			tp_task->vp_func = v_mppt_queue_task_set_chg_pwr;
 			
 			if(uPrint.tFlag.bMpptTask)
-				sMyPrint("bMpptTask:----×°ÔØÉèÖÃ³äµç¹¦ÂÊÈÎÎñ ²ÎÊı%dW----\r\n",tp_task->usInParam);
+				sMyPrint("bMpptTask:----è£…è½½è®¾ç½®å……ç”µåŠŸç‡ä»»åŠ¡ å‚æ•°%dW----\r\n",tp_task->usInParam);
         }break;
 		
 		case MTI_ERR_PROCESS:
@@ -129,7 +129,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
             tp_task->vp_func = v_mppt_queue_task_err_process;
 			
 			if(uPrint.tFlag.bMpptTask)
-				sMyPrint("bMpptTask:----×°ÔØ´íÎó´¦ÀíÈÎÎñ----\r\n");
+				sMyPrint("bMpptTask:----è£…è½½é”™è¯¯å¤„ç†ä»»åŠ¡----\r\n");
         }break;
 		
 		case MTI_NULL:
@@ -146,11 +146,11 @@ static void v_add_task_return_func_cb(Task_T *tp_task, u8 num)
 {
 	switch(num)
 	{
-		//Ìí¼ÓÁËÈÎÎñ
+		//æ·»åŠ äº†ä»»åŠ¡
 		case 2:
 		{
 			#if(boardUSE_OS)
-			xTaskNotifyGive(tMpptTaskHandler); //·¢Í¨Öª
+			xTaskNotifyGive(tMpptTaskHandler); //å‘é€šçŸ¥
 			#endif  //boardUSE_OS
 		}
 		break;

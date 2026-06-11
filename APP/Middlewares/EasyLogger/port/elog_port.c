@@ -38,7 +38,7 @@
 #include "task.h"
 #include "semphr.h"
 
-/* »¥³âĞÅºÅÁ¿¾ä±ú */
+/* äº’æ–¥ä¿¡å·é‡å¥æŸ„ */
 SemaphoreHandle_t eLogSemMutex = NULL;
 #endif
 /**
@@ -52,7 +52,7 @@ ElogErrCode elog_port_init(void) {
     /* add your code here */
 	
 	#if(boardUSE_OS)
-    /* ´´½¨»¥³âĞÅºÅÁ¿ */
+    /* åˆ›å»ºäº’æ–¥ä¿¡å·é‡ */
     eLogSemMutex = xSemaphoreCreateMutex();
 	#endif
 	
@@ -85,9 +85,9 @@ void elog_port_output(const char *log, size_t size) {
 	char char_temp[6] = {0};
 	size_t cp_len = (size < sizeof(char_temp) - 1) ? size : sizeof(char_temp) - 1;
     memcpy(char_temp, log, cp_len);
-    char_temp[cp_len] = '\0';        /* È·±£×Ö·û´®½áÊø */
+    char_temp[cp_len] = '\0';        /* ç¡®ä¿å­—ç¬¦ä¸²ç»“æŸ */
 
-	//Ö»´¢´æ´íÎó
+	//åªå‚¨å­˜é”™è¯¯
 	if(char_temp[0] == 0x1b &&
 		char_temp[1] == 0x5b &&
 		char_temp[2] == 0x33 &&
@@ -112,7 +112,7 @@ void elog_port_output_lock(void) {
 	if(eLogSemMutex == NULL)
 		return;
 	
-	xSemaphoreTake(eLogSemMutex, pdMS_TO_TICKS(100)); //»ñÈ¡
+	xSemaphoreTake(eLogSemMutex, pdMS_TO_TICKS(100)); //è·å–
 	#else
 	__disable_irq();
 	#endif
@@ -130,7 +130,7 @@ void elog_port_output_unlock(void) {
 	if(eLogSemMutex == NULL)
 		return;
 	
-	xSemaphoreGive(eLogSemMutex); //ÊÍ·Å»¥³âÁ¿
+	xSemaphoreGive(eLogSemMutex); //é‡Šæ”¾äº’æ–¥é‡
 	#else
     __enable_irq();
 	#endif
@@ -145,13 +145,13 @@ const char *elog_port_get_time(void) {
     
     // static char buffer[80] = {0};
 // 	struct tm time_info;
-// 	time_info.tm_year = tExRtc.uReadTime.tTime.ucYear -1910; 	// Äê·İ´Ó1900Äê¿ªÊ¼
-// 	time_info.tm_mon = tExRtc.uReadTime.tTime.ucMonth - 1;		// ÔÂ·İ´Ó0¿ªÊ¼
-// 	time_info.tm_mday = tExRtc.uReadTime.tTime.ucDay;          	// ÈÕ
-// 	time_info.tm_hour = tExRtc.uReadTime.tTime.ucHour;			// Ğ¡Ê±
-// 	time_info.tm_min = tExRtc.uReadTime.tTime.ucMinute;         // ·ÖÖÓ
-// 	time_info.tm_sec = tExRtc.uReadTime.tTime.ucSecond;         // Ãë
-// 	time_info.tm_isdst = -1;         // ÈÃmktime()×Ô¶¯¼ì²âÏÄÁîÊ±
+// 	time_info.tm_year = tExRtc.uReadTime.tTime.ucYear -1910; 	// å¹´ä»½ä»1900å¹´å¼€å§‹
+// 	time_info.tm_mon = tExRtc.uReadTime.tTime.ucMonth - 1;		// æœˆä»½ä»0å¼€å§‹
+// 	time_info.tm_mday = tExRtc.uReadTime.tTime.ucDay;          	// æ—¥
+// 	time_info.tm_hour = tExRtc.uReadTime.tTime.ucHour;			// å°æ—¶
+// 	time_info.tm_min = tExRtc.uReadTime.tTime.ucMinute;         // åˆ†é’Ÿ
+// 	time_info.tm_sec = tExRtc.uReadTime.tTime.ucSecond;         // ç§’
+// 	time_info.tm_isdst = -1;         // è®©mktime()è‡ªåŠ¨æ£€æµ‹å¤ä»¤æ—¶
 // 	strftime(buffer, sizeof(buffer), "%y-%m-%d %H:%M:%S", &time_info);
 // //	sMyPrint("%s \r\n", buffer);
 	

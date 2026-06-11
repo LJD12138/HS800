@@ -11,11 +11,11 @@
 #include "task.h"
 #endif
 
-extern Task_T *tpBmsTask;  //队列任务指针
+extern Task_T *tpBmsTask;  //闃熷垪浠诲姟鎸囬拡
 
 bool bBms_QueueInit(void);
 
-//队列函数
+//闃熷垪鍑芥暟
 void v_bms_queue_task_init(Task_T *tp_task);
 void v_bms_queue_task_clt_switch(Task_T *tp_task);
 void v_bms_queue_task_main(Task_T *tp_task);

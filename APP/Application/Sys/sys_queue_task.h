@@ -11,12 +11,12 @@
 #endif
 
 
-#define     	sysTASK_CYCLE_TIME                		100  //任务时间
+#define     	sysTASK_CYCLE_TIME                		100  //浠诲姟鏃堕棿
 
 
 bool bSys_QueueInit(void);
 
-//队列任务
+//闃熷垪浠诲姟
 void v_sys_queue_task_init(Task_T *tp_task);
 void v_sys_queue_task_closing(Task_T *tp_task);
 void v_sys_queue_task_shut_down(Task_T *tp_task);

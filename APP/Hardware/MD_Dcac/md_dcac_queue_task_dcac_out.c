@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ∂”¡–∫Ø ˝                                                  			*
+ *                                         ÈòüÂàóÂáΩÊï∞                                                  			*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
@@ -13,16 +13,16 @@
 
 #define       	dcacTASK_OUT_CYCLE_TIME               		50
 
-//****************************************************∫Ø ˝…˘√˜****************************************************//
+//****************************************************ÂáΩÊï∞Â£∞Êòé****************************************************//
 
 
 
 /*****************************************************************************************************************
------∫Ø ˝π¶ƒ‹    »ŒŒÒ∫Ø ˝:≥ı ºªØ
------Àµ√˜(±∏◊¢)  none
------¥´»Î≤Œ ˝    none
------ ‰≥ˆ≤Œ ˝    none
------∑µªÿ÷µ      none
+-----ÂáΩÊï∞ÂäüËÉΩ    ‰ªªÂä°ÂáΩÊï∞:ÂàùÂßãÂåñ
+-----ËØ¥Êòé(Â§áÊ≥®)  none
+-----‰º†ÂÖ•ÂèÇÊï∞    none
+-----ËæìÂá∫ÂèÇÊï∞    none
+-----ËøîÂõûÂÄº      none
 ******************************************************************************************************************/
 void v_dcac_queue_task_dcac_out(Task_T *tp_task)
 {
@@ -37,20 +37,20 @@ void v_dcac_queue_task_dcac_out(Task_T *tp_task)
 		case 0:
 		{
 			if(type == ST_ON)
-				bDcac_SetAcState(OO_DISCHG, IOS_STARTING);   //ø™∆Ù
+				bDcac_SetAcState(OO_DISCHG, IOS_STARTING);   //ÂºÄÂêØ
 			else 
-				bDcac_SetAcState(OO_DISCHG, IOS_CLOSING);    //πÿ±’	
+				bDcac_SetAcState(OO_DISCHG, IOS_CLOSING);    //ÂÖ≥Èó≠	
 			
 			if(b_dcac_cs_ac_output_switch(us_temp) == true)
 			{
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //œ¬“ª≤Ω
+				cQueue_GotoStep(tp_task, STEP_NEXT);  //‰∏ã‰∏ÄÊ≠•
 			}
 
 			tp_task->usStepRepeatCnt++;
 			if(tp_task->usStepRepeatCnt > 3)
 			{
 				if(uPrint.tFlag.bDcacTask)
-					log_w("bDcacTask: ˝æ›∑¢ÀÕ ß∞‹¥Œ ˝π˝∂‡,ÕÀ≥ˆø™πÿƒÊ±‰ ‰≥ˆ»ŒŒÒ");
+					log_w("bDcacTask:Êï∞ÊçÆÂèëÈÄÅÂ§±Ë¥•Ê¨°Êï∞ËøáÂ§ö,ÈÄÄÂá∫ÂºÄÂÖ≥ÈÄÜÂèòËæìÂá∫‰ªªÂä°");
 				
 				goto loop_end;
 			}
@@ -62,13 +62,13 @@ void v_dcac_queue_task_dcac_out(Task_T *tp_task)
 			b_dcac_cs_ac_output_switch(us_temp);
 			if(type == ST_ON)
 			{
-				bDcac_SetAcState(OO_DISCHG, IOS_WORK);   //ø™∆Ù
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //œ¬“ª≤Ω
+				bDcac_SetAcState(OO_DISCHG, IOS_WORK);   //ÂºÄÂêØ
+				cQueue_GotoStep(tp_task, STEP_NEXT);  //‰∏ã‰∏ÄÊ≠•
 			}
 			else 
 			{
-				bDcac_SetAcState(OO_DISCHG, IOS_SHUT_DOWN);    //πÿ±’
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //œ¬“ª≤Ω					
+				bDcac_SetAcState(OO_DISCHG, IOS_SHUT_DOWN);    //ÂÖ≥Èó≠
+				cQueue_GotoStep(tp_task, STEP_NEXT);  //‰∏ã‰∏ÄÊ≠•					
 			}
 		}
 		break;
@@ -76,22 +76,22 @@ void v_dcac_queue_task_dcac_out(Task_T *tp_task)
 		case 2:
 		{
 			if(uPrint.tFlag.bDcacTask)
-                sMyPrint("bDcacTask: ‰≥ˆø™πÿ≤Ÿ◊˜ÕÍ≥…\r\n");
+                sMyPrint("bDcacTask:ËæìÂá∫ÂºÄÂÖ≥Êìç‰ΩúÂÆåÊàê\r\n");
 			
-			cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+			cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 			return;
 		}
 			
 		default:
-		    cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+		    cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 			break;
 	}
 	
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt>(3000/dcacTASK_OUT_CYCLE_TIME))  //µ»¥˝≥¨ ±
+	if(tp_task->usTaskWaitCnt>(3000/dcacTASK_OUT_CYCLE_TIME))  //Á≠âÂæÖË∂ÖÊó∂
 	{
 		if(uPrint.tFlag.bDcacTask)
-			log_w("bDcacTask:øÿ÷∆ƒÊ±‰ ‰≥ˆ≥¨ ±,≤Ω÷Ë%d", tp_task->ucStep);
+			log_w("bDcacTask:ÊéßÂà∂ÈÄÜÂèòËæìÂá∫Ë∂ÖÊó∂,Ê≠•È™§%d", tp_task->ucStep);
 		
 		loop_end:
 		if(type == ST_ON)
@@ -100,7 +100,7 @@ void v_dcac_queue_task_dcac_out(Task_T *tp_task)
 			bDcac_SetAcState(OO_DISCHG, IOS_SHUT_DOWN);
 		}
 		
-		cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+		cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 	}
 	
 	vTaskDelay(dcacTASK_OUT_CYCLE_TIME);

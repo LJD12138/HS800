@@ -18,7 +18,7 @@
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUSART0_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUSART0_GPIO_TX_PIN
 #define     	dcacUSART_GPIO_TX_AF           		gpioUSART0_GPIO_TX_AF
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	dcacUSART_RCU           				RCU_USART0
 #define     	dcacUSART               				USART0
 #define     	dcacUSART_BAUD          				9600
@@ -52,7 +52,7 @@
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUSART1_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUSART1_GPIO_TX_PIN
 #define     	dcacUSART_GPIO_TX_AF           		gpioUSART1_GPIO_TX_AF
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	dcacUSART_RCU           				RCU_USART1
 #define     	dcacUSART               				USART1
 #define     	dcacUSART_BAUD          				4800
@@ -86,7 +86,7 @@
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUSART2_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUSART2_GPIO_TX_PIN
 #define     	dcacUSART_GPIO_TX_AF           		gpioUSART2_GPIO_TX_AF
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	dcacUSART_RCU           				RCU_USART2
 #define     	dcacUSART               				USART2
 #define     	dcacUSART_BAUD          				9600
@@ -120,7 +120,7 @@
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUART3_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUART3_GPIO_TX_PIN
 #define     	dcacUSART_GPIO_TX_AF           		gpioUART3_GPIO_TX_AF
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	dcacUSART_RCU           				RCU_UART3
 #define     	dcacUSART               				UART3
 #define     	dcacUSART_BAUD          				9600
@@ -152,7 +152,7 @@
 #define     	dcacUSART_GPIO_TX_PORT          		gpioUART4_GPIO_TX_PORT
 #define     	dcacUSART_GPIO_TX_PIN           		gpioUART4_GPIO_TX_PIN
 #define     	dcacUSART_GPIO_TX_AF           		gpioUART4_GPIO_TX_AF
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	dcacUSART_RCU           				RCU_UART4
 #define     	dcacUSART               				UART4
 #define     	dcacUSART_BAUD          				9600
@@ -171,8 +171,8 @@
 #define     	dcacGPIO_485_TX_EN_RCU					RCU_GPIOB
 #define     	dcacGPIO_485_TX_EN_PORT					GPIOB
 #define     	dcacGPIO_485_TX_EN_PIN					GPIO_PIN_2
-#define     	dcacGPIO_485_TX_EN_ON()					GPIO_BOP(dcacGPIO_485_TX_EN_PORT) = dcacGPIO_485_TX_EN_PIN   // πƒ‹∑¢ÀÕ
-#define     	dcacGPIO_485_TX_EN_OFF()				GPIO_BC(dcacGPIO_485_TX_EN_PORT)  = dcacGPIO_485_TX_EN_PIN   // πƒ‹Ω” ’
+#define     	dcacGPIO_485_TX_EN_ON()					GPIO_BOP(dcacGPIO_485_TX_EN_PORT) = dcacGPIO_485_TX_EN_PIN   //‰ΩøËÉΩÂèëÈÄÅ
+#define     	dcacGPIO_485_TX_EN_OFF()				GPIO_BC(dcacGPIO_485_TX_EN_PORT)  = dcacGPIO_485_TX_EN_PIN   //‰ΩøËÉΩÊé•Êî∂
 #endif //boardDCAC_485_IFACE_EN
 
 extern __IO bool bDcacUseFlag;

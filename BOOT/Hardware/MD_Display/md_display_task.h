@@ -9,28 +9,28 @@
 #include "MD_Display/md_display_eng_mode.h"
 #endif
 
-//*********************************ÈÎÎñ¶ÔÏó**********************************
+//*********************************ä»»åŠ¡å¯¹è±¡**********************************
 typedef struct
 {
-    bool             bLight;            //1:´ò¿ª   0:¹Ø±Õ
-	bool             bSleepShow;       	//1:´ò¿ª   0:¹Ø±Õ
-	vu16             usAutoOffTime;     //Ï¢ÆÁÊ±¼ä
-	vu16             usAutoOffCnt;      //Ï¢ÆÁµ¹¼ÆÊ±
+    bool             bLight;            //1:æ‰“å¼€   0:å…³é—­
+	bool             bSleepShow;       	//1:æ‰“å¼€   0:å…³é—­
+	vu16             usAutoOffTime;     //æ¯å±æ—¶é—´
+	vu16             usAutoOffCnt;      //æ¯å±å€’è®¡æ—¶
 	#if(boardENG_MODE_EN)
-	DispTypeSet_E    eLightSetType;      //ÁÁ¶ÈÉèÖÃ
+	DispTypeSet_E    eLightSetType;      //äº®åº¦è®¾ç½®
 	#endif
 }Disp_T;  
 extern Disp_T   tDisp; 
 
-//*********************************¼ÇÒä²ÎÊı**********************************
-#pragma pack(1) //Ç¿ÖÆÒ»¸ö×Ö½Ú¶ÔÆë
+//*********************************è®°å¿†å‚æ•°**********************************
+#pragma pack(1) //å¼ºåˆ¶ä¸€ä¸ªå­—èŠ‚å¯¹é½
 typedef struct
 {
 	u8           ucHighLightValue;
 	u8           ucLowLightValue;
-	vu16         usAutoOffTime;      //´æ´¢Ï¢ÆÁµÄÊ±¼ä,´óÓÚ0´æÔÚÓĞÏ¢ÆÁ,0Îª³£ÁÁ
+	vu16         usAutoOffTime;      //å­˜å‚¨æ¯å±çš„æ—¶é—´,å¤§äº0å­˜åœ¨æœ‰æ¯å±,0ä¸ºå¸¸äº®
 }DispMemParam_T;
-#pragma pack()  //È¡ÏûÒ»¸ö×Ö½Ú¶ÔÆë
+#pragma pack()  //å–æ¶ˆä¸€ä¸ªå­—èŠ‚å¯¹é½
 
 
 bool bDisp_TaskInit(void);

@@ -13,7 +13,7 @@
 
 bool bPrint_QueueInit(void);
 
-//¶ÓÁÐº¯Êý
+//é˜Ÿåˆ—å‡½æ•°
 void v_print_queue_task_main(Task_T *tp_task);
 void v_print_queue_task_reply_app_info(Task_T *tp_task);
 void v_print_queue_task_reply_cali(Task_T *tp_task);

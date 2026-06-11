@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ∂”¡–∫Ø ˝: ø™πÿ≥‰µÁ                                                  			*
+ *                                         ÈòüÂàóÂáΩÊï∞: ÂºÄÂÖ≥ÂÖÖÁîµ                                                  			*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
@@ -15,16 +15,16 @@
 
 #define       	dcacTASK_IN_CYCLE_TIME               		50
 
-//****************************************************∫Ø ˝…˘√˜****************************************************//
+//****************************************************ÂáΩÊï∞Â£∞Êòé****************************************************//
 
 
 
 /*****************************************************************************************************************
------∫Ø ˝π¶ƒ‹    »ŒŒÒ∫Ø ˝:ø™πÿ≥‰µÁ
------Àµ√˜(±∏◊¢)  none
------¥´»Î≤Œ ˝    none
------ ‰≥ˆ≤Œ ˝    none
------∑µªÿ÷µ      none
+-----ÂáΩÊï∞ÂäüËÉΩ    ‰ªªÂä°ÂáΩÊï∞:ÂºÄÂÖ≥ÂÖÖÁîµ
+-----ËØ¥Êòé(Â§áÊ≥®)  none
+-----‰º†ÂÖ•ÂèÇÊï∞    none
+-----ËæìÂá∫ÂèÇÊï∞    none
+-----ËøîÂõûÂÄº      none
 ******************************************************************************************************************/
 void v_dcac_queue_task_dcac_in(Task_T *tp_task)
 {
@@ -39,13 +39,13 @@ void v_dcac_queue_task_dcac_in(Task_T *tp_task)
 				us_temp = tAppMemParam.tDCAC.usMinInPwr;
 			
 			if(b_dcac_cs_set_chg_pwr(us_temp) == true)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //œ¬“ª≤Ω
+				cQueue_GotoStep(tp_task, STEP_NEXT);  //‰∏ã‰∏ÄÊ≠•
 			
 			tp_task->usStepRepeatCnt++;
 			if(tp_task->usStepRepeatCnt > 3)
 			{
 				if(uPrint.tFlag.bDcacTask)
-					log_w("bDcacTask: ˝æ›∑¢ÀÕ ß∞‹¥Œ ˝π˝∂‡,ÕÀ≥ˆø™πÿƒÊ±‰≥‰µÁ»ŒŒÒ");
+					log_w("bDcacTask:Êï∞ÊçÆÂèëÈÄÅÂ§±Ë¥•Ê¨°Êï∞ËøáÂ§ö,ÈÄÄÂá∫ÂºÄÂÖ≥ÈÄÜÂèòÂÖÖÁîµ‰ªªÂä°");
 				
 				goto loop_end;
 			}
@@ -53,30 +53,30 @@ void v_dcac_queue_task_dcac_in(Task_T *tp_task)
 		
 		case 1:
 		{
-			cQueue_GotoStep(tp_task, STEP_NEXT);  //œ¬“ª≤Ω	
+			cQueue_GotoStep(tp_task, STEP_NEXT);  //‰∏ã‰∏ÄÊ≠•	
 		}
 		break;
 		
 		case 2:
 		{	
 			if(uPrint.tFlag.bDcacTask)
-                sMyPrint("bDcacTask:≥‰µÁø™πÿ≤Ÿ◊˜ÕÍ≥…\r\n");
+                sMyPrint("bDcacTask:ÂÖÖÁîµÂºÄÂÖ≥Êìç‰ΩúÂÆåÊàê\r\n");
 			
-			cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+			cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 
 			return;
 		}
 			
 		default:
-		    cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+		    cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 			break;
 	}
 	
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt > (3000 / dcacTASK_IN_CYCLE_TIME))  //µ»¥˝≥¨ ±
+	if(tp_task->usTaskWaitCnt > (3000 / dcacTASK_IN_CYCLE_TIME))  //Á≠âÂæÖË∂ÖÊó∂
 	{
 		if(uPrint.tFlag.bDcacTask)
-			log_w("bDcacTask:øÿ÷∆ƒÊ±‰≥‰µÁ≥¨ ±,≤Ω÷Ë%d", tp_task->ucStep);
+			log_w("bDcacTask:ÊéßÂà∂ÈÄÜÂèòÂÖÖÁîµË∂ÖÊó∂,Ê≠•È™§%d", tp_task->ucStep);
 		
 		loop_end:
 		if(type == ST_ON)
@@ -85,7 +85,7 @@ void v_dcac_queue_task_dcac_in(Task_T *tp_task)
 			bDcac_SetAcState(OO_CHG, IOS_SHUT_DOWN);
 		}
 		
-		cQueue_GotoStep(tp_task, STEP_END);  //Ω· ¯
+		cQueue_GotoStep(tp_task, STEP_END);  //ÁªìÊùü
 	}
 	
 	vTaskDelay(dcacTASK_IN_CYCLE_TIME);

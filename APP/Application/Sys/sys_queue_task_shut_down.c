@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Sys/sys_queue_task.h"
@@ -18,14 +18,14 @@
 
 #include "gpio_init.h"
 
-#define     	sysTASK_SHUT_DOWN_CYCLE_TIME					sysTASK_CYCLE_TIME //ÈÎÎñÊ±¼ä
+#define     	sysTASK_SHUT_DOWN_CYCLE_TIME					sysTASK_CYCLE_TIME //ä»»åŠ¡æ—¶é—´
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ÏµÍ³³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ç³»ç»Ÿåˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/  
 void v_sys_queue_task_shut_down(Task_T *tp_task)
 {
@@ -38,13 +38,13 @@ void v_sys_queue_task_shut_down(Task_T *tp_task)
 	if(bSys_ExistInVolt() == true)
 	{
 		bSys_ChgWakeUp(SO_MPPT);
-		cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+		cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 		return;
 	}
 	
     switch (tp_task->ucStep)
     {
-		//ÓĞ°´¼ü°´ÏÂ
+		//æœ‰æŒ‰é”®æŒ‰ä¸‹
 		case 0:
 		{
 			#if(boardKEY_EN)
@@ -52,19 +52,19 @@ void v_sys_queue_task_shut_down(Task_T *tp_task)
 				tp_task->usStepWaitCnt = 0;
 			#endif
 
-			//ÓĞÈÎÎñÍË³ö
-			if(lwrb_get_full(&tp_task->tQueueBuff))                 //¶ÓÁĞÀïÃæÓĞÈÎÎñ
-				cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+			//æœ‰ä»»åŠ¡é€€å‡º
+			if(lwrb_get_full(&tp_task->tQueueBuff))                 //é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
+				cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 			
-			//µÈ´ıÖ÷»úÇëÇó¹Ø±Õ
+			//ç­‰å¾…ä¸»æœºè¯·æ±‚å…³é—­
 			tp_task->usStepWaitCnt++;
 			if(tp_task->usStepWaitCnt >= (6000 / sysTASK_SHUT_DOWN_CYCLE_TIME))
 			{
 				tp_task->usStepWaitCnt = 0;
-				cQueue_GotoStep( tp_task, STEP_NEXT );  //ÏÂÒ»²½
+				cQueue_GotoStep( tp_task, STEP_NEXT );  //ä¸‹ä¸€æ­¥
 				
 				if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant) 
-					sMyPrint("bSysTask:µÈ´ıÖ÷»ú¹Ø±Õ³¬Ê±,ÔÙ´Î¹Ø±ÕBMS¹Ø±Õ\r\n");
+					sMyPrint("bSysTask:ç­‰å¾…ä¸»æœºå…³é—­è¶…æ—¶,å†æ¬¡å…³é—­BMSå…³é—­\r\n");
 			}
 		}
 		break;
@@ -72,25 +72,25 @@ void v_sys_queue_task_shut_down(Task_T *tp_task)
 		case 1:
 		{
 			#if(boardBMS_EN)
-			if(cBms_Switch(SO_KEY, ST_OFF, false) < 0)  //²Ù×÷Ê§°Ü
+			if(cBms_Switch(SO_KEY, ST_OFF, false) < 0)  //æ“ä½œå¤±è´¥
 			{
 				if(uPrint.tFlag.bSysTask) 
-					sMyPrint("bSysTask:¹Ø±ÕBMSÊ§°Ü\r\n");
+					sMyPrint("bSysTask:å…³é—­BMSå¤±è´¥\r\n");
 				
 				#if(boardUSE_OS)
 				vTaskDelay(500);
 				#endif  //boardUSE_OS
 			}
 			else
-				cQueue_GotoStep( tp_task, STEP_FORWARD );  //ÉÏÒ»²½
+				cQueue_GotoStep( tp_task, STEP_FORWARD );  //ä¸Šä¸€æ­¥
 			#else
-			cQueue_GotoStep( tp_task, STEP_FORWARD );  //ÉÏÒ»²½
+			cQueue_GotoStep( tp_task, STEP_FORWARD );  //ä¸Šä¸€æ­¥
 			#endif
 		}
 		break;
 		
         default:
-				cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+				cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 			break;
     }
 	

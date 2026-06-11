@@ -11,15 +11,15 @@
 
 #include "function.h"
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//   
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//   
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ´¦Àí½ÓÊÕµ½µÄÊı¾İ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      0:Ã»ÓĞ´íÎó  ÆäËûÓĞ´íÎó
+-----å‡½æ•°åŠŸèƒ½    å¤„ç†æ¥æ”¶åˆ°çš„æ•°æ®
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      0:æ²¡æœ‰é”™è¯¯  å…¶ä»–æœ‰é”™è¯¯
 ************************************************************************************************************************/
 s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 {
@@ -38,7 +38,7 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 	
 	if(uPrint.tFlag.bDcacRecTask)
 	{
-		sMyPrint("\r\n bDcacRecTask:½ÓÊÕµØÖ·%d:", proto_tx->usRegAddr);
+		sMyPrint("\r\n bDcacRecTask:æ¥æ”¶åœ°å€%d:", proto_tx->usRegAddr);
 		for(int i = 0; i < proto_rx->ucValidLen; i++)
 			sMyPrint("%x ",proto_rx->ucpValidData[i]);
 		sMyPrint("\r\n");
@@ -79,9 +79,9 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			if(proto_rx->ucCharLen != sizeof(tParam1))
 				return -4;
 			
-			//×°ÔØ²ÎÊı
+			//è£…è½½å‚æ•°
 			bFunc_SwapU16Array((u8*)&tParam1, proto_rx->ucpValidData, proto_rx->ucCharLen / 2);
-			//¸üĞÂÊı¾İ
+			//æ›´æ–°æ•°æ®
 			tDcacRx.usOutVolt = tParam1.usOutVolt;
 
 			//G3604 0.1A     G2404 0.01A
@@ -124,9 +124,9 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			if(proto_rx->ucCharLen != sizeof(tParam2))
 				return -5;
 
-			//×°ÔØ²ÎÊı
+			//è£…è½½å‚æ•°
 			bFunc_SwapU16Array((u8*)&tParam2, proto_rx->ucpValidData, proto_rx->ucCharLen/2);
-			//¸üĞÂÊı¾İ
+			//æ›´æ–°æ•°æ®
 			// if(tMppt.eDevState > DS_BOOTING && tDcac.eChgState == DS_SHUT_DOWN)
 				tDcacRx.uErrCode.usCode[0] = tParam2.uDcErrCode & (~0x0001);
 			// else
@@ -145,9 +145,9 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			if(proto_rx->ucCharLen != sizeof(tParam3))
 				return -6;
 
-			//×°ÔØ²ÎÊı
+			//è£…è½½å‚æ•°
 			bFunc_SwapU16Array((u8*)&tParam3, proto_rx->ucpValidData, proto_rx->ucCharLen/2);
-			//¸üĞÂÊı¾İ
+			//æ›´æ–°æ•°æ®
 			tDcacRx.usInVolt = tParam3.usAcInVolt;
 			tDcacRx.usInPwr = LIMIT_MIN(tParam3.sAcInPwr, 0);
 			tDcacRx.usInChgPwr = LIMIT_MIN(tParam3.sAcChgPwr, 0);

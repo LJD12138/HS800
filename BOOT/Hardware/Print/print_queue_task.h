@@ -13,7 +13,7 @@
 
 bool bPrint_QueueInit(void);
 
-//¶ÓÁÐº¯Êý
+//é˜Ÿåˆ—å‡½æ•°
 void v_print_queue_task_main(Task_T *tp_task);
 
 #endif  //boardPRINT_IFACE

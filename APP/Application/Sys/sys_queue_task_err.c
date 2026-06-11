@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁÐº¯Êý                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Sys/sys_queue_task.h"
@@ -16,15 +16,15 @@
 #endif
 
 
-#define     	sysTASK_ERR_CYCLE_TIME					sysTASK_CYCLE_TIME //ÈÎÎñÊ±¼ä
+#define     	sysTASK_ERR_CYCLE_TIME					sysTASK_CYCLE_TIME //ä»»åŠ¡æ—¶é—´
 
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    ´íÎóÈÎÎñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    é”™è¯¯ä»»åŠ¡
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/ 
 void v_sys_queue_task_err(Task_T *tp_task)
 {
@@ -36,28 +36,28 @@ void v_sys_queue_task_err(Task_T *tp_task)
 //	BIT_CLR(u_err_code.ulCode, BEC_AFE_DISCHG_UV);
 //	BIT_CLR(u_err_code.ulCode, BEC_BMS_CELL_UV);
 	
-	//¶ÓÁÐÀïÃæÓÐÈÎÎñ
+	//é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
 	if(lwrb_get_full(&tp_task->tQueueBuff))  
 	{
-		cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+		cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 		return;
 	}
 					
     switch (tp_task->ucStep)
     {
-		//************************************²½Öè0:³õÊ¼»¯*************************************************
+		//************************************æ­¥éª¤0:åˆå§‹åŒ–*************************************************
 		case 0:
 		{
 			bSys_SetDevState(DS_ERR, false);
-			cQueue_GotoStep( tp_task, STEP_NEXT );  //ÏÂÒ»²½
+			cQueue_GotoStep( tp_task, STEP_NEXT );  //ä¸‹ä¸€æ­¥
 		}
 		break;
 		
-		//************************************²½Öè2:µÈ´ý¹Ø±Õ*************************************************
+		//************************************æ­¥éª¤2:ç­‰å¾…å…³é—­*************************************************
 		case 1:
 		{
 			#if(boardKEY_EN)
-			//°´¼ü°´ÏÂ¼´¿ÉÖØÖÃ
+			//æŒ‰é”®æŒ‰ä¸‹å³å¯é‡ç½®
 			if(bKey_AcIsPress() == true ||
 				bKey_PowerIsPress() == true ||
 				bKey_UsbIsPress() == true ||
@@ -66,14 +66,14 @@ void v_sys_queue_task_err(Task_T *tp_task)
 				tp_task->usStepWaitCnt = 0;
 			#endif
 				
-			//´æÔÚ³äµç
+			//å­˜åœ¨å……ç”µ
 			if(bSys_ExistInVolt() == true)
 			{
 				cQueue_GotoStep(tp_task, 3);
 				return;
 			}
 
-			//µ¹¼ÆÊ±ÍË³ö
+			//å€’è®¡æ—¶é€€å‡º
 			if(tSysInfo.uErrCode.tCode.bUV == 1 || tSysInfo.uErrCode.tCode.b0SOC == 1)
 			{
 				tp_task->usStepWaitCnt++;
@@ -81,21 +81,21 @@ void v_sys_queue_task_err(Task_T *tp_task)
 				{
 					tp_task->usStepWaitCnt = 0;
 					bSys_SetDevState(DS_SHUT_DOWN, true);
-					cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½
+					cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥
 				}
 			}
 			else
 			{
 				tp_task->usStepWaitCnt = 0;
-				cQueue_GotoStep( tp_task, STEP_NEXT );  //ÏÂÒ»²½
+				cQueue_GotoStep( tp_task, STEP_NEXT );  //ä¸‹ä¸€æ­¥
 			}
 		}
 		break;
 		
-		//************************************²½Öè2:½øÈë¹Ø»ú**************************************************
+		//************************************æ­¥éª¤2:è¿›å…¥å…³æœº**************************************************
 		case 2:
 		{
-			//´æÔÚ³äµç
+			//å­˜åœ¨å……ç”µ
 			if(bSys_ExistInVolt() == true)
 			{
 				cQueue_GotoStep(tp_task, 3);
@@ -114,24 +114,24 @@ void v_sys_queue_task_err(Task_T *tp_task)
 		}
 		break ;
 
-		//************************************²½Öè3:³äµç¿ª»ú**************************************************
+		//************************************æ­¥éª¤3:å……ç”µå¼€æœº**************************************************
 		case 3:
 		{
-			cSys_Switch(SO_MPPT, ST_ON, false); //¿ª»ú
+			cSys_Switch(SO_MPPT, ST_ON, false); //å¼€æœº
 			if(uPrint.tFlag.bSysTask)
-				sMyPrint("bSysTask:¿ªÆô³äµç»½ÐÑ\r\n");
+				sMyPrint("bSysTask:å¼€å¯å……ç”µå”¤é†’\r\n");
 
-			cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+			cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 			return;
 		}
 		
         default:
-			if(lwrb_get_full(&tp_task->tQueueBuff))  //¶ÓÁÐÀïÃæÓÐÈÎÎñ
-				cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+			if(lwrb_get_full(&tp_task->tQueueBuff))  //é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
+				cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 			break;
     }
 	
-	//µÈ´ý60S,³¬Ê±ÍË³ö
+	//ç­‰å¾…60S,è¶…æ—¶é€€å‡º
 	tp_task->usTaskWaitCnt++;
 	if(tp_task->usTaskWaitCnt > (60000 / sysTASK_ERR_CYCLE_TIME) && tp_task->ucStep != STEP_END)
 	{

@@ -38,7 +38,7 @@ extern "C" {
 
 
 /* ==========================================extern======================================*/
-//Éè±¸×´Ì¬
+//è®¾å¤‡çŠ¶æ€
 void Display_IconWifi(void);
 void Display_IconBL(void);
 void Display_IconFan(void);
@@ -56,7 +56,7 @@ void Display_IconMultiPack(void);
 void Display_IconWirelessCharge(void);
 void Display_GRID(void);
 
-//·ûºÅ
+//ç¬¦å·
 void Display_IconUpdate(void);
 void Display_IconTimeH(void);
 void Display_IconTimeM(void);
@@ -67,7 +67,7 @@ void Display_IconKwh(void);
 void Display_IconSave(void);
 void Display_IconTest(void);
 
-//´íÎóºÍ±£»¤
+//é”™è¯¯å’Œä¿æŠ¤
 void Display_IconSysErr(void);
 void Display_IconBatLow(void);
 void Display_IconOT(void);
@@ -76,13 +76,13 @@ void Display_IconUT(void);
 void Display_IconOL(void);
 void Display_IconBmsOT(void);
 
-//¿ØÖÆÖ¸Áî
+//æ§åˆ¶æŒ‡ä»¤
 void Display_SetStandbyMode(void);
 void Display_SetRunMode(void);
 void Display_ClearData(void);
 void Display_RefreshData(void);
 
-//Êı¾İÏÔÊ¾
+//æ•°æ®æ˜¾ç¤º
 void Display_NoShowAll(void);
 void Display_ShowAll(void);
 void Display_ShowON(void);
@@ -99,7 +99,7 @@ void Display_ShowErrCode(u32 list);
 void Display_Cap(u16 num);
 void Display_IconExpCapNum(u8 num);
 
-//ÌØÊâÄ£Ê½
+//ç‰¹æ®Šæ¨¡å¼
 void Display_OutNum(s16 num);
 void Display_UpdateProgress(u16 frame_num, u16 rec_frame_num);
 void Display_UpdateState(u8 obj, u8 proto, u8 num);

@@ -14,7 +14,7 @@
 
 bool bDcac_QueueInit(void);
 
-//¶ÓÁÐº¯Êý
+//é˜Ÿåˆ—å‡½æ•°
 void v_dcac_queue_task_init(Task_T *tp_task);
 void v_dcac_queue_task_main(Task_T *tp_task);
 void v_dcac_queue_task_dcac_out(Task_T *tp_task);

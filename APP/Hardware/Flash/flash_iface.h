@@ -4,7 +4,7 @@
 #include "main.h"
 #include "..\..\BOOT\Application\flash_allot_table.h"
 
-#define  FLASH_DEBUG          0      //进入测试模式
+#define  FLASH_DEBUG          0      //杩涘叆娴嬭瘯妯″紡
 
 #define  FALSH_START_ADDR     flashAPP_START  
 #define  FALSH_END_ADDR       flashAPP_END    

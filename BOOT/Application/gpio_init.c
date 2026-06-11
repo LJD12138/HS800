@@ -2,15 +2,15 @@
 #include "Print/print_iface.h"
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    IO¿Ú³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    IOå£åˆå§‹åŒ–
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/ 
 void vGPIO_Init(void)
 {
-//	//	//³õÊ¼»¯ËùÓÐIO,ÒÑ´ïµ½×îµÍ¹¦ºÄ.
+//	//	//åˆå§‹åŒ–æ‰€æœ‰IO,å·²è¾¾åˆ°æœ€ä½ŽåŠŸè€—.
 //	rcu_periph_clock_enable(RCU_GPIOA);
 //	rcu_periph_clock_enable(RCU_GPIOB);
 //	rcu_periph_clock_enable(RCU_GPIOC);
@@ -63,11 +63,11 @@ void vGPIO_Init(void)
 }
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    »ñÈ¡Ìø×ªµ½APP³ÌÐòÐÅºÅ
------ËµÃ÷(±¸×¢)  1MSË¢ÐÂ
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      true:Ìø×ªAPP   false:ÁôÔÚBoot
+-----å‡½æ•°åŠŸèƒ½    èŽ·å–è·³è½¬åˆ°APPç¨‹åºä¿¡å·
+-----è¯´æ˜Ž(å¤‡æ³¨)  1MSåˆ·æ–°
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      true:è·³è½¬APP   false:ç•™åœ¨Boot
 ************************************************************************************************************************/ 
 bool bGPIO_BootJumpApp(void)
 {
@@ -91,11 +91,11 @@ bool bGPIO_BootJumpApp(void)
 
 #if(boardLOW_POWER)
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    IO¿Ú½øÈëµÍ¹¦ºÄ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    IOå£è¿›å…¥ä½ŽåŠŸè€—
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/ 
 void vKey_EnterLowPower(void)
 {
@@ -123,11 +123,11 @@ void vKey_EnterLowPower(void)
 	gpio_mode_set(attiSENSOR_INT_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, attiSENSOR_INT_PIN);
 	gpio_mode_set(PRINT_RX_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, PRINT_RX_PIN);
 	#else
-	gpio_init(KEY_POWER_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //ÖÐ¶Ï µçÔ´°´¼ü PC13
-	gpio_init(KEY_WP_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //ÖÐ¶Ï »½ÐÑ½Å PA0
+	gpio_init(KEY_POWER_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //ä¸­æ–­ ç”µæºæŒ‰é”® PC13
+	gpio_init(KEY_WP_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //ä¸­æ–­ å”¤é†’è„š PA0
 	gpio_init(KEY_KEY1_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_KEY1_PIN);
-	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //ÖÐ¶Ï ×´Ì¬´«¸ÐÆ÷ PA9
-	gpio_init(PRINT_RX_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //ÖÐ¶Ï ´®¿Ú½ÓÊÕ   PD2
+	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //ä¸­æ–­ çŠ¶æ€ä¼ æ„Ÿå™¨ PA9
+	gpio_init(PRINT_RX_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //ä¸­æ–­ ä¸²å£æŽ¥æ”¶   PD2
 	#endif
 	
 	/* enable and set key EXTI interrupt to the lowest priority */
@@ -143,10 +143,10 @@ void vKey_EnterLowPower(void)
 	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0);  //PA0
 
 	/* configure key EXTI line */
-	exti_init(EXTI_13, EXTI_INTERRUPT, EXTI_TRIG_FALLING); //ÏÂ½µÑØ´¥·¢
-	exti_init(EXTI_9, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //ÉÏÉýÑØ´¥·¢
-	exti_init(EXTI_2, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //ÉÏÉýÑØ´¥·¢
-	exti_init(EXTI_0, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //ÉÏÉýÑØ´¥·¢
+	exti_init(EXTI_13, EXTI_INTERRUPT, EXTI_TRIG_FALLING); //ä¸‹é™æ²¿è§¦å‘
+	exti_init(EXTI_9, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //ä¸Šå‡æ²¿è§¦å‘
+	exti_init(EXTI_2, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //ä¸Šå‡æ²¿è§¦å‘
+	exti_init(EXTI_0, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //ä¸Šå‡æ²¿è§¦å‘
 	exti_interrupt_flag_clear(EXTI_13);
 	exti_interrupt_flag_clear(EXTI_9);
 	exti_interrupt_flag_clear(EXTI_2);
@@ -158,11 +158,11 @@ void vKey_EnterLowPower(void)
 }
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    IO¿ÚÍË³öµÍ¹¦ºÄ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    IOå£é€€å‡ºä½ŽåŠŸè€—
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/ 
 void vGPIO_ExitLowPower(void)
 {
@@ -172,11 +172,11 @@ void vGPIO_ExitLowPower(void)
 
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    IO¿Ú½øÈëAPP³ÌÐò
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    IOå£è¿›å…¥APPç¨‹åº
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/ 
 void vGPIO_EnterApp(void)
 {
@@ -187,11 +187,11 @@ void vGPIO_EnterApp(void)
 	gpio_mode_set(attiSENSOR_INT_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, attiSENSOR_INT_PIN);
 //	gpio_mode_set(PRINT_RX_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, PRINT_RX_PIN);
 	#else
-	gpio_init(KEY_POWER_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //ÖÐ¶Ï µçÔ´°´¼ü   PC13
-	gpio_init(KEY_WP_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //ÖÐ¶Ï »½ÐÑ½Å     PA0
+	gpio_init(KEY_POWER_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //ä¸­æ–­ ç”µæºæŒ‰é”®   PC13
+	gpio_init(KEY_WP_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //ä¸­æ–­ å”¤é†’è„š     PA0
 	gpio_init(KEY_KEY1_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_KEY1_PIN);
-	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //ÖÐ¶Ï ×´Ì¬´«¸ÐÆ÷ PA9
-//	gpio_init(PRINT_RX_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //ÖÐ¶Ï ´®¿Ú½ÓÊÕ   PD2
+	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //ä¸­æ–­ çŠ¶æ€ä¼ æ„Ÿå™¨ PA9
+//	gpio_init(PRINT_RX_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //ä¸­æ–­ ä¸²å£æŽ¥æ”¶   PD2
 	#endif
 	
 	nvic_irq_disable(EXTI10_15_IRQn);

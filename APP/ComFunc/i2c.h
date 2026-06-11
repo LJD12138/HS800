@@ -33,7 +33,7 @@ typedef struct
 	vu8              ucBuffLen;
 	vu8              ucLostCnt;
 	#elif(boardIC_TYPE == boardIC_STM32G4XX)
-	#Error(Î´¶¨Òå)
+	#Error(æœªå®šä¹‰)
 	#endif
 }I2cObj_T;
 

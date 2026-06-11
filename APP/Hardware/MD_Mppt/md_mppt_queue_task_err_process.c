@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Mppt/md_mppt_queue_task.h"
@@ -14,23 +14,23 @@
 
 #define       	mpptTASK_ERR_CYCLE_TIME               		100
 
-//****************************************************º¯ÊıÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜****************************************************//
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ÈÎÎñº¯Êı:³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ä»»åŠ¡å‡½æ•°:åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 void v_mppt_queue_task_err_process(Task_T *tp_task)
 {
 	MpptErrCode_E e_err_code;
 	
-	e_err_code = (MpptErrCode_E)tp_task->usInParam;       //ÒªÉèÖÃMPPTµÄ×´Ì¬
+	e_err_code = (MpptErrCode_E)tp_task->usInParam;       //è¦è®¾ç½®MPPTçš„çŠ¶æ€
 	
-	//¶ªÊ§×´Ì¬²»ĞèÒªÈ¥¹Ø±Õ
+	//ä¸¢å¤±çŠ¶æ€ä¸éœ€è¦å»å…³é—­
 	if(e_err_code == MEC_SYS_DEV_LOST)
 	{
 		tp_task->ucStep = 2;
@@ -43,36 +43,36 @@ void v_mppt_queue_task_err_process(Task_T *tp_task)
 		case 0:
 		{
 			if(c_mppt_cs_set_pwr(0) > 0)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  	//ÏÂÒ»²½
+				cQueue_GotoStep(tp_task, STEP_NEXT);  	//ä¸‹ä¸€æ­¥
 		}
 		break;
 		
 		case 1:
 		{
 			if(tMpptRx.usMaxInPwr == 0)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  	//ÏÂÒ»²½
+				cQueue_GotoStep(tp_task, STEP_NEXT);  	//ä¸‹ä¸€æ­¥
 		}
 		break;
 		
 		case 2:
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 		}
 		break;
 			
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
 	}
 	
-	//µÈ´ı³¬Ê±
+	//ç­‰å¾…è¶…æ—¶
 	tp_task->usTaskWaitCnt++;
 	if(tp_task->usTaskWaitCnt>(3000/mpptTASK_ERR_CYCLE_TIME)) 
 	{
 		if(uPrint.tFlag.bMpptTask)
-			log_w("bMpptTask:´íÎó´¦ÀíÈÎÎñµÈ´ı³¬Ê±,²½Öè%d", tp_task->ucStep);
+			log_w("bMpptTask:é”™è¯¯å¤„ç†ä»»åŠ¡ç­‰å¾…è¶…æ—¶,æ­¥éª¤%d", tp_task->ucStep);
 		
-		cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+		cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 	}
 	
 	#if(boardUSE_OS)

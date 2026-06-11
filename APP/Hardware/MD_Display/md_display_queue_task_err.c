@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏÔÊ¾¶ÓÁĞÈÎÎñ-´íÎó - TFT+LVGL°æ±¾                                      *
+ *                                         æ˜¾ç¤ºé˜Ÿåˆ—ä»»åŠ¡-é”™è¯¯ - TFT+LVGLç‰ˆæœ¬                                      *
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_queue_task.h"
@@ -17,7 +17,7 @@
 
 void v_disp_queue_task_err(Task_T *tp_task)
 {
-    //ĞÂµÄÈÎÎñ
+    //æ–°çš„ä»»åŠ¡
     if(lwrb_get_full(&tp_task->tQueueBuff))
         cQueue_GotoStep(tp_task, STEP_END);
 
@@ -45,9 +45,9 @@ void v_disp_queue_task_err(Task_T *tp_task)
             break;
 
         case 1:
-            /* TFT+LVGL°æ±¾ - ´íÎó×´Ì¬´¦Àí */
+            /* TFT+LVGLç‰ˆæœ¬ - é”™è¯¯çŠ¶æ€å¤„ç† */
             if(uPrint.tFlag.bDispTask)
-                sMyPrint("DispTask: ´íÎóÄ£Ê½ÔËĞĞÖĞ\r\n");
+                sMyPrint("DispTask: é”™è¯¯æ¨¡å¼è¿è¡Œä¸­\r\n");
             cQueue_GotoStep(tp_task, STEP_END);
             break;
 

@@ -8,7 +8,7 @@
 #include "main.h"
 #include "queue_task.h"
 
-//¹¤³Ì²½Öè
+//å·¥ç¨‹æ­¥éª¤
 typedef enum
 {
 	EMS_INIT = 0,

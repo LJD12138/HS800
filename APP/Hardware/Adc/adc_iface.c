@@ -5,16 +5,16 @@
 u16 adc_value[ADC_CHANNEL_NUM];
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    IO³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    IOåˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 static void gpio_config(void)
 {
 
-    // µç³ØµçÑ¹ PA7
+    // ç”µæ± ç”µå‹ PA7
     rcu_periph_clock_enable(adcSYS_IN_VOLT_RCU);
     #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcSYS_IN_VOLT_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcSYS_IN_VOLT_PIN);
@@ -22,7 +22,7 @@ static void gpio_config(void)
     gpio_init(adcSYS_IN_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcSYS_IN_VOLT_PIN);
     #endif  // boardIC_TYPE
 
-    // DCÎÂ¶È PA6
+    // DCæ¸©åº¦ PA6
     rcu_periph_clock_enable(adcDC_TEMP_RCU);
     #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcDC_TEMP_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_TEMP_PIN);
@@ -30,7 +30,7 @@ static void gpio_config(void)
     gpio_init(adcDC_TEMP_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_TEMP_PIN);
     #endif  // boardIC_TYPE
 
-    // DCµçÁ÷ PA1
+    // DCç”µæµ PA1
     rcu_periph_clock_enable(adcDC_CURR_RCU);
         #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcDC_CURR_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_CURR_PIN);
@@ -38,7 +38,7 @@ static void gpio_config(void)
     gpio_init(adcDC_CURR_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_CURR_PIN);
     #endif  // boardIC_TYPE
 
-    // DCµçÑ¹ PC1
+    // DCç”µå‹ PC1
     rcu_periph_clock_enable(adcDC_VOLT_RCU);
     #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcDC_VOLT_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_VOLT_PIN);
@@ -46,7 +46,7 @@ static void gpio_config(void)
     gpio_init(adcDC_VOLT_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_VOLT_PIN);
     #endif  // boardIC_TYPE
 
-    // °´¼üµçÔ´ PA0
+    // æŒ‰é”®ç”µæº PA0
     rcu_periph_clock_enable(adcKEY_POWER_RCU);
     #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcKEY_POWER_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcKEY_POWER_PIN);
@@ -54,7 +54,7 @@ static void gpio_config(void)
     gpio_init(adcKEY_POWER_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcKEY_POWER_PIN);
     #endif  // boardIC_TYPE
 
-    // DCÊäÈëµçÑ¹1 PC5
+    // DCè¾“å…¥ç”µå‹1 PC5
     rcu_periph_clock_enable(adcDC_IN_1_RCU);
     #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcDC_IN_1_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_IN_1_PIN);
@@ -62,7 +62,7 @@ static void gpio_config(void)
     gpio_init(adcDC_IN_1_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, adcDC_IN_1_PIN);
     #endif  // boardIC_TYPE
 
-    // DCÊäÈëµçÑ¹2 PB0
+    // DCè¾“å…¥ç”µå‹2 PB0
     rcu_periph_clock_enable(adcDC_IN_2_RCU);
     #if (boardIC_TYPE == boardIC_GD32F50X)
     gpio_mode_set(adcDC_IN_2_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, adcDC_IN_2_PIN);
@@ -84,11 +84,11 @@ static void delay_1ms(u16 time)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    DMA³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    DMAåˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 #if(ADC_DMAX)
 static void dma_config(void)
@@ -123,19 +123,19 @@ static void dma_config(void)
 #endif
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ADC³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ADCåˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 static void adc_config(void)
 {
     #if (boardIC_TYPE == boardIC_GD32F50X)
-    /* ADC sync mode config - GD32F50xÊ¹ÓÃadc_sync_mode_config */
+    /* ADC sync mode config - GD32F50xä½¿ç”¨adc_sync_mode_config */
     adc_sync_mode_config(ADC_MODE_FREE);
     #elif (boardIC_TYPE == boardIC_GD32F30X)
-    /* ADC mode config - GD32F30xÊ¹ÓÃadc_mode_config */
+    /* ADC mode config - GD32F30xä½¿ç”¨adc_mode_config */
     adc_mode_config(ADC_MODE_FREE); 
     #endif  //boardIC_TYPE
 
@@ -150,33 +150,33 @@ static void adc_config(void)
     adc_channel_length_config(ADCX, ADC_ROUTINE_CHANNEL, ADC_CHANNEL_NUM);
 
      #if (boardIC_TYPE == boardIC_GD32F50X)
-    /* ADC routine channel config - GD32F50xÊ¹ÓÃadc_routine_channel_config */ 
-    adc_routine_channel_config(ADCX, 0, adcSYS_IN_VOLT_CH, ADC_SAMPLETIME_239POINT5);  // µç³ØµçÑ¹
-    adc_routine_channel_config(ADCX, 1, adcDC_TEMP_CH,     ADC_SAMPLETIME_239POINT5);  // DCÎÂ¶È
-    adc_routine_channel_config(ADCX, 2, adcDC_CURR_CH,     ADC_SAMPLETIME_239POINT5);  // DCµçÁ÷
-    adc_routine_channel_config(ADCX, 3, adcDC_VOLT_CH,     ADC_SAMPLETIME_239POINT5);  // DCµçÑ¹
-    adc_routine_channel_config(ADCX, 4, adcKEY_POWER_CH,   ADC_SAMPLETIME_239POINT5);  // °´¼üµçÔ´
-    adc_routine_channel_config(ADCX, 5, adcDC_IN_1_CH,     ADC_SAMPLETIME_239POINT5);  // DCÊäÈëµçÑ¹1
-    adc_routine_channel_config(ADCX, 6, adcDC_IN_2_CH,     ADC_SAMPLETIME_239POINT5);  // DCÊäÈëµçÑ¹2
+    /* ADC routine channel config - GD32F50xä½¿ç”¨adc_routine_channel_config */ 
+    adc_routine_channel_config(ADCX, 0, adcSYS_IN_VOLT_CH, ADC_SAMPLETIME_239POINT5);  // ç”µæ± ç”µå‹
+    adc_routine_channel_config(ADCX, 1, adcDC_TEMP_CH,     ADC_SAMPLETIME_239POINT5);  // DCæ¸©åº¦
+    adc_routine_channel_config(ADCX, 2, adcDC_CURR_CH,     ADC_SAMPLETIME_239POINT5);  // DCç”µæµ
+    adc_routine_channel_config(ADCX, 3, adcDC_VOLT_CH,     ADC_SAMPLETIME_239POINT5);  // DCç”µå‹
+    adc_routine_channel_config(ADCX, 4, adcKEY_POWER_CH,   ADC_SAMPLETIME_239POINT5);  // æŒ‰é”®ç”µæº
+    adc_routine_channel_config(ADCX, 5, adcDC_IN_1_CH,     ADC_SAMPLETIME_239POINT5);  // DCè¾“å…¥ç”µå‹1
+    adc_routine_channel_config(ADCX, 6, adcDC_IN_2_CH,     ADC_SAMPLETIME_239POINT5);  // DCè¾“å…¥ç”µå‹2
 
     /* ADC trigger config */
     adc_external_trigger_config(ADCX, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_DISABLE);
     #elif (boardIC_TYPE == boardIC_GD32F30X)
-    /* ADC regular channel config - GD32F30xÊ¹ÓÃadc_regular_channel_config */ 
-    adc_regular_channel_config(ADCX, 0, adcSYS_IN_VOLT_CH, ADC_SAMPLETIME_239POINT5);  // µç³ØµçÑ¹
-    adc_regular_channel_config(ADCX, 1, adcDC_TEMP_CH,     ADC_SAMPLETIME_239POINT5);  // DCÎÂ¶È
-    adc_regular_channel_config(ADCX, 2, adcDC_CURR_CH,     ADC_SAMPLETIME_239POINT5);  // DCµçÁ÷
-    adc_regular_channel_config(ADCX, 3, adcDC_VOLT_CH,     ADC_SAMPLETIME_239POINT5);  // DCµçÑ¹
-    adc_regular_channel_config(ADCX, 4, adcKEY_POWER_CH,   ADC_SAMPLETIME_239POINT5);  // °´¼üµçÔ´
-    adc_regular_channel_config(ADCX, 5, adcDC_IN_1_CH,     ADC_SAMPLETIME_239POINT5);  // DCÊäÈëµçÑ¹1
-    adc_regular_channel_config(ADCX, 6, adcDC_IN_2_CH,     ADC_SAMPLETIME_239POINT5);  // DCÊäÈëµçÑ¹2
+    /* ADC regular channel config - GD32F30xä½¿ç”¨adc_regular_channel_config */ 
+    adc_regular_channel_config(ADCX, 0, adcSYS_IN_VOLT_CH, ADC_SAMPLETIME_239POINT5);  // ç”µæ± ç”µå‹
+    adc_regular_channel_config(ADCX, 1, adcDC_TEMP_CH,     ADC_SAMPLETIME_239POINT5);  // DCæ¸©åº¦
+    adc_regular_channel_config(ADCX, 2, adcDC_CURR_CH,     ADC_SAMPLETIME_239POINT5);  // DCç”µæµ
+    adc_regular_channel_config(ADCX, 3, adcDC_VOLT_CH,     ADC_SAMPLETIME_239POINT5);  // DCç”µå‹
+    adc_regular_channel_config(ADCX, 4, adcKEY_POWER_CH,   ADC_SAMPLETIME_239POINT5);  // æŒ‰é”®ç”µæº
+    adc_regular_channel_config(ADCX, 5, adcDC_IN_1_CH,     ADC_SAMPLETIME_239POINT5);  // DCè¾“å…¥ç”µå‹1
+    adc_regular_channel_config(ADCX, 6, adcDC_IN_2_CH,     ADC_SAMPLETIME_239POINT5);  // DCè¾“å…¥ç”µå‹2
 
     /* ADC trigger config */
     adc_external_trigger_source_config(ADCX, ADC_REGULAR_CHANNEL, ADC0_1_2_EXTTRIG_REGULAR_NONE);
     adc_external_trigger_config(ADCX, ADC_REGULAR_CHANNEL, ENABLE);
     #endif  //boardIC_TYPE
 
-    /* ADC DMA function enable - GD32F50xĞèÒªµÚ¶ş¸ö²ÎÊı */
+    /* ADC DMA function enable - GD32F50xéœ€è¦ç¬¬äºŒä¸ªå‚æ•° */
     adc_dma_mode_enable(ADCX, ADC_ROUTINE_CHANNEL);
 
     /* enable ADC interface */
@@ -197,14 +197,14 @@ void vAdc_Init(void)
     rcu_periph_clock_enable(adcDMA_RCU);
     /* config ADC clock */
     #if (boardIC_TYPE == boardIC_GD32F50X)
-    /* GD32F50xĞèÒªÊ¹ÄÜDMAMUXÊ±ÖÓ */
+    /* GD32F50xéœ€è¦ä½¿èƒ½DMAMUXæ—¶é’Ÿ */
     rcu_periph_clock_enable(RCU_DMAMUX);
     rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
     #elif (boardIC_TYPE == boardIC_GD32F30X)
     rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV16);
     #endif  //boardIC_TYPE
     
-    /*=============================ÅäÖÃADC=============================*/    
+    /*=============================é…ç½®ADC=============================*/    
 	
     gpio_config();
     /* DMA configuration */

@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ¶ÓÁĞº¯Êı                                                  			*
+ *                                         é˜Ÿåˆ—å‡½æ•°                                                  			*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
@@ -14,16 +14,16 @@
 
 #define       	dcacTASK_ERR_PROC_CYCLE_TIME               		50
 
-//****************************************************º¯ÊıÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜****************************************************//
 
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ÈÎÎñº¯Êı:³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ä»»åŠ¡å‡½æ•°:åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 void v_dcac_queue_task_err_proc(Task_T *tp_task)
 {
@@ -32,7 +32,7 @@ void v_dcac_queue_task_err_proc(Task_T *tp_task)
 		case 0:
 		{
 			if(b_dcac_cs_sys_switch(dcacSWITCH_REG_OFF) == true)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //ÏÂÒ»²½
+				cQueue_GotoStep(tp_task, STEP_NEXT);  //ä¸‹ä¸€æ­¥
 		}
 		break;
 
@@ -40,22 +40,22 @@ void v_dcac_queue_task_err_proc(Task_T *tp_task)
 		{
 			bDcac_SetAcState(OO_CHG, IOS_ERR);
 			bDcac_SetAcState(OO_DISCHG, IOS_ERR);
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 		}
 		break;
              
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
 	}
 	
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt>(3000 / dcacTASK_ERR_PROC_CYCLE_TIME))  //µÈ´ı³¬Ê±
+	if(tp_task->usTaskWaitCnt>(3000 / dcacTASK_ERR_PROC_CYCLE_TIME))  //ç­‰å¾…è¶…æ—¶
 	{
 		if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
-			log_w("bDcacTask:´íÎó´¦ÀíÈÎÎñ´¦Àí³¬Ê±,²½Öè%d",tp_task->ucStep);
+			log_w("bDcacTask:é”™è¯¯å¤„ç†ä»»åŠ¡å¤„ç†è¶…æ—¶,æ­¥éª¤%d",tp_task->ucStep);
 		
-		cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+		cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 	}
 	
 	vTaskDelay(dcacTASK_ERR_PROC_CYCLE_TIME);

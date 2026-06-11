@@ -17,7 +17,11 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_UCA_OUT_PWR_VALUE = 1,
     FLOW_GLOBAL_VARIABLE_UCA_IN_PWR_VALUE = 2,
     FLOW_GLOBAL_VARIABLE_UCA_BAT_SOC_VALUE = 3,
-    FLOW_GLOBAL_VARIABLE_UCA_ERR_CODE_VALUE = 4
+    FLOW_GLOBAL_VARIABLE_UCA_ERR_CODE_VALUE = 4,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_PROGRESS = 5,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_COUNTDOWN = 6,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_STATE = 7,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_MSG = 8
 };
 
 // Native global variables
@@ -32,6 +36,14 @@ extern const char *get_var_uca_bat_soc_value();
 extern void set_var_uca_bat_soc_value(const char *value);
 extern const char *get_var_uca_err_code_value();
 extern void set_var_uca_err_code_value(const char *value);
+extern const char *get_var_uca_update_progress();
+extern void set_var_uca_update_progress(const char *value);
+extern const char *get_var_uca_update_countdown();
+extern void set_var_uca_update_countdown(const char *value);
+extern int32_t get_var_uca_update_state();
+extern void set_var_uca_update_state(int32_t value);
+extern const char *get_var_uca_update_msg();
+extern void set_var_uca_update_msg(const char *value);
 
 #ifdef __cplusplus
 }

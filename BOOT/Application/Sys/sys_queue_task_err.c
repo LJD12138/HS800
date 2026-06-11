@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Sys/sys_queue_task.h"
@@ -8,11 +8,11 @@
 #include "Print/print_task.h"
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ´íÎóÈÎÎñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    é”™è¯¯ä»»åŠ¡
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/ 
 void v_sys_queue_task_err(Task_T *tp_task)
 {
@@ -20,40 +20,40 @@ void v_sys_queue_task_err(Task_T *tp_task)
     {
 		case 0:
 		{
-			//¶ÓÁĞÀïÃæÓĞÈÎÎñ
+			//é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
 			if(lwrb_get_full(&tp_task->tQueueBuff))  
 			{
-				cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+				cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 				break;
 			}
 			
 			if(tSysInfo.eDevState != DS_ERR)
 				bSys_SetDevState(DS_ERR, false);
 			
-			cQueue_GotoStep( tp_task, STEP_NEXT );  //ÏÂÒ»²½
+			cQueue_GotoStep( tp_task, STEP_NEXT );  //ä¸‹ä¸€æ­¥
 			break;
 		}
 		
-		//************************************²½Öè1:¹Ø±Õ²¢»ú¹¦ÄÜ*********************************************
+		//************************************æ­¥éª¤1:å…³é—­å¹¶æœºåŠŸèƒ½*********************************************
 		case 1:
 		{
-			cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+			cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 		}break ;
 		
         default:
-			if(lwrb_get_full(&tp_task->tQueueBuff))  //¶ÓÁĞÀïÃæÓĞÈÎÎñ
-				cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+			if(lwrb_get_full(&tp_task->tQueueBuff))  //é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
+				cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 			break;
     }
 	
-	//µÈ´ı5S,³¬Ê±ÍË³ö
+	//ç­‰å¾…5S,è¶…æ—¶é€€å‡º
 	tp_task->usTaskWaitCnt++;
 	if(tp_task->usTaskWaitCnt > (5000/sysTASK_CYCLE_TIME) && tp_task->ucStep != STEP_END)
 	{
 		if(uPrint.tFlag.bSysTask)
-			log_w("bSysTask:´íÎóÈÎÎñµÈ´ı³¬Ê±,ÍË³ö");
+			log_w("bSysTask:é”™è¯¯ä»»åŠ¡ç­‰å¾…è¶…æ—¶,é€€å‡º");
 
-		cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+		cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 	}
 }
 

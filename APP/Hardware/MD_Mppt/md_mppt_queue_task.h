@@ -11,12 +11,12 @@
 #endif
 
 
-#define       	mpptTASK_CYCLE_TIME               		1000  //任务时间
+#define       	mpptTASK_CYCLE_TIME               		1000  //浠诲姟鏃堕棿
 
 
 bool bMppt_QueueInit(void);
 
-//队列函数
+//闃熷垪鍑芥暟
 void v_mppt_queue_task_init(Task_T *tp_task);
 void v_mppt_queue_task_main(Task_T *tp_task);
 void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task);

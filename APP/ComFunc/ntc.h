@@ -14,11 +14,11 @@ extern const u32 ula100K_B3950_RES_TABLE[ntc100K_B3950_RES_TABLE_SIZE];
 
 typedef struct
 {
-    double         		sys_vol;     		/* µçÑ¹ */
-    u16   				volt_res;    		/* ntc·ÖÑ¹µç×è*/
-    u16   				ntc_res;     		/* ntc¶î¶¨µç×è */
-    u16   				hex_x;      		/* ADC·Ö±æÂÊ -12Bit_4096 10Bit_1025 8Bit_256 */
-    u16   				b_x;         		/* BÖµ*/
+    double         		sys_vol;     		/* ç”µå‹ */
+    u16   				volt_res;    		/* ntcåˆ†å‹ç”µé˜»*/
+    u16   				ntc_res;     		/* ntcé¢å®šç”µé˜» */
+    u16   				hex_x;      		/* ADCåˆ†è¾¨ç‡ -12Bit_4096 10Bit_1025 8Bit_256 */
+    u16   				b_x;         		/* Bå€¼*/
 }ntc_val_t;
 
 extern void vNtc_Init(ntc_val_t *val, double sys_vol, u16 volt_res, u16 ntc_res, u16 hex_x, u16 b_x);

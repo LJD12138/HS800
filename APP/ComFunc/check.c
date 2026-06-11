@@ -4,7 +4,7 @@
 /*******************************************************
  *                Variables Declarations
  *******************************************************/
-//CRC8 X8+X5+X4+1²éÑ¯±í
+//CRC8 X8+X5+X4+1æŸ¥è¯¢è¡¨
 static const uint8_t crc8541_table[] ={
     0x00,0x31,0x62,0x53,0xc4,0xf5,0xa6,0x97,0xb9,0x88,0xdb,0xea,0x7d,0x4c,0x1f,0x2e,\
     0x43,0x72,0x21,0x10,0x87,0xb6,0xe5,0xd4,0xfa,0xcb,0x98,0xa9,0x3e,0x0f,0x5c,0x6d,\
@@ -84,7 +84,7 @@ static const uint16_t crc161521[256] = {
 };
 
 
-/* CRC ¸ßÎ»×Ö½ÚÖµ±í */ 
+/* CRC é«˜ä½å­—èŠ‚å€¼è¡¨ */ 
 const  uint8_t auchCRCHi[] = 
 { 
 	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
@@ -115,7 +115,7 @@ const  uint8_t auchCRCHi[] =
 	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40 
 };
 
-/* CRCµÍÎ»×Ö½ÚÖµ±í*/ 
+/* CRCä½ä½å­—èŠ‚å€¼è¡¨*/ 
 const  uint8_t auchCRCLo[] = 
 { 
 	0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 
@@ -151,11 +151,11 @@ const  uint8_t auchCRCLo[] =
 
 
 /************************************************************************
-	\brief      Êı¾İbit·´×ª,MSBºÍLSBÊı¾İµ÷»»
-	\param[in]  input:ĞèÒª·´×ªµÄÊı¾İ
-				bits:´Óbit0¿ªÊ¼,ĞèÒª·´×ª¶àÉÙ¸öbit
+	\brief      æ•°æ®bitåè½¬,MSBå’ŒLSBæ•°æ®è°ƒæ¢
+	\param[in]  input:éœ€è¦åè½¬çš„æ•°æ®
+				bits:ä»bit0å¼€å§‹,éœ€è¦åè½¬å¤šå°‘ä¸ªbit
 	\param[out] none
-	\retval     CRC8µÄÖµ
+	\retval     CRC8çš„å€¼
 ************************************************************************/
 static uint32_t ul_data_reflect(uint32_t input, uint8_t bits)
 {
@@ -172,13 +172,13 @@ static uint32_t ul_data_reflect(uint32_t input, uint8_t bits)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*****************************************************************ÀÛ¼ÓºÍ***************************************************************************/
+/*****************************************************************ç´¯åŠ å’Œ***************************************************************************/
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /************************************************************************
-	\brief      ÀÛ¼ÓºÍĞ£ÑéÈ¡·´
-    \param[in]  strĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë, str_lengthĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      ç´¯åŠ å’Œæ ¡éªŒå–å
+    \param[in]  stréœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ, str_lengthéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC8µÄÖµ
+	\retval     CRC8çš„å€¼
 ************************************************************************/
 uint8_t ucCheck_SumReflect(uint8_t *str, int str_length)
 {
@@ -192,10 +192,10 @@ uint8_t ucCheck_SumReflect(uint8_t *str, int str_length)
 }
 
 /************************************************************************
-	\brief      ÀÛ¼ÓºÍĞ£Ñé
-    \param[in]  strĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë, str_lengthĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      ç´¯åŠ å’Œæ ¡éªŒ
+    \param[in]  stréœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ, str_lengthéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC8µÄÖµ
+	\retval     CRC8çš„å€¼
 ************************************************************************/
 uint8_t ucCheck_Sum(uint8_t *str, int str_length)
 {
@@ -214,10 +214,10 @@ uint8_t ucCheck_Sum(uint8_t *str, int str_length)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /************************************************************************
-	\brief      CRC8²é±í·¨(X8+X5+X4+1)
-    \param[in]  bufĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë, lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC8æŸ¥è¡¨æ³•(X8+X5+X4+1)
+    \param[in]  buféœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ, lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC8µÄÖµ
+	\retval     CRC8çš„å€¼
 ************************************************************************/
 uint8_t ucCheck_GetCrc8Tab(uint8_t *buf, uint16_t len)
 {
@@ -250,31 +250,31 @@ uint8_t ucCheck_CRC8cal(uint8_t *p, uint8_t counter)    		   //look-up table cal
 
 
 /**********************************************************************************************************
-	\brief      CRC8¼ÆËã·¨
-	\param[in]  init:CRC³õÊ¼Öµ
-				data:ÊäÈëÒªĞ£ÑéµÄ×Ö½ÚÊı×é¡£
-				len:ĞèÒªĞ£ÑéµÄ³¤¶È
-				poly:PolyÖµ£¬Èç¹ûÊÇCRC8£¬ÄÇÃ´¾ÍÊÇ0x8005£¬Èç¹ûÊÇCRC-CCITT£¬ÄÇÃ´¾ÍÊÇ0x1201,ÕâĞ©ÖµÍøÉÏ¿ÉÒÔ²éµ½¡£
-					 CRC-8       x8+x5+x4+1              poly = 0x31£¨0x131£©
-					 CRC-8       x8+x2+x1+1              poly = 0x07£¨0x107£©
-					 CRC-8       x8+x6+x4+x3+x2+x1       poly = 0x5E£¨0x15E£©
-				reflection£º true--LSBÄ£Ê½¡¢ FALSE---MSBÄ£Ê½¡£
+	\brief      CRC8è®¡ç®—æ³•
+	\param[in]  init:CRCåˆå§‹å€¼
+				data:è¾“å…¥è¦æ ¡éªŒçš„å­—èŠ‚æ•°ç»„ã€‚
+				len:éœ€è¦æ ¡éªŒçš„é•¿åº¦
+				poly:Polyå€¼ï¼Œå¦‚æœæ˜¯CRC8ï¼Œé‚£ä¹ˆå°±æ˜¯0x8005ï¼Œå¦‚æœæ˜¯CRC-CCITTï¼Œé‚£ä¹ˆå°±æ˜¯0x1201,è¿™äº›å€¼ç½‘ä¸Šå¯ä»¥æŸ¥åˆ°ã€‚
+					 CRC-8       x8+x5+x4+1              poly = 0x31ï¼ˆ0x131ï¼‰
+					 CRC-8       x8+x2+x1+1              poly = 0x07ï¼ˆ0x107ï¼‰
+					 CRC-8       x8+x6+x4+x3+x2+x1       poly = 0x5Eï¼ˆ0x15Eï¼‰
+				reflectionï¼š true--LSBæ¨¡å¼ã€ FALSE---MSBæ¨¡å¼ã€‚
 	\param[out] none
-	\retval     CRC8µÄÖµ
+	\retval     CRC8çš„å€¼
 ***********************************************************************************************************/
 uint8_t ucCheck_GetCrc8(uint8_t init, const uint8_t *data, uint16_t length, uint8_t poly, bool reflection)
 {
 	unsigned char i;
-	unsigned char crc = init; /* ¼ÆËãµÄ³õÊ¼crcÖµ */
+	unsigned char crc = init; /* è®¡ç®—çš„åˆå§‹crcå€¼ */
 	unsigned char tmp = 0;
 
 	while (length--)
 	{
-		tmp = *data++;/* Ã¿´ÎÏÈÓëĞèÒª¼ÆËãµÄÊı¾İÒì»ò,¼ÆËãÍêÖ¸ÏòÏÂÒ»Êı¾İ */
-		if (reflection)				//ÊÇ·ñLSB
+		tmp = *data++;/* æ¯æ¬¡å…ˆä¸éœ€è¦è®¡ç®—çš„æ•°æ®å¼‚æˆ–,è®¡ç®—å®ŒæŒ‡å‘ä¸‹ä¸€æ•°æ® */
+		if (reflection)				//æ˜¯å¦LSB
 			tmp = (uint8_t)ul_data_reflect(tmp, 8);
 		crc ^= tmp;
-		for (i = 8; i > 0; --i)   /* ÏÂÃæÕâ¶Î¼ÆËã¹ı³ÌÓë¼ÆËãÒ»¸ö×Ö½ÚcrcÒ»Ñù */
+		for (i = 8; i > 0; --i)   /* ä¸‹é¢è¿™æ®µè®¡ç®—è¿‡ç¨‹ä¸è®¡ç®—ä¸€ä¸ªå­—èŠ‚crcä¸€æ · */
 		{
 			if (crc & 0x80)
 				crc = (crc << 1) ^ poly;
@@ -293,19 +293,19 @@ uint8_t ucCheck_GetCrc8(uint8_t init, const uint8_t *data, uint16_t length, uint
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**********************************************************************************************************
-	\brief      CRC16¼ÆËã·¨
-	\param[in]  init:CRC³õÊ¼Öµ
-				data:ÊäÈëÒªĞ£ÑéµÄ×Ö½ÚÊı×é¡£
-				length:ĞèÒªĞ£ÑéµÄ³¤¶È
-				PolyÖµ£¬Èç¹ûÊÇCRC16£¬ÄÇÃ´¾ÍÊÇ0x8005£¬Èç¹ûÊÇCRC-CCITT£¬ÄÇÃ´¾ÍÊÇ0x1201,ÕâĞ©ÖµÍøÉÏ¿ÉÒÔ²éµ½¡£
-				reflection:true--LSBÄ£Ê½¡¢ FALSE---MSBÄ£Ê½¡£
-				final_xor:Êä³öÖµÓëÖ®Òì»ò
+	\brief      CRC16è®¡ç®—æ³•
+	\param[in]  init:CRCåˆå§‹å€¼
+				data:è¾“å…¥è¦æ ¡éªŒçš„å­—èŠ‚æ•°ç»„ã€‚
+				length:éœ€è¦æ ¡éªŒçš„é•¿åº¦
+				Polyå€¼ï¼Œå¦‚æœæ˜¯CRC16ï¼Œé‚£ä¹ˆå°±æ˜¯0x8005ï¼Œå¦‚æœæ˜¯CRC-CCITTï¼Œé‚£ä¹ˆå°±æ˜¯0x1201,è¿™äº›å€¼ç½‘ä¸Šå¯ä»¥æŸ¥åˆ°ã€‚
+				reflection:true--LSBæ¨¡å¼ã€ FALSE---MSBæ¨¡å¼ã€‚
+				final_xor:è¾“å‡ºå€¼ä¸ä¹‹å¼‚æˆ–
 	\param[out] none
-	\retval     CRC8µÄÖµ
+	\retval     CRC8çš„å€¼
 ***********************************************************************************************************/
 static uint16_t usCheck_crc16(uint16_t init, const uint8_t* data, uint16_t length, uint16_t poly, bool reflection, uint16_t final_xor)
 {
-    uint16_t crc = init;        //³õÊ¼Öµ
+    uint16_t crc = init;        //åˆå§‹å€¼
     uint32_t start = 0;
 
     while (length-- > 0)
@@ -333,11 +333,11 @@ static uint16_t usCheck_crc16(uint16_t init, const uint8_t* data, uint16_t lengt
 
 
 /********************************************************************************
-	\brief      CRC16¼ÆËã·¨
-    \param[in]  dataĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë
-                lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC16è®¡ç®—æ³•
+    \param[in]  dataéœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ
+                lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ********************************************************************************/
 uint16_t usCheck_CRC_CCITT(uint16_t init,  const uint8_t* data, uint16_t length)
 {
@@ -345,11 +345,11 @@ uint16_t usCheck_CRC_CCITT(uint16_t init,  const uint8_t* data, uint16_t length)
 }
 
 /********************************************************************************
-	\brief      CRC16¼ÆËã·¨
-    \param[in]  dataĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë
-                lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC16è®¡ç®—æ³•
+    \param[in]  dataéœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ
+                lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ********************************************************************************/
 uint16_t usCheck_Crc16(uint16_t init, uint8_t* data, uint16_t length)
 {
@@ -359,45 +359,45 @@ uint16_t usCheck_Crc16(uint16_t init, uint8_t* data, uint16_t length)
 
 
 /********************************************************************************
-	\brief      CRC16¼ÆËã·¨ Modbus-CRCĞ£Ñé Õâ¸öÓ¦¸ÃÊÇºÍusCheck_LsbDataGetCrc16Ò»Ñù
-    \param[in]  dataĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë
-                lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC16è®¡ç®—æ³• Modbus-CRCæ ¡éªŒ è¿™ä¸ªåº”è¯¥æ˜¯å’ŒusCheck_LsbDataGetCrc16ä¸€æ ·
+    \param[in]  dataéœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ
+                lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ********************************************************************************/
 uint16_t usCheck_GetModbusCrc16(uint8_t *data, uint32_t len)
 {
 	uint8_t temp;
-	uint16_t wcrc = 0XFFFF;//16Î»crc¼Ä´æÆ÷Ô¤ÖÃ
-	uint32_t i = 0, j = 0;//¼ÆÊı
-	for (i = 0; i < len; i++)//Ñ­»·¼ÆËãÃ¿¸öÊı¾İ
+	uint16_t wcrc = 0XFFFF;//16ä½crcå¯„å­˜å™¨é¢„ç½®
+	uint32_t i = 0, j = 0;//è®¡æ•°
+	for (i = 0; i < len; i++)//å¾ªç¯è®¡ç®—æ¯ä¸ªæ•°æ®
 	{
-		temp = data[i] & 0X00FF;//½«°ËÎ»Êı¾İÓëcrc¼Ä´æÆ÷Òà»ò
-		wcrc ^= temp;						//½«Êı¾İ´æÈëcrc¼Ä´æÆ÷
-		for (j = 0; j < 8; j++)	//Ñ­»·¼ÆËãÊı¾İµÄ
+		temp = data[i] & 0X00FF;//å°†å…«ä½æ•°æ®ä¸crcå¯„å­˜å™¨äº¦æˆ–
+		wcrc ^= temp;						//å°†æ•°æ®å­˜å…¥crcå¯„å­˜å™¨
+		for (j = 0; j < 8; j++)	//å¾ªç¯è®¡ç®—æ•°æ®çš„
 		{
-			if (wcrc & 0X0001)//ÅĞ¶ÏÓÒÒÆ³öµÄÊÇ²»ÊÇ1£¬Èç¹ûÊÇ1ÔòÓë¶àÏîÊ½½øĞĞÒì»ò¡£
+			if (wcrc & 0X0001)//åˆ¤æ–­å³ç§»å‡ºçš„æ˜¯ä¸æ˜¯1ï¼Œå¦‚æœæ˜¯1åˆ™ä¸å¤šé¡¹å¼è¿›è¡Œå¼‚æˆ–ã€‚
 			{
-				wcrc >>= 1;//ÏÈ½«Êı¾İÓÒÒÆÒ»Î»
-				wcrc ^= 0XA001;//ÓëÉÏÃæµÄ¶àÏîÊ½½øĞĞÒì»ò
+				wcrc >>= 1;//å…ˆå°†æ•°æ®å³ç§»ä¸€ä½
+				wcrc ^= 0XA001;//ä¸ä¸Šé¢çš„å¤šé¡¹å¼è¿›è¡Œå¼‚æˆ–
 			}
-			else//Èç¹û²»ÊÇ1£¬ÔòÖ±½ÓÒÆ³ö
+			else//å¦‚æœä¸æ˜¯1ï¼Œåˆ™ç›´æ¥ç§»å‡º
 			{
-				wcrc >>= 1;//Ö±½ÓÒÆ³ö
+				wcrc >>= 1;//ç›´æ¥ç§»å‡º
 			}
 		}
 	}
 	return wcrc;
-//  return ((wcrc>>8)|(wcrc << 8));//¸ßµÍÎ»ÖÃ»»
+//  return ((wcrc>>8)|(wcrc << 8));//é«˜ä½ä½ç½®æ¢
 }
 
 
 /************************************************************************
-	\brief      CRC16¼ÆËã·¨(X16+X15+X2+X1)  
-    \param[in]  buf(MSB)ĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë,buff [high bit...low bit]; 
-                lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC16è®¡ç®—æ³•(X16+X15+X2+X1)  
+    \param[in]  buf(MSB)éœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ,buff [high bit...low bit]; 
+                lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ************************************************************************/
 static uint16_t crc16(uint8_t data, uint16_t crc) 
 {
@@ -433,11 +433,11 @@ uint16_t usCheck_MsbDataGetCrc16(uint8_t* buf, int len, uint16_t crc)
 }
 
 /************************************************************************
-	\brief      CRC16¼ÆËã·¨(X16+X15+X2+X1)  
-    \param[in]  buf(LSB)ĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë, ,buff [ low bit...high bit];
-				lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC16è®¡ç®—æ³•(X16+X15+X2+X1)  
+    \param[in]  buf(LSB)éœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ, ,buff [ low bit...high bit];
+				lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ************************************************************************/
 static uint16_t crc16_r(uint8_t data, uint16_t crc)
 {
@@ -474,34 +474,34 @@ uint16_t usCheck_LsbDataGetCrc16(unsigned char* buf, int len, uint16_t crc)
 
 /********************************************************************************
 	\brief      
-    \param[in]  bufĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë
-                lenĞèÒªĞ£ÑéµÄ³¤¶È
+    \param[in]  buféœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ
+                lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ********************************************************************************/
 uint16_t usCheck_CRC16(uint8_t *puchMsg, uint8_t usDataLen) 
 { 
-	uint8_t uchCRCHi = 0xFF ;              // ¸ßCRC×Ö½Ú³õÊ¼»¯  
-	uint8_t uchCRCLo = 0xFF ;              // µÍCRC ×Ö½Ú³õÊ¼»¯ 
+	uint8_t uchCRCHi = 0xFF ;              // é«˜CRCå­—èŠ‚åˆå§‹åŒ–  
+	uint8_t uchCRCLo = 0xFF ;              // ä½CRC å­—èŠ‚åˆå§‹åŒ– 
 
-	uint8_t uIndex ;                      // CRCÑ­»·ÖĞµÄË÷Òı   
+	uint8_t uIndex ;                      // CRCå¾ªç¯ä¸­çš„ç´¢å¼•   
 	
-	while (usDataLen--)                  // ´«ÊäÏûÏ¢»º³åÇø  
+	while (usDataLen--)                  // ä¼ è¾“æ¶ˆæ¯ç¼“å†²åŒº  
 	{ 
-		uIndex = uchCRCHi ^ *puchMsg++ ; // ¼ÆËãCRC         
+		uIndex = uchCRCHi ^ *puchMsg++ ; // è®¡ç®—CRC         
 		uchCRCHi = uchCRCLo ^ auchCRCHi[uIndex]; 
 		uchCRCLo = auchCRCLo[uIndex]; 
 	} 
 
-	return (uchCRCLo << 8 | uchCRCHi);	// MODBUS ¹æ¶¨¸ßÎ»ÔÚÇ°
+	return (uchCRCLo << 8 | uchCRCHi);	// MODBUS è§„å®šé«˜ä½åœ¨å‰
 }
 
 
 /************************************************************************
-	\brief      CRC16²é±í·¨(X16+X15+X2+X1),ÓÃÓÚXModemµÄĞ£Ñé·½Ê½
-    \param[in]  bufĞèÒªĞ£ÑéÊı¾İµÄÖ¸Õë, lenĞèÒªĞ£ÑéµÄ³¤¶È
+	\brief      CRC16æŸ¥è¡¨æ³•(X16+X15+X2+X1),ç”¨äºXModemçš„æ ¡éªŒæ–¹å¼
+    \param[in]  buféœ€è¦æ ¡éªŒæ•°æ®çš„æŒ‡é’ˆ, lenéœ€è¦æ ¡éªŒçš„é•¿åº¦
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 ************************************************************************/
 uint16_t usCheck_GetCrc16Tab(uint8_t *buf, uint16_t len)
 {  
@@ -520,14 +520,14 @@ uint16_t usCheck_GetCrc16Tab(uint8_t *buf, uint16_t len)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*******************************************************************************************************************
-	\brief      CRC32Ğ£Ñé
-	\param[in]  CRCinit:CRC³õÊ¼Öµ
-				InData£º  ÊäÈëÒªĞ£ÑéµÄ×Ö½ÚÊı×é¡£
-				len:Êı¾İµÄ³¤¶È
-				reflection£º ture--LSBÄ£Ê½¡¢ false---MSBÄ£Ê½¡£
-				final_xor£º  Êä³öÖµÓëÖ®Òì»ò
+	\brief      CRC32æ ¡éªŒ
+	\param[in]  CRCinit:CRCåˆå§‹å€¼
+				InDataï¼š  è¾“å…¥è¦æ ¡éªŒçš„å­—èŠ‚æ•°ç»„ã€‚
+				len:æ•°æ®çš„é•¿åº¦
+				reflectionï¼š ture--LSBæ¨¡å¼ã€ false---MSBæ¨¡å¼ã€‚
+				final_xorï¼š  è¾“å‡ºå€¼ä¸ä¹‹å¼‚æˆ–
 	\param[out] none
-	\retval     CRC16µÄÖµ
+	\retval     CRC16çš„å€¼
 *******************************************************************************************************************/
 static uint32_t crc32(uint32_t CRCinit, const uint8_t* InData, uint32_t len, bool reflection, uint32_t final_xor)
 {

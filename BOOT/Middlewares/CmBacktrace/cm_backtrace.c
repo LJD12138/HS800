@@ -31,6 +31,14 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-security"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+
 #if __STDC_VERSION__ < 199901L
     #error "must be C99 or higher. try to add '-std=c99' to compile parameters"
 #endif
@@ -279,7 +287,7 @@ static void dump_stack(uint32_t stack_start_addr, size_t stack_size, uint32_t *s
     }
     cmb_println(print_info[PRINT_THREAD_STACK_INFO]);
     for (; (uint32_t) stack_pointer < stack_start_addr + stack_size && deep; stack_pointer++, deep--) {
-        cmb_println("  addr: %08x    data: %08x", stack_pointer, *stack_pointer);
+        cmb_println("  addr: %08x    data: %08x", (uint32_t)stack_pointer, *stack_pointer);
     }
     cmb_println("====================================");
 }
@@ -723,3 +731,10 @@ void cm_backtrace_fault(uint32_t fault_handler_lr, uint32_t fault_handler_sp) {
 
     print_call_stack(stack_pointer);
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+

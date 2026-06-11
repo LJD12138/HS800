@@ -20,7 +20,7 @@
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART0_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART0_GPIO_TX_PIN
 #define     	bmsUSART_GPIO_TX_AF           			gpioUSART0_GPIO_TX_AF
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	bmsUSART_RCU           					RCU_USART0
 #define     	bmsUSART               					USART0
 #define     	bmsUSART_BAUD          					115200
@@ -46,7 +46,7 @@
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUSART1_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART1_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART1_GPIO_TX_PIN
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	bmsUSART_RCU           					RCU_USART1
 #define     	bmsUSART               					USART1
 #define     	bmsUSART_BAUD          					115200
@@ -72,7 +72,7 @@
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUSART2_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART2_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART2_GPIO_TX_PIN
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	bmsUSART_RCU           					RCU_USART2
 #define     	bmsUSART               					USART2
 #define     	bmsUSART_BAUD          					115200
@@ -98,7 +98,7 @@
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUART3_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUART3_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUART3_GPIO_TX_PIN
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	bmsUSART_RCU           					RCU_UART3
 #define     	bmsUSART               					UART3
 #define     	bmsUSART_BAUD          					115200
@@ -124,7 +124,7 @@
 #define     	bmsUSART_GPIO_TX_RCU          			gpioUART4_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO         			gpioUART4_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN          			gpioUART4_GPIO_TX_PIN
-//¥Æø⁄
+//‰∏≤Âè£
 #define     	bmsUSART_RCU          					RCU_UART4
 #define     	bmsUSART              					UART4
 #define     	bmsUSART_BAUD         					115200
@@ -137,8 +137,8 @@
 #define     	bmsGPIO_485_TX_EN_RCU      				RCU_GPIOB
 #define     	bmsGPIO_485_TX_EN_GPIO     				GPIOB
 #define     	bmsGPIO_485_TX_EN_PIN      				GPIO_PIN_2
-#define     	bmsGPIO_485_TX_EN_ON()     				GPIO_BOP(bmsGPIO_485_TX_EN_GPIO) = bmsGPIO_485_TX_EN_PIN   // πƒ‹∑¢ÀÕ
-#define     	bmsGPIO_485_TX_EN_OFF()    				GPIO_BC(bmsGPIO_485_TX_EN_GPIO)  = bmsGPIO_485_TX_EN_PIN   // πƒ‹Ω” ’
+#define     	bmsGPIO_485_TX_EN_ON()     				GPIO_BOP(bmsGPIO_485_TX_EN_GPIO) = bmsGPIO_485_TX_EN_PIN   //‰ΩøËÉΩÂèëÈÄÅ
+#define     	bmsGPIO_485_TX_EN_OFF()    				GPIO_BC(bmsGPIO_485_TX_EN_GPIO)  = bmsGPIO_485_TX_EN_PIN   //‰ΩøËÉΩÊé•Êî∂
 #define     	bmsGPIO_485_TX_EN_SATTE()               gpio_output_bit_get(bmsGPIO_485_TX_EN_GPIO,bmsGPIO_485_TX_EN_PIN)
 #endif 	//boardBMS_485_IFACE_EN
 

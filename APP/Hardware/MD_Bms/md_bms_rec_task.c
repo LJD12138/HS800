@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         Äæ±ä½ÓÊÕÈÎÎñ                                                         *
+ *                                         é€†å˜æŽ¥æ”¶ä»»åŠ¡                                                         *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Bms/md_bms_rec_task.h"
@@ -25,29 +25,29 @@
 #endif  //boardUPDATE
 
 
-//****************************************************ÈÎÎñ³õÊ¼»¯**************************************************//
+//****************************************************ä»»åŠ¡åˆå§‹åŒ–**************************************************//
 #if(boardUSE_OS)
-#define			bmsREC_TASK_PRIO                    	2        //ÈÎÎñÓÅÏÈ¼¶ 
-#define			bmsREC_TASK_SIZE                    	192      //ÈÎÎñ¶ÑÕ»  Êµ¼Ê×Ö½ÚÊý *4
+#define			bmsREC_TASK_PRIO                    	2        //ä»»åŠ¡ä¼˜å…ˆçº§ 
+#define			bmsREC_TASK_SIZE                    	192      //ä»»åŠ¡å †æ ˆ  å®žé™…å­—èŠ‚æ•° *4
 TaskHandle_t	tBmsRecTaskHandle;
 void			vBms_RecTask(void *pvParameters);
 #endif  //boardUSE_OS
 
 
-//****************************************************²ÎÊý³õÊ¼»¯**************************************************//
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
 __ALIGNED(4) BmsRx_T tBmsRx;
 vu32 ulBmsRxErrCode = 0;
 
-//****************************************************º¯ÊýÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜Ž****************************************************//
 static u8 c_check_conn_state(void);
 
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    ¸´Î»½ÓÊÕ²ÎÊýBUFF
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    å¤ä½æŽ¥æ”¶å‚æ•°BUFF
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/
 static void v_rec_task_param_init(void)
 {
@@ -64,34 +64,34 @@ static void v_rec_task_param_init(void)
 
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    Äæ±ä½ÓÊÕÈÎÎñ³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    é€†å˜æŽ¥æ”¶ä»»åŠ¡åˆå§‹åŒ–
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/
 bool bBms_RecTaskInit(void)
 {
-	//½Ó¿Ú³õÊ¼»¯
+	//æŽ¥å£åˆå§‹åŒ–
 	#if(boardBMS_EN)
 	vBms_IfaceInit();
 	#endif
 	
-	//½ÓÊÕÐ­Òé³õÊ¼»¯
+	//æŽ¥æ”¶åè®®åˆå§‹åŒ–
 	if(bBms_RecProtInit() == false)
 		return false;
 		
-	//ÈÎÎñ²ÎÊý³õÊ¼»¯
+	//ä»»åŠ¡å‚æ•°åˆå§‹åŒ–
 	v_rec_task_param_init();
 	
-    //Êý¾Ý½âÎöÈÎÎñ³õÊ¼»¯
+    //æ•°æ®è§£æžä»»åŠ¡åˆå§‹åŒ–
 	#if(boardUSE_OS)
-    xTaskCreate((TaskFunction_t )vBms_RecTask,			//ÈÎÎñº¯Êý
-                (const char* )"BmsRecTask",   			//ÈÎÎñÃû³Æ
-                (uint16_t ) bmsREC_TASK_SIZE,  			//ÈÎÎñ¶ÑÕ»´óÐ¡
-                (void* )NULL,                 			//´«µÝ¸øÈÎÎñº¯ÊýµÄ²ÎÊý
-                (UBaseType_t ) bmsREC_TASK_PRIO,		//ÈÎÎñÓÅÏÈ¼¶
-                (TaskHandle_t*)&tBmsRecTaskHandle);    	//ÈÎÎñ¾ä±ú
+    xTaskCreate((TaskFunction_t )vBms_RecTask,			//ä»»åŠ¡å‡½æ•°
+                (const char* )"BmsRecTask",   			//ä»»åŠ¡åç§°
+                (uint16_t ) bmsREC_TASK_SIZE,  			//ä»»åŠ¡å †æ ˆå¤§å°
+                (void* )NULL,                 			//ä¼ é€’ç»™ä»»åŠ¡å‡½æ•°çš„å‚æ•°
+                (UBaseType_t ) bmsREC_TASK_PRIO,		//ä»»åŠ¡ä¼˜å…ˆçº§
+                (TaskHandle_t*)&tBmsRecTaskHandle);    	//ä»»åŠ¡å¥æŸ„
 	#endif  //boardUSE_OS
 				
 	return true;
@@ -99,11 +99,11 @@ bool bBms_RecTaskInit(void)
 
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    Äæ±ä½ÓÊÕÈÎÎñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    é€†å˜æŽ¥æ”¶ä»»åŠ¡
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/
 void vBms_RecTask(void *pvParameters)
 {
@@ -125,17 +125,17 @@ void vBms_RecTask(void *pvParameters)
 			#endif
 		}
 
-		//******************************************Ð­Òé´¦Àí****************************************************
-		//Ð­Òé½âÎö
+		//******************************************åè®®å¤„ç†****************************************************
+		//åè®®è§£æž
 		#if(boardUPDATE)
 		if(tBms.eDevState == DS_UPDATE_MODE)
 		{
 			c_result = cUpdate_ProtoCheck(tpBmsProtoRx, &tpPrintTask->tReplyBuff);
 
-			//Ð­ÒéÊÊÅä
+			//åè®®é€‚é…
 			if(c_result == PT_BAIKU || c_result == PT_XMODEM)
 				cUpdate_ProtoSelect(UO_BMS, (ProtoType_E)c_result);
-			//ÆäËûÎ´ÊÊÅä»òÎ´¶¨Òå
+			//å…¶ä»–æœªé€‚é…æˆ–æœªå®šä¹‰
 			else
 				cUpdate_ProtoSelect(UO_BMS, PT_NULL);
 
@@ -146,7 +146,7 @@ void vBms_RecTask(void *pvParameters)
 		#endif  //boardUPDATE
         	c_result = cBaiku_ProtoCheck(tpBmsProtoRx);
 
-		//Êý¾Ý´¦Àí
+		//æ•°æ®å¤„ç†
 		if(c_result > 0)
         {
 			c_check_conn_state();
@@ -154,12 +154,12 @@ void vBms_RecTask(void *pvParameters)
 			if(c_result <= 0)
 			{
 				if(uPrint.tFlag.bBmsRecTask || uPrint.tFlag.bImportant)
-					log_w("bBmsRecTask:×°ÔØµÄÊý¾Ý´íÎó,´úÂë%d",c_result);
+					log_w("bBmsRecTask:è£…è½½çš„æ•°æ®é”™è¯¯,ä»£ç %d",c_result);
 			}
 			else
 			{
 				#if(boardUSE_OS)
-				xTaskNotifyGive(tBmsTaskHandler);//Í¨Öª·¢ËÍÈÎÎñ
+				xTaskNotifyGive(tBmsTaskHandler);//é€šçŸ¥å‘é€ä»»åŠ¡
 				#endif  //boardUSE_OS
 			}
 
@@ -177,7 +177,7 @@ void vBms_RecTask(void *pvParameters)
 			{
 				#if(boardUSE_OS)
 				if(lwrb_get_full(&tpBmsProtoRx->tRxBuff) ==0)
-					ulTaskNotifyTake(pdFALSE,portMAX_DELAY);//µÈ´ýÈÎÎñÍ¨Öª
+					ulTaskNotifyTake(pdFALSE,portMAX_DELAY);//ç­‰å¾…ä»»åŠ¡é€šçŸ¥
 				else
 					vTaskDelay(10);
 				#endif  //boardUSE_OS
@@ -185,7 +185,7 @@ void vBms_RecTask(void *pvParameters)
 			else 
 			{
 				if(uPrint.tFlag.bBmsRecTask|| uPrint.tFlag.bImportant)
-					log_w("bBmsRecTask:Ð­Òé½âÎö´íÎó,´úÂë%d",c_result);
+					log_w("bBmsRecTask:åè®®è§£æžé”™è¯¯,ä»£ç %d",c_result);
 					
 				#if(boardUSE_OS)
 				vTaskDelay(10);
@@ -197,21 +197,21 @@ void vBms_RecTask(void *pvParameters)
 
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    ¼ì²âÉè±¸µÄÁ¬½Ó×´Ì¬
------ËµÃ÷(±¸×¢)  connection
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      0:Ã»ÓÐ´íÎó  ÆäËûÓÐ´íÎó
+-----å‡½æ•°åŠŸèƒ½    æ£€æµ‹è®¾å¤‡çš„è¿žæŽ¥çŠ¶æ€
+-----è¯´æ˜Ž(å¤‡æ³¨)  connection
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      0:æ²¡æœ‰é”™è¯¯  å…¶ä»–æœ‰é”™è¯¯
 ************************************************************************************************************************/
 static u8 c_check_conn_state(void)	
 {
-	//-----------------------¶ªÊ§ºóµÚÒ»´ÎÁ¬½Ó-----------------------------------------------
+	//-----------------------ä¸¢å¤±åŽç¬¬ä¸€æ¬¡è¿žæŽ¥-----------------------------------------------
 	if(tBms.eDevState == DS_LOST)
 	{
 		bBms_SetErrCode(BEC_SYS_DEV_LOST, false);
 		
 		#if(boardSYS_DATA_UPADATA)
-		if(!BIT_GET(tSysInfo.Mod_Exist,OL_BMS))//µÚÒ»´Î³õÊ¼»¯
+		if(!BIT_GET(tSysInfo.Mod_Exist,OL_BMS))//ç¬¬ä¸€æ¬¡åˆå§‹åŒ–
 		{
 			STAT_SET(tSysInfo.Mod_Exist,OL_BMS);
 			Sys_Update_Element(AT_SYS_MODEXIST_ADDR, NULL, tSysInfo.Mod_Exist, true );
@@ -223,18 +223,18 @@ static u8 c_check_conn_state(void)
 }
 
 /***********************************************************************************************************************
------º¯Êý¹¦ÄÜ    ¼ì²âÉè±¸µÄÁ¬½Ó×´Ì¬
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊý    none
------Êä³ö²ÎÊý    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    æ£€æµ‹è®¾å¤‡çš„è¿žæŽ¥çŠ¶æ€
+-----è¯´æ˜Ž(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›žå€¼      none
 ************************************************************************************************************************/
 void vBms_RecTickTimer(void)
 {
 	if(tpBmsProtoRx == NULL)
 		return;
 	
-	//******************************************Êý¾ÝÖ¡½ÓÊÕ³¬Ê±¼ÆËã***************************************************
+	//******************************************æ•°æ®å¸§æŽ¥æ”¶è¶…æ—¶è®¡ç®—***************************************************
 	if(tpBmsProtoRx->usRecOverTimeCnt > 0)
 	{    
 		tpBmsProtoRx->usRecOverTimeCnt--;
@@ -245,12 +245,12 @@ void vBms_RecTickTimer(void)
 		}
 	}
 	
-	//******************************************Äæ±äÄ£¿éÁ¬½Ó³¬Ê±¼ÆËã*************************************************		
+	//******************************************é€†å˜æ¨¡å—è¿žæŽ¥è¶…æ—¶è®¡ç®—*************************************************		
 	if(tpBmsProtoRx->usLostOverTimeCnt > 0 && bSys_IsWorkState() == true )
 	{    
 		tpBmsProtoRx->usLostOverTimeCnt--;
 	
-		if(tpBmsProtoRx->usLostOverTimeCnt == 0)      //¶ªÊ§    
+		if(tpBmsProtoRx->usLostOverTimeCnt == 0)      //ä¸¢å¤±    
 		{
 			v_rec_task_param_init();
 			

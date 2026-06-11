@@ -115,13 +115,13 @@ EfErrCode easyflash_init(void) {
  */
 void easyflash_test_env(void)
 {
-//	//获取环境变量
+//	//鑾峰彇鐜鍙橀噺
 //	ef_get_env_blob("tDC", &tAppMemParam.tDC, sizeof(tAppMemParam.tDC), NULL);
 
 //	tAppMemParam.tDC.usAutoOffTime = 100;
 //	ef_set_env_blob("tDC", &tAppMemParam.tDC, sizeof(tAppMemParam.tDC));
 //	
-//	//获取环境变量
+//	//鑾峰彇鐜鍙橀噺
 //	ef_get_env_blob("tDC", &tAppMemParam.tDC, sizeof(tAppMemParam.tDC), NULL);
 }
 

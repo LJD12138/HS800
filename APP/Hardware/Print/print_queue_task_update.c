@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³µÄ¶ÓÁĞº¯Êı                                                  		*
+ *                                         ç³»ç»Ÿçš„é˜Ÿåˆ—å‡½æ•°                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Print/print_queue_task.h"
@@ -19,34 +19,34 @@
 #define       	printTASK_UPDATE_CYCLE_TIME               		50
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ÈÎÎñº¯Êı:Éı¼¶ÈÎÎñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none:
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    ä»»åŠ¡å‡½æ•°:å‡çº§ä»»åŠ¡
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none:
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 void v_print_queue_task_update(Task_T *tp_task)
 {
 	UpdateObj_E e_update_obj = (UpdateObj_E)tp_task->usInParam;	
 	
-	//³¬·¶Î§
+	//è¶…èŒƒå›´
 	if(tp_task->usInParam >= UO_INVAILD)
 	{
-		cQueue_GotoStep( tp_task, STEP_END );  //½áÊø
+		cQueue_GotoStep( tp_task, STEP_END );  //ç»“æŸ
 		return;
 	}
 	
-	//ÍË³öÉı¼¶Ä£Ê½ || ¶ÓÁĞÀïÃæÓĞÈÎÎñ
+	//é€€å‡ºå‡çº§æ¨¡å¼ || é˜Ÿåˆ—é‡Œé¢æœ‰ä»»åŠ¡
 	if(tSysInfo.eDevState != DS_UPDATE_MODE || 
 		lwrb_get_full(&tp_task->tQueueBuff))
 	{
-		cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+		cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 		return;
 	}		
 
 	switch(tp_task->ucStep)
 	{
-		//¿ªÊ¼Í¸´«
+		//å¼€å§‹é€ä¼ 
 		case 0 :
 		{
 			u16 us_char_send_bms_len = lwrb_get_full(&tpPrintProtoRx->tRxBuff);
@@ -62,7 +62,7 @@ void v_print_queue_task_update(Task_T *tp_task)
 					lwrb_move(&tpBmsTask->tReplyBuff, &tpPrintProtoRx->tRxBuff);
 
 					#if(boardUSE_OS)
-					xTaskNotifyGive(tBmsTaskHandler);//Í¨Öª·¢ËÍÈÎÎñ
+					xTaskNotifyGive(tBmsTaskHandler);//é€šçŸ¥å‘é€ä»»åŠ¡
 					#endif  //boardUSE_OS
 				}
 				
@@ -78,7 +78,7 @@ void v_print_queue_task_update(Task_T *tp_task)
 		break;
 		
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //½áÊø
+			cQueue_GotoStep(tp_task, STEP_END);  //ç»“æŸ
 			break;
 	}
 	

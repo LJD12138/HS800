@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         ÏµÍ³×ÜÈÎÎñµÄ¶ÓÁĞº¯Êı                                                  *
+ *                                         ç³»ç»Ÿæ€»ä»»åŠ¡çš„é˜Ÿåˆ—å‡½æ•°                                                  *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
@@ -12,11 +12,11 @@
 #include "Sys/sys_task.h"
 
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//
-__ALIGNED(4) 	Task_T *tpDcacTask = NULL;  		//¶ÓÁĞÈÎÎñ
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
+__ALIGNED(4) 	Task_T *tpDcacTask = NULL;  		//é˜Ÿåˆ—ä»»åŠ¡
 
 
-//****************************************************º¯ÊıÉùÃ÷****************************************************//
+//****************************************************å‡½æ•°å£°æ˜****************************************************//
 static bool b_task_manage_func_cb(Task_T *tp_task);
 static void v_add_task_return_func_cb(Task_T *tp_task, u8 num);
 
@@ -24,29 +24,29 @@ static void v_add_task_return_func_cb(Task_T *tp_task, u8 num);
 
 
 /***********************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¶ÓÁĞ³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    é˜Ÿåˆ—åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ************************************************************************************************************************/
 bool bDcac_QueueInit(void)
 {
 	s8 c_result = 1;
 	
-	//ÈÎÎñ¶ÓÁĞ³õÊ¼»¯£¬¶ÓÁĞ´óĞ¡Îª8£¬»Ø¸´»º´æÆ÷´óĞ¡Îª0
+	//ä»»åŠ¡é˜Ÿåˆ—åˆå§‹åŒ–ï¼Œé˜Ÿåˆ—å¤§å°ä¸º8ï¼Œå›å¤ç¼“å­˜å™¨å¤§å°ä¸º0
 	c_result = cQueue_TaskInit(&tpDcacTask, 8, 0, b_task_manage_func_cb, v_add_task_return_func_cb);
 	if(c_result <= 0)
 	{
 		if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
-			log_e("bDcacTask:tpDcacTaskÈÎÎñ¶ÔÏó³õÊ¼»¯Ê§°Ü,´úÂë&d",c_result);
+			log_e("bDcacTask:tpDcacTaskä»»åŠ¡å¯¹è±¡åˆå§‹åŒ–å¤±è´¥,ä»£ç &d",c_result);
 		
 		return false;
 	}
 	else if(tpDcacTask == NULL)
 	{
 		if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
-			log_e("bDcacTask:tpDcacTaskÈÎÎñ¶ÔÏó´´½¨Ê§°Ü");
+			log_e("bDcacTask:tpDcacTaskä»»åŠ¡å¯¹è±¡åˆ›å»ºå¤±è´¥");
 		
 		return false;
 	}
@@ -56,11 +56,11 @@ bool bDcac_QueueInit(void)
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ×°ÔØÈÎÎñº¯Êı
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      true:³É¹¦   false:Ê§°Ü 
+-----å‡½æ•°åŠŸèƒ½    è£…è½½ä»»åŠ¡å‡½æ•°
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      true:æˆåŠŸ   false:å¤±è´¥ 
 ******************************************************************************************************************/
 static bool b_task_manage_func_cb(Task_T *tp_task)
 {
@@ -79,7 +79,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 	if(uc_temp%3 != 0 && uc_temp != 0)
 	{
 		if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
-			log_e("bDcacTask:ÈÎÎñ¶ÓÁĞ³¤¶ÈÒì³£ ³¤¶È%d",uc_temp);
+			log_e("bDcacTask:ä»»åŠ¡é˜Ÿåˆ—é•¿åº¦å¼‚å¸¸ é•¿åº¦%d",uc_temp);
 		lwrb_reset(&tp_task->tQueueBuff);
 		return false;
 	}
@@ -105,7 +105,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         case DTI_INIT:
         {
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØ³õÊ¼»¯ÈÎÎñ----\r\n");
+				sMyPrint("bDcacTask:----è£…è½½åˆå§‹åŒ–ä»»åŠ¡----\r\n");
 			
             tp_task->vp_func = v_dcac_queue_task_init;
         }
@@ -114,7 +114,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         case DTI_MAIN:
         {	
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØÖ÷ÈÎÎñ----\r\n");
+				sMyPrint("bDcacTask:----è£…è½½ä¸»ä»»åŠ¡----\r\n");
 			
             tp_task->vp_func = v_dcac_queue_task_main;
         }
@@ -123,7 +123,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         case DTI_CTRL_DCAC_OUT:
         {
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØ½»Á÷Êä³öÈÎÎñ ²ÎÊı0x%x----\r\n", tp_task->usInParam);
+				sMyPrint("bDcacTask:----è£…è½½äº¤æµè¾“å‡ºä»»åŠ¡ å‚æ•°0x%x----\r\n", tp_task->usInParam);
 			
 			tp_task->vp_func = v_dcac_queue_task_dcac_out;
         }
@@ -132,7 +132,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         case DTI_CTRL_DCAC_IN:
 		{
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØ¿ªÆô³äµçÈÎÎñ ²ÎÊı0x%x----\r\n", tp_task->usInParam);
+				sMyPrint("bDcacTask:----è£…è½½å¼€å¯å……ç”µä»»åŠ¡ å‚æ•°0x%x----\r\n", tp_task->usInParam);
 			
 			tp_task->vp_func = v_dcac_queue_task_dcac_in;
 		}
@@ -141,7 +141,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 		case DTI_CTRL_PARA_IN:
         {	
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØ²¢Íø·ÅµçÈÎÎñ ²ÎÊı0x%x----\r\n", tp_task->usInParam);
+				sMyPrint("bDcacTask:----è£…è½½å¹¶ç½‘æ”¾ç”µä»»åŠ¡ å‚æ•°0x%x----\r\n", tp_task->usInParam);
 			
             tp_task->vp_func = v_dcac_queue_task_para_in;
         }
@@ -150,7 +150,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 		case DTI_ERR_PROC:
         {	
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØ´íÎó´¦ÀíÈÎÎñ----\r\n");
+				sMyPrint("bDcacTask:----è£…è½½é”™è¯¯å¤„ç†ä»»åŠ¡----\r\n");
 			
             tp_task->vp_func = v_dcac_queue_task_err_proc;
         }
@@ -159,7 +159,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 		case DTI_UPDATE:
 		{
 			if(uPrint.tFlag.bDcacTask)
-				sMyPrint("bDcacTask:----×°ÔØÉı¼¶ÈÎÎñ----\r\n");
+				sMyPrint("bDcacTask:----è£…è½½å‡çº§ä»»åŠ¡----\r\n");
 			
 			tp_task->vp_func = v_dcac_queue_task_update;
 		}
@@ -180,7 +180,7 @@ static void v_add_task_return_func_cb(Task_T *tp_task, u8 num)
 {
 	switch(num)
 	{
-		//Ìí¼ÓÁËÈÎÎñ
+		//æ·»åŠ äº†ä»»åŠ¡
 		case 2:
 		{
 			#if(boardUSE_OS)

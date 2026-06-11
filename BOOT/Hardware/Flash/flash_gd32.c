@@ -6,19 +6,19 @@
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    flash²Á³ıº¯Êı
------ËµÃ÷(±¸×¢)  ×¢ÒâG4ÏµÁĞ£¬µ¥ bank ·ÖÇøÒ»´Î²ÁĞ´×îĞ¡µ¥Î»Îª4KB£¬Ë« bank ·ÖÇøÒ»´Î²ÁĞ´×îĞ¡µ¥Î»Îª2KB
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    flashæ“¦é™¤å‡½æ•°
+-----è¯´æ˜(å¤‡æ³¨)  æ³¨æ„G4ç³»åˆ—ï¼Œå• bank åˆ†åŒºä¸€æ¬¡æ“¦å†™æœ€å°å•ä½ä¸º4KBï¼ŒåŒ bank åˆ†åŒºä¸€æ¬¡æ“¦å†™æœ€å°å•ä½ä¸º2KB
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 *****************************************************************************************************************/
 bool bFlash_Gd32EraseSector(uint32_t StartAddr,uint32_t EndAddr)
 {
 	uint32_t EraseCounter;
 	uint8_t state = 0;
 	/* calculate the number of page to be programmed/erased */
-	uint32_t PageNum = (EndAddr - StartAddr + 1) / FMC_PAGE_SIZE; //Ò»¹²Òª²Á³ı¶àÉÙÒ³
-	uint32_t num = (StartAddr - FLASH_BASE) / FMC_PAGE_SIZE ;      //µÚ¼¸Ò³¿ªÊ¼
+	uint32_t PageNum = (EndAddr - StartAddr + 1) / FMC_PAGE_SIZE; //ä¸€å…±è¦æ“¦é™¤å¤šå°‘é¡µ
+	uint32_t num = (StartAddr - FLASH_BASE) / FMC_PAGE_SIZE ;      //ç¬¬å‡ é¡µå¼€å§‹
 	
 	if(uPrint.tFlag.bOperFlash == 1)
 		sMyPrint("bOperFlash:Erase%d,address:0x%02X to 0x%02X \r\n", num, StartAddr, EndAddr );
@@ -37,13 +37,13 @@ bool bFlash_Gd32EraseSector(uint32_t StartAddr,uint32_t EndAddr)
  		if(fmc_page_erase(StartAddr + (FMC_PAGE_SIZE * EraseCounter)) == FMC_READY )
 		{
 			if( uPrint.tFlag.bOperFlash ) 
-				sMyPrint("bOperFlash:¿ªÊ¼²Á³ıµÚ%dÒ³\r\n", num+EraseCounter );			
+				sMyPrint("bOperFlash:å¼€å§‹æ“¦é™¤ç¬¬%dé¡µ\r\n", num+EraseCounter );			
 		}
 		else
 		{
 			state = 1;
 			if( uPrint.tFlag.bOperFlash ) 
-				sMyPrint("bOperFlash:µÚ%dÒ³²Á³ıÊ§°Ü\r\n", num+EraseCounter );	
+				sMyPrint("bOperFlash:ç¬¬%dé¡µæ“¦é™¤å¤±è´¥\r\n", num+EraseCounter );	
 		}
 		fmc_flag_clear(FMC_FLAG_BANK0_END | FMC_FLAG_BANK0_WPERR | FMC_FLAG_BANK0_PGERR);
     }
@@ -60,16 +60,16 @@ bool bFlash_Gd32EraseSector(uint32_t StartAddr,uint32_t EndAddr)
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    flash Ğ´Èëº¯Êı,°´16Î»Ğ´Èë
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    Addr:¿ªÊ¼µØÖ·    Data:Êı¾İ    Num:8Bit³¤¶È
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    flash å†™å…¥å‡½æ•°,æŒ‰16ä½å†™å…¥
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    Addr:å¼€å§‹åœ°å€    Data:æ•°æ®    Num:8Bité•¿åº¦
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 *****************************************************************************************************************/
 bool bFlash_Gd32Write16Bit(uint32_t WriteAddr,uint16_t *wData,uint32_t wNum)
 {
 	if( uPrint.tFlag.bOperFlash ) 
-		sMyPrint("¿ªÊ¼Ğ´Èë\r\n");
+		sMyPrint("å¼€å§‹å†™å…¥\r\n");
 	
     /* unlock the flash program/erase controller */
     fmc_unlock();
@@ -84,10 +84,10 @@ bool bFlash_Gd32Write16Bit(uint32_t WriteAddr,uint16_t *wData,uint32_t wNum)
 		wData++;
 	}
     
-	//Êı¾İÎªµ¥Êı,²¹ÉÏ×îºóÒ»¸ö×Ö½Ú
+	//æ•°æ®ä¸ºå•æ•°,è¡¥ä¸Šæœ€åä¸€ä¸ªå­—èŠ‚
 	if(wNum % 2 != 0)
 	{
-		uint16_t data_temp = *wData & 0x00FF;  //È¡µÍÎ»
+		uint16_t data_temp = *wData & 0x00FF;  //å–ä½ä½
 		if(fmc_halfword_program(WriteAddr, data_temp) != FMC_READY)
 		{
 			return false;
@@ -101,18 +101,18 @@ bool bFlash_Gd32Write16Bit(uint32_t WriteAddr,uint16_t *wData,uint32_t wNum)
 	
     if( uPrint.tFlag.bOperFlash ) 
 	{
-		sMyPrint("Ğ´ÈëÍê³É\r\n");
+		sMyPrint("å†™å…¥å®Œæˆ\r\n");
 	}
 	
 	return true;
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    flash Ğ´Èëº¯Êı,°´32Î»Ğ´Èë
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    Addr:¿ªÊ¼µØÖ·    Data:Êı¾İ    Num:8Bit³¤¶È
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    flash å†™å…¥å‡½æ•°,æŒ‰32ä½å†™å…¥
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    Addr:å¼€å§‹åœ°å€    Data:æ•°æ®    Num:8Bité•¿åº¦
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 *****************************************************************************************************************/
 bool bFlash_Gd32Write32Bit(uint32_t WriteAddr,const uint32_t *wData,uint32_t wNum)
 {
@@ -132,11 +132,11 @@ bool bFlash_Gd32Write32Bit(uint32_t WriteAddr,const uint32_t *wData,uint32_t wNu
 		wData++;
 	}
     
-	//Êı¾İÎªµ¥Êı,²¹ÉÏ×îºó×Ö½Ú
+	//æ•°æ®ä¸ºå•æ•°,è¡¥ä¸Šæœ€åå­—èŠ‚
 	int len = wNum % 4;
 	if(len != 0)
 	{
-		uint16_t data_temp = *wData & (0xFFFFFFFF>>(4-len));  //È¡µÍÎ»
+		uint16_t data_temp = *wData & (0xFFFFFFFF>>(4-len));  //å–ä½ä½
 		if(fmc_word_program(WriteAddr, data_temp) != FMC_READY)
 		{
 			return false;
@@ -158,18 +158,18 @@ bool bFlash_Gd32Write32Bit(uint32_t WriteAddr,const uint32_t *wData,uint32_t wNu
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    flash ¶ÁÈ¡º¯Êı,°´8Î»¶ÁÈ¡
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    ReadAddr:¿ªÊ¼µØÖ·    rData:Êı¾İ    rNum:8Bit³¤¶È
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    flash è¯»å–å‡½æ•°,æŒ‰8ä½è¯»å–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    ReadAddr:å¼€å§‹åœ°å€    rData:æ•°æ®    rNum:8Bité•¿åº¦
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 *****************************************************************************************************************/
 void vFlash_Gd32Read8Bit(uint32_t ReadAddr,uint8_t *rData,uint32_t rNum)
 {
 	uint8_t i;
     if( uPrint.tFlag.bOperFlash )
 	{		
-		sMyPrint("´ÓµØÖ·0x%02X¿ªÊ¼¶ÁÈ¡\r\n", ReadAddr);
+		sMyPrint("ä»åœ°å€0x%02Xå¼€å§‹è¯»å–\r\n", ReadAddr);
 	}
     for(i=0; i<rNum; i++){
         rData[i] = *(__IO uint8_t*)ReadAddr;
@@ -179,16 +179,16 @@ void vFlash_Gd32Read8Bit(uint32_t ReadAddr,uint8_t *rData,uint32_t rNum)
     }
     if( uPrint.tFlag.bOperFlash ) 
 	{
-		sMyPrint("¶ÁÈ¡Íê³É\r\n");
+		sMyPrint("è¯»å–å®Œæˆ\r\n");
 	}
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    flash ¶ÁÈ¡º¯Êı,°´8Î»¶ÁÈ¡
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    ReadAddr:¿ªÊ¼µØÖ·    rData:Êı¾İ    rNum:8Bit³¤¶È
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    flash è¯»å–å‡½æ•°,æŒ‰8ä½è¯»å–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    ReadAddr:å¼€å§‹åœ°å€    rData:æ•°æ®    rNum:8Bité•¿åº¦
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 *****************************************************************************************************************/
 void vFlash_Gd32Read32Bit(uint32_t ReadAddr,uint32_t *rData,uint32_t rNum)
 {

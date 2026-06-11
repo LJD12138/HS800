@@ -20,11 +20,11 @@
 #endif  //boardDCAC_EN
 
 #if(boardBMS_485_IFACE_EN)
-extern	TimerHandle_t 	tBmsRxEnTimer; 	//µ¥´Î¶¨Ê±Æ÷
+extern	TimerHandle_t 	tBmsRxEnTimer; 	//å•æ¬¡å®šæ—¶å™¨
 #endif  //boardBMS_485_IFACE_EN
 
 #if(boardMPPT_485_IFACE_EN)
-extern TimerHandle_t 	tMpptRxEnTimer; //µ¥´Î¶¨Ê±Æ÷
+extern TimerHandle_t 	tMpptRxEnTimer; //å•æ¬¡å®šæ—¶å™¨
 #endif  //boardMPPT_485_IFACE_EN
 
 #if(boardBMS_EN)
@@ -35,7 +35,7 @@ extern TimerHandle_t 	tWakeUpBmsTimer;
 extern TimerHandle_t 	tDcacRxEnTimer;
 #endif  //boardDCAC_485_IFACE_EN
 
-extern TimerHandle_t 	tRepetTimer;   //ÖØ¸´¶¨Ê±Æ÷  repetition
+extern TimerHandle_t 	tRepetTimer;   //é‡å¤å®šæ—¶å™¨  repetition
 
 void vTimer_TaskInit(void);
 #if(boardLOW_POWER)

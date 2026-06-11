@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         BootĞÅÏ¢                                                             *
+ *                                         Bootä¿¡æ¯                                                             *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "boot_info.h"
@@ -16,18 +16,18 @@
 #include "MD_Display/md_display_task.h"
 #endif  //boardDISPLAY_EN
 
-//ÎªÁË±àÒë°æ±¾¡¢ÈÕÆÚºÍÊ±¼äÕıÈ·£¬ĞèÒª½øĞĞÉèÖÃ£º×ÜÊÇ±àÒë
-//ÔÚoption for ...ÖĞ¹´Ñ¡ always build
+//ä¸ºäº†ç¼–è¯‘ç‰ˆæœ¬ã€æ—¥æœŸå’Œæ—¶é—´æ­£ç¡®ï¼Œéœ€è¦è¿›è¡Œè®¾ç½®ï¼šæ€»æ˜¯ç¼–è¯‘
+//åœ¨option for ...ä¸­å‹¾é€‰ always build
 
-//****************************************************²ÎÊı³õÊ¼»¯**************************************************//
+//****************************************************å‚æ•°åˆå§‹åŒ–**************************************************//
 __ALIGNED(4) BootMemParam_T  	tBootMemParam;
 
 const char tBootMemParamStr[]	= "tBootMemParam";
 const char tBootVerInfoStr[]	= "tBootVerInfo";
 const char tBootParamStr[] 	= "tBootParam";
 
-//°Ñ°æ±¾ĞÅÏ¢Ğ´ÈëBOOTµÄFlashÖĞ
-//tBootInfo Ö¸ÏòµÄµØÖ·ÊÇFlashÇø,µ±¶ÔÆäFlashÇø²Á³ıºó,tBootInfoÒ²±»Çå¿ÕÁË
+//æŠŠç‰ˆæœ¬ä¿¡æ¯å†™å…¥BOOTçš„Flashä¸­
+//tBootInfo æŒ‡å‘çš„åœ°å€æ˜¯FlashåŒº,å½“å¯¹å…¶FlashåŒºæ“¦é™¤å,tBootInfoä¹Ÿè¢«æ¸…ç©ºäº†
 #if (boardIC_TYPE == boardIC_GD32F50X)
 __attribute__((section(".ARM.__at_0x08000F00"))) const VerInfo_T tBootDefaultVer = {
 #else
@@ -46,7 +46,7 @@ const ef_env default_env_set[] = {
 };
 #endif
 
-//****************************************************º¯Êı¶¨Òå**************************************************//
+//****************************************************å‡½æ•°å®šä¹‰**************************************************//
 static void v_print_info(void);
 	
 
@@ -61,11 +61,11 @@ static void v_print_info(void);
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¶ÁÈ¡¼ÇÒä²ÎÊıÈ¥³õÊ¼»¯ÈÎÎñ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    init true:Ç¿ÖÆ³õÊ¼»¯    false:×ÔÖ÷ÅĞ¶Ï
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      SysTaskId_E
+-----å‡½æ•°åŠŸèƒ½    è¯»å–è®°å¿†å‚æ•°å»åˆå§‹åŒ–ä»»åŠ¡
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    init true:å¼ºåˆ¶åˆå§‹åŒ–    false:è‡ªä¸»åˆ¤æ–­
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      SysTaskId_E
 ******************************************************************************************************************/
 SysTaskId_E eBoot_InfoInit(bool init)
 {
@@ -73,107 +73,107 @@ SysTaskId_E eBoot_InfoInit(bool init)
 	
 	const char* p_obj_str = tBootMemParamStr;
 	
-	//---------Ç¿ÖÆ³õÊ¼»¯----------
+	//---------å¼ºåˆ¶åˆå§‹åŒ–----------
 	if(init == true)
 		goto init_loop;
 	
-	//--------------------------------------»ñÈ¡ÏûÏ¢-------------------------------------------
-	//¶ÁÈ¡²ÎÊı
+	//--------------------------------------è·å–æ¶ˆæ¯-------------------------------------------
+	//è¯»å–å‚æ•°
 	c_ret = cBoot_GetMemParam(p_obj_str);
-	//¶ÁÈ¡²ÎÊıÊ§°Ü
+	//è¯»å–å‚æ•°å¤±è´¥
 	if(c_ret < 0)
 	{
 		if(uPrint.tFlag.bBootInfo)
-			sMyPrint("bBootInfo:²ÎÊı¶ÁÈ¡Ê§°Ü ´úÂë%d\r\n",c_ret);
+			sMyPrint("bBootInfo:å‚æ•°è¯»å–å¤±è´¥ ä»£ç %d\r\n",c_ret);
 		return STI_ERR;
 	}
 	if(c_ret == 0)
 		goto init_loop;
 	
-	//--------------------------------------Ğ£ÑéÏûÏ¢-------------------------------------------
-	//---------³õÊ¼»¯----------
+	//--------------------------------------æ ¡éªŒæ¶ˆæ¯-------------------------------------------
+	//---------åˆå§‹åŒ–----------
 	if(bBoot_CmdExist(tBootMemParam.tParam.ulCmd) ==false)
 	{
 		goto init_loop;
 	}
-	//---------Ìø×ªAPP----------
-	else if(tBootMemParam.tParam.ulCmd ==mainINIT_FINISH_FLAG && //APPÌø×ªÉı¼¶
-		tBootMemParam.tParam.ucAppFaultCnt < 5 && 	//APPÆô¶¯Ê§°Ü´ÎÊı¹ı¶à
-		tBootMemParam.tParam.eAppState != AS_ERASE)	//APPÒÑ¾­²Á³ı
+	//---------è·³è½¬APP----------
+	else if(tBootMemParam.tParam.ulCmd ==mainINIT_FINISH_FLAG && //APPè·³è½¬å‡çº§
+		tBootMemParam.tParam.ucAppFaultCnt < 5 && 	//APPå¯åŠ¨å¤±è´¥æ¬¡æ•°è¿‡å¤š
+		tBootMemParam.tParam.eAppState != AS_ERASE)	//APPå·²ç»æ“¦é™¤
 	{
 		if(uPrint.tFlag.bBootInfo == 1)
-			sMyPrint("Ìø×ªAPPÈÎÎñ!\r\n");
+			sMyPrint("è·³è½¬APPä»»åŠ¡!\r\n");
 		return STI_ENTER_APP;
 	}
 	
-	//---------µÍ¹¦ºÄÏÔÊ¾----------
+	//---------ä½åŠŸè€—æ˜¾ç¤º----------
 	#if(boardDISPLAY_EN)
 	else if(tBootMemParam.tParam.ulCmd ==mainDISPLAY_FLAG)
 	{
 		tDisp.bSleepShow = true;
 		if(uPrint.tFlag.bBootInfo == 1)
-			sMyPrint("µÍ¹¦ºÄÏÔÊ¾ÈÎÎñ!\r\n");
+			sMyPrint("ä½åŠŸè€—æ˜¾ç¤ºä»»åŠ¡!\r\n");
 		return STI_DISPLAY;
 	}
 	#endif  //boardDISPLAY_EN
 	
-	//---------µÍ¹¦ºÄ----------
+	//---------ä½åŠŸè€—----------
 	#if(boardLOW_POWER)
 	else if(tBootMemParam.tParam.ulCmd ==mainLOW_POWER_FLAG)
 	{
 		LCD.bSleepShow = false;
 		if(uPrint.tFlag.bBootInfo == 1)
-			sMyPrint("½øÈëµÍ¹¦ºÄ!\r\n");
+			sMyPrint("è¿›å…¥ä½åŠŸè€—!\r\n");
 		return TS_LowPower;
 	}
 	#endif  //boardLOW_POWER
 	
-	//---------ĞèÒªÉı¼¶----------
+	//---------éœ€è¦å‡çº§----------
 	#if( boardPRINT_IFACE )
 	else if(tBootMemParam.tParam.ulCmd == mainUPDATE_FLAG	||
-			(tBootMemParam.tParam.ucAppFaultCnt >= 5 &&  tBootMemParam.tParam.ucAppFaultCnt != 0xff)|| 	//APPÆô¶¯Ê§°Ü´ÎÊı¹ı¶à
-			tBootMemParam.tParam.eAppState == AS_ERASE)	//APPÒÑ¾­²Á³ı
+			(tBootMemParam.tParam.ucAppFaultCnt >= 5 &&  tBootMemParam.tParam.ucAppFaultCnt != 0xff)|| 	//APPå¯åŠ¨å¤±è´¥æ¬¡æ•°è¿‡å¤š
+			tBootMemParam.tParam.eAppState == AS_ERASE)	//APPå·²ç»æ“¦é™¤
 	{
 		#if(boardDISPLAY_EN)
 		tDisp.bSleepShow = true;
 		#endif  //boardDISPLAY_EN
 		if(uPrint.tFlag.bBootInfo == 1)
-			sMyPrint("Éı¼¶ÈÎÎñ!\r\n");
+			sMyPrint("å‡çº§ä»»åŠ¡!\r\n");
 		return STI_UPDATE;
 	}
 	#endif  //boardPRINT_IFACE
 
 	
-	//--------------------------------------¿ªÊ¼³õÊ¼»¯---------------------------------------------
+	//--------------------------------------å¼€å§‹åˆå§‹åŒ–---------------------------------------------
 	init_loop:
     #if(boardDISPLAY_EN)
 //    vExRTC_WriteDefaultTime();
 	#endif  //boardDISPLAY_EN
 	
-	//³õÊ¼»¯Êı¾İ
+	//åˆå§‹åŒ–æ•°æ®
 	c_ret = cBoot_MemParamInit(p_obj_str);
-	//¶ÁÈ¡²ÎÊıÊ§°Ü
+	//è¯»å–å‚æ•°å¤±è´¥
 	if(c_ret <= 0)
 	{
 		if(uPrint.tFlag.bBootInfo)
-			sMyPrint("bBootInfo:²ÎÊı³õÊ¼»¯Ê§°Ü ´úÂë%d\r\n",c_ret);
+			sMyPrint("bBootInfo:å‚æ•°åˆå§‹åŒ–å¤±è´¥ ä»£ç %d\r\n",c_ret);
 		return STI_ERR;
 	}
 	
-	//¸üĞÂ²ÎÊı
+	//æ›´æ–°å‚æ•°
 	c_ret = cBoot_UpdateMemParam(p_obj_str);
-	//¸üĞÂÊ§°Ü
+	//æ›´æ–°å¤±è´¥
 	if(c_ret <= 0)
 	{
 		if(uPrint.tFlag.bBootInfo)
-			sMyPrint("bBootInfo:²ÎÊı¸üĞÂÊ§°Ü ´úÂë%d\r\n",c_ret);
+			sMyPrint("bBootInfo:å‚æ•°æ›´æ–°å¤±è´¥ ä»£ç %d\r\n",c_ret);
 		return STI_ERR;
 	}
 
 	if(uPrint.tFlag.bBootInfo == 1)
 	{
 		v_print_info();
-		sMyPrint("bBootInfo:²ÎÊıÖØÖÃ³É¹¦\r\n");
+		sMyPrint("bBootInfo:å‚æ•°é‡ç½®æˆåŠŸ\r\n");
 		
 		#if( boardPRINT_IFACE )
 		bPrint_SendDataToUsart();
@@ -184,31 +184,31 @@ SysTaskId_E eBoot_InfoInit(bool init)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    APP¼ÇÒä²ÎÊı³õÊ¼»¯
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      true:Ğ´Èë³É¹¦  false:Ğ´ÈëÊ§°Ü
+-----å‡½æ•°åŠŸèƒ½    APPè®°å¿†å‚æ•°åˆå§‹åŒ–
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      true:å†™å…¥æˆåŠŸ  false:å†™å…¥å¤±è´¥
 ******************************************************************************************************************/
 s8 cBoot_MemParamInit(const char* id_str)
 {
 	if (strcmp(id_str, tBootMemParamStr) == 0)
 	{
-		//°Ñ°æ±¾ĞÅÏ¢Â¼Èë
+		//æŠŠç‰ˆæœ¬ä¿¡æ¯å½•å…¥
 		tBootMemParam.tVerInfo 				= tBootDefaultVer;
-		tBootMemParam.tParam.ulCmd 			= mainINIT_FINISH_FLAG;  //Íê³É³õÊ¼»¯
+		tBootMemParam.tParam.ulCmd 			= mainINIT_FINISH_FLAG;  //å®Œæˆåˆå§‹åŒ–
 		tBootMemParam.tParam.eAppState 		= AS_NULL;
 		tBootMemParam.tParam.ucAppFaultCnt 	= 0;
 	}
-	//³õÊ¼»¯°æ±¾ĞÅÏ¢
+	//åˆå§‹åŒ–ç‰ˆæœ¬ä¿¡æ¯
 	else if (strcmp(id_str, tBootVerInfoStr) == 0)
 	{
 		tBootMemParam.tVerInfo 				= tBootDefaultVer;
 	}
-	//³õÊ¼»¯²ÎÊıĞÅÏ¢
+	//åˆå§‹åŒ–å‚æ•°ä¿¡æ¯
 	else if (strcmp(id_str, tBootParamStr) == 0)
 	{
-		tBootMemParam.tParam.ulCmd 			= mainINIT_FINISH_FLAG;  //Íê³É³õÊ¼»¯
+		tBootMemParam.tParam.ulCmd 			= mainINIT_FINISH_FLAG;  //å®Œæˆåˆå§‹åŒ–
 		tBootMemParam.tParam.eAppState 		= AS_NULL;
 		tBootMemParam.tParam.ucAppFaultCnt 	= 0;
 	}
@@ -219,11 +219,11 @@ s8 cBoot_MemParamInit(const char* id_str)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¸üĞÂAPP¼ÇÒä²ÎÊı
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    id_str:ĞèÒª¸üĞÂµÄ¶ÔÏó
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      >0 Ğ´ÈëµÄ×Ö½ÚÊı   0:Î´²Ù×÷  <0:´íÎó
+-----å‡½æ•°åŠŸèƒ½    æ›´æ–°APPè®°å¿†å‚æ•°
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    id_str:éœ€è¦æ›´æ–°çš„å¯¹è±¡
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      >0 å†™å…¥çš„å­—èŠ‚æ•°   0:æœªæ“ä½œ  <0:é”™è¯¯
 ******************************************************************************************************************/
 s16 cBoot_UpdateMemParam(const char* id_str)
 {
@@ -233,20 +233,20 @@ s16 cBoot_UpdateMemParam(const char* id_str)
 	#if(boardEASY_FLASH)
 	int write_len = 0;
 	
-	//È«²¿ÖØÖÃ
+	//å…¨éƒ¨é‡ç½®
 	if (strcmp(id_str, tBootMemParamStr) == 0)
 	{
 		if(ef_env_set_default() != EF_NO_ERR)
 			return -2;
 	}
-	//Ğ´Èë°æ±¾ĞÅÏ¢
+	//å†™å…¥ç‰ˆæœ¬ä¿¡æ¯
 	else if (strcmp(id_str, tBootVerInfoStr) == 0)
 	{
 		write_len = sizeof(tBootMemParam.tVerInfo);
 		if(ef_set_env_blob(id_str, &tBootMemParam.tVerInfo, write_len) != EF_NO_ERR)
 			return -10;
 	}
-	//Ğ´Èë²ÎÊı
+	//å†™å…¥å‚æ•°
 	else if (strcmp(id_str, tBootParamStr) == 0)
 	{
 		write_len = sizeof(tBootMemParam.tParam);
@@ -256,10 +256,10 @@ s16 cBoot_UpdateMemParam(const char* id_str)
 	else
 		return -99;
 	#else
-	//²Á³ıFalsh×¼±¸Ğ´Èë
+	//æ“¦é™¤Falshå‡†å¤‡å†™å…¥
 	if(cFlash_EraseSector(flashAPP_INFO_SATRT, flashAPP_INFO_END) <= 0)
 		return -2;
-	//¿ªÊ¼Ğ´ÈëÊı¾İ
+	//å¼€å§‹å†™å…¥æ•°æ®
 	if(cFlash_Write8BitData(flashAPP_INFO_SATRT, (u8*)&tBootMemParam, sizeof(tBootMemParam)) <= 0)
 		return -3;
 	#endif
@@ -267,11 +267,11 @@ s16 cBoot_UpdateMemParam(const char* id_str)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¸üĞÂAPP¼ÇÒä²ÎÊı
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    id_str:ĞèÒª¸üĞÂµÄ¶ÔÏó
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      >0 Ğ´ÈëµÄ×Ö½ÚÊı   0:Î´²Ù×÷  <0:´íÎó
+-----å‡½æ•°åŠŸèƒ½    æ›´æ–°APPè®°å¿†å‚æ•°
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    id_str:éœ€è¦æ›´æ–°çš„å¯¹è±¡
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      >0 å†™å…¥çš„å­—èŠ‚æ•°   0:æœªæ“ä½œ  <0:é”™è¯¯
 ******************************************************************************************************************/
 s16 cBoot_GetMemParam(const char* id_str)
 {
@@ -282,7 +282,7 @@ s16 cBoot_GetMemParam(const char* id_str)
 	int read_len = 0;
 	int return_len = 0;
 	
-	//¶ÁÈ¡ËùÓĞ
+	//è¯»å–æ‰€æœ‰
 	if (strcmp(id_str, tBootMemParamStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tVerInfo);
@@ -309,7 +309,7 @@ s16 cBoot_GetMemParam(const char* id_str)
 			return -3;
 		}
 	}
-	//¶ÁÈ¡°æ±¾ĞÅÏ¢
+	//è¯»å–ç‰ˆæœ¬ä¿¡æ¯
 	else if (strcmp(id_str, tBootVerInfoStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tVerInfo);
@@ -317,7 +317,7 @@ s16 cBoot_GetMemParam(const char* id_str)
 		if(return_len == 0)
 			return 0;
 	}
-	//¶ÁÈ¡²ÎÊı
+	//è¯»å–å‚æ•°
 	else if (strcmp(id_str, tBootParamStr) == 0)
 	{
 		read_len = sizeof(tBootMemParam.tParam);
@@ -331,7 +331,7 @@ s16 cBoot_GetMemParam(const char* id_str)
 	if(return_len != read_len)
 		return -40;
 	#else
-	//¶ÁÈ¡Êı¾İ
+	//è¯»å–æ•°æ®
 	if(cFlash_Read8BitData(flashAPP_INFO_SATRT, (u8*)&tBootMemParam, sizeof(tBootMemParam)) <= 0)
 		return -41;
 	#endif
@@ -339,11 +339,11 @@ s16 cBoot_GetMemParam(const char* id_str)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    »ñÈ¡×ÜµÄÄ¬ÈÏ²ÎÊı´óĞ¡
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      byteÊıÁ¿´óĞ¡
+-----å‡½æ•°åŠŸèƒ½    è·å–æ€»çš„é»˜è®¤å‚æ•°å¤§å°
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      byteæ•°é‡å¤§å°
 ******************************************************************************************************************/
 u16 usBoot_GetMemParamSize(void)
 {
@@ -356,11 +356,11 @@ u16 usBoot_GetMemParamSize(void)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    Ö¸ÁîÊÇ·ñ´æÔÚ
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      true:´æÔÚ  false:²»´æÔÚ
+-----å‡½æ•°åŠŸèƒ½    æŒ‡ä»¤æ˜¯å¦å­˜åœ¨
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      true:å­˜åœ¨  false:ä¸å­˜åœ¨
 ******************************************************************************************************************/
 bool bBoot_CmdExist(u32 cmd)
 {
@@ -379,11 +379,11 @@ bool bBoot_CmdExist(u32 cmd)
 }
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    ¿ØÖÆ½øÈëÉı¼¶½ÓÊÕ
------ËµÃ÷(±¸×¢)  ÏòBOOTµÄINFO FlashÇøĞ´ÈëÉı¼¶±êÖ¾Î»
------´«Èë²ÎÊı    en true:Éı¼¶    false:²»Éı¼¶
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    æ§åˆ¶è¿›å…¥å‡çº§æ¥æ”¶
+-----è¯´æ˜(å¤‡æ³¨)  å‘BOOTçš„INFO FlashåŒºå†™å…¥å‡çº§æ ‡å¿—ä½
+-----ä¼ å…¥å‚æ•°    en true:å‡çº§    false:ä¸å‡çº§
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 #if(boardUPDATE)
 s8 cBoot_CtrlUpdate(bool en, AppState_E state)
@@ -410,18 +410,18 @@ s8 cBoot_CtrlUpdate(bool en, AppState_E state)
 	else 
 		tBootMemParam.tParam.ucAppFaultCnt++;
 	
-	//¸üĞÂ²ÎÊı
+	//æ›´æ–°å‚æ•°
 	return cBoot_UpdateMemParam(tBootParamStr);
 }
 #endif
 
 
 /*****************************************************************************************************************
------º¯Êı¹¦ÄÜ    Êä³öÂ¼ÈëĞÅÏ¢
------ËµÃ÷(±¸×¢)  none
------´«Èë²ÎÊı    none
------Êä³ö²ÎÊı    none
------·µ»ØÖµ      none
+-----å‡½æ•°åŠŸèƒ½    è¾“å‡ºå½•å…¥ä¿¡æ¯
+-----è¯´æ˜(å¤‡æ³¨)  none
+-----ä¼ å…¥å‚æ•°    none
+-----è¾“å‡ºå‚æ•°    none
+-----è¿”å›å€¼      none
 ******************************************************************************************************************/
 static void v_print_info(void)
 {
