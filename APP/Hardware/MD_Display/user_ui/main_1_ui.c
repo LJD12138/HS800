@@ -49,7 +49,7 @@ bool S_bDevDcState;     // DC�豸״̬
 
 static EnergyRing_T s_tEnergyRing;
 static bool S_bMain1InitialFinish = false;
-static bool S_bTestAllParam = false;
+static bool S_bTestAllParam = true;
 
 //****************************************************Function Declaration****************************************************//
 

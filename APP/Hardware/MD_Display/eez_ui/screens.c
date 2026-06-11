@@ -27,6 +27,7 @@ void create_screen_main_booting() {
     objects.main_booting = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 320, 240);
+    lv_obj_remove_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
     {
         lv_obj_t *parent_obj = obj;
         {
@@ -42,6 +43,8 @@ void create_screen_main_booting() {
             objects.uc_booting_bar = obj;
             lv_obj_set_pos(obj, 45, 182);
             lv_obj_set_size(obj, 230, 10);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+            lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICKABLE);
         }
     }
     
@@ -110,30 +113,6 @@ void create_screen_main_work() {
             lv_image_set_src(obj, &img_icon_w);
         }
         {
-            // Icon_perc
-            lv_obj_t *obj = lv_image_create(parent_obj);
-            objects.icon_perc = obj;
-            lv_obj_set_pos(obj, 195, 93);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon__);
-        }
-        {
-            // Icon_Time
-            lv_obj_t *obj = lv_image_create(parent_obj);
-            objects.icon_time = obj;
-            lv_obj_set_pos(obj, 110, 195);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_time);
-        }
-        {
-            // Icon_in
-            lv_obj_t *obj = lv_image_create(parent_obj);
-            objects.icon_in = obj;
-            lv_obj_set_pos(obj, 11, 133);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_image_set_src(obj, &img_icon_in);
-        }
-        {
             // b_dev_pv_state
             lv_obj_t *obj = lv_image_create(parent_obj);
             objects.b_dev_pv_state = obj;
@@ -179,18 +158,32 @@ void create_screen_main_work() {
             lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
         }
         {
-            // Icon_out
             lv_obj_t *obj = lv_image_create(parent_obj);
-            objects.icon_out = obj;
+            lv_obj_set_pos(obj, 195, 93);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_image_set_src(obj, &img_icon__);
+        }
+        {
+            lv_obj_t *obj = lv_image_create(parent_obj);
+            lv_obj_set_pos(obj, 110, 195);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_image_set_src(obj, &img_icon_time);
+        }
+        {
+            lv_obj_t *obj = lv_image_create(parent_obj);
+            lv_obj_set_pos(obj, 11, 133);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_image_set_src(obj, &img_icon_in);
+        }
+        {
+            lv_obj_t *obj = lv_image_create(parent_obj);
             lv_obj_set_pos(obj, 238, 133);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_image_set_src(obj, &img_icon_out);
         }
         {
-            // anim_dis_chg
             lv_obj_t *obj = lv_image_create(parent_obj);
-            objects.anim_dis_chg = obj;
-            lv_obj_set_pos(obj, 29, 29);
+            lv_obj_set_pos(obj, 1, 29);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
         }
         {
@@ -206,7 +199,7 @@ void create_screen_main_work() {
             // b_err_icon_ot
             lv_obj_t *obj = lv_image_create(parent_obj);
             objects.b_err_icon_ot = obj;
-            lv_obj_set_pos(obj, 263, 18);
+            lv_obj_set_pos(obj, 280, 18);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_image_set_src(obj, &img_icon_ot);
             lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
@@ -280,6 +273,7 @@ void create_screen_main_closing() {
     objects.main_closing = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 320, 240);
+    lv_obj_remove_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
     {
         lv_obj_t *parent_obj = obj;
         {

@@ -22,16 +22,11 @@ typedef struct _objects_t {
     lv_obj_t *main_work;
     lv_obj_t *main_closing;
     lv_obj_t *uc_booting_bar;
-    lv_obj_t *icon_perc;
-    lv_obj_t *icon_time;
-    lv_obj_t *icon_in;
     lv_obj_t *b_dev_pv_state;
     lv_obj_t *b_dev_ac_in_state;
     lv_obj_t *b_dev_ac_out_state;
     lv_obj_t *b_dev_usb_state;
     lv_obj_t *b_dev_dc_state;
-    lv_obj_t *icon_out;
-    lv_obj_t *anim_dis_chg;
     lv_obj_t *b_err_icon_ol;
     lv_obj_t *b_err_icon_ot;
     lv_obj_t *uca_err_code;
