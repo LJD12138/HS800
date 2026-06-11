@@ -15,7 +15,7 @@
     <View>
       <WinId>38003</WinId>
       <ViewName>Registers</ViewName>
-      <TableColWidths>226 33</TableColWidths>
+      <TableColWidths>226 80</TableColWidths>
     </View>
     <View>
       <WinId>346</WinId>
@@ -93,25 +93,25 @@
       <flags>2</flags>
       <showCmd>3</showCmd>
       <MinPosition>
-        <xPos>-1</xPos>
-        <yPos>-1</yPos>
+        <xPos>-32000</xPos>
+        <yPos>-32000</yPos>
       </MinPosition>
       <MaxPosition>
         <xPos>-1</xPos>
         <yPos>-1</yPos>
       </MaxPosition>
       <NormalPosition>
-        <Top>173</Top>
-        <Left>-3370</Left>
-        <Right>-1321</Right>
-        <Bottom>1572</Bottom>
+        <Top>0</Top>
+        <Left>391</Left>
+        <Right>2440</Right>
+        <Bottom>1399</Bottom>
       </NormalPosition>
     </WindowPosition>
     <MDIClientArea>
       <RegID>0</RegID>
       <MDITabState>
-        <Len>581</Len>
-        <Data>0100000004000000010000000100000001000000010000000000000002000000000000000100000001000000000000002800000028000000010000000400000003000000010000003D473A5C312D4261696B755F50726F6A656374735C54656D705C48533830305C4150505C4170706C69636174696F6E5C626F6172645F636F6E6669672E68000000000E626F6172645F636F6E6669672E6800000000C5D4F200FFFFFFFF4B473A5C312D4261696B755F50726F6A656374735C54656D705C48533830305C4150505C48617264776172655C4D445F4D7070745C6D645F6D7070745F7265635F646174615F70726F632E6300000000176D645F6D7070745F7265635F646174615F70726F632E6300000000FFDC7800FFFFFFFF44473A5C312D4261696B755F50726F6A656374735C54656D705C48533830305C4150505C4D6964646C6577617265735C436D4261636B74726163655C636D625F6366672E680000000009636D625F6366672E6800000000BECEA100FFFFFFFF49473A5C312D4261696B755F50726F6A656374735C54656D705C48533830305C4150505C4D6964646C6577617265735C436D4261636B74726163655C636D5F6261636B74726163652E63000000000E636D5F6261636B74726163652E6300000000F0A0A100FFFFFFFF0100000010000000C5D4F200FFDC7800BECEA100F0A0A100BCA8E1009CC1B600F7B88600D9ADC200A5C2D700B3A6BE00EAD6A300F6FA7D00B5E99D005FC3CF00C1838300CACAD50001000000000000000200000011F2FFFF6600000000FDFFFF75040000</Data>
+        <Len>60</Len>
+        <Data>010000000400000001000000010000000100000001000000000000000200000000000000010000000100000000000000280000002800000000000000</Data>
       </MDITabState>
     </MDIClientArea>
     <ViewEx>
@@ -3605,7 +3605,7 @@
       <Size>100</Size>
       <ActiveTab>3</ActiveTab>
       <Doc>
-        <Name>.\Application\board_config.h</Name>
+        <Name>&lt;1&gt;.\Application\board_config.h</Name>
         <ColumnNumber>0</ColumnNumber>
         <TopLine>1</TopLine>
         <CurrentLine>1</CurrentLine>
@@ -3614,7 +3614,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>.\Hardware\MD_Mppt\md_mppt_rec_data_proc.c</Name>
+        <Name>G:\1-Baiku_Projects\Temp\HS800\BOOT\Hardware\MD_Mppt\md_mppt_rec_data_proc.c</Name>
         <ColumnNumber>22</ColumnNumber>
         <TopLine>119</TopLine>
         <CurrentLine>157</CurrentLine>
@@ -3623,7 +3623,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>Middlewares\CmBacktrace\cmb_cfg.h</Name>
+        <Name>G:\1-Baiku_Projects\Temp\HS800\BOOT\Middlewares\CmBacktrace\cmb_cfg.h</Name>
         <ColumnNumber>0</ColumnNumber>
         <TopLine>1</TopLine>
         <CurrentLine>37</CurrentLine>
@@ -3632,7 +3632,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>.\Middlewares\CmBacktrace\cm_backtrace.c</Name>
+        <Name>G:\1-Baiku_Projects\Temp\HS800\BOOT\Middlewares\CmBacktrace\cm_backtrace.c</Name>
         <ColumnNumber>0</ColumnNumber>
         <TopLine>257</TopLine>
         <CurrentLine>290</CurrentLine>

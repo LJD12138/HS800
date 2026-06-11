@@ -9,12 +9,12 @@
 
   <project>
     <PathAndName>.\BOOT\BOOT.uvprojx</PathAndName>
-    <NodeIsActive>1</NodeIsActive>
     <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
   <project>
     <PathAndName>.\APP\APP.uvprojx</PathAndName>
+    <NodeIsActive>1</NodeIsActive>
   </project>
 
 </ProjectWorkspace>

@@ -156,7 +156,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\Usb\usb_task.c</Filename>
+          <Filename>G:\1-Baiku_Projects\Temp\HS800\BOOT\Hardware\Usb\usb_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/Usb/usb_task.c\454</Expression>
         </Bp>
@@ -172,7 +172,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Mppt\md_mppt_task.c</Filename>
+          <Filename>G:\1-Baiku_Projects\Temp\HS800\BOOT\Hardware\MD_Mppt\md_mppt_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Mppt/md_mppt_task.c\404</Expression>
         </Bp>
@@ -188,7 +188,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Dcac\md_dcac_task.c</Filename>
+          <Filename>G:\1-Baiku_Projects\Temp\HS800\BOOT\Hardware\MD_Dcac\md_dcac_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Dcac/md_dcac_task.c\396</Expression>
         </Bp>
@@ -204,7 +204,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Bms\md_bms_task.c</Filename>
+          <Filename>&lt;1&gt;.\Hardware\MD_Bms\md_bms_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Bms/md_bms_task.c\294</Expression>
         </Bp>
@@ -220,7 +220,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Bms\md_bms_queue_task_err.c</Filename>
+          <Filename>G:\1-Baiku_Projects\Temp\HS800\BOOT\Hardware\MD_Bms\md_bms_queue_task_err.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Bms/md_bms_queue_task_err.c\33</Expression>
         </Bp>
@@ -236,7 +236,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\Dc\dc_task.c</Filename>
+          <Filename>G:\1-Baiku_Projects\Temp\HS800\BOOT\Hardware\Dc\dc_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/Dc/dc_task.c\324</Expression>
         </Bp>
@@ -1053,7 +1053,7 @@
 
   <Group>
     <GroupName>MW-CmBacktrace</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -13953,7 +13953,7 @@
 
   <Group>
     <GroupName>Application</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
