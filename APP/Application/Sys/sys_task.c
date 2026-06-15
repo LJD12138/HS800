@@ -794,7 +794,7 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 		{
 			#if(boardDISPLAY_EN)
 			if(tDisp.eDevState != DS_ENG_MODE)
-				cQueue_AddQueueTask(tpDispTask, DTI_ENG, 0, false);
+				cQueue_AddQueueTask(tpDispTask, DISPTI_ENG, 0, false);
 			#endif  //boardDISPLAY_EN
 
 			if(uPrint.tFlag.bSysTask)

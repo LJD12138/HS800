@@ -64,11 +64,11 @@
 #define         dispTFT_SPI_DMA_REQUEST                 DMA_REQUEST_SPI1_TX
 #endif  //boardIC_TYPE
 
-#define         dispTFT_DMA_PERIPH                      DMA0
-#define         dispTFT_DMA_CH                          DMA_CH4
-#define         dispTFT_DMA_RCU                         RCU_DMA0
-#define     	dispTFT_DMA_TX_IRQ          			DMA0_Channel4_IRQn
-#define     	dispTFT_DMA_TX_IRQ_HANDLER  			DMA0_Channel4_IRQHandler
+#define         dispTFT_DMA_PERIPH                      DMA1
+#define         dispTFT_DMA_CH                          DMA_CH0
+#define         dispTFT_DMA_RCU                         RCU_DMA1
+#define     	dispTFT_DMA_TX_IRQ          			DMA1_Channel0_IRQn
+#define     	dispTFT_DMA_TX_IRQ_HANDLER  			DMA1_Channel0_IRQHandler
 #endif
 
 void vDisp_IfaceInit(void);

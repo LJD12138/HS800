@@ -8,6 +8,7 @@
 #if (boardDISPLAY_EN)
 #include "MD_Display/eez_ui/ui.h"
 #include "MD_Display/eez_ui/vars.h"
+#include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/user_ui/main_1_ui.h"
@@ -72,6 +73,12 @@ void v_disp_queue_task_work(Task_T *tp_task)
         {
             if (tDisp.eDevState != DS_WORK)
                 bDisp_SetDevState(DS_WORK);
+            
+            if (lv_screen_active() != objects.main_work)
+            {
+                loadScreen(SCREEN_ID_MAIN_WORK);
+            }
+            vDisp_Main1UiStart();
             
             v_update_dev_param();
             bDisp_Main1DataUpdate();

@@ -211,48 +211,65 @@ static void v_mppt_param_update(void)
 ************************************************************************************************************************/
 static void v_mppt_auto_switch_chg_source(void)
 {
-    // 如果两个输入任意一个都高于 110V → 全部关闭
-    if(usDcInVolt > 650 || usXT60InVolt > 650){
+    static uint32_t s_ul_xt60_start_tick = 0;
+    static uint32_t s_ul_dc_start_tick = 0;
+
+    // 都超过最大输入电压 → 全部关闭
+    if(usDcInVolt > tAppMemParam.tMPPT.usMaxInVolt || usXT60InVolt > tAppMemParam.tMPPT.usMaxInVolt){
         mpptGPIO_DC_EN_OFF();
         mpptGPIO_XT60_EN_OFF();
         tMppt.eWorkMode = MWM_NULL;
         bMppt_SetErrCode( MEC_MPPT_IN_OV, true );
+        s_ul_xt60_start_tick = 0;
+        s_ul_dc_start_tick = 0;
         return;
     }
     
     bMppt_SetErrCode( MEC_MPPT_IN_OV, false );
     
-    // 如果两个输入都低于 110V → 全部关闭
-    if(usDcInVolt < 50 && usXT60InVolt < 50)
-    {
-        mpptGPIO_DC_EN_OFF();
-        mpptGPIO_XT60_EN_OFF();
-        tMppt.eWorkMode = MWM_NULL;
-        return;
-    }
-
     // PV 优先逻辑
     if(tMppt.eWorkMode == MWM_NULL) {
-        if(usXT60InVolt > 115)
+        if(usXT60InVolt > tAppMemParam.tMPPT.usMinInVolt)
         {
-            tMppt.eWorkMode = MWM_PV;
-            mpptGPIO_DC_EN_OFF();
-            mpptGPIO_XT60_EN_ON();
+			s_ul_xt60_start_tick++;
+			s_ul_dc_start_tick = 0;
+			if(s_ul_xt60_start_tick > (2000 / mpptTASK_CYCLE_TIME))
+            {
+				tMppt.eWorkMode = MWM_PV;
+				mpptGPIO_DC_EN_OFF();
+				mpptGPIO_XT60_EN_ON();
+				s_ul_xt60_start_tick = 0;
+			}
         }
-        else if(usDcInVolt > 115)
+        else if(usDcInVolt > tAppMemParam.tMPPT.usMinInVolt)
         {
-            tMppt.eWorkMode = MWM_DC;
-            mpptGPIO_DC_EN_ON();
-            mpptGPIO_XT60_EN_OFF();
+			s_ul_dc_start_tick++;
+			s_ul_xt60_start_tick = 0;
+			if(s_ul_dc_start_tick > (2000 / mpptTASK_CYCLE_TIME))
+            {
+				tMppt.eWorkMode = MWM_DC;
+				mpptGPIO_DC_EN_ON();	
+				mpptGPIO_XT60_EN_OFF();
+				s_ul_dc_start_tick = 0;
+			}
+        }
+        else
+        {
+            s_ul_xt60_start_tick = 0;
+            s_ul_dc_start_tick = 0;
         }
     } else if(tMppt.eWorkMode == MWM_PV) {
-        if(usXT60InVolt < 50) {
+        s_ul_xt60_start_tick = 0;
+        s_ul_dc_start_tick = 0;
+        if(usXT60InVolt < (tAppMemParam.tMPPT.usMinInVolt * 0.5f)) {
             tMppt.eWorkMode = MWM_NULL;
             mpptGPIO_DC_EN_OFF();
             mpptGPIO_XT60_EN_OFF();
         }
     } else if(tMppt.eWorkMode == MWM_DC) {
-        if(usDcInVolt < 50) {
+        s_ul_xt60_start_tick = 0;
+        s_ul_dc_start_tick = 0;
+        if(usDcInVolt < (tAppMemParam.tMPPT.usMinInVolt * 0.5f)) {
             tMppt.eWorkMode = MWM_NULL;
             mpptGPIO_DC_EN_OFF();
             mpptGPIO_XT60_EN_OFF();

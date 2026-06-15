@@ -71,7 +71,12 @@ void vLight_Task(void *pvParameters)
 	#endif //lightSIMPLE_MODE
 	 
 	for(;;)
-	{		
+	{
+		if((tSysInfo.eDevState == DS_SHUT_DOWN && tLight.eWordMode != LWM_OFF))
+		{
+			v_light_set_state(LWM_OFF);
+		}
+
 	    if(tSysInfo.uPerm.tPerm.bDisChgPerm == true)
 		{
 //			lightPWM_EN_ON();

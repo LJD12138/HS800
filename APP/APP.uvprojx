@@ -278,7 +278,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8010000</StartAddress>
-                <Size>0x64000</Size>
+                <Size>0xc8000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -6795,6 +6795,16 @@
               <FileName>main_1_ui.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\user_ui\main_1_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>eng_mode_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\user_ui\eng_mode_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>eng_mode_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\MD_Display\user_ui\eng_mode_ui.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -35,7 +35,8 @@ void v_disp_queue_task_booting(Task_T *tp_task)
             if(tDisp.eDevState != DS_BOOTING)
                 bDisp_SetDevState(DS_BOOTING);
             ucLoadingStep = 0;
-            ui_init();
+            vDisp_UiInit();
+            vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;

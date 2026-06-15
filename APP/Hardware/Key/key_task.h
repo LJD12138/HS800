@@ -33,9 +33,9 @@
 #define     	keyGPIO_LIGHT_PORT      				GPIOA
 #define     	keyGPIO_LIGHT_PIN       				GPIO_PIN_11
 
-#define     	keyGPIO_USB_RCU        					RCU_GPIOA
-#define     	keyGPIO_USB_PORT        				GPIOA
-#define     	keyGPIO_USB_PIN        					GPIO_PIN_12
+#define     	keyGPIO_USB_RCU        					RCU_GPIOB
+#define     	keyGPIO_USB_PORT        				GPIOB
+#define     	keyGPIO_USB_PIN        					GPIO_PIN_4
 
 #define     	keyGPIO_DC_RCU          				RCU_GPIOB 
 #define     	keyGPIO_DC_PORT         				GPIOB

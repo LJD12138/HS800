@@ -41,7 +41,7 @@ void v_disp_queue_task_shut_down(Task_T *tp_task)
 
         case 1:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            
         }
         break;
         

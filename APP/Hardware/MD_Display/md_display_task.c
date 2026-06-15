@@ -9,6 +9,7 @@
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
 #include "MD_Display/md_display_queue_task.h"
+#include "MD_Display/eez_ui/ui.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 #include "lvgl.h"
@@ -26,6 +27,7 @@ void vDisp_Task(void *pvParameters);
 
 //****************************************************参数初始化**************************************************//
 Disp_T tDisp; 
+bool G_bUiInitialized = false;
 static Task_T *tp_task = NULL;
 
 //****************************************************局部函数定义************************************************//
@@ -295,5 +297,21 @@ void vLcd_ExitLowPower(void)
 	vTaskResume(tDispTaskHandler);
 }
 #endif //boardLOW_POWER
+
+/***********************************************************************************************************************
+ * 函数功能    : 安全的UI及所有屏幕初始化
+ * 说明(备注)  : 用于替代直接调用 ui_init，带有防重入保护
+ * 传入参数    : void
+ * 输出参数    : void
+ * 返回值      : void
+ ************************************************************************************************************************/
+void vDisp_UiInit(void)
+{
+    if (G_bUiInitialized == false)
+    {
+        G_bUiInitialized = true;
+        ui_init();
+    }
+}
 
 #endif //boardDISPLAY_EN

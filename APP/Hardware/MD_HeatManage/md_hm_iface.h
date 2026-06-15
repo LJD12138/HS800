@@ -12,9 +12,9 @@
 #define 		fanPWM_GPIO_PORT                   		GPIOA
 #define 		fanPWM_PIN                         		GPIO_PIN_15
 
-#define 		fanPWM_EN_GPIO_RCU                 		RCU_GPIOC
-#define 		fanPWM_EN_GPIO_PORT                		GPIOC
-#define 		fanPWM_EN_PIN                      		GPIO_PIN_10
+#define 		fanPWM_EN_GPIO_RCU                 		RCU_GPIOA
+#define 		fanPWM_EN_GPIO_PORT                		GPIOA
+#define 		fanPWM_EN_PIN                      		GPIO_PIN_9
 #define 		fanPWM_EN_ON()                     		GPIO_BOP(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN
 #define 		fanPWM_EN_OFF()                    		GPIO_BC(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN
 //#define 		fanPWM_EN_ON()                     		GPIO_BOP(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN;timer_enable(fanTIMER)

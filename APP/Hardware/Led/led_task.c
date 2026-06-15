@@ -88,6 +88,8 @@ void vLed_TaskInit(void)
 ************************************************************************************************************************/
 void vLed_Task(void *pvParameters)
 {
+	static vu16 led_breath_cnt = 0;
+
     #if(boardUSE_OS)
 	for(;;)
 	#endif  //boardUSE_OS
@@ -100,10 +102,10 @@ void vLed_Task(void *pvParameters)
 			case DS_SHUT_DOWN:
 			{	
 				ledPWR_SW_OFF();
-				// ledAC_SW_OFF();
+				ledAC_SW_OFF();
 				ledLight_SW_OFF();
-				// ledUSB_SW_OFF();
-				// ledDC_SW_OFF();
+				ledUSB_SW_OFF();
+				ledDC_SW_OFF();
 				#if(boardUSE_OS)
 				vTaskDelay(ledTASK_CYCLE_TIME);
 				#endif  //boardUSE_OS
@@ -113,6 +115,7 @@ void vLed_Task(void *pvParameters)
 			case DS_BOOTING:
 			{
 				ledPWR_SW_ON();
+				led_breath_cnt = 0;
 				#if(boardUSE_OS)
 				vTaskDelay(ledTASK_CYCLE_TIME);
 				#endif  //boardUSE_OS
@@ -124,26 +127,23 @@ void vLed_Task(void *pvParameters)
 			case DS_WORK:
 			{
 				#if(boardDISPLAY_EN)
-				if(tDisp.bLight == true)
+				if(led_breath_cnt < 0xffff) led_breath_cnt++;
+				if(tDisp.bLight == true || led_breath_cnt < (40))
 					ledPWR_SW_ON();
 				else 
 				#endif  //boardDISPLAY_EN
 					v_led_breathing();
 				
 				#if(boardDCAC_EN)
-				// if(tDcac.eDisChgState >= IOS_STARTING)
-				// 	ledAC_SW_ON();
-				// else 
-				// 	ledAC_SW_OFF();
-				
-				
+				if(tDcac.eDisChgState >= IOS_STARTING)
+					ledAC_SW_ON();
+				else 
+					ledAC_SW_OFF();
 				
 				if(tLight.eDevState == DS_WORK)
 					ledLight_SW_ON();
 				else 
 					ledLight_SW_OFF();
-				
-				
 				
 				#if(boardDCAC_PARA_IN)
 				//USB DC
@@ -157,16 +157,16 @@ void vLed_Task(void *pvParameters)
 				else 
 					ledDC_SW_OFF();
 				#else
-				// //USB
-				// if(tUsb.eDevState >= DS_BOOTING)
-				// 	ledUSB_SW_ON();
-				// else 
-				// 	ledUSB_SW_OFF();
-				// //DC
-				// if(tDc.eDevState >= DS_BOOTING)
-				// 	ledDC_SW_ON();
-				// else 
-				// 	ledDC_SW_OFF();
+				//USB
+				if(tUsb.eDevState >= DS_BOOTING)
+					ledUSB_SW_ON();
+				else 
+					ledUSB_SW_OFF();
+				//DC
+				if(tDc.eDevState >= DS_BOOTING)
+					ledDC_SW_ON();
+				else 
+					ledDC_SW_OFF();
 				#endif
 				
 				#if(boardUSE_OS)

@@ -290,6 +290,8 @@ virtualFolder:
             - path: Hardware/MD_Display/user_ui/img_breath.h
             - path: Hardware/MD_Display/user_ui/main_1_ui.c
             - path: Hardware/MD_Display/user_ui/main_1_ui.h
+            - path: Hardware/MD_Display/user_ui/eng_mode_ui.c
+            - path: Hardware/MD_Display/user_ui/eng_mode_ui.h
           folders: []
     - name: HW-MD_Light
       files:
@@ -707,7 +709,7 @@ targets:
               isChecked: true
               isStartup: true
               mem:
-                size: "0x64000"
+                size: "0xC8000"
                 startAddr: "0x08010000"
               tag: IROM
         useCustomScatterFile: false

@@ -299,7 +299,7 @@ void vDcac_IoEnterLowPower(void)
 -----输出参数    none
 -----返回值      true:成功    false:失败
 ******************************************************************************************************************/
-bool bDcac_DataSendStart(u8* data,u16 len)
+bool bDcac_DataSendStart(u8* data, u16 len)
 {
 	if(len > dcacTX_DMA_BUFF_SIZE)
 		len = dcacTX_DMA_BUFF_SIZE;

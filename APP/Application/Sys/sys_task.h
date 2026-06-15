@@ -23,6 +23,8 @@
 #endif
 #define  		sysCHG_PWR_LEVEL4              		3000
 
+#define     	sysDEV_ADRR							0x20
+
 
 extern bool G_TestMode;
 extern Task_T *tpSysTask;

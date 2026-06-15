@@ -21,10 +21,17 @@
 #include <string.h>
 #include <stdio.h>
 #include "lvgl.h"
+#include "Print/print_api.h"
+#include "Middlewares/LVGL/src/stdlib/lv_mem.h"
+#if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
+#include "MD_Display/md_display_eng_mode.h"
 #include "MD_Display/eez_ui/fonts.h"
+#include "MD_Display/eez_ui/screens.h"
+#include "MD_Display/eez_ui/ui.h"
+#endif
 #include "Sys/sys_task.h"
 #include "Sys/sys_queue_task_eng.h"
 #include "app_info.h"
@@ -45,19 +52,22 @@
 #include "MD_HeatManage/md_hm_task.h"
 #endif
 
+#if(boardMPPT_EN)
+#include "MD_Mppt/md_mppt_rec_task.h"
+#include "MD_Mppt/md_mppt_task.h"
+#endif
+
 #if(boardDCAC_EN)
 #include "MD_Dcac/md_dcac_rec_task.h"
 #include "MD_Dcac/md_dcac_task.h"
 #endif
 
-#if(boardBMS_EN)
-#include "MD_Bms/md_bms_rec_task.h"
-#include "MD_Bms/md_bms_task.h"
+#if(boardDC_EN)
+#include "Dc/dc_task.h"
 #endif
 
-#if(boardMPPT_EN)
-#include "MD_Mppt/md_mppt_rec_task.h"
-#include "MD_Mppt/md_mppt_task.h"
+#if(boardUSB_EN)
+#include "Usb/usb_task.h"
 #endif
 
 #if(boardUSE_OS)
@@ -109,6 +119,9 @@
 #else
 #define ENG_FONT_SMALL          LV_FONT_DEFAULT
 #endif
+
+/* Param Set页: 不可编辑项标记(只读/开关类型) */
+#define PS_ITEM_READONLY        0xFF
 
 
 //****************************************************类型定义************************************************//
@@ -235,6 +248,7 @@ static void v_ps_update_data(void);
 static void v_ps_update_selection(void);
 static void v_ss_update_selection(void);
 static void v_cfm_update_selection(void);
+static void v_ps_adjust_param(bool b_add);
 
 
 //****************************************************辅助函数**************************************************//
@@ -467,12 +481,8 @@ static void v_pv_update_data(void)
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "T_max");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tBmsRx.tDevInfo[0].sMaxTemp);
+            snprintf(buf_r, sizeof(buf_r), "%dC", tBmsRx.tDevInfo[0].sMaxTemp);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
-
-            snprintf(buf_l, sizeof(buf_l), "T_min");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tBmsRx.tDevInfo[0].sMinTemp);
-            v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "Online");
             {
@@ -481,11 +491,17 @@ static void v_pv_update_data(void)
                 else if(tBms.eWorkState == BWS_CHG) p_st = "CHG";
                 snprintf(buf_r, sizeof(buf_r), "%u St:%s", tBmsRx.tDevNum.ucOnlineNum, p_st);
             }
+            v_pv_set_row(5, buf_l, buf_r, ul_accent);
+
+            snprintf(buf_l, sizeof(buf_l), "ChgT");
+            snprintf(buf_r, sizeof(buf_r), "F:%um E:%um",
+                tBmsRx.usChgFullTime, tBmsRx.usDisChgEmptyTime);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "Cap");
-            snprintf(buf_r, sizeof(buf_r), "%.1fAH B:%dC",
-                tBmsRx.tDevInfo[0].usCalcCapAH * 0.1f, tBmsRx.tDevInfo[0].sBoardTempMax);
+            snprintf(buf_r, sizeof(buf_r), "%.1fAH E:0x%04lX",
+                tBmsRx.tDevInfo[0].usCalcCapAH * 0.1f,
+                (unsigned long)tBmsRx.tDevInfo[0].uErrCode.ulCode & 0xFFFF);
             v_pv_set_row(7, buf_l, buf_r, ul_accent);
 
             v_pv_hide_rows(8);
@@ -507,20 +523,23 @@ static void v_pv_update_data(void)
             snprintf(buf_r, sizeof(buf_r), "%.1fW", tMpptRx.usInPwr * 0.1f);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "P_out");
-            snprintf(buf_r, sizeof(buf_r), "%.1fW", tMpptRx.usOutPwr * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "V/I_out");
+            snprintf(buf_r, sizeof(buf_r), "%.1fV %.2fA",
+                tMpptRx.usOutVolt * 0.1f, tMpptRx.usOutCurr * 0.01f);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "V_out");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV", tMpptRx.usOutVolt * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "P_out");
+            snprintf(buf_r, sizeof(buf_r), "%.1fW Pm:%.1fW",
+                tMpptRx.usOutPwr * 0.1f, tMpptRx.usMaxInPwr * 0.1f);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "Temp");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tMpptRx.sMaxTemp);
+            snprintf(buf_r, sizeof(buf_r), "%dC", tMpptRx.sMaxTemp);
             v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "InType");
-            snprintf(buf_r, sizeof(buf_r), "T:%u", (uint8_t)tMpptRx.uInType);
+            snprintf(buf_r, sizeof(buf_r), "T:%u C:%u",
+                (uint8_t)tMpptRx.uInType, (uint8_t)tMppt.bChgPerm);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "ErrCode");
@@ -543,20 +562,17 @@ static void v_pv_update_data(void)
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "P_ac_in");
-            snprintf(buf_r, sizeof(buf_r), "%uW", tDcacRx.usInPwr);
+            snprintf(buf_r, sizeof(buf_r), "%uW %.1fHz", tDcacRx.usInPwr, tDcacRx.usInFreq * 0.1f);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "F_ac_in");
-            snprintf(buf_r, sizeof(buf_r), "%.1fHz", tDcacRx.usInFreq * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "V_ac_out");
+            snprintf(buf_r, sizeof(buf_r), "%.1fV %.1fA",
+                tDcacRx.usOutVolt * 0.1f, tDcacRx.usOutCurr * 0.1f);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "V_ac_out");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV", tDcacRx.usOutVolt * 0.1f);
-            v_pv_set_row(4, buf_l, buf_r, ul_accent);
-
             snprintf(buf_l, sizeof(buf_l), "P_ac_out");
-            snprintf(buf_r, sizeof(buf_r), "%uW", tDcacRx.usOutPwr);
-            v_pv_set_row(5, buf_l, buf_r, ul_accent);
+            snprintf(buf_r, sizeof(buf_r), "%uW %.1fHz", tDcacRx.usOutPwr, tDcacRx.usOutFreq * 0.1f);
+            v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "ChgSt");
             {
@@ -564,6 +580,10 @@ static void v_pv_update_data(void)
                 const char *p_d = (tDcac.eDisChgState == IOS_WORK) ? "DISG" : "OFF";
                 snprintf(buf_r, sizeof(buf_r), "C:%s D:%s", p_c, p_d);
             }
+            v_pv_set_row(5, buf_l, buf_r, ul_accent);
+
+            snprintf(buf_l, sizeof(buf_l), "Temp");
+            snprintf(buf_r, sizeof(buf_r), "H:%dC L:%dC", tDcacRx.sMaxTemp, tDcacRx.sMinTemp);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "State");
@@ -692,7 +712,7 @@ static void v_pv_update_data(void)
             }
 #endif
             snprintf(buf_l, sizeof(buf_l), "ErrCode");
-            snprintf(buf_r, sizeof(buf_r), "0x%08lX", (unsigned long)tSysInfo.uErrCode);
+            snprintf(buf_r, sizeof(buf_r), "0x%04X", tSysInfo.uErrCode.usCode);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "Version");
@@ -705,7 +725,7 @@ static void v_pv_update_data(void)
 
 #if(boardADC_EN)
             snprintf(buf_l, sizeof(buf_l), "BoardTmp");
-            snprintf(buf_r, sizeof(buf_r), "DC:%dC USB:%dC", tAdcSamp.sDcOutTemp, tAdcSamp.sUsbTemp);
+            snprintf(buf_r, sizeof(buf_r), "DC:%dC", tAdcSamp.sDcOutTemp);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "SysVolt");
@@ -1031,6 +1051,107 @@ static void v_ps_update_selection(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 调整当前选中的参数值
+ * 说明(备注)  : b_add=true增加, b_add=false减少; 对于只读/开关类型项做特殊处理
+ ************************************************************************************************************************/
+static void v_ps_adjust_param(bool b_add)
+{
+    uint8_t uc_tab = S_tState.ucPsTab;
+    uint8_t uc_item = S_tState.ucPsItem;
+
+    /* 同步 tEngMode 以便后台任务处理 */
+    tEngMode.ucEngModeItem = uc_item;
+
+    switch(uc_tab)
+    {
+        case 0: /* SYS */
+        {
+            if(uc_item == 0)
+            {
+                /* 版本号: 只读, 不调整 */
+            }
+            else if(uc_item == 1)
+            {
+                /* 风扇控制: 开关类型 */
+                #if(boardHEAT_MANAGE_EN)
+                if(b_add)
+                    vFan_ForceOpenFan(true);
+                else
+                    vFan_ForceOpenFan(false);
+                #endif
+                tEngMode.cEngModeState = b_add ? 1 : 0;
+            }
+            else if(uc_item == 6)
+            {
+                /* 蜂鸣器开关: 取反 */
+                tAppMemParam.tSYS.bBuzSwitchOff = b_add ? 0 : 1;
+                tEngMode.cEngModeState = b_add ? 1 : 0;
+            }
+            else
+            {
+                /* 可调参数项 2~5 */
+                vSys_MemParamSet(uc_item, b_add);
+                tEngMode.cEngModeState = b_add ? 1 : -1;
+            }
+        }break;
+
+#if(boardDISPLAY_EN)
+        case 1: /* LCD */
+        {
+            tEngMode.ucEngModeItem = uc_item;
+            vDisp_MemParamSet(b_add);
+            tEngMode.cEngModeState = b_add ? 1 : -1;
+        }break;
+#endif
+
+#if(boardBMS_EN)
+        case 2: /* BAT */
+        {
+            vBms_MemParamSet(uc_item, b_add);
+            tEngMode.cEngModeState = b_add ? 1 : -1;
+        }break;
+#endif
+
+#if(boardMPPT_EN)
+        case 3: /* MPPT */
+        {
+            vMppt_MemParamSet(uc_item, b_add);
+            tEngMode.cEngModeState = b_add ? 1 : -1;
+        }break;
+#endif
+
+#if(boardDCAC_EN)
+        case 4: /* DCAC */
+        {
+            vDcac_MemParamSet(uc_item, b_add);
+            tEngMode.cEngModeState = b_add ? 1 : -1;
+        }break;
+#endif
+
+#if(boardUSB_EN)
+        case 5: /* USB */
+        {
+            vUsb_MemParamSet(uc_item, b_add);
+            tEngMode.cEngModeState = b_add ? 1 : -1;
+        }break;
+#endif
+
+#if(boardDC_EN)
+        case 6: /* DC */
+        {
+            vDc_MemParamSet(uc_item, b_add);
+            tEngMode.cEngModeState = b_add ? 1 : -1;
+        }break;
+#endif
+
+        default:
+            break;
+    }
+
+    S_tState.bNeedRefresh = true;
+}
+
 
 //****************************************************系统设置页面************************************************//
 
@@ -1215,10 +1336,8 @@ void vEngMode_KeyUp(void)
 
         case ENG_PAGE_PARAM_SET:
         {
-            /* 调整参数值 (+1) */
-            tEngMode.ucEngModeItem = S_tState.ucPsItem;
-            tEngMode.cEngModeState = 1;
-            S_tState.bNeedRefresh = true;
+            /* 增加参数值 */
+            v_ps_adjust_param(true);
         }break;
 
         case ENG_PAGE_SYS_SET:
@@ -1251,10 +1370,8 @@ void vEngMode_KeyDown(void)
 
         case ENG_PAGE_PARAM_SET:
         {
-            /* 调整参数值 (-1) */
-            tEngMode.ucEngModeItem = S_tState.ucPsItem;
-            tEngMode.cEngModeState = -1;
-            S_tState.bNeedRefresh = true;
+            /* 减少参数值 */
+            v_ps_adjust_param(false);
         }break;
 
         case ENG_PAGE_SYS_SET:
@@ -1365,16 +1482,26 @@ void vEngMode_KeyEnter(void)
                 switch(S_tState.ucSsSel)
                 {
                     case 0: /* SAVE & EXIT */
-                        tpSysTask->ucStep = EMS_SET;
-                        tEngMode.ucEngModeItem = 0;
-                        tEngMode.cEngModeState = 1;
-                        break;
+                    {
+                        /* 保存所有参数到 Flash */
+                        cApp_UpdateMemParam("tAppMemParam");
+                        /* 退出工程模式 -> 开机工作 */
+                        vEngMode_UiDelete();
+                        cSys_Switch(SO_KEY, ST_ON, false);
+                        S_tState.bExitReq = true;
+                    }break;
 
                     case 1: /* RESET DEFAULTS */
-                        tpSysTask->ucStep = EMS_SET;
-                        tEngMode.ucEngModeItem = 1;
-                        tEngMode.cEngModeState = 1;
-                        break;
+                    {
+                        /* 重置所有参数为默认值 */
+                        cApp_MemParamInit("tAppMemParam");
+                        /* 保存到 Flash */
+                        cApp_UpdateMemParam("tAppMemParam");
+                        /* 退出工程模式 -> 关机 */
+                        vEngMode_UiDelete();
+                        cSys_Switch(SO_KEY, ST_OFF, false);
+                        S_tState.bExitReq = true;
+                    }break;
 
                     case 2: /* FIRMWARE UPDATE */
                         vApp_JumpToBoot(mainUPDATE_FLAG);
@@ -1426,6 +1553,12 @@ void vEngMode_KeyBack(void)
 
 void vEngMode_UiCreate(void)
 {
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: entering, free_size = %d\r\n", (int)t_mon.free_size);
+    }
+
     /* 清除旧UI */
     if(S_tObjs.p_base != NULL)
         vEngMode_UiDelete();
@@ -1441,8 +1574,11 @@ void vEngMode_UiCreate(void)
     S_tState.ucConfirmSel = 0;
     S_tState.bExitReq = false;
 
+    /* 切换到EEZ Studio预定义的工程模式专用屏幕, 避免与工作屏幕的对象树重叠 */
+    lv_screen_load(objects.main_eng);
+
     /* 创建基础容器 */
-    lv_obj_t *p_base = lv_obj_create(lv_screen_active());
+    lv_obj_t *p_base = lv_obj_create(objects.main_eng);
     lv_obj_set_pos(p_base, 0, 0);
     lv_obj_set_size(p_base, ENG_SCREEN_W, ENG_SCREEN_H);
     lv_obj_remove_flag(p_base, LV_OBJ_FLAG_SCROLLABLE);
@@ -1473,14 +1609,49 @@ void vEngMode_UiCreate(void)
     memset(&S_tObjs.p_menu_page, 0,
         (uint8_t *)&S_tObjs.p_cfm_lbls[1] + sizeof(lv_obj_t *) - (uint8_t *)&S_tObjs.p_menu_page);
 
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: creating menu page, free_size = %d\r\n", (int)t_mon.free_size);
+    }
     v_page_create_menu();
+
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: creating pv page, free_size = %d\r\n", (int)t_mon.free_size);
+    }
     v_page_create_pv();
+
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: creating ps page, free_size = %d\r\n", (int)t_mon.free_size);
+    }
     v_page_create_ps();
+
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: creating ss page, free_size = %d\r\n", (int)t_mon.free_size);
+    }
     v_page_create_ss();
+
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: creating cfm page, free_size = %d\r\n", (int)t_mon.free_size);
+    }
     v_page_create_cfm();
 
     /* 显示主菜单 */
     v_page_show(ENG_PAGE_MAIN_MENU);
+
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: finished, free_size = %d\r\n", (int)t_mon.free_size);
+    }
 }
 
 void vEngMode_UiDelete(void)

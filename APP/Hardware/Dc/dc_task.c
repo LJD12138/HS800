@@ -103,6 +103,7 @@ void vDc_Task(void *pvParameters)
 {
 	s8 c_ret = 0;
 	static vu16 us_pwr_exist_cnt = 0;
+	static uint16_t s_us_boot_delay_cnt = 0;
 	
 	#if(boardUSE_OS)
     for(;;)
@@ -232,6 +233,13 @@ void vDc_Task(void *pvParameters)
 			//计算DC 总功率
             tDc.usOutPwr = (tDc.usOutCurr * tDc.usOutVolt) / 100;
 			
+			/* 开启的前2S不显示功率 */
+			if(s_us_boot_delay_cnt < (2000 / dcTASK_CYCLE_TIME))
+			{
+				s_us_boot_delay_cnt++;
+				tDc.usOutPwr = 0;
+			}
+			
 			if(tDc.usOutPwr > 1)
 				us_pwr_exist_cnt ++;
 			else 
@@ -249,6 +257,7 @@ void vDc_Task(void *pvParameters)
 			tDc.usOutVolt = 0;
 			tDc.usOutCurr = 0;
 			tDc.usOutPwr = 0;
+			s_us_boot_delay_cnt = 0;
 		}
 			
 		

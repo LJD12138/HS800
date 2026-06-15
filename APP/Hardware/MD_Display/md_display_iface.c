@@ -541,7 +541,7 @@ static void v_tft_spi_dma_finish_isr(void)
 -----日期        2026-05-29
 ************************************************************************************************************************/
 #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-void DMA0_Channel4_IRQHandler(void)
+void dispTFT_DMA_TX_IRQ_HANDLER(void)
 {
     #if(boardUSE_OS)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;

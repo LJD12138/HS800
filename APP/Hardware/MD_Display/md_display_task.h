@@ -80,6 +80,7 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en);
 void vDisp_TickTimer(void);
 bool bDisp_MemParamInit(DispMemParam_T* p_disp_mem);
 u16 usDisp_ErrCodeDisplay(void);
+void vDisp_UiInit(void);
 
 #if(!boardUSE_OS)
 void vDisp_Task(void *pvParameters);

@@ -101,12 +101,12 @@
 #endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 //DMA 
-#define     	gpioUART3_DMA                     		DMA1
-#define     	gpioUART3_DMA_RCU                 		RCU_DMA1
-#define     	gpioUART3_DMA_RX_CH               		DMA_CH2
-#define     	gpioUART3_DMA_TX_CH               		DMA_CH4
-#define     	gpioUART3_DMA_TX_IRQ              		DMA1_Channel3_Channel4_IRQn
-#define     	gpioUART3_DMA_TX_IRQ_HANDLER      		DMA1_Channel3_4_IRQHandler
+#define     	gpioUART3_DMA                     		DMA0
+#define     	gpioUART3_DMA_RCU                 		RCU_DMA0
+#define     	gpioUART3_DMA_RX_CH               		DMA_CH3
+#define     	gpioUART3_DMA_TX_CH               		DMA_CH5
+#define     	gpioUART3_DMA_TX_IRQ              		DMA0_Channel5_IRQn
+#define     	gpioUART3_DMA_TX_IRQ_HANDLER      		DMA0_Channel5_IRQHandler
 
 //************************************UART4***************************
 #define     	gpioUART4_GPIO_RX_RCU                  	RCU_GPIOD

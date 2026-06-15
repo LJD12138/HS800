@@ -49,7 +49,7 @@ bool S_bDevDcState;     // DC设备状态
 
 static EnergyRing_T s_tEnergyRing;
 static bool S_bMain1InitialFinish = false;
-static bool S_bTestAllParam = true;
+static bool S_bTestAllParam = false;
 
 //****************************************************Function Declaration****************************************************//
 

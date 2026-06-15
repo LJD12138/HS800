@@ -94,10 +94,12 @@
 #define     	bmsUSART_GPIO_RX_RCU           			gpioUART3_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO          			gpioUART3_GPIO_RX_PORT
 #define     	bmsUSART_GPIO_RX_PIN           			gpioUART3_GPIO_RX_PIN
+#define     	bmsUSART_GPIO_RX_AF           			gpioUART3_GPIO_RX_AF
 //TX
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUART3_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUART3_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUART3_GPIO_TX_PIN
+#define     	bmsUSART_GPIO_TX_AF           			gpioUART3_GPIO_TX_AF
 //串口
 #define     	bmsUSART_RCU           					RCU_UART3
 #define     	bmsUSART               					UART3

@@ -24,13 +24,13 @@
 #define     	flashBOOT_END           				(flashBOOT_START + flashBOOT_SIZE - 1)              
 
 //APP数据：   	800K                    				地址偏移：0x0801_0000--0x0807_3FFF 
-#define     	flashAPP_SIZE           				(200 * FLASH_PAGE_SIZE)
+#define     	flashAPP_SIZE           				(400 * FLASH_PAGE_SIZE)
 #define     	flashAPP_START          				(flashBOOT_END + 1)    
 #define     	flashAPP_END            				(flashAPP_START + flashAPP_SIZE - 1)
 
 //APP信息：   	30K                      				地址偏移：0x0803_F000--0x0803_FFFF   
 #define     	flashAPP_INFO_SIZE      				(15 * FLASH_PAGE_SIZE)
-#define     	flashAPP_INFO_SATRT     				(flashAPP_END + 1)
+#define     	flashAPP_INFO_SATRT     				(flashAPP_END + 1 + FLASH_PAGE_SIZE)
 #define     	flashAPP_INFO_END		 				(flashAPP_INFO_SATRT + flashAPP_INFO_SIZE - 1)
 
 //BOOT信息：  	和APP公用地址 
