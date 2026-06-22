@@ -48,6 +48,7 @@ void vDisp_Main1Exit(void);
 bool bDisp_Main1DataUpdate(void);
 void vDisp_SetDevStateIcon(DevType_E devType, u8 ucState);
 void vDisp_SetAcWorkMode(ImgAnimMode_E eMode);
+void vDisp_UpdateDevParam(void);
 
 /* ==========================================types=======================================*/
 

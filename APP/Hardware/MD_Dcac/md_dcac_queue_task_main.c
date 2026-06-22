@@ -78,25 +78,22 @@ void v_dcac_queue_task_main(Task_T *tp_task)
         {
 			if(b_dcac_cs_get_param1() == true)  //获取参数
 				cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-			else
-				break;
         }
+		break;
 		
 		case 1:
         {
 			if(b_dcac_cs_get_param2() == true)  //获取参数
 				cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-			else
-				break;
         }
+		break;
 		
 		case 2:
         {
 			if(b_dcac_cs_get_param3() == true)  //获取参数
 				cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-			else
-				break;
         }
+		break;
 		
 		case 3:
         {
@@ -740,7 +737,7 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	{
 		us_last_total_chg_pwr = us_total_chg_pwr;
 		us_total_chg_pwr_err_cnt = 0;
-		// sMyPrint("设置总的充电功率 %d\r\n",us_total_chg_pwr);
+		sMyPrint("设置总的充电功率 %d\r\n",us_total_chg_pwr);
 	}
 }
 
@@ -794,7 +791,7 @@ __STATIC_INLINE void v_set_ac_chg_pwr(void)
 	{
 		us_last_chg_pwr = us_chg_pwr;
 		us_chg_pwr_err = 0;
-		// sMyPrint("设置AC充电功率 %d",us_chg_pwr);
+		sMyPrint("设置AC充电功率 %d\r\n",us_chg_pwr);
 	}	
 }
 #endif  //boardDCAC_EN

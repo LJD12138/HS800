@@ -57,9 +57,8 @@ void v_mppt_queue_task_main(Task_T *tp_task)
 			//发送成功
 			if(result > 0)
 				cQueue_GotoStep(tp_task, STEP_NEXT);
-			else
-				break;
         }
+		break;
 		
 		case 1:
         {

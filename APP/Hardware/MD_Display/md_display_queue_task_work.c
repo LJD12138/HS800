@@ -38,12 +38,9 @@
 //****************************************************局部变量定义************************************************//
 static TickType_t s_tDispWorkLastDataUpdateTick = 0U;
 static bool s_bDispWorkDataUpdateTickValid = false;
+static u8 uc_refresh_ui_index = 0U;
 
 //****************************************************局部函数定义************************************************//
-static void v_update_dev_param(void);
-#if (boardBMS_EN)
-static void v_disp_work_format_remaining_time(char *pc_str, size_t str_size, u16 us_total_minutes);
-#endif
 
 /***********************************************************************************************************************
 -----函数功能    工作显示任务
@@ -75,13 +72,9 @@ void v_disp_queue_task_work(Task_T *tp_task)
                 bDisp_SetDevState(DS_WORK);
             
             if (lv_screen_active() != objects.main_work)
-            {
                 loadScreen(SCREEN_ID_MAIN_WORK);
-            }
-            vDisp_Main1UiStart();
-            
-            v_update_dev_param();
-            bDisp_Main1DataUpdate();
+
+            uc_refresh_ui_index = 0U;
             vDisp_UiRefresh();
             bDisp_Switch(ST_ON, true);
             s_tDispWorkLastDataUpdateTick = xTaskGetTickCount();
@@ -89,6 +82,14 @@ void v_disp_queue_task_work(Task_T *tp_task)
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
+
+        // //加载能量环数据
+        // case 1: 
+        // {
+        //     vDisp_UpdateDevParam();
+        //     uc_refresh_ui_index++;
+        // }
+        // break;
 
         // 持续刷新显示
         case 1: 
@@ -102,8 +103,27 @@ void v_disp_queue_task_work(Task_T *tp_task)
                 {
                     s_tDispWorkLastDataUpdateTick = t_now_tick;
                     s_bDispWorkDataUpdateTickValid = true;
-                    v_update_dev_param();
-                    bDisp_Main1DataUpdate();
+
+                    switch(uc_refresh_ui_index)
+                    {
+                       case 0U:
+                       {
+                            vDisp_UpdateDevParam();
+                            uc_refresh_ui_index++;
+                       }
+                       break;
+
+                       case 1U:
+                       {
+                            bDisp_Main1DataUpdate();
+                            uc_refresh_ui_index = 0U;
+                       }
+                       break;
+                    
+                       default:
+                            uc_refresh_ui_index = 0U;
+                            break;
+                    }
                 }
 
                 vDisp_UiRefresh();
@@ -128,94 +148,5 @@ void v_disp_queue_task_work(Task_T *tp_task)
 
     vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_LVGL_PERIOD_MS));
 }
-
-/***********************************************************************************************************************
------函数功能    更新设备参数
------说明(备注)  这里只需要更新数据,eez_ui里面会根据数据变化自动更新显示;但是DevStateIcon需要单独更新,在user_ui中实现
------传入参数    none
------输出参数    none
------返回值      true:文本数据有变化 false:文本数据无变化
------日期        2026-05-28
-************************************************************************************************************************/
-__STATIC_INLINE void v_update_dev_param(void)
-{
-    char cStr[10];
-
-    #if (boardBMS_EN)
-    snprintf(cStr, sizeof(cStr), "%d", tBmsRx.usSOC);
-    set_var_uca_bat_soc_value(cStr);
-
-    u16 usTotalMinutes;
-    if (tBms.eWorkState == BWS_CHG)
-        usTotalMinutes = tBmsRx.usChgFullTime;
-    else
-        usTotalMinutes = tBmsRx.usDisChgEmptyTime;
-    v_disp_work_format_remaining_time(cStr, sizeof(cStr), usTotalMinutes);
-    set_var_uca_remaining_usage_time(cStr);
-    #endif // boardBMS_EN
-
-    #if (boardUSB_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_USB, tUsb.eDevState);
-    #endif // boardUSB_EN
-
-    #if (boardDC_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_DC, tDc.eDevState);
-    #endif // boardDC_EN
-
-    #if (boardMPPT_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_PV, tMppt.eDevState);
-    #endif // boardMPPT_EN
-
-    #if (boardDCAC_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_AC_OUT, tDcac.eDisChgState);
-    vDisp_SetDevStateIcon(DEV_TYPE_AC_IN, tDcac.eChgState);
-    #endif // boardDCAC_EN
-    
-    snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usOutPwr);
-    set_var_uca_out_pwr_value(cStr);
-
-    snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usInPwr);
-    set_var_uca_in_pwr_value(cStr);
-
-    // 故障码轮询显示: 切换间隙(返回100)时不更新错误码文本,
-    // 避免将"100"字符串显示到标签上, 同时配合 user_ui 的可见性控制实现闪烁效果
-    u16 us_err_code = usDisp_ErrCodeDisplay();
-    // u16 us_err_code = 88;//测试
-    if (us_err_code != 100)
-    {
-        snprintf(cStr, sizeof(cStr), "E%d", us_err_code);
-        set_var_uca_err_code_value(cStr);
-    }
-}
-
-/***********************************************************************************************************************
------函数功能    格式化剩余使用时间
------说明(备注)  将分钟数转换为固定宽度的小时/分钟显示文本
------传入参数    pc_str:输出缓存  str_size:缓存大小  us_total_minutes:总分钟数
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-#if (boardBMS_EN)
-__STATIC_INLINE void v_disp_work_format_remaining_time(char *pc_str, size_t str_size, u16 us_total_minutes)
-{
-    u16 us_hours = us_total_minutes / 60U;
-    u16 us_minutes = us_total_minutes % 60U;
-
-    if (us_hours > 99U)
-    {
-        us_hours = 99U;
-        us_minutes = 99U;
-    }
-
-    if (us_hours >= 10U && us_minutes >= 10U)
-        snprintf(pc_str, str_size, "%2uh %2um", (unsigned int)us_hours, (unsigned int)us_minutes);
-    else if (us_hours >= 10U)
-        snprintf(pc_str, str_size, "%2uh  %1um", (unsigned int)us_hours, (unsigned int)us_minutes);
-    else if (us_minutes >= 10U)
-        snprintf(pc_str, str_size, " %1uh %2um", (unsigned int)us_hours, (unsigned int)us_minutes);
-    else
-        snprintf(pc_str, str_size, " %1uh  %1um", (unsigned int)us_hours, (unsigned int)us_minutes);
-}
-#endif // boardBMS_EN
 
 #endif /*boardDISPLAY_EN*/

@@ -48,7 +48,12 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 		proto_rx->ucCmd == modbusREAD_MULTI_BIT)
 	{
 		if(proto_rx->ucCharLen != proto_tx->ucCharLen)
+		{
+			if(uPrint.tFlag.bDcacRecTask || uPrint.tFlag.bImportant)
+				log_w("bDcacRecTask:迟到回复(期望长度%d,收到%d),当前等待寄存器%d",
+					proto_tx->ucCharLen, proto_rx->ucCharLen, proto_tx->usRegAddr);
 			return -1;
+		}
 		if(proto_rx->ucValidLen != proto_rx->ucCharLen || proto_rx->ucpValidData == NULL)
 			return -7;
 	}

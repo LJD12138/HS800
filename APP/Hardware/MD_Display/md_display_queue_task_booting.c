@@ -13,6 +13,7 @@
 #include "MD_Display/eez_ui/ui.h"
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "Print/print_task.h"
+#include "lvgl.h"
 
 #define dispTASK_BOOTING_CYCLE_TIME         33
 
@@ -35,6 +36,7 @@ void v_disp_queue_task_booting(Task_T *tp_task)
             if(tDisp.eDevState != DS_BOOTING)
                 bDisp_SetDevState(DS_BOOTING);
             ucLoadingStep = 0;
+            vDisp_UpdateDevParam();
             vDisp_UiInit();
             vDisp_UiRefresh();
             cQueue_GotoStep(tp_task, STEP_NEXT);
@@ -57,36 +59,20 @@ void v_disp_queue_task_booting(Task_T *tp_task)
         }
         break;
 
-        //进度条到100后停留50ms
+        //关背光,切换到Work屏,渲染完成后立即亮屏
         case 2:
         {
-            // tp_task->usStepWaitCnt++;
-            // if(tp_task->usStepWaitCnt >= (250 / dispTASK_BOOTING_CYCLE_TIME))
-            {
-                bDisp_Switch(ST_OFF, true);
-                cQueue_GotoStep(tp_task, STEP_NEXT);
-            } 
-        }
-        // break;
-
-        //关背光,切换到Work屏,初始化Work UI
-        case 3:
-        {
+            bDisp_Switch(ST_OFF, true);
+            /* 先立即加载屏幕(无动画),再调用loadScreen仅更新currentScreen,
+               因act_scr已等于main_work,loadScreen内部的lv_scr_load_anim会直接返回 */
+            lv_scr_load(objects.main_work);
             loadScreen(SCREEN_ID_MAIN_WORK);
             vDisp_Main1UiStart();
             vDisp_UiRefresh();
-            cQueue_GotoStep(tp_task, STEP_NEXT);
-        }
-        break;
-
-        //等待LVGL渲染完成后结束
-        case 4:
-        {
-            vDisp_UiRefresh();
-            vDisp_UiRefresh();
+            bDisp_Switch(ST_ON, true);
             cQueue_GotoStep(tp_task, STEP_END);
+            return;
         }
-        break;
 
         default:
             cQueue_GotoStep(tp_task, STEP_END);

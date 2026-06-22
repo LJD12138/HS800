@@ -21,7 +21,7 @@
 
 //MPPT设备地址
 #define       	mpptDEV_ADRR                          	0x01
-#define  		mpptWAIT_NOTIFY_OUTTIME              	1000     //任务通知超时时间 MS
+#define  		mpptWAIT_NOTIFY_OUTTIME              	1500     //任务通知超时时间 MS
 
 //****************************************************参数初始化**************************************************//
 __ALIGNED(4) 	ModbusProtoTx_t *tpMpptProtoTx = NULL;	//发送协议
