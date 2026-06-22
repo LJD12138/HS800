@@ -34,6 +34,10 @@
 #define     	bmsUSART_DMA_TX_CH           			gpioUSART0_DMA_TX_CH
 #define     	bmsUSART_DMA_TX_IRQ          			gpioUSART0_DMA_TX_IRQ
 #define     	bmsUSART_DMA_TX_IRQ_HANDLER  			gpioUSART0_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART0_TX
+#define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART0_RX
+#endif
 #endif  //bmsUSART_DMA_EN
 
 
@@ -60,6 +64,10 @@
 #define     	bmsUSART_DMA_TX_CH           			gpioUSART1_DMA_TX_CH
 #define     	bmsUSART_DMA_TX_IRQ          			gpioUSART1_DMA_TX_IRQ
 #define     	bmsUSART_DMA_TX_IRQ_HANDLER  			gpioUSART1_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART1_TX
+#define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART1_RX
+#endif
 #endif  //bmsUSART_DMA_EN
 
 
@@ -86,6 +94,10 @@
 #define     	bmsUSART_DMA_TX_CH           			gpioUSART2_DMA_TX_CH
 #define     	bmsUSART_DMA_TX_IRQ          			gpioUSART2_DMA_TX_IRQ
 #define     	bmsUSART_DMA_TX_IRQ_HANDLER  			gpioUSART2_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART2_TX
+#define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART2_RX
+#endif
 #endif  //bmsUSART_DMA_EN
 
 
@@ -114,6 +126,10 @@
 #define     	bmsUSART_DMA_TX_CH           			gpioUART3_DMA_TX_CH
 #define     	bmsUSART_DMA_TX_IRQ          			gpioUART3_DMA_TX_IRQ
 #define     	bmsUSART_DMA_TX_IRQ_HANDLER  			gpioUART3_DMA_TX_IRQ_HANDLER
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_UART3_TX
+#define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_UART3_RX
+#endif
 #endif  //bmsUSART_DMA_EN
 
 

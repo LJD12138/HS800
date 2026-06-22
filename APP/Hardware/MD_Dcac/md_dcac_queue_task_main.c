@@ -398,17 +398,17 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	// }
 	// else
 	{
-		us_overload_pwr = tAppMemParam.tDCAC.usOutPwrRating * 1.2f;
-		us_overload_pwr1 = tAppMemParam.tDCAC.usOutPwrRating * 1.3f;
+		us_overload_pwr = tAppMemParam.tDCAC.usOutPwrRating * 1.5f;
+		us_overload_pwr1 = tAppMemParam.tDCAC.usOutPwrRating * 2.0f;
 	}		
 	
 	if(tDcacRx.usOutPwr > tAppMemParam.tDCAC.usOverLoadPwr)
 	{
 		if(tDcacRx.usOutPwr >= us_overload_pwr1)
 		{
-			if(us_temp != 4)
+			if(us_temp != 2)
 				us_overload_cnt = 0;
-			us_temp = 4;
+			us_temp = 2;
 		}
 		else if(tDcacRx.usOutPwr >= us_overload_pwr)
 		{

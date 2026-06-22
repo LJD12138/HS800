@@ -50,7 +50,7 @@ const char tSysMemParamStr[]	= "tSYS";
 const __attribute__((at(flashAPP_START + FLASH_PAGE_SIZE)))  VerInfo_T tAppDefaultVer = {
 #elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
 /* ARMCLANG不支持at属性,使用section放置到固定地址 */
-const __attribute__((section(".ARM.__at_0x08010800"))) __attribute__((used)) VerInfo_T tAppDefaultVer = {
+const __attribute__((section(".ARM.__at_0x08020000"))) __attribute__((used)) VerInfo_T tAppDefaultVer = {
 #else
 const VerInfo_T tAppDefaultVer = {
 #endif

@@ -7,6 +7,7 @@
 
 //#define		//4Tab									//10Tab
 #define			sysLOW_POWER_MODE						0      //0:不进入休眠   1:睡眠模式   2:待机模式
+#define     	sysDEV_ADRR								0x20
 extern 			Task_T									*tpSysTask;
 
 //*******任务 ID  ************************************************

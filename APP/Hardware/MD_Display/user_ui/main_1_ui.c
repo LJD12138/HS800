@@ -19,15 +19,20 @@
 //****************************************************Includes******************************************************************//
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "MD_Bms/md_bms_task.h"
+#include "main.h"
 #include <stdbool.h>
 
 #if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/eez_ui/screens.h"
+#include "MD_Display/eez_ui/images.h"
 #include "MD_Display/user_ui/energy_ring.h"
 #include "Sys/sys_task.h"
 
 #include "MD_Dcac/md_dcac_task.h"
+#if(boardMPPT_EN)
+#include "MD_Mppt/md_mppt_task.h"
+#endif
 
 #include "lvgl.h"
 
@@ -37,15 +42,15 @@
 
 //****************************************************Parameter Initialization************************************************//
 // 设备状态
-bool S_bDevAcOutState;  // AC输出设备状态(true=开, false=关)
-bool S_bDevAcInState;   // AC输入设备状态(true=开, false=关)
-bool S_bDevPvState;     // PV设备状态
-// bool S_bDevLightState;  // Light设备状态
-bool S_bDevUsbState;    // USB设备状态
-// bool S_bDevUsbAState;   // USB A设备状态
-// bool S_bDevUsbC1State;  // USB C1设备状态
-// bool S_bDevUsbC2State;  // USB C2设备状态
-bool S_bDevDcState;     // DC设备状态
+bool S_bDevAcOutShow;  // AC输出设备显示(true=开, false=关)
+bool S_bDevAcInShow;   // AC输入设备显示(true=开, false=关)
+bool S_bDevPvShow;     // PV设备显示(true=开, false=关)
+// bool S_bDevLightState;  // Light设备显示(true=开, false=关)
+bool S_bDevUsbShow;    // USB设备显示(true=开, false=关)
+// bool S_bDevUsbAState;   // USB A设备显示(true=开, false=关)
+// bool S_bDevUsbC1State;  // USB C1设备显示(true=开, false=关)
+// bool S_bDevUsbC2State;  // USB C2设备显示(true=开, false=关)
+bool S_bDevDcShow;     // DC设备显示(true=开, false=关)
 
 static EnergyRing_T s_tEnergyRing;
 static bool S_bMain1InitialFinish = false;
@@ -91,56 +96,85 @@ bool b_disp_update_all_dev_states(bool b_force)
 	static int8_t s_last_dev_ac_out_state = -1;
 	static int8_t s_last_dev_ac_in_state = -1;
 	static int8_t s_last_dev_pv_state = -1;
+	#if(boardMPPT_EN)
+	static int8_t s_last_pv_work_mode = -1;
+	#endif
 	static int8_t s_last_dev_usb_state = -1;
 	static int8_t s_last_dev_dc_state = -1;
 
-	bool b_ac_out_state = S_bDevAcOutState;
-	bool b_ac_in_state = S_bDevAcInState;
-	bool b_pv_state = S_bDevPvState;
-	bool b_usb_state = S_bDevUsbState;
-	bool b_dc_state = S_bDevDcState;
+	bool b_ac_out_show = S_bDevAcOutShow;
+	bool b_ac_in_show = S_bDevAcInShow;
+	bool b_pv_show = S_bDevPvShow;
+	bool b_usb_show = S_bDevUsbShow;
+	bool b_dc_show = S_bDevDcShow;
 
 	if (S_bTestAllParam)
 	{
-		b_ac_out_state = true;
-		b_ac_in_state = true;
-		b_pv_state = true;
-		b_usb_state = true;
-		b_dc_state = true;
+		b_ac_out_show = true;
+		b_ac_in_show = true;
+		b_pv_show = true;
+		b_usb_show = true;
+		b_dc_show = true;
 	}
 	
-	if(s_last_dev_ac_out_state != b_ac_out_state || b_force)
+	if(s_last_dev_ac_out_state != b_ac_out_show || b_force)
 	{
-		s_last_dev_ac_out_state = b_ac_out_state;
-		v_disp_set_icon_visible(objects.b_dev_ac_out_state, b_ac_out_state);
+		s_last_dev_ac_out_state = b_ac_out_show;
+		v_disp_set_icon_visible(objects.b_dev_ac_out_state, b_ac_out_show);
         b_ret = true;
 	}
 
-	if(s_last_dev_ac_in_state != b_ac_in_state || b_force)
+	if(s_last_dev_ac_in_state != b_ac_in_show || b_force)
 	{
-		s_last_dev_ac_in_state = b_ac_in_state;
-		v_disp_set_icon_visible(objects.b_dev_ac_in_state, b_ac_in_state);
+		s_last_dev_ac_in_state = b_ac_in_show;
+		v_disp_set_icon_visible(objects.b_dev_ac_in_state, b_ac_in_show);
         b_ret = true;
 	}
 	
-	if(s_last_dev_pv_state != b_pv_state || b_force)
+	#if(boardMPPT_EN)
+	MpptWorkMode_E e_work_mode = tMppt.eWorkMode;
+	if(s_last_dev_pv_state != b_pv_show || s_last_pv_work_mode != (int8_t)e_work_mode || b_force)
 	{
-		s_last_dev_pv_state = b_pv_state;
-		v_disp_set_icon_visible(objects.b_dev_pv_state, b_pv_state);
+		s_last_dev_pv_state = b_pv_show;
+		s_last_pv_work_mode = (int8_t)e_work_mode;
+		if(b_pv_show)
+		{
+			if(e_work_mode == MWM_DC)
+			{
+				lv_image_set_src(objects.b_dev_pv_state, &img_icon_dc);
+			}
+			else
+			{
+				lv_image_set_src(objects.b_dev_pv_state, &img_icon_tx60);
+			}
+			v_disp_set_icon_visible(objects.b_dev_pv_state, true);
+		}
+		else
+		{
+			v_disp_set_icon_visible(objects.b_dev_pv_state, false);
+		}
         b_ret = true;
 	}
+	#else
+	if(s_last_dev_pv_state != b_pv_show || b_force)
+	{
+		s_last_dev_pv_state = b_pv_show;
+		v_disp_set_icon_visible(objects.b_dev_pv_state, b_pv_show);
+        b_ret = true;
+	}
+	#endif
 
-	if(s_last_dev_usb_state != b_usb_state || b_force)
+	if(s_last_dev_usb_state != b_usb_show || b_force)
 	{
-		s_last_dev_usb_state = b_usb_state;
-		v_disp_set_icon_visible(objects.b_dev_usb_state, b_usb_state);
+		s_last_dev_usb_state = b_usb_show;
+		v_disp_set_icon_visible(objects.b_dev_usb_state, b_usb_show);
         b_ret = true;
 	}
 	
-	if(s_last_dev_dc_state != b_dc_state || b_force)
+	if(s_last_dev_dc_state != b_dc_show || b_force)
 	{
-		s_last_dev_dc_state = b_dc_state;
-		v_disp_set_icon_visible(objects.b_dev_dc_state, b_dc_state);
+		s_last_dev_dc_state = b_dc_show;
+		v_disp_set_icon_visible(objects.b_dev_dc_state, b_dc_show);
         b_ret = true;
 	}
 
@@ -369,36 +403,131 @@ bool bDisp_Main1DataUpdate(void)
 /*****************************************************************************************************************
 -----函数功能    统一设置设备状态
 -----说明(备注)  设置设备状态标志，实际的UI更新在displaytask中处理
------传入参数    devType: 设备类型, bState: true=开启状态, false=关闭状态
+-----传入参数    devType: 设备类型, ucState: 设备状态
 -----输出参数    none
 -----返回值      none
 *****************************************************************************************************************/
-void vDisp_SetDevStateIcon(DevType_E devType, bool bState)
+void vDisp_SetDevStateIcon(DevType_E devType, u8 ucState)
 {
-	if (S_bTestAllParam)
-		bState = true;
+	DevState_E eState;
+	InOutState_E eInOutState;
 
 	switch(devType)
 	{
 		case DEV_TYPE_AC_OUT:
-			S_bDevAcOutState = bState;
-			break;
+		{
+			eInOutState = (InOutState_E)ucState;
+
+			//0.5S频率闪烁
+			if(eInOutState == IOS_ERR || eInOutState == IOS_PROTE)
+			{
+				static uint32_t s_ul_last_tick = 0;
+				uint32_t ul_now_tick = xTaskGetTickCount();
+				
+				if(ul_now_tick - s_ul_last_tick >= 500)
+				{
+					s_ul_last_tick = ul_now_tick;
+					S_bDevAcOutShow = !S_bDevAcOutShow;
+				}
+			}
+			else if(eInOutState >= IOS_STARTING)
+				S_bDevAcOutShow = true;
+			else
+			   	S_bDevAcOutShow = false;
+		}
+		break;
 		
 		case DEV_TYPE_AC_IN:
-			S_bDevAcInState = bState;
-			break;
+		{
+			eInOutState = (InOutState_E)ucState;
+
+			//0.5S频率闪烁
+			if(eInOutState == IOS_ERR || eInOutState == IOS_PROTE)
+			{
+				static uint32_t s_ul_last_tick = 0;
+				uint32_t ul_now_tick = xTaskGetTickCount();
+				
+				if(ul_now_tick - s_ul_last_tick >= 500)
+				{
+					s_ul_last_tick = ul_now_tick;
+					S_bDevAcInShow = !S_bDevAcInShow;
+				}
+			}
+			else if(eInOutState >= IOS_STARTING)
+				S_bDevAcInShow = true;
+			else
+			   	S_bDevAcInShow = false;
+		}
+		break;
 		
 		case DEV_TYPE_PV:
-			S_bDevPvState = bState;
-			break;
+		{
+			eState = (DevState_E)ucState;
+
+			//0.5S频率闪烁
+			if(eState == DS_ERR)
+			{
+				static uint32_t s_ul_last_tick = 0;
+				uint32_t ul_now_tick = xTaskGetTickCount();
+				
+				if(ul_now_tick - s_ul_last_tick >= 500)
+				{
+					s_ul_last_tick = ul_now_tick;
+					S_bDevPvShow = !S_bDevPvShow;
+				}
+			}
+			else if(eState >= DS_BOOTING)
+				S_bDevPvShow = true;
+			else
+			   	S_bDevPvShow = false;
+		}
+		break;
 		
 		case DEV_TYPE_USB:
-			S_bDevUsbState = bState;
-			break;
+		{
+			eState = (DevState_E)ucState;
+
+			//0.5S频率闪烁
+			if(eState == DS_ERR)
+			{
+				static uint32_t s_ul_last_tick = 0;
+				uint32_t ul_now_tick = xTaskGetTickCount();
+				
+				if(ul_now_tick - s_ul_last_tick >= 500)
+				{
+					s_ul_last_tick = ul_now_tick;
+					S_bDevUsbShow = !S_bDevUsbShow;
+				}
+			}
+			else if(eState >= DS_BOOTING)
+				S_bDevUsbShow = true;
+			else
+			   	S_bDevUsbShow = false;
+		}
+		break;
 		
 		case DEV_TYPE_DC:
-			S_bDevDcState = bState;
-			break;
+		{
+			eState = (DevState_E)ucState;
+
+			//0.5S频率闪烁
+			if(eState == DS_ERR)
+			{
+				static uint32_t s_ul_last_tick = 0;
+				uint32_t ul_now_tick = xTaskGetTickCount();
+				
+				if(ul_now_tick - s_ul_last_tick >= 500)
+				{
+					s_ul_last_tick = ul_now_tick;
+					S_bDevDcShow = !S_bDevDcShow;
+				}
+			}
+			else if(eState >= DS_BOOTING)
+				S_bDevDcShow = true;
+			else
+			   	S_bDevDcShow = false;
+		}
+		break;
 		
 		default:
 			break;

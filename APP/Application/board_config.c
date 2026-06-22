@@ -107,10 +107,10 @@ void SysParamInit(void)
 	uPrint.tFlag.bKeyTask   = 1;
 	uPrint.tFlag.bBmsRecTask= 0;
 	uPrint.tFlag.bBmsTask   = 0;
-	uPrint.tFlag.bDcacTask  = 1;
-	uPrint.tFlag.bDcacRecTask= 1;
-	uPrint.tFlag.bMpptTask  = 1;
-	uPrint.tFlag.bMpptRecTask= 1;
+	uPrint.tFlag.bDcacTask  = 0;
+	uPrint.tFlag.bDcacRecTask= 0;
+	uPrint.tFlag.bMpptTask  = 0;
+	uPrint.tFlag.bMpptRecTask= 0;
 	uPrint.tFlag.bUsbTask   = 0;
 	uPrint.tFlag.bDcTask    = 0;
 	uPrint.tFlag.bDispTask   = 0;

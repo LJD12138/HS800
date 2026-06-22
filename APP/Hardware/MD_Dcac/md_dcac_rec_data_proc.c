@@ -38,7 +38,7 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 	
 	if(uPrint.tFlag.bDcacRecTask)
 	{
-		sMyPrint("\r\n bDcacRecTask:接收地址%d:", proto_tx->usRegAddr);
+		sMyPrint("bDcacRecTask:接收地址%d:", proto_tx->usRegAddr);
 		for(int i = 0; i < proto_rx->ucValidLen; i++)
 			sMyPrint("%x ",proto_rx->ucpValidData[i]);
 		sMyPrint("\r\n");

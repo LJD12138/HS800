@@ -185,6 +185,7 @@ virtualFolder:
         - path: Hardware/MD_Bms/md_bms_prot_frame.h
         - path: Hardware/MD_Bms/md_bms_iface.c
         - path: Hardware/MD_Bms/md_bms_iface.h
+        - path: Hardware/MD_Bms/md_bms_queue_task_update.c
       folders: []
     - name: HW-MD_Disp
       files:
@@ -194,6 +195,8 @@ virtualFolder:
         - path: Hardware/MD_Display/md_display_task.h
         - path: Hardware/MD_Display/md_display_api.c
         - path: Hardware/MD_Display/md_display_api.h
+        - path: Hardware/MD_Display/user_ui/update_mode_ui.c
+        - path: Hardware/MD_Display/user_ui/update_mode_ui.h
       folders: []
 dependenceList: []
 outDir: build
@@ -410,7 +413,7 @@ targets:
               isChecked: true
               isStartup: true
               mem:
-                size: "0x10000"
+                size: "0x19000"
                 startAddr: "0x8000000"
               tag: IROM
             - id: 2

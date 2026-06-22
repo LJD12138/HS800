@@ -104,11 +104,7 @@ void vBms_Task(void *pvParameters)
     for(;;)
 	#endif  //boardUSE_OS
     {
-		if(tp_task == NULL
-			#if(boardUPDATE)
-			|| (tSysInfo.eDevState == DS_UPDATE_MODE)
-			#endif  //boardUPDATE
-		)
+		if(tp_task == NULL)
 		{
 			if(tp_task == NULL)
 				b_bms_task_param_init();

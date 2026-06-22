@@ -139,7 +139,6 @@ static void v_bms_dma_init(void)
 {
 	/* USART interrupt configuration */
 	nvic_irq_enable(bmsUSART_DMA_TX_IRQ, 2, 0);
-	nvic_irq_enable(bmsUSART_IRQ, 2, 0);
 	
 	dma_parameter_struct dma_init_struct;
 	
@@ -155,7 +154,7 @@ static void v_bms_dma_init(void)
     dma_struct_para_init(&dma_init_struct);
 	
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	dma_init_struct.request = DMA_REQUEST_USART0_TX;
+	dma_init_struct.request = bmsUSART_DMA_TX_REQUEST;
 	#endif	//boardIC_GD32F50X
     dma_init_struct.direction    = DMA_MEMORY_TO_PERIPHERAL;            /* 外设到内存 */              
     dma_init_struct.memory_addr  = (uint32_t)ucaBmsTxDmaBuffData;       /* 设置内存接收基地址 */
@@ -173,7 +172,7 @@ static void v_bms_dma_init(void)
     dma_deinit(bmsUSART_DMA, bmsUSART_DMA_RX_CH);
 
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	dma_init_struct.request = DMA_REQUEST_USART0_RX;
+	dma_init_struct.request = bmsUSART_DMA_RX_REQUEST;
 	#endif  //boardIC_GD32F50X
     dma_init_struct.direction = DMA_PERIPHERAL_TO_MEMORY;
     dma_init_struct.number = bmsRX_DMA_BUFF_SIZE;
@@ -224,9 +223,7 @@ static void v_bms_dma_init(void)
 void vBms_IfaceInit(void)
 {
     v_bms_io_init();
-	
     v_bms_usart_init();
-	
 	#if(boardBMS_IFACE_DMA_EN)
 	v_bms_dma_init();
 	#endif
@@ -261,15 +258,15 @@ void vBms_IfaceDeInit(void)
 ******************************************************************************************************************/
 bool bBms_DataSendStart(u8* data, u16 len)
 {
-	#if(boardBMS_485_IFACE_EN)
-	vBms_485TransEnable(true);
-	#endif
-	
 	if(data == NULL || len == 0)
 		return false;
 	
 	if(len > bmsTX_DMA_BUFF_SIZE)
 		len = bmsTX_DMA_BUFF_SIZE;
+
+	#if(boardBMS_485_IFACE_EN)
+	vBms_485TransEnable(true);
+	#endif
 	
 	memcpy(ucaBmsTxDmaBuffData, data, len);
 	

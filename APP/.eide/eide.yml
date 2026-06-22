@@ -573,7 +573,7 @@ targets:
               disable: false
             - name: $PMergeTool.bat
               abortAfterFailed: true
-              command: ${P}MergeTool.bat ${K}
+              command: .\MergeTool.bat ${K}
               disable: false
           asm-compiler: {}
           beforeBuildTasks: []
@@ -674,18 +674,26 @@ targets:
         floatingPointHardware: single
         options:
           version: 3
-          afterBuildTasks: []
+          afterBuildTasks:
+            - name: $PMergeTool.bat
+              abortAfterFailed: true
+              command: .\MergeTool.bat ${K}
+              disable: false
           asm-compiler:
             $use: asm-auto
-            misc-controls: ""
-          beforeBuildTasks: []
+          beforeBuildTasks:
+            - name: "[Copy linker output for Keil User Commands]"
+              abortAfterFailed: true
+              command: mkdir ${KEIL_OUTPUT_DIR} & copy "${OutDir}\${ProjectName}.axf" "${KEIL_OUTPUT_DIR}\${ProjectName}.axf"
+              disable: false
+              stopBuildAfterFailed: false
           c/cpp-compiler:
             language-c: c99
             language-cpp: c++11
-            link-time-optimization: false
             one-elf-section-per-function: true
             optimization: level-1
             short-enums#wchar: true
+            warnings: ac5-like-warnings
           global:
             output-debug-info: enable
             use-microLIB: true
@@ -710,7 +718,7 @@ targets:
               isStartup: true
               mem:
                 size: "0xC8000"
-                startAddr: "0x08010000"
+                startAddr: "0x08019000"
               tag: IROM
         useCustomScatterFile: false
     uploadConfigMap:

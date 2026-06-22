@@ -245,7 +245,7 @@ static void v_sys_check_prote(void)
 		// else
 			s_board_max_temp = MAX2(s_board_max_temp, tDc.sMaxTemp);
 
-		tSysInfo.usInPwr += tDc.usOutPwr;
+		tSysInfo.usOutPwr += tDc.usOutPwr;
 	}
 	#endif  //boardDC_EN
 

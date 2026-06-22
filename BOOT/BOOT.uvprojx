@@ -278,7 +278,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x10000</Size>
+                <Size>0x19000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -1151,6 +1151,11 @@
               <FileType>5</FileType>
               <FilePath>.\Hardware\MD_Bms\md_bms_iface.h</FilePath>
             </File>
+            <File>
+              <FileName>md_bms_queue_task_update.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Bms\md_bms_queue_task_update.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1185,6 +1190,16 @@
               <FileName>md_display_api.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\MD_Display\md_display_api.h</FilePath>
+            </File>
+            <File>
+              <FileName>update_mode_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\user_ui\update_mode_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>update_mode_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\MD_Display\user_ui\update_mode_ui.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -46,7 +46,7 @@ typedef enum
 void vDisp_Main1UiStart(void);
 void vDisp_Main1Exit(void);
 bool bDisp_Main1DataUpdate(void);
-void vDisp_SetDevStateIcon(DevType_E devType, bool bState);
+void vDisp_SetDevStateIcon(DevType_E devType, u8 ucState);
 void vDisp_SetAcWorkMode(ImgAnimMode_E eMode);
 
 /* ==========================================types=======================================*/

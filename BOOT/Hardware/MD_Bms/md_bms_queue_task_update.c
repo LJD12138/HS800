@@ -12,13 +12,13 @@
 #include "Update/update_main.h"
 
 /*****************************************************************************************************************
------函数功能    任务函数:主任务
+-----函数功能    任务函数:更新任务
 -----说明(备注)  none
 -----传入参数    none
 -----输出参数    none
 -----返回值      none
 ******************************************************************************************************************/
-void v_bms_queue_task_main(Task_T *tp_task)
+void v_bms_queue_task_update(Task_T *tp_task)
 {	
 	switch(tp_task->ucStep)
 	{
@@ -32,7 +32,7 @@ void v_bms_queue_task_main(Task_T *tp_task)
 		
 		case 1:
 		{	
-			c_bms_cs_get_param(0);
+			c_bms_cs_send_update();
 			cQueue_GotoStep(tp_task, STEP_END);
 		}
 		break;
@@ -46,7 +46,7 @@ void v_bms_queue_task_main(Task_T *tp_task)
 	if(tp_task->usTaskWaitCnt > (3000 / bmsTASK_CYCLE_TIME))  //等待超时
 	{
 		if(uPrint.tFlag.bBmsTask)
-			sMyPrintWarn("bBmsTask:获取数据任务等待超时,退出");
+			sMyPrintWarn("bBmsTask:升级任务等待超时,退出");
 		
 		cQueue_GotoStep(tp_task, STEP_END);  //结束
 	}

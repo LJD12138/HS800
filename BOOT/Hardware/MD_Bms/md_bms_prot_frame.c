@@ -5,6 +5,7 @@
 #if(boardBMS_EN)
 #include "MD_Bms/md_bms_iface.h"
 #include "Print/print_task.h"
+#include "Sys/sys_task.h"
 
 #if(boardUSE_OS)
 #include "freertos.h"
@@ -44,7 +45,7 @@ bool bBms_SendProtInit(void)
 {
 	s8 c_result = cBaiku_ProtoSendInit(&tpBmsProtoTx, 
 								bmsTX_PROTO_BUFF_LEN, 
-								bmsDEV_ADRR);
+								sysDEV_ADRR);
 	if(c_result <= 0)
 	{
 		if(uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)

@@ -96,6 +96,10 @@ int main(void)
 			#if(boardLED_EN)
 			vLed_Task(NULL);
 			#endif  //boardLED_EN
+
+			#if(boardDISPLAY_EN)
+			vDisp_Task(NULL);
+			#endif
 		}
 
 		if(bSystick_100MsFlag)
@@ -103,10 +107,6 @@ int main(void)
 			bSystick_100MsFlag = false;
 			
 			vTimer_Task();
-			
-			#if(boardDISPLAY_EN)
-			vDisp_Task(NULL);
-			#endif
 		}
 		
 		#if(boardPRINT_IFACE)

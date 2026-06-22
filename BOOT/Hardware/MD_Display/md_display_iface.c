@@ -1,603 +1,564 @@
+/***********************************************************************************************************************
+ -----文件说明    TFT显示接口实现
+ -----说明(备注)  TFT显示屏底层驱动接口，支持软件模拟SPI和硬件SPI+DMA两种传输模式
+ -----文件版本    V1.0
+ -----作者        HS800开发团队
+ -----日期        2024
+ ************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "MD_Display/md_display_iface.h"
+
+#if(boardDISPLAY_EN)
+// #include "lv_port_disp.h"
 
 #if(boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
 #endif  //boardUSE_OS
 
+//****************************************************Macros*******************************************************************//
+#define TFT_SPI_TIMEOUT                    0x10000U
 
-unsigned char gsDisplayBuff[25];
- 
-const unsigned char NUM_COM_SEG_TAB[]=
-{	
-   LCD_IC1_1A_ICON_COM_INDEX,
-   LCD_IC1_1B_ICON_COM_INDEX,
-   LCD_IC1_1C_ICON_COM_INDEX,
-   LCD_IC1_1D_ICON_COM_INDEX,
-   LCD_IC1_1E_ICON_COM_INDEX,
-   LCD_IC1_1F_ICON_COM_INDEX,
-   LCD_IC1_1G_ICON_COM_INDEX,
-
-  LCD_IC1_1A_ICON_SEG_INDEX, 
-  LCD_IC1_1B_ICON_SEG_INDEX,
-  LCD_IC1_1C_ICON_SEG_INDEX,
-  LCD_IC1_1D_ICON_SEG_INDEX,
-  LCD_IC1_1E_ICON_SEG_INDEX,
-  LCD_IC1_1F_ICON_SEG_INDEX,
-  LCD_IC1_1G_ICON_SEG_INDEX,
-
-  LCD_IC1_2A_ICON_COM_INDEX,
-  LCD_IC1_2B_ICON_COM_INDEX,
-  LCD_IC1_2C_ICON_COM_INDEX,
-  LCD_IC1_2D_ICON_COM_INDEX,
-  LCD_IC1_2E_ICON_COM_INDEX,
-  LCD_IC1_2F_ICON_COM_INDEX,
-  LCD_IC1_2G_ICON_COM_INDEX,
-
-  LCD_IC1_2A_ICON_SEG_INDEX,
-  LCD_IC1_2B_ICON_SEG_INDEX,
-  LCD_IC1_2C_ICON_SEG_INDEX,
-  LCD_IC1_2D_ICON_SEG_INDEX,
-  LCD_IC1_2E_ICON_SEG_INDEX,
-  LCD_IC1_2F_ICON_SEG_INDEX,
-  LCD_IC1_2G_ICON_SEG_INDEX,
-
-  LCD_IC1_3A_ICON_COM_INDEX,
-  LCD_IC1_3B_ICON_COM_INDEX,
-  LCD_IC1_3C_ICON_COM_INDEX,
-  LCD_IC1_3D_ICON_COM_INDEX,
-  LCD_IC1_3E_ICON_COM_INDEX,
-  LCD_IC1_3F_ICON_COM_INDEX,
-  LCD_IC1_3G_ICON_COM_INDEX,
-
-  LCD_IC1_3A_ICON_SEG_INDEX,
-  LCD_IC1_3B_ICON_SEG_INDEX,
-  LCD_IC1_3C_ICON_SEG_INDEX,
-  LCD_IC1_3D_ICON_SEG_INDEX,
-  LCD_IC1_3E_ICON_SEG_INDEX,
-  LCD_IC1_3F_ICON_SEG_INDEX,
-  LCD_IC1_3G_ICON_SEG_INDEX,
-
-  LCD_IC1_4A_ICON_COM_INDEX,
-  LCD_IC1_4B_ICON_COM_INDEX,
-  LCD_IC1_4C_ICON_COM_INDEX,
-  LCD_IC1_4D_ICON_COM_INDEX,
-  LCD_IC1_4E_ICON_COM_INDEX,
-  LCD_IC1_4F_ICON_COM_INDEX,
-  LCD_IC1_4G_ICON_COM_INDEX,
-
-  LCD_IC1_4A_ICON_SEG_INDEX,
-  LCD_IC1_4B_ICON_SEG_INDEX,
-  LCD_IC1_4C_ICON_SEG_INDEX,
-  LCD_IC1_4D_ICON_SEG_INDEX,
-  LCD_IC1_4E_ICON_SEG_INDEX,
-  LCD_IC1_4F_ICON_SEG_INDEX,
-  LCD_IC1_4G_ICON_SEG_INDEX,
-
-  LCD_IC1_5A_ICON_COM_INDEX,
-  LCD_IC1_5B_ICON_COM_INDEX,
-  LCD_IC1_5C_ICON_COM_INDEX,
-  LCD_IC1_5D_ICON_COM_INDEX,
-  LCD_IC1_5E_ICON_COM_INDEX,
-  LCD_IC1_5F_ICON_COM_INDEX,
-  LCD_IC1_5G_ICON_COM_INDEX,
-
-  LCD_IC1_5A_ICON_SEG_INDEX,
-  LCD_IC1_5B_ICON_SEG_INDEX,
-  LCD_IC1_5C_ICON_SEG_INDEX,
-  LCD_IC1_5D_ICON_SEG_INDEX,
-  LCD_IC1_5E_ICON_SEG_INDEX,
-  LCD_IC1_5F_ICON_SEG_INDEX,
-  LCD_IC1_5G_ICON_SEG_INDEX,
-
-  LCD_IC1_6A_ICON_COM_INDEX,
-  LCD_IC1_6B_ICON_COM_INDEX,
-  LCD_IC1_6C_ICON_COM_INDEX,
-  LCD_IC1_6D_ICON_COM_INDEX,
-  LCD_IC1_6E_ICON_COM_INDEX,
-  LCD_IC1_6F_ICON_COM_INDEX,
-  LCD_IC1_6G_ICON_COM_INDEX,
-
-  LCD_IC1_6A_ICON_SEG_INDEX,
-  LCD_IC1_6B_ICON_SEG_INDEX,
-  LCD_IC1_6C_ICON_SEG_INDEX,
-  LCD_IC1_6D_ICON_SEG_INDEX,
-  LCD_IC1_6E_ICON_SEG_INDEX,
-  LCD_IC1_6F_ICON_SEG_INDEX,
-  LCD_IC1_6G_ICON_SEG_INDEX,
-
-  LCD_IC1_7A_ICON_COM_INDEX,
-  LCD_IC1_7B_ICON_COM_INDEX,
-  LCD_IC1_7C_ICON_COM_INDEX,
-  LCD_IC1_7D_ICON_COM_INDEX,
-  LCD_IC1_7E_ICON_COM_INDEX,
-  LCD_IC1_7F_ICON_COM_INDEX,
-  LCD_IC1_7G_ICON_COM_INDEX,
-
-  LCD_IC1_7A_ICON_SEG_INDEX,
-  LCD_IC1_7B_ICON_SEG_INDEX,
-  LCD_IC1_7C_ICON_SEG_INDEX,
-  LCD_IC1_7D_ICON_SEG_INDEX,
-  LCD_IC1_7E_ICON_SEG_INDEX,
-  LCD_IC1_7F_ICON_SEG_INDEX,
-  LCD_IC1_7G_ICON_SEG_INDEX,
-
-  LCD_IC1_8A_ICON_COM_INDEX,
-  LCD_IC1_8B_ICON_COM_INDEX,
-  LCD_IC1_8C_ICON_COM_INDEX,
-  LCD_IC1_8D_ICON_COM_INDEX,
-  LCD_IC1_8E_ICON_COM_INDEX,
-  LCD_IC1_8F_ICON_COM_INDEX,
-  LCD_IC1_8G_ICON_COM_INDEX,
-
-  LCD_IC1_8A_ICON_SEG_INDEX, 
-  LCD_IC1_8B_ICON_SEG_INDEX,
-  LCD_IC1_8C_ICON_SEG_INDEX,
-  LCD_IC1_8D_ICON_SEG_INDEX,
-  LCD_IC1_8E_ICON_SEG_INDEX,
-  LCD_IC1_8F_ICON_SEG_INDEX,
-  LCD_IC1_8G_ICON_SEG_INDEX,
-
-  LCD_IC1_9A_ICON_COM_INDEX,
-  LCD_IC1_9B_ICON_COM_INDEX,
-  LCD_IC1_9C_ICON_COM_INDEX,
-  LCD_IC1_9D_ICON_COM_INDEX,
-  LCD_IC1_9E_ICON_COM_INDEX,
-  LCD_IC1_9F_ICON_COM_INDEX,
-  LCD_IC1_9G_ICON_COM_INDEX,
-
-  LCD_IC1_9A_ICON_SEG_INDEX,
-  LCD_IC1_9B_ICON_SEG_INDEX,
-  LCD_IC1_9C_ICON_SEG_INDEX,
-  LCD_IC1_9D_ICON_SEG_INDEX,
-  LCD_IC1_9E_ICON_SEG_INDEX,
-  LCD_IC1_9F_ICON_SEG_INDEX,
-  LCD_IC1_9G_ICON_SEG_INDEX,
-
-  LCD_IC1_10A_ICON_COM_INDEX,
-  LCD_IC1_10B_ICON_COM_INDEX,
-  LCD_IC1_10C_ICON_COM_INDEX,
-  LCD_IC1_10D_ICON_COM_INDEX,
-  LCD_IC1_10E_ICON_COM_INDEX,
-  LCD_IC1_10F_ICON_COM_INDEX,
-  LCD_IC1_10G_ICON_COM_INDEX,
-
-  LCD_IC1_10A_ICON_SEG_INDEX,
-  LCD_IC1_10B_ICON_SEG_INDEX,
-  LCD_IC1_10C_ICON_SEG_INDEX,
-  LCD_IC1_10D_ICON_SEG_INDEX,
-  LCD_IC1_10E_ICON_SEG_INDEX,
-  LCD_IC1_10F_ICON_SEG_INDEX,
-  LCD_IC1_10G_ICON_SEG_INDEX,
-
-  LCD_IC1_11A_ICON_COM_INDEX,
-  LCD_IC1_11B_ICON_COM_INDEX,
-  LCD_IC1_11C_ICON_COM_INDEX,
-  LCD_IC1_11D_ICON_COM_INDEX,
-  LCD_IC1_11E_ICON_COM_INDEX,
-  LCD_IC1_11F_ICON_COM_INDEX,
-  LCD_IC1_11G_ICON_COM_INDEX,
-
-  LCD_IC1_11A_ICON_SEG_INDEX,
-  LCD_IC1_11B_ICON_SEG_INDEX,
-  LCD_IC1_11C_ICON_SEG_INDEX,
-  LCD_IC1_11D_ICON_SEG_INDEX,
-  LCD_IC1_11E_ICON_SEG_INDEX,
-  LCD_IC1_11F_ICON_SEG_INDEX,
-  LCD_IC1_11G_ICON_SEG_INDEX,
-
-  LCD_IC1_12A_ICON_COM_INDEX,
-  LCD_IC1_12B_ICON_COM_INDEX,
-  LCD_IC1_12C_ICON_COM_INDEX,
-  LCD_IC1_12D_ICON_COM_INDEX,
-  LCD_IC1_12E_ICON_COM_INDEX,
-  LCD_IC1_12F_ICON_COM_INDEX,
-  LCD_IC1_12G_ICON_COM_INDEX,
-
-  LCD_IC1_12A_ICON_SEG_INDEX,
-  LCD_IC1_12B_ICON_SEG_INDEX,
-  LCD_IC1_12C_ICON_SEG_INDEX,
-  LCD_IC1_12D_ICON_SEG_INDEX,
-  LCD_IC1_12E_ICON_SEG_INDEX,
-  LCD_IC1_12F_ICON_SEG_INDEX,
-  LCD_IC1_12G_ICON_SEG_INDEX,
-  
-  LCD_IC1_13A_ICON_COM_INDEX,
-  LCD_IC1_13B_ICON_COM_INDEX,
-  LCD_IC1_13C_ICON_COM_INDEX,
-  LCD_IC1_13D_ICON_COM_INDEX,
-  LCD_IC1_13E_ICON_COM_INDEX,
-  LCD_IC1_13F_ICON_COM_INDEX,
-  LCD_IC1_13G_ICON_COM_INDEX,
-
-  LCD_IC1_13A_ICON_SEG_INDEX,
-  LCD_IC1_13B_ICON_SEG_INDEX,
-  LCD_IC1_13C_ICON_SEG_INDEX,
-  LCD_IC1_13D_ICON_SEG_INDEX,
-  LCD_IC1_13E_ICON_SEG_INDEX,
-  LCD_IC1_13F_ICON_SEG_INDEX,
-  LCD_IC1_13G_ICON_SEG_INDEX,
-
-
-  LCD_IC1_14A_ICON_COM_INDEX,
-  LCD_IC1_14B_ICON_COM_INDEX,
-  LCD_IC1_14C_ICON_COM_INDEX,
-  LCD_IC1_14D_ICON_COM_INDEX,
-  LCD_IC1_14E_ICON_COM_INDEX,
-  LCD_IC1_14F_ICON_COM_INDEX,
-  LCD_IC1_14G_ICON_COM_INDEX,
-
-  LCD_IC1_14A_ICON_SEG_INDEX,
-  LCD_IC1_14B_ICON_SEG_INDEX,
-  LCD_IC1_14C_ICON_SEG_INDEX,
-  LCD_IC1_14D_ICON_SEG_INDEX,
-  LCD_IC1_14E_ICON_SEG_INDEX,
-  LCD_IC1_14F_ICON_SEG_INDEX,
-  LCD_IC1_14G_ICON_SEG_INDEX,
-
-
-  LCD_IC1_15A_ICON_COM_INDEX,
-  LCD_IC1_15B_ICON_COM_INDEX,
-  LCD_IC1_15C_ICON_COM_INDEX,
-  LCD_IC1_15D_ICON_COM_INDEX,
-  LCD_IC1_15E_ICON_COM_INDEX,
-  LCD_IC1_15F_ICON_COM_INDEX,
-  LCD_IC1_15G_ICON_COM_INDEX,
-
-  LCD_IC1_15A_ICON_SEG_INDEX,
-  LCD_IC1_15B_ICON_SEG_INDEX,
-  LCD_IC1_15C_ICON_SEG_INDEX,
-  LCD_IC1_15D_ICON_SEG_INDEX,
-  LCD_IC1_15E_ICON_SEG_INDEX,
-  LCD_IC1_15F_ICON_SEG_INDEX,
-  LCD_IC1_15G_ICON_SEG_INDEX,
-
-
-  LCD_IC1_16A_ICON_COM_INDEX,
-  LCD_IC1_16B_ICON_COM_INDEX,
-  LCD_IC1_16C_ICON_COM_INDEX,
-  LCD_IC1_16D_ICON_COM_INDEX,
-  LCD_IC1_16E_ICON_COM_INDEX,
-  LCD_IC1_16F_ICON_COM_INDEX,
-  LCD_IC1_16G_ICON_COM_INDEX,
-
-  LCD_IC1_16A_ICON_SEG_INDEX,
-  LCD_IC1_16B_ICON_SEG_INDEX,
-  LCD_IC1_16C_ICON_SEG_INDEX,
-  LCD_IC1_16D_ICON_SEG_INDEX,
-  LCD_IC1_16E_ICON_SEG_INDEX,
-  LCD_IC1_16F_ICON_SEG_INDEX,
-  LCD_IC1_16G_ICON_SEG_INDEX,
-
-
-  LCD_IC1_17A_ICON_COM_INDEX,
-  LCD_IC1_17B_ICON_COM_INDEX,
-  LCD_IC1_17C_ICON_COM_INDEX,
-  LCD_IC1_17D_ICON_COM_INDEX,
-  LCD_IC1_17E_ICON_COM_INDEX,
-  LCD_IC1_17F_ICON_COM_INDEX,
-  LCD_IC1_17G_ICON_COM_INDEX,
-
-  LCD_IC1_17A_ICON_SEG_INDEX,
-  LCD_IC1_17B_ICON_SEG_INDEX,
-  LCD_IC1_17C_ICON_SEG_INDEX,
-  LCD_IC1_17D_ICON_SEG_INDEX,
-  LCD_IC1_17E_ICON_SEG_INDEX,
-  LCD_IC1_17F_ICON_SEG_INDEX,
-  LCD_IC1_17G_ICON_SEG_INDEX,
-
-
-  LCD_IC1_18A_ICON_COM_INDEX,
-  LCD_IC1_18B_ICON_COM_INDEX,
-  LCD_IC1_18C_ICON_COM_INDEX,
-  LCD_IC1_18D_ICON_COM_INDEX,
-  LCD_IC1_18E_ICON_COM_INDEX,
-  LCD_IC1_18F_ICON_COM_INDEX,
-  LCD_IC1_18G_ICON_COM_INDEX,
-
-  LCD_IC1_18A_ICON_SEG_INDEX,
-  LCD_IC1_18B_ICON_SEG_INDEX,
-  LCD_IC1_18C_ICON_SEG_INDEX,
-  LCD_IC1_18D_ICON_SEG_INDEX,
-  LCD_IC1_18E_ICON_SEG_INDEX,
-  LCD_IC1_18F_ICON_SEG_INDEX,
-  LCD_IC1_18G_ICON_SEG_INDEX,
-
-  LCD_IC1_19A_ICON_COM_INDEX,
-  LCD_IC1_19B_ICON_COM_INDEX,
-  LCD_IC1_19C_ICON_COM_INDEX,
-  LCD_IC1_19D_ICON_COM_INDEX,
-  LCD_IC1_19E_ICON_COM_INDEX,
-  LCD_IC1_19F_ICON_COM_INDEX,
-  LCD_IC1_19G_ICON_COM_INDEX,
-
-  LCD_IC1_19A_ICON_SEG_INDEX,
-  LCD_IC1_19B_ICON_SEG_INDEX,
-  LCD_IC1_19C_ICON_SEG_INDEX,
-  LCD_IC1_19D_ICON_SEG_INDEX,
-  LCD_IC1_19E_ICON_SEG_INDEX,
-  LCD_IC1_19F_ICON_SEG_INDEX,
-  LCD_IC1_19G_ICON_SEG_INDEX,
-};
-
-const unsigned char LCD_NUM_DISP_TAB[]=
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+typedef enum
 {
-	0x3F,//0
-	0x06,//1
-	0x5B,//2
-	0x4F,//3
-	0x66,//4
-	0x6D,//5	
-	0x7D,//6
-	0x07,//7
-	0x7F,//8
-	0xEF,//9
-	0x40,//-
-	0x38,//L
-	0x77,//A
-	0x7C,//b
-	0x58,//c
-	0x5E,//d
-	0x79,//E
-	0x71,//F
-	0x74,//h
-	0x73,//P
-	0x39,//C
-	0x76,//H
-	0x78,//t
-	0x48,//=
-	0x5C,//o
-	0x54,//n
-    0x37,//N
-	0x72,//Y
-	0x50,//r
-	0x3E,//U
-};
+    DISP_TFT_DMA_XFER_NONE = 0,
+    DISP_TFT_DMA_XFER_LVGL_COLOR
+} disp_tft_dma_xfer_t;
 
-void delay_us(vu16 us)
+static volatile disp_tft_dma_xfer_t s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
+#endif
+
+//****************************************************Function Declaration****************************************************//
+static void tft_delay_ms(vu16 ms);
+
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+static void tft_hw_spi_dma_init(void);
+static void v_tft_spi_dma_send_bytes(const u8 *data, u32 len);
+#if(boardUSE_OS)
+static void v_tft_spi_dma_finish_isr(BaseType_t *px_higher_priority_task_woken);
+#else
+static void v_tft_spi_dma_finish_isr(void);
+#endif
+static void tft_hw_spi_wait_idle(void);
+#endif //boardDISP_SPI_MODE
+
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
+static void tft_spi_send_byte(u8 data);
+#endif //boardDISP_SPI_MODE
+
+/***********************************************************************************************************************
+ -----函数功能    TFT延时函数
+ -----说明(备注)  毫秒级延时，支持FreeRTOS和裸机两种模式
+ -----传入参数    ms:延时毫秒数
+ -----输出参数    none
+ -----返回值      none
+ ************************************************************************************************************************/
+static void tft_delay_ms(vu16 ms)
 {
-    vu8 j = 0;
-    while(us--)
-        for(j = 0; j < 20; j++);
-}
-
-void HT_SDA_OUT(void)
-{
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispHT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispHT_SDA_PIN);
-    gpio_output_options_set(dispHT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispHT_SDA_PIN);
-	#else
-    gpio_init( dispHT_SDA_PORT,
-	           GPIO_MODE_OUT_PP,
-	           GPIO_OSPEED_50MHZ,
-	           dispHT_SDA_PIN);
-	#endif
-}
-
-void HT_SDA_IN(void)
-{
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispHT_SDA_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, dispHT_SDA_PIN);
-	#else
-    gpio_init( dispHT_SDA_PORT,
-	           GPIO_MODE_IPU,
-	           GPIO_OSPEED_50MHZ,
-	           dispHT_SDA_PIN);
-	#endif
-}
-
-void HT_IIC_Start(void)
-{
-	HT_SDA_OUT();
-	dispHT_SDA_H();
-	dispHT_SCL_H();
-	delay_us(5);
-	dispHT_SDA_L();
-	delay_us(5);
-	dispHT_SCL_L();
-}	  
-
-void HT_IIC_Stop(void)
-{
-	HT_SDA_OUT();
-	dispHT_SCL_L();
-	dispHT_SDA_L();
- 	delay_us(5);
-	dispHT_SCL_H();
-	delay_us(5);
-	dispHT_SDA_H();
-	delay_us(5);							   	
-}
-
-u8 HT_IIC_Wait_Ack(void)
-{
-	u16 ucErrTime=0;
-	HT_SDA_IN();
-	dispHT_SCL_H();
-	delay_us(5);
-	while(dispHT_READ_SDA())
-	{
-		ucErrTime++;
-		if(ucErrTime>1000)
-		{
-			HT_IIC_Stop();
-			return 1;
-		}
-	}
-    dispHT_SCL_L();	   
-	delay_us(5);
-	return 0;
-} 
-
-void HT_IIC_Ack(void)
-{
-	dispHT_SCL_L();	
-	HT_SDA_OUT();
-	dispHT_SDA_L();
-	delay_us(2);
-	dispHT_SCL_H();
-	delay_us(2);
-	dispHT_SCL_L();	
-}
-
-void HT_IIC_NAck()
-{
-	dispHT_SCL_L();
-	HT_SDA_OUT();
-	dispHT_SDA_H();
-	delay_us(2);
-	dispHT_SCL_H();
-	delay_us(2);
-	dispHT_SCL_L();	
-}					 				     
-
-void HT_IIC_Send_Byte(u8 txd)
-{                        
-    u8 t=0;   
-	HT_SDA_OUT(); 	
-	dispHT_SCL_L();
-	#if(boardUSE_OS)
-	taskENTER_CRITICAL();
-	#endif
-    for(t=0;t<8;t++)
-    {       
-        if((txd&0x80)>>7) {dispHT_SDA_H();}
-		else              {dispHT_SDA_L();}
-        txd<<=1; 	  
-		delay_us(5);
-		dispHT_SCL_H();
-		delay_us(5); 
-		dispHT_SCL_L();	
+    while(ms--)
+    {
+        for(volatile u32 i = 0U; i < (SystemCoreClock / 8000000U); i++)
+            __NOP();
     }
-	#if(boardUSE_OS)
-    taskEXIT_CRITICAL();
-	#endif
 }
 
-void Ht1621Wr_Comd(unsigned char command,unsigned char ComData)
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+/***********************************************************************************************************************
+ -----函数功能    SPI DMA接口初始化
+ -----说明(备注)  配置SPI1和DMA作为TFT单向发送通道
+ -----传入参数    none
+ -----输出参数    none
+ -----返回值      none
+ ************************************************************************************************************************/
+static void tft_hw_spi_dma_init(void)
 {
-	HT_IIC_Start();
-	HT_IIC_Send_Byte(0x7C);
-	HT_IIC_Wait_Ack();
-	HT_IIC_Send_Byte(command);
-	HT_IIC_Wait_Ack();
-	HT_IIC_Send_Byte(ComData);
-	HT_IIC_Wait_Ack();
-	HT_IIC_Stop();
-}
+    spi_parameter_struct spi_init_struct;
+    dma_parameter_struct dma_init_struct;
 
-void FillLcdAll1(unsigned char mFillData)
-{  
-	unsigned char i=0;
-	for (i=0;i<25;i++)
-	{
-		gsDisplayBuff[i]=mFillData;
-	}
-} 
+    rcu_periph_clock_enable(RCU_AF);
+    rcu_periph_clock_enable(dispTFT_SPI_RCU);
+    rcu_periph_clock_enable(dispTFT_DMA_RCU);
 
-void FillLcdFromBuff(void)
-{	
-	unsigned char i=0;
-	#if(boardUSE_OS)
-	taskENTER_CRITICAL();
-	#endif
-	HT_IIC_Start();
-	HT_IIC_Send_Byte(0x7C);
-	HT_IIC_Wait_Ack();
-	HT_IIC_Send_Byte(0x80);
-	HT_IIC_Wait_Ack();
-	HT_IIC_Send_Byte(0x00);
-	HT_IIC_Wait_Ack();
-	for (i=0;i<25;i++)
-	{
-		HT_IIC_Send_Byte(gsDisplayBuff[i]);
-		HT_IIC_Wait_Ack();
-	}
-	HT_IIC_Stop();
-	#if(boardUSE_OS)
-	taskEXIT_CRITICAL();
-	#endif
-}
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    /* enable DMAMUX clock */
+    rcu_periph_clock_enable(RCU_DMAMUX);
 
-void HT1621DispIcon(unsigned char mSegIndex,unsigned char mComIndex)
-{
-	if (mSegIndex>49)
-	return;	 
-	if (mComIndex>3)
-	return;	
-	if (mSegIndex&0x01)
-	{
-		gsDisplayBuff[(mSegIndex>>1)] |= (1<<(mComIndex+4));
-	}
-	else
-	{  
-		gsDisplayBuff[(mSegIndex>>1)] |= (1<<(mComIndex));
-	}
-} 
+    gpio_mode_set(dispTFT_SCK_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, dispTFT_SCK_PIN);
+    gpio_output_options_set(dispTFT_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SCK_PIN);
+    gpio_af_set(dispTFT_SCK_PORT, dispTFT_SPI_SCK_AF, dispTFT_SCK_PIN);
+    gpio_mode_set(dispTFT_SDA_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, dispTFT_SDA_PIN);
+    gpio_output_options_set(dispTFT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SDA_PIN);
+    gpio_af_set(dispTFT_SDA_PORT, dispTFT_SPI_SDA_AF, dispTFT_SDA_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    gpio_init(dispTFT_SCK_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, dispTFT_SCK_PIN);
+    gpio_init(dispTFT_SDA_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
+    #endif  //boardIC_TYPE
 
-void DisplayNum(signed short int mStartX,unsigned char mNum)
-{
-	unsigned char i=0,tmp=0;
-	tmp = LCD_NUM_DISP_TAB[mNum];
-	for (i=0;i<7;i++)
-	{
-		if (tmp&1)
-		HT1621DispIcon(NUM_COM_SEG_TAB[mStartX*14+7+i],NUM_COM_SEG_TAB[mStartX*14+i]);
-		tmp >>= 1;
-	} 	
-}
+    spi_i2s_deinit(dispTFT_SPI_PERIPH);
+    spi_struct_para_init(&spi_init_struct);
+    spi_init_struct.device_mode = SPI_MASTER;
+    spi_init_struct.trans_mode = SPI_TRANSMODE_FULLDUPLEX;
+    spi_init_struct.frame_size = SPI_FRAMESIZE_8BIT;
+    spi_init_struct.nss = SPI_NSS_SOFT;
+    spi_init_struct.clock_polarity_phase = SPI_CK_PL_LOW_PH_1EDGE;
+    spi_init_struct.prescale = dispTFT_SPI_PRESCALE;
+    spi_init_struct.endian = SPI_ENDIAN_MSB;
+    spi_init(dispTFT_SPI_PERIPH, &spi_init_struct);
+    spi_nss_internal_high(dispTFT_SPI_PERIPH);
+    spi_dma_enable(dispTFT_SPI_PERIPH, SPI_DMA_TRANSMIT);
+    spi_enable(dispTFT_SPI_PERIPH);
 
-I2cObj_T tLCD_HT1621_IIC;
+    dma_deinit(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    dma_struct_para_init(&dma_init_struct);
 
-void HT1621_IfaceInit(void)
-{ 	
-	rcu_periph_clock_enable(dispLIGHT_POWER_RCU);
-	rcu_periph_clock_enable(RCU_AF);
-	#if (boardIC_TYPE != boardIC_GD32F50X)
-	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP,ENABLE);
-	#endif
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispLIGHT_POWER_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispLIGHT_POWER_PIN);
-    gpio_output_options_set(dispLIGHT_POWER_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispLIGHT_POWER_PIN);
-	#else
-    gpio_init( dispLIGHT_POWER_PORT,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,dispLIGHT_POWER_PIN);
-	#endif
-	dispLIGHT_POWER_OFF();
- 
-	rcu_periph_clock_enable(dispHT_SDA_RCU);
-	rcu_periph_clock_enable(dispHT_SCL_RCU);
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    dma_init_struct.request = dispTFT_SPI_DMA_REQUEST;
+    #endif  //boardIC_TYPE
+    dma_init_struct.periph_addr = (uint32_t)(&SPI_DATA(dispTFT_SPI_PERIPH));
+    dma_init_struct.memory_addr = 0U;
+    dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
+    dma_init_struct.memory_width = DMA_MEMORY_WIDTH_8BIT;
+    dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
+    dma_init_struct.priority = DMA_PRIORITY_HIGH;
+    dma_init_struct.number = 1U;
+    dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_init(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, &dma_init_struct);
+    dma_circulation_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    dma_memory_to_memory_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
 	
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispHT_SCL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispHT_SCL_PIN);
-    gpio_output_options_set(dispHT_SCL_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispHT_SCL_PIN);
-	#else
-    gpio_init( dispHT_SCL_PORT,
-	           GPIO_MODE_OUT_PP,
-	           GPIO_OSPEED_50MHZ,
-	           dispHT_SCL_PIN);
-	#endif
-	 
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif (boardIC_TYPE == boardIC_GD32F30X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif  //boardIC_TYPE
+
+    /* 不要全局开启 DMA 中断！ */
+    // dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+    nvic_irq_enable(dispTFT_DMA_TX_IRQ, 2, 0);
+}
+
+
+/***********************************************************************************************************************
+-----传入参数    use_staging_buf:true-先拷贝到中转缓存再发  false-直接以源缓存作为DMA源
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+static void v_tft_spi_dma_send_bytes(const u8 *data, u32 len)
+{
+    if((data == NULL) || (len == 0U))
+        return;
+
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    /* 明确关闭 DMA 完成中断，确保纯阻塞死等 */
+    dma_interrupt_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+
+    dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
+    dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispHT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispHT_SDA_PIN);
-    gpio_output_options_set(dispHT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispHT_SDA_PIN);
-	#else
-    gpio_init( dispHT_SDA_PORT,
-	           GPIO_MODE_OUT_PP,
-	           GPIO_OSPEED_50MHZ,
-	           dispHT_SDA_PIN);
-	#endif
-	
-	gpio_bit_set(dispHT_SCL_PORT,dispHT_SCL_PIN);
-	gpio_bit_set(dispHT_SDA_PORT,dispHT_SDA_PIN); 
-	
-    // vTaskDelay(10);
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif (boardIC_TYPE == boardIC_GD32F30X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif  //boardIC_TYPE
+
+    dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    /* 恢复阻塞等待：保证初始化指令和短参数完整发送 */
+    uint32_t timeout = TFT_SPI_TIMEOUT;
+    while((RESET == dma_flag_get(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_FTF)) && (timeout > 0U))
+        timeout--;
+
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif (boardIC_TYPE == boardIC_GD32F30X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif  //boardIC_TYPE
     
-	Ht1621Wr_Comd(0x82,0x00);
-	Ht1621Wr_Comd(0x84,0x03);
+    /* 确保 SPI 移位完全结束 */
+    tft_hw_spi_wait_idle(); 
 }
 
-void HT1621_Init(void)
-{ 	
-	Ht1621Wr_Comd(0x82,0x00);
-	Ht1621Wr_Comd(0x84,0x03);
+/***********************************************************************************************************************
+-----函数功能    等待SPI发送空闲
+-----说明(备注)  等待SPI移位和发送缓存完成, 避免过早切换片选或DC引脚
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+static void tft_hw_spi_wait_idle(void)
+{
+    uint32_t timeout;
+
+    timeout = TFT_SPI_TIMEOUT;
+    while((SET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TRANS)) && (timeout > 0U))
+    {
+        timeout--;
+    }
+
+    timeout = TFT_SPI_TIMEOUT;
+    while((RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE)) && (timeout > 0U))
+    {
+        timeout--;
+    }
 }
+#endif  //boardDISP_SPI_MODE
+
+/***********************************************************************************************************************
+-----函数功能    软件SPI发送单字节
+-----说明(备注)  使用GPIO模拟SPI时序
+-----传入参数    data:要发送的字节
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
+static void tft_spi_send_byte(u8 data)
+{
+    for(u8 i = 0; i < 8; i++)
+    {
+        dispTFT_SCK_L();
+        if(data & 0x80)
+            dispTFT_SDA_H();
+        else
+            dispTFT_SDA_L();
+        dispTFT_SCK_H();
+        data <<= 1;
+    }
+}
+#endif  //boardDISP_SPI_MODE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************************************************************************************************************
+-----函数功能    显示接口硬件初始化
+-----说明(备注)  完成TFT相关时钟、GPIO、SPI/DMA和复位时序配置
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_IfaceInit(void)
+{
+    rcu_periph_clock_enable(dispTFT_CS_RCU);
+    rcu_periph_clock_enable(dispTFT_RES_RCU);
+    rcu_periph_clock_enable(dispTFT_A0_RCU);
+    rcu_periph_clock_enable(dispTFT_BL_RCU);
+    rcu_periph_clock_enable(dispTFT_SCK_RCU);
+    rcu_periph_clock_enable(dispTFT_SDA_RCU);
+
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispTFT_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_CS_PIN);
+    gpio_output_options_set(dispTFT_CS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_CS_PIN);
+    gpio_mode_set(dispTFT_RES_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_RES_PIN);
+    gpio_output_options_set(dispTFT_RES_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_RES_PIN);
+    gpio_mode_set(dispTFT_A0_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_A0_PIN);
+    gpio_output_options_set(dispTFT_A0_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_A0_PIN);
+    gpio_mode_set(dispTFT_BL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_BL_PIN);
+    gpio_output_options_set(dispTFT_BL_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_BL_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    gpio_init(dispTFT_CS_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_CS_PIN);
+    gpio_init(dispTFT_RES_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_RES_PIN);
+    gpio_init(dispTFT_A0_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_A0_PIN);
+    gpio_init(dispTFT_BL_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_BL_PIN);
+    #endif  //boardIC_TYPE
+
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    tft_hw_spi_dma_init();
+    #else
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispTFT_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SCK_PIN);
+    gpio_output_options_set(dispTFT_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SCK_PIN);
+    gpio_mode_set(dispTFT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SDA_PIN);
+    gpio_output_options_set(dispTFT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SDA_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    gpio_init(dispTFT_SCK_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SCK_PIN);
+    gpio_init(dispTFT_SDA_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
+    #endif  //boardIC_TYPE
+    #endif  //boardDISP_SPI_MODE
+
+    dispTFT_CS_H();
+    dispTFT_A0_H();
+    dispTFT_BL_L();
+
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
+    dispTFT_SCK_H();
+    dispTFT_SDA_H();
+    #endif  //boardDISP_SPI_MODE
+
+    dispTFT_RES_L();
+    tft_delay_ms(20);
+    dispTFT_RES_H();
+    tft_delay_ms(120);
+}
+
+/***********************************************************************************************************************
+-----函数功能    SPI发送数据
+-----说明(备注)  根据配置选择硬件DMA SPI或软件模拟SPI发送原始字节流
+-----传入参数    data:数据指针  len:数据长度
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_SpiSendByte(const u8 *data, u16 len)
+{
+    if((data == NULL) || (len == 0U))
+        return;
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    v_tft_spi_dma_send_bytes(data, len);
+    #else
+    for(u16 x = 0; x < len; x++)
+    {
+        tft_spi_send_byte(*data);
+        data++;
+    }
+    #endif  //boardDISP_SPI_MODE
+}
+
+/***********************************************************************************************************************
+-----函数功能    设置背光
+-----说明(备注)  控制TFT背光开关
+-----传入参数    on: true开启背光, false关闭背光
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_TftSetBacklight(bool on)
+{
+    if(on)
+        dispTFT_BL_H();
+    else
+        dispTFT_BL_L();
+}
+
+/***********************************************************************************************************************
+-----函数功能    写命令到TFT
+-----说明(备注)  向TFT写入单个命令字节
+-----传入参数    cmd:命令字节
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_TftWriteCommand(u8 cmd)
+{
+    dispTFT_A0_L();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, cmd);
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    tft_hw_spi_wait_idle();
+    #else
+    tft_spi_send_byte(cmd);
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+-----函数功能    写8位数据到TFT
+-----说明(备注)  向TFT写入单个8位数据
+-----传入参数    data:8位数据
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_TftWriteData8(u8 data)
+{
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, data);
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    tft_hw_spi_wait_idle();
+    #else
+    tft_spi_send_byte(data);
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+-----函数功能    写16位数据到TFT
+-----说明(备注)  向TFT写入单个16位数据
+-----传入参数    data:16位数据
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_TftWriteData16(u16 data)
+{
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, (u8)(data >> 8));
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, (u8)(data & 0xFF));
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    tft_hw_spi_wait_idle();
+    #else
+    tft_spi_send_byte((u8)(data >> 8));
+    tft_spi_send_byte((u8)(data & 0xFF));
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+-----函数功能    写数据缓冲区到TFT
+-----说明(备注)  发送命令参数等通用字节流
+-----传入参数    data:数据指针  len:数据长度
+-----输出参数    none
+-----返回值      none
+************************************************************************************************************************/
+void vDisp_TftWriteBuffer(const u8 *data, u32 len)
+{
+    if((data == NULL) || (len == 0U))
+        return;
+
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    v_tft_spi_dma_send_bytes(data, len);
+    #else
+    {
+        const u8 *byte_data = (const u8 *)data;
+        u32 byte_len = len;
+
+        for(u32 i = 0U; i < byte_len; i++)
+            tft_spi_send_byte(byte_data[i]);
+    }
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+-----函数功能    异步发送颜色数据 (专供 LVGL 刷屏使用)
+-----说明(备注)  开启 DMA 后立刻返回，片选拉高交由 DMA 中断处理
+************************************************************************************************************************/
+bool bDisp_TftWriteColorAsync(const u8 *data, u32 len)
+{
+    if((data == NULL) || (len == 0U))
+        return false;
+
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    s_eDmaXferType = DISP_TFT_DMA_XFER_LVGL_COLOR;
+    dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
+    dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
+	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif  (boardIC_TYPE == boardIC_GD32F30X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif //boardIC_TYPE
+
+    dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    return true;
+    #else
+    {
+        const u8 *byte_data = (const u8 *)data;
+        u32 byte_len = len;
+
+        for(u32 i = 0U; i < byte_len; i++)
+            tft_spi_send_byte(byte_data[i]);
+    }
+
+    dispTFT_CS_H();
+    return false;
+    #endif  //boardDISP_SPI_MODE
+}
+
+/***********************************************************************************************************************
+ -----函数功能    SPI DMA传输完成中断服务子函数
+ -----说明(备注)  DMA传输完成后由中断处理函数调用，清除DMA中断标志，等待SPI移位结束，
+                   拉高片选信号；若当前传输为LVGL颜色数据，则释放显示信号量并通知LVGL刷新完成
+ -----传入参数    px_higher_priority_task_woken:FreeRTOS模式下用于返回是否有更高优先级任务被唤醒，裸机模式下无参数
+ -----输出参数    none
+ -----返回值      none
+ ************************************************************************************************************************/
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+#if(boardUSE_OS)
+static void v_tft_spi_dma_finish_isr(BaseType_t *px_higher_priority_task_woken)
+#else
+static void v_tft_spi_dma_finish_isr(void)
+#endif
+{
+    dma_interrupt_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_GIF);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_G);
+    #endif
+    dma_interrupt_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_FTF);
+
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    while(SET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TRANS));
+
+    dispTFT_CS_H();
+
+    #if 0
+    if(s_eDmaXferType == DISP_TFT_DMA_XFER_LVGL_COLOR)
+    {
+        s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
+
+        #if(boardUSE_OS)
+        if(DispSemaphoreBinary != NULL)
+            xSemaphoreGiveFromISR(DispSemaphoreBinary, px_higher_priority_task_woken);
+
+        if(DispFlushDoneSemaphore != NULL)
+            xSemaphoreGiveFromISR(DispFlushDoneSemaphore, px_higher_priority_task_woken);
+        #endif
+
+        if(disp != NULL)
+            lv_display_flush_ready(disp);
+    }
+    #endif
+}
+#endif
+/***********************************************************************************************************************
+-----函数功能    DMA0 通道4中断处理函数
+-----说明(备注)  处理DMA传输完成的中断
+-----日期        2026-05-29
+************************************************************************************************************************/
+#if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+void dispTFT_DMA_TX_IRQ_HANDLER(void)
+{
+    #if(boardUSE_OS)
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    #endif
+
+    if(dma_interrupt_flag_get(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_INT_FLAG_FTF))
+    {
+        #if(boardUSE_OS)
+        v_tft_spi_dma_finish_isr(&xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        #else
+        v_tft_spi_dma_finish_isr();
+        #endif
+    }
+}
+#endif
+
+#endif  //boardDISPLAY_EN

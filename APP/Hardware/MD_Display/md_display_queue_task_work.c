@@ -155,22 +155,22 @@ __STATIC_INLINE void v_update_dev_param(void)
     #endif // boardBMS_EN
 
     #if (boardUSB_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_USB, (tUsb.eDevState == DS_WORK));
+    vDisp_SetDevStateIcon(DEV_TYPE_USB, tUsb.eDevState);
     #endif // boardUSB_EN
 
     #if (boardDC_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_DC, (tDc.eDevState == DS_WORK));
+    vDisp_SetDevStateIcon(DEV_TYPE_DC, tDc.eDevState);
     #endif // boardDC_EN
 
     #if (boardMPPT_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_PV, (tMppt.eDevState >= DS_BOOTING));
+    vDisp_SetDevStateIcon(DEV_TYPE_PV, tMppt.eDevState);
     #endif // boardMPPT_EN
 
     #if (boardDCAC_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_AC_OUT, (tDcac.eDisChgState >= IOS_STARTING));
-    vDisp_SetDevStateIcon(DEV_TYPE_AC_IN, (tDcac.eChgState >= IOS_STARTING));
+    vDisp_SetDevStateIcon(DEV_TYPE_AC_OUT, tDcac.eDisChgState);
+    vDisp_SetDevStateIcon(DEV_TYPE_AC_IN, tDcac.eChgState);
     #endif // boardDCAC_EN
-
+    
     snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usOutPwr);
     set_var_uca_out_pwr_value(cStr);
 

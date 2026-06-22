@@ -19,6 +19,10 @@
 #include "Adc/adc_task.h"
 #endif
 
+#if(boardMPPT_EN)
+#include "MD_Mppt/md_mppt_rec_task.h"
+#endif
+
 #include "app_info.h"
 #include "gpio_init.h"
 														
@@ -129,8 +133,8 @@ __STATIC_INLINE void v_chg_pwr_manage(void)
 	{
 		if(ucBms_GetSoc() >= 98)
 			tSysInfo.tSetChgPwr.usMPPT = sysCHG_PWR_LEVEL1;
-		else if(ucBms_GetSoc() <=2 || ucBms_GetSoc() >= 90)
-			tSysInfo.tSetChgPwr.usMPPT = sysCHG_PWR_LEVEL2;
+		// else if(ucBms_GetSoc() <=2 || ucBms_GetSoc() >= 90)
+		// 	tSysInfo.tSetChgPwr.usMPPT = sysCHG_PWR_LEVEL2;
 		else
 		{
 			tSysInfo.tSetChgPwr.usMPPT = tAppMemParam.tMPPT.usInPwrRating / 10;
@@ -163,6 +167,20 @@ __STATIC_INLINE void v_chg_pwr_manage(void)
 
 				tSysInfo.tSetChgPwr.usMPPT = tSysInfo.tSetChgPwr.usMPPT;
 			}
+
+			//根据接口,限制功率
+			//DC输入模式:严格限制输入电流不超过7A,通过输入电压计算最大功率上限
+			//PV输入模式:不进行电流限制,保持当前功率设置
+			//原理:功率(W)=电压(V)×电流(A),tMpptRx.usInVolt单位为0.1V
+			//      7A对应最大功率=usInVolt*0.1V*7A=usInVolt*0.7W
+			if(tMppt.eWorkMode == MWM_DC)
+			{
+				u16 us_dc_curr_limit_pwr = (u16)(tMpptRx.usInVolt * 0.7f);
+				if(tSysInfo.tSetChgPwr.usMPPT > us_dc_curr_limit_pwr)
+					tSysInfo.tSetChgPwr.usMPPT = us_dc_curr_limit_pwr;
+			}
+			//MWM_PV模式不限制电流,无需处理
+			
 		}
 	}
 	#endif  //boardMPPT_EN

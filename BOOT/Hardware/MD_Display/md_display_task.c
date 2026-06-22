@@ -1,6 +1,6 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         Disp显示任务                                                          *
+*                                         Disp显示任务                                                          *
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Display/md_display_task.h"
@@ -13,7 +13,13 @@
 #include "Print/print_task.h"
 
 #include "boot_info.h"
+#include "Update/update_main.h"
+#include "MD_Display/user_ui/update_mode_ui.h"
 
+#if(boardUSE_OS)
+#include "freertos.h"
+#include "task.h"
+#endif
 
 //****************************************************任务参数初始化**********************************************//
 #if(boardUSE_OS)
@@ -26,9 +32,6 @@ void vDisp_Task(void *pvParameters);
 //****************************************************参数初始化**************************************************//
 Disp_T   tDisp; 
 
-//****************************************************局部函数定义************************************************//
-static void v_disp_update(void);
-
 /***********************************************************************************************************************
 -----函数功能    参数初始化
 -----说明(备注)  none
@@ -40,10 +43,8 @@ static void v_disp_param_init(void)
 {
 	memset(&tDisp, 0, sizeof(tDisp));
 	
-	Display_ClearData();   //Buff清零,避免残留
-	
 	tDisp.usAutoOffTime = boardDISP_OFF_TIME;
-	tDisp.bSleepShow =true;//待机强制打开亮屏
+	tDisp.bSleepShow = true;//待机强制打开亮屏
 }
 
 /***********************************************************************************************************************
@@ -57,7 +58,8 @@ bool bDisp_TaskInit(void)
 {
 	v_disp_param_init();
 	
-	HT1621_IfaceInit();
+	vDisp_IfaceInit();
+	vDisp_Init();
 	
 	#if(boardUSE_OS)
 	xTaskCreate((TaskFunction_t )vDisp_Task,			//任务函数
@@ -85,12 +87,24 @@ void vDisp_Task(void *pvParameters)
 	#endif  //boardUSE_OS
 	{
 		if(tpSysTask == NULL)
+		{
+			#if(boardUSE_OS)
+			vTaskDelay(100);
+			continue;
+			#else
 			return;
+			#endif
+		}
 		
 		if(tpSysTask->ucID != STI_UPDATE)
 		{
 			bDisp_Switch(ST_OFF, false);
+			#if(boardUSE_OS)
+			vTaskDelay(100);
+			continue;
+			#else
 			return;
+			#endif
 		}
 			
 		bDisp_Switch(ST_ON, true);
@@ -119,7 +133,7 @@ void vDisp_Task(void *pvParameters)
 			#if(boardUPDATE)
 			case STI_UPDATE:
 			{
-				v_disp_update();
+				vDisp_UpdateModeUi();
 			}
 			break;
 			#endif
@@ -143,39 +157,15 @@ void vDisp_Task(void *pvParameters)
 			default:
 				break;
 		}
+		
+		#if(boardUSE_OS)
+		vTaskDelay(50);
+		#endif
 	}
 	
 }
 
 
-/***********************************************************************************************************************
------函数功能    参数初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-__STATIC_INLINE void v_disp_update(void)
-{
-	static vu16 us_delay_cnt = 0;
-	us_delay_cnt++;
-	if(us_delay_cnt >= 5)
-	{
-		us_delay_cnt = 0;
-		
-		Display_IconUpdate();
-		
-
-		
-		Display_ShowErrCode(tBootMemParam.tParam.eAppState);
-		Display_UpdateState(1, tUpdate.eProtoType, 0);
-		Display_UpdateProgress(tUpdate.usRecFrameCnt, tUpdate.usTotalFrmValue);
-		Display_UpdateTime(tUpdate.tpProtoRx->usLostOverTimeCnt/100);
-		Display_UpdateAnimation();
-		
-		Display_RefreshData();            //发送数据
-	}
-}
 
 /***********************************************************************************************************************
 -----函数功能    显示开关
@@ -186,14 +176,26 @@ __STATIC_INLINE void v_disp_update(void)
 ************************************************************************************************************************/
 bool bDisp_Switch(SwitchType_E type, bool fore_en)
 {
-	Display_ClearData();   //Buff清零,避免残留
-	
 	switch(type)
 	{
 		case ST_ON:
+			if(tDisp.bLight == true)
+			{
+				if(fore_en == true)
+					tDisp.usAutoOffTime = 0;
+				
+				if(tDisp.usAutoOffTime)
+					tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
+				
+				return true;
+			}
 			goto LoopOn;
 		
 		case ST_OFF:
+			if(tDisp.bLight == false)
+			{
+				return true;
+			}
 			goto LoopOff;
 		
 		default:
@@ -201,8 +203,12 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en)
 			if(tDisp.bLight == false)
 			{
 				LoopOn:
-				dispLIGHT_POWER_ON();
+				vDisp_TftSetBacklight(true);
 				tDisp.bLight = true;
+				
+				// 清屏并绘制静态标题
+				vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x10A3);
+				vDisp_DrawText(40, 20, "FIRMWARE UPDATE", 0xFFFF, 0x10A3, 2);
 				
 				//关闭息屏
 				if(fore_en == true)
@@ -215,12 +221,8 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en)
 			else 
 			{
 				LoopOff:
-				dispLIGHT_POWER_OFF();
+				vDisp_TftSetBacklight(false);
 				v_disp_param_init();
-				
-				if(tDisp.bLight != false)
-					Display_RefreshData(); //发送数据
-				
 				tDisp.bLight = false;
 			}
 		}
@@ -255,7 +257,6 @@ void vDisp_TickTimer(void)
 			tDisp.usAutoOffCnt--;
 			if(tDisp.usAutoOffCnt == 0)
 			{
-				// v_disp_shut_down();
 				if(uPrint.tFlag.bDispTask|| uPrint.tFlag.bImportant)
 					sMyPrint("Lcd_Task:倒计时结束,进入息屏 时间 = %dS\r\n",tDisp.usAutoOffTime);
 			}
@@ -280,35 +281,6 @@ bool bDisp_MemParamInit(DispMemParam_T* p_disp_mem)
 
 #if(boardLOW_POWER)
 /*****************************************************************************************************************
------函数功能    检查系统的输入电源:外接电池
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-*****************************************************************************************************************/
-void v_dis_power_select( void )
-{
-	if(tDisp.bLight)
-	{
-		/*************************************电源有输入*********************************************************/
-		if( tAdcSamp.usBMS_Vin >= boardBMS_MIN_VOLT )   
-		{
-			Disp_EN_OFF();          //关闭显示屏的电池供电
-		}
-		/*************************************没有电源输入*******************************************************/
-		else
-		{
-			Disp_EN_ON();          //打开显示屏的电池供电
-		}	
-	}
-	else 
-	{
-		Disp_EN_OFF();          //关闭显示屏的电池供电
-	}
-}
-
-
-/*****************************************************************************************************************
 -----函数功能    进入低功耗
 -----说明(备注)  none
 -----传入参数    none
@@ -317,9 +289,6 @@ void v_dis_power_select( void )
 *****************************************************************************************************************/
 void vLcd_EnterLowPower(void)
 {
-//	vLcd_IoEnterLowPower();
-//	bAtti_EnterLowPower();
-//	vExRTC_EnterLowPower();
 	vTaskSuspend(tDispTaskHandler);
 }
 
@@ -332,7 +301,6 @@ void vLcd_EnterLowPower(void)
 *****************************************************************************************************************/
 void vLcd_ExitLowPower(void)
 {
-//	vExRTC_ExitLowPower();
 	vTaskResume(tDispTaskHandler);
 }
 #endif //boardLOW_POWER

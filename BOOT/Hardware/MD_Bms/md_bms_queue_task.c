@@ -87,9 +87,16 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->ucID, 1);
 		lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->usInParam, 2);
     }
-    else
+	#if(boardUPDATE)
+    else if(tpSysTask->ucID == STI_UPDATE)
     {
-		tp_task->ucID = BTI_MAIN;
+		tp_task->ucID = BTI_UPDATE;
+		tp_task->usInParam = 0;
+    }
+	#endif  //boardUPDATE
+	else
+    {
+		tp_task->ucID = BTI_NULL;
 		tp_task->usInParam = 0;
     }
     
@@ -100,6 +107,13 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
             tp_task->vp_func = v_bms_queue_task_main;
 			if(uPrint.tFlag.bBmsTask)
 				sMyPrint("bBmsTask:----装载主任务----\r\n");
+        }break; 
+
+        case BTI_UPDATE:
+        {			
+            tp_task->vp_func = v_bms_queue_task_update;
+			if(uPrint.tFlag.bBmsTask)
+				sMyPrint("bBmsTask:----装载更新任务----\r\n");
         }break; 
         
 		case BTI_NULL:
