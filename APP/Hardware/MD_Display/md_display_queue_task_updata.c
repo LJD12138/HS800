@@ -112,7 +112,7 @@ void v_disp_queue_task_updata(Task_T *tp_task)
         case 0:
             if(tDisp.eDevState != DS_UPDATE_MODE)
                 bDisp_SetDevState(DS_UPDATE_MODE);
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
 
             /* 载入升级专属屏幕 */
             loadScreen(SCREEN_ID_MAIN_UPDATE);

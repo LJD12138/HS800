@@ -34,7 +34,7 @@ void v_disp_queue_task_eng(Task_T *tp_task)
                      tDisp.eDevState, lv_screen_active(), objects.main_eng);
             if(tDisp.eDevState != DS_ENG_MODE)
                 bDisp_SetDevState(DS_ENG_MODE);
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
 
             /* 创建工程模式UI */
             vEngMode_UiCreate();

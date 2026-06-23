@@ -23,7 +23,7 @@ void v_disp_queue_task_closing(Task_T *tp_task)
         {
             if(tDisp.eDevState != DS_CLOSING)
                 bDisp_SetDevState(DS_CLOSING);
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
             loadScreen(SCREEN_ID_MAIN_CLOSING);
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }

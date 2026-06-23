@@ -40,7 +40,7 @@ void v_disp_queue_task_err(Task_T *tp_task)
         case 0:
             if(tDisp.eDevState != DS_ERR)
                 bDisp_SetDevState(DS_ERR);
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
             cQueue_GotoStep(tp_task, STEP_NEXT);
             break;
 

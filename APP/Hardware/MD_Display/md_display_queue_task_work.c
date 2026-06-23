@@ -76,7 +76,7 @@ void v_disp_queue_task_work(Task_T *tp_task)
 
             uc_refresh_ui_index = 0U;
             vDisp_UiRefresh();
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
             s_tDispWorkLastDataUpdateTick = xTaskGetTickCount();
             s_bDispWorkDataUpdateTickValid = true;
             cQueue_GotoStep(tp_task, STEP_NEXT);

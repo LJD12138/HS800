@@ -4,6 +4,8 @@
 *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_task.h"
+#include "Buz/buz_task.h"
+#include <stdbool.h>
 
 #if(boardDISPLAY_EN)
 #include "MD_Display/md_display_api.h"
@@ -185,10 +187,33 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en)
 	}
 	
 	tDisp.bLight = target_on;
+	if(tDisp.bLight == true)
+	{
+		if(fore_en == true)
+		{
+			tDisp.usAutoOffTime = 0;
+			tDisp.usAutoOffCnt = tAppMemParam.tDISP.usAutoOffTime;
+
+			#if(boardBUZ_EN)
+			bBuz_Tweet(LONG_1);
+			#endif  //boardBUZ_EN
+		}
+		else
+		{
+			if(tDisp.usAutoOffTime)
+				tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
+		}
+	}
+	//息屏后重置
+	else 
+	{
+		tDisp.usAutoOffTime = tAppMemParam.tDISP.usAutoOffTime;
+		tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
+	}
+	
 	vDisp_TftSetBacklight(target_on);
 
-	if(tDisp.usAutoOffTime)
-		tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
+	
 
 	return true;
 }

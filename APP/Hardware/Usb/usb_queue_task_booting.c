@@ -18,7 +18,7 @@
 #endif  //boardPRINT_IFACE
 
 
-#define       	usbTASK_BOOTING_CYCLE_TIME               		100
+#define       	usbTASK_BOOTING_CYCLE_TIME               		500
 
 
 /*****************************************************************************************************************
@@ -38,14 +38,15 @@ void v_usb_queue_task_booting(Task_T *tp_task)
 
 			if(cUsb_CheckInVolt() == 0)
 			{
+				usbPD_EN_ON();
 				cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
-				return;
 			}
 		}
 		break;
 
 		case 1:
 		{
+			usbPD2_EN_ON();
 			bUsb_SetDevState(DS_WORK);
 			cQueue_GotoStep(tp_task, STEP_END);  //结束
 		}

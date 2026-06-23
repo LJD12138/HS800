@@ -281,6 +281,7 @@ virtualFolder:
             - path: Hardware/MD_Display/eez_ui/vars.c
             - path: Hardware/MD_Display/eez_ui/ui_image_1_mirror_map.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_ol.c
+            - path: Hardware/MD_Display/eez_ui/ui_image_icon_light.c
           folders: []
         - name: user_ui
           files:

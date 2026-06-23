@@ -14,6 +14,7 @@ extern const lv_img_dsc_t img_icon_tx60;
 extern const lv_img_dsc_t img_icon__;
 extern const lv_img_dsc_t img_icon_ac;
 extern const lv_img_dsc_t img_icon_dc;
+extern const lv_img_dsc_t img_icon_light;
 extern const lv_img_dsc_t img_icon_ot;
 extern const lv_img_dsc_t img_icon_ol;
 extern const lv_img_dsc_t img_icon_time;
@@ -31,7 +32,7 @@ typedef struct _ext_img_desc_t {
 } ext_img_desc_t;
 #endif
 
-extern const ext_img_desc_t images[15];
+extern const ext_img_desc_t images[16];
 
 #ifdef __cplusplus
 }

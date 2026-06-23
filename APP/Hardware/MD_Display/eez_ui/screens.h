@@ -31,6 +31,7 @@ typedef struct _objects_t {
     lv_obj_t *b_dev_ac_out_state;
     lv_obj_t *b_dev_usb_state;
     lv_obj_t *b_dev_dc_state;
+    lv_obj_t *b_dev_light_state;
     lv_obj_t *b_err_icon_ol;
     lv_obj_t *b_err_icon_ot;
     lv_obj_t *uca_err_code;

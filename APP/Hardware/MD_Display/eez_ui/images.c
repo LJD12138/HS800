@@ -1,6 +1,6 @@
 #include "images.h"
 
-const ext_img_desc_t images[15] = {
+const ext_img_desc_t images[16] = {
     { "Icon_W", &img_icon_w },
     { "Icon_out", &img_icon_out },
     { "Icon_in", &img_icon_in },
@@ -8,6 +8,7 @@ const ext_img_desc_t images[15] = {
     { "Icon_%", &img_icon__ },
     { "Icon_AC", &img_icon_ac },
     { "Icon_DC", &img_icon_dc },
+    { "icon_light", &img_icon_light },
     { "Icon_OT", &img_icon_ot },
     { "Icon_OL", &img_icon_ol },
     { "Icon_Time", &img_icon_time },

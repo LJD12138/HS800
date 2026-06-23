@@ -46,7 +46,7 @@ void v_disp_queue_task_booting(Task_T *tp_task)
         //加载进度条
         case 1:
         {
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
             
             if(ucLoadingStep < 100)
                 ucLoadingStep += 3;
@@ -62,14 +62,14 @@ void v_disp_queue_task_booting(Task_T *tp_task)
         //关背光,切换到Work屏,渲染完成后立即亮屏
         case 2:
         {
-            bDisp_Switch(ST_OFF, true);
+            bDisp_Switch(ST_OFF, false);
             /* 先立即加载屏幕(无动画),再调用loadScreen仅更新currentScreen,
                因act_scr已等于main_work,loadScreen内部的lv_scr_load_anim会直接返回 */
             lv_scr_load(objects.main_work);
             loadScreen(SCREEN_ID_MAIN_WORK);
             vDisp_Main1UiStart();
             vDisp_UiRefresh();
-            bDisp_Switch(ST_ON, true);
+            bDisp_Switch(ST_ON, false);
             cQueue_GotoStep(tp_task, STEP_END);
             return;
         }

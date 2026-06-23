@@ -394,8 +394,8 @@ void bUsb_SetDevState(DevState_E stat)
 	if(stat == DS_BOOTING)
 	{
 		// usbPOWER_EN_ON();
-		usbPD_EN_ON();
-		usbPD2_EN_ON();
+		// usbPD_EN_ON();
+		// usbPD2_EN_ON();
 		// usbA_EN_ON();
 	}
 	else if(stat == DS_CLOSING)

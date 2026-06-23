@@ -22,6 +22,7 @@
     "ui_image_icon_ac.c",
     "ui_image_icon_dc.c",
     "ui_image_icon_in.c",
+    "ui_image_icon_light.c",
     "ui_image_icon_ol.c",
     "ui_image_icon_ot.c",
     "ui_image_icon_out.c",

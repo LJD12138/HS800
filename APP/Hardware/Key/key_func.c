@@ -214,7 +214,7 @@ void vKey_ProcKeyFunc(u8* pKeyTriTypeBuff)
 		#if(boardDISPLAY_EN)
 		else if(bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_BLOnOffBuff, sizeof(KeyTriType_BLOnOffBuff))) //单击POWER按键　
 		{
-			bDisp_Switch(ST_NULL, true);
+			bDisp_Switch(ST_NULL, false);
 			
 			if(uPrint.tFlag.bKeyTask)
 				sMyPrint("Key_Task:开关背光\r\n");

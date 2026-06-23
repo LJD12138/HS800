@@ -37,6 +37,9 @@
 
 #include "Usb/usb_task.h"
 #include "Dc/dc_task.h"
+#if(boardLIGHT_EN)
+#include "MD_Light/md_light_task.h"
+#endif
 #include <stdio.h>
 
 #include "lvgl.h"
@@ -50,7 +53,7 @@
 bool S_bDevAcOutShow;  // AC输出设备显示(true=开, false=关)
 bool S_bDevAcInShow;   // AC输入设备显示(true=开, false=关)
 bool S_bDevPvShow;     // PV设备显示(true=开, false=关)
-// bool S_bDevLightState;  // Light设备显示(true=开, false=关)
+bool S_bDevLightShow;   // Light设备显示(true=开, false=关)
 bool S_bDevUsbShow;    // USB设备显示(true=开, false=关)
 // bool S_bDevUsbAState;   // USB A设备显示(true=开, false=关)
 // bool S_bDevUsbC1State;  // USB C1设备显示(true=开, false=关)
@@ -106,12 +109,14 @@ bool b_disp_update_all_dev_states(bool b_force)
 	#endif
 	static int8_t s_last_dev_usb_state = -1;
 	static int8_t s_last_dev_dc_state = -1;
+	static int8_t s_last_dev_light_state = -1;
 
 	bool b_ac_out_show = S_bDevAcOutShow;
 	bool b_ac_in_show = S_bDevAcInShow;
 	bool b_pv_show = S_bDevPvShow;
 	bool b_usb_show = S_bDevUsbShow;
 	bool b_dc_show = S_bDevDcShow;
+	bool b_light_show = S_bDevLightShow;
 
 	if (S_bTestAllParam)
 	{
@@ -120,6 +125,7 @@ bool b_disp_update_all_dev_states(bool b_force)
 		b_pv_show = true;
 		b_usb_show = true;
 		b_dc_show = true;
+		b_light_show = true;
 	}
 	
 	if(s_last_dev_ac_out_state != b_ac_out_show || b_force)
@@ -180,6 +186,13 @@ bool b_disp_update_all_dev_states(bool b_force)
 	{
 		s_last_dev_dc_state = b_dc_show;
 		v_disp_set_icon_visible(objects.b_dev_dc_state, b_dc_show);
+        b_ret = true;
+	}
+
+	if(s_last_dev_light_state != b_light_show || b_force)
+	{
+		s_last_dev_light_state = b_light_show;
+		v_disp_set_icon_visible(objects.b_dev_light_state, b_light_show);
         b_ret = true;
 	}
 
@@ -580,6 +593,17 @@ void vDisp_SetDevStateIcon(DevType_E devType, u8 ucState)
 		}
 		break;
 		
+		case DEV_TYPE_LIGHT:
+		{
+			eState = (DevState_E)ucState;
+
+			if(eState >= DS_WORK)
+				S_bDevLightShow = true;
+			else
+			   	S_bDevLightShow = false;
+		}
+		break;
+		
 		default:
 			break;
 	}
@@ -652,6 +676,10 @@ void vDisp_UpdateDevParam(void)
     #if (boardDC_EN)
     vDisp_SetDevStateIcon(DEV_TYPE_DC, tDc.eDevState);
     #endif // boardDC_EN
+
+    #if (boardLIGHT_EN)
+    vDisp_SetDevStateIcon(DEV_TYPE_LIGHT, tLight.eDevState);
+    #endif // boardLIGHT_EN
 
     #if (boardMPPT_EN)
     vDisp_SetDevStateIcon(DEV_TYPE_PV, tMppt.eDevState);
