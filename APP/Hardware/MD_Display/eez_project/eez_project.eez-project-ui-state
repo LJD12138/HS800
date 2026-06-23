@@ -1,7 +1,6 @@
 {
   "navigation": {
     "selectedUserPageObject": "[eez_project.eez-project]:/userPages/1",
-    "selectedGlobalVariableObject": "[eez_project.eez-project]:/variables/globalVariables/-1",
     "selectedFontObject": "[eez_project.eez-project]:/fonts/0",
     "selectedBitmapObject": "[eez_project.eez-project]:/bitmaps/7",
     "subnavigationSelectedItems": {
@@ -210,10 +209,10 @@
                 {
                   "type": "tab",
                   "id": "#3b8e8889-101a-4f85-a9de-74ac162a5fe7",
-                  "name": "Main_Eng",
+                  "name": "Main_Update",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[eez_project.eez-project]:/userPages/4",
+                    "objectPath": "[eez_project.eez-project]:/userPages/3",
                     "permanent": false
                   },
                   "icon": "svg:page"
@@ -1128,10 +1127,10 @@
         "0": {
           "0": {},
           "6": {},
-          "9": {},
-          "10": {
+          "9": {
             "$selected": true
           },
+          "10": {},
           "12": {},
           "13": {}
         }

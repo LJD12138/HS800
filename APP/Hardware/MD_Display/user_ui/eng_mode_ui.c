@@ -62,14 +62,6 @@
 #include "MD_Dcac/md_dcac_task.h"
 #endif
 
-#if(boardDC_EN)
-#include "Dc/dc_task.h"
-#endif
-
-#if(boardUSB_EN)
-#include "Usb/usb_task.h"
-#endif
-
 #if(boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
@@ -880,7 +872,18 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
             switch(uc_item)
             {
                 case 0: snprintf(pc_buf, uc_size, "%s", tAppMemParam.tVerInfo.saVersion + 10); break;
-                case 1: snprintf(pc_buf, uc_size, "%d", S_tState.ucPsItem == 1 ? tEngMode.cEngModeState : 0); break;
+                case 1: /* FanCtrl: 显示风扇实际工作档位 */
+                {
+                #if(boardHEAT_MANAGE_EN)
+                    FanWorkMode_E e_fm = eFan_GetWorkMode();
+                    const char *p_fm = "OFF";
+                    if(e_fm == FWM_GEAR_FULL) p_fm = "FULL";
+                    else if(e_fm > FWM_OFF)   p_fm = "ON";
+                    snprintf(pc_buf, uc_size, "%s", p_fm);
+                #else
+                    snprintf(pc_buf, uc_size, "-");
+                #endif
+                }break;
                 case 2: snprintf(pc_buf, uc_size, "%u min", tAppMemParam.tSYS.usAutoOffTime); break;
                 case 3: snprintf(pc_buf, uc_size, "%d C", tAppMemParam.tSYS.sMaxTemp); break;
                 case 4: snprintf(pc_buf, uc_size, "%d C", tAppMemParam.tSYS.sMinTemp); break;
@@ -1048,6 +1051,12 @@ static void v_ps_update_selection(void)
             lv_obj_set_style_text_color(S_tObjs.p_ps_lbl_n[i],
                 lv_color_hex(ENG_CLR_TEXT_SEC), LV_PART_MAIN | LV_STATE_DEFAULT);
         }
+    }
+
+    /* 选中项自动滚动到可视区域, 避免长列表中选中项被遮挡 */
+    if(S_tState.ucPsItem < uc_cnt && S_tObjs.p_ps_items[S_tState.ucPsItem] != NULL)
+    {
+        lv_obj_scroll_to_view(S_tObjs.p_ps_items[S_tState.ucPsItem], LV_ANIM_ON);
     }
 }
 
@@ -1290,11 +1299,17 @@ static void v_page_show(EngModePage_E e_page)
 
         case ENG_PAGE_PARAM_VIEW:
             if(S_tObjs.p_pv_page) lv_obj_clear_flag(S_tObjs.p_pv_page, LV_OBJ_FLAG_HIDDEN);
+            lv_label_set_text(S_tObjs.p_title_label, "PARAM VIEW");
+            lv_obj_set_style_text_color(S_tObjs.p_title_label,
+                lv_color_hex(ENG_CLR_TEXT), LV_PART_MAIN | LV_STATE_DEFAULT);
             v_pv_switch_tab(S_tState.ucPvTab);
             break;
 
         case ENG_PAGE_PARAM_SET:
             if(S_tObjs.p_ps_page) lv_obj_clear_flag(S_tObjs.p_ps_page, LV_OBJ_FLAG_HIDDEN);
+            lv_label_set_text(S_tObjs.p_title_label, "PARAM SET");
+            lv_obj_set_style_text_color(S_tObjs.p_title_label,
+                lv_color_hex(ENG_CLR_TEXT), LV_PART_MAIN | LV_STATE_DEFAULT);
             v_ps_switch_tab(S_tState.ucPsTab);
             break;
 
@@ -1472,7 +1487,8 @@ void vEngMode_KeyEnter(void)
         }break;
 
         case ENG_PAGE_SYS_SET:
-            S_tState.ucConfirmSel = 1;  /* 默认选中确认 */
+            /* 保存退出(SAVE&EXIT)默认选中确认, 重置/升级等危险操作默认选中取消, 防止误触发 */
+            S_tState.ucConfirmSel = (S_tState.ucSsSel == 0) ? 1 : 0;
             v_page_show(ENG_PAGE_CONFIRM);
             break;
 

@@ -3,7 +3,7 @@
 
 #if(boardUSE_SFUD)
 #include <sfud.h>
-#elif(boardIC_TYPE == boardIC_GD32F30X)
+#elif(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 #include "Flash/flash_gd32.h"
 #elif(boardIC_TYPE == boardIC_STM32H7XX)
 #include "Flash/flash_stm32.h"
@@ -116,7 +116,7 @@ bool bFlash_WriteDataToFlash(u8* data,u32 len)
 *****************************************************************************************************************/
 s8 cFlash_EraseSector(u32 star_addr,u32 end_addr)
 {
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	if(bFlash_Gd32EraseSector(star_addr, end_addr) == false)
 		return -1;
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
@@ -148,7 +148,7 @@ s8 cFlash_Write8BitData(u32 start_addr, u8* data, u32 len)
 		return 0;
 	
 	
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X ||boardIC_TYPE == boardIC_GD32F50X)
 	if(bFlash_Gd32Write32Bit(start_addr,(u32*)data,len) == false)
 		return -1;
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
@@ -189,7 +189,7 @@ s8 cFlash_Read8BitData(u32 start_addr, u8* data, u32 len)
 	if(data == NULL || len == 0)
 		return 0;
 	
-	#if(boardIC_TYPE == boardIC_GD32F30X)
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 	vFlash_Gd32Read8Bit(start_addr, data, len);
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
 	#if(boardUSE_SFUD)

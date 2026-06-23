@@ -6,11 +6,12 @@
  * Author  : LJD(291483914@qq.com)
  * Desc    : 工程模式按键处理 - TFT+LVGL版本
  *           按键映射:
- *             AC_SHORT   -> KeyUp    (上移/增值)
- *             DC_SHORT   -> KeyDown  (下移/减值)
- *             POWER_SHORT-> KeyEnter (确认/选择)
- *             LIGHT_SHORT-> KeyRight (右切Tab)
- *             POWER_LONG -> KeyBack  (返回/退出)
+ *             AC_SHORT    -> KeyUp    (上移/增值)
+ *             DC_SHORT    -> KeyDown  (下移/减值)
+ *             POWER_SHORT -> KeyEnter (确认/选择)
+ *             LIGHT_SHORT -> KeyRight (右切Tab)
+ *             LIGHT_LONG  -> KeyLeft  (左切Tab)
+ *             POWER_LONG  -> KeyBack  (返回/退出)
  * -------------------------------------------------------
  * Copyright (c) 2026 -inc
 *******************************************************************************************************************************/
@@ -51,6 +52,7 @@ u8 const KeyTriType_UpBuff[ 2 ]     = { KTE_AC_SHORT, KTE_FUN_NULL};          //
 u8 const KeyTriType_DownBuff[ 2 ]   = { KTE_DC_SHORT, KTE_FUN_NULL};          //下/减
 u8 const KeyTriType_EnterBuff[ 2 ]  = { KTE_POWER_SHORT, KTE_FUN_NULL};       //确认
 u8 const KeyTriType_RightBuff[ 2 ]  = { KTE_LIGHT_SHORT, KTE_FUN_NULL};       //右切Tab
+u8 const KeyTriType_LeftBuff[ 2 ]   = { KTE_LIGHT_LONG, KTE_FUN_NULL};        //左切Tab
 u8 const KeyTriType_BackBuff[ 2 ]   = { KTE_POWER_LONG, KTE_FUN_NULL};        //返回
 
 
@@ -86,6 +88,13 @@ void v_key_func_eng(u8* pKeyTriTypeBuff)
 	else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_RightBuff, sizeof(KeyTriType_RightBuff)) )
 	{
 		vEngMode_KeyRight();
+		#if(boardBUZ_EN)
+		bBuz_Tweet(SHORT_1);
+		#endif
+	}
+	else if( bFun_DataCompare( pKeyTriTypeBuff, (u8*)&KeyTriType_LeftBuff, sizeof(KeyTriType_LeftBuff)) )
+	{
+		vEngMode_KeyLeft();
 		#if(boardBUZ_EN)
 		bBuz_Tweet(SHORT_1);
 		#endif

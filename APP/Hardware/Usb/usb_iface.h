@@ -29,14 +29,16 @@
 #define     	usbPD_EN_RCU          					RCU_GPIOB
 #define     	usbPD_EN_PORT     						GPIOB
 #define     	usbPD_EN_PIN          					GPIO_PIN_7
-#define     	usbPD_EN_ON()         					GPIO_BOP(usbPD_EN_PORT) = (uint32_t)usbPD_EN_PIN
-#define     	usbPD_EN_OFF()        					GPIO_BC(usbPD_EN_PORT) = (uint32_t)usbPD_EN_PIN
+#define     	usbPD_EN_PWM_SET(x)    					TIMER_CH1CV(TIMER3) = ((uint32_t)x)
+#define     	usbPD_EN_ON()         					usbPD_EN_PWM_SET(1000)
+#define     	usbPD_EN_OFF()        					usbPD_EN_PWM_SET(0)
 
 #define     	usbPD2_EN_RCU          					RCU_GPIOA
 #define     	usbPD2_EN_PORT     						GPIOA
 #define     	usbPD2_EN_PIN          					GPIO_PIN_10
-#define     	usbPD2_EN_ON()         					GPIO_BOP(usbPD2_EN_PORT) = (uint32_t)usbPD2_EN_PIN
-#define     	usbPD2_EN_OFF()        					GPIO_BC(usbPD2_EN_PORT) = (uint32_t)usbPD2_EN_PIN
+#define     	usbPD2_EN_PWM_SET(x)    				TIMER_CH2CV(TIMER0) = ((uint32_t)x)
+#define     	usbPD2_EN_ON()         					usbPD2_EN_PWM_SET(1000)
+#define     	usbPD2_EN_OFF()        					usbPD2_EN_PWM_SET(0)
 
 // #define     	usbPOWER_EN_RCU       					RCU_GPIOB
 // #define     	usbPOWER_EN_PORT      					GPIOB

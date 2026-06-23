@@ -30,8 +30,9 @@ void v_disp_queue_task_eng(Task_T *tp_task)
             /* 确保 UI 及所有屏幕已经初始化 (防止直入工程模式时未调用 ui_init) */
             vDisp_UiInit();
 
-            sMyPrint("DispEng: case 0, tDisp.eDevState = %d, active_scr = %p, main_eng = %p\r\n", 
-                     tDisp.eDevState, lv_screen_active(), objects.main_eng);
+            if(uPrint.tFlag.bDispTask)
+                sMyPrint("DispEng: case 0, tDisp.eDevState = %d, active_scr = %p, main_eng = %p\r\n",
+                         tDisp.eDevState, lv_screen_active(), objects.main_eng);
             if(tDisp.eDevState != DS_ENG_MODE)
                 bDisp_SetDevState(DS_ENG_MODE);
             bDisp_Switch(ST_ON, false);
@@ -41,7 +42,8 @@ void v_disp_queue_task_eng(Task_T *tp_task)
 
             /* 立即渲染首帧, 确保工程模式UI同步到TFT显存 */
             lv_refr_now(NULL);
-            sMyPrint("DispEng: case 0 refr_now done, active_scr = %p\r\n", lv_screen_active());
+            if(uPrint.tFlag.bDispTask)
+                sMyPrint("DispEng: case 0 refr_now done, active_scr = %p\r\n", lv_screen_active());
 
             /* 重置超时计数 */
             vEng_RefreshEngModeTime();
@@ -57,7 +59,8 @@ void v_disp_queue_task_eng(Task_T *tp_task)
                 if(s_log_cnt >= 100)
                 {
                     s_log_cnt = 0;
-                    sMyPrint("DispEng: case 1 running, active_scr = %p\r\n", lv_screen_active());
+                    if(uPrint.tFlag.bDispTask)
+                        sMyPrint("DispEng: case 1 running, active_scr = %p\r\n", lv_screen_active());
                 }
             }
             /* 工程模式运行态 - 周期性刷新数据 */

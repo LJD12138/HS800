@@ -38,15 +38,28 @@ void v_usb_queue_task_booting(Task_T *tp_task)
 
 			if(cUsb_CheckInVolt() == 0)
 			{
-				usbPD_EN_ON();
 				cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
 			}
 		}
 		break;
 
+		//USB的软启动
 		case 1:
 		{
-			usbPD2_EN_ON();
+			for (u16 duty = 0; duty <= 1000; duty += 50)
+			{
+				usbPD_EN_PWM_SET(duty);
+				usbPD2_EN_PWM_SET(duty);
+				#if(boardUSE_OS)
+				vTaskDelay(20);
+				#endif
+			}
+			cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
+		}
+		break;
+
+		case 2:
+		{
 			bUsb_SetDevState(DS_WORK);
 			cQueue_GotoStep(tp_task, STEP_END);  //结束
 		}

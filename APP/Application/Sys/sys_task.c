@@ -72,7 +72,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define     	SYS_TASK_PRIO                  			2     //任务优先级 
-#define      	SYS_TASK_STK_SIZE              			192   //任务堆栈  实际字节数 *4
+#define      	SYS_TASK_STK_SIZE              			256   //任务堆栈  实际字节数 *4
 TaskHandle_t  	tSysTaskHandler = NULL; 
 void         	vSys_Task(void *pvParameters);
 #endif  //boardUSE_OS

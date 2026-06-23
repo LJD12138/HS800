@@ -6776,6 +6776,11 @@
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_ol.c</FilePath>
             </File>
+            <File>
+              <FileName>ui_image_icon_light.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon_light.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

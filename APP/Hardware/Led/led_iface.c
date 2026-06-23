@@ -1,6 +1,10 @@
 #include "Led/led_iface.h"
 #if(boardLED_EN)
 
+#if(boardUSB_EN)
+#include "Usb/usb_iface.h"
+#endif
+
 
 /***********************************************************************************************************************
 -----函数功能    LED GPIO初始化
@@ -21,6 +25,17 @@ static void v_led_gpio_init(void)
 	#else
 //    gpio_pin_remap_config(GPIO_TIMER2_FULL_REMAP,ENABLE);//重映射T2_H0
 	gpio_init(ledPWR_SW_PORT,GPIO_MODE_AF_PP,GPIO_OSPEED_50MHZ,ledPWR_SW_PIN);
+	#endif
+
+	#if (boardUSB_EN)
+	rcu_periph_clock_enable(usbPD_EN_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(usbPD_EN_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, usbPD_EN_PIN);
+	gpio_output_options_set(usbPD_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, usbPD_EN_PIN);
+	gpio_af_set(usbPD_EN_PORT, ledTIMER_AF, usbPD_EN_PIN);
+	#else
+	gpio_init(usbPD_EN_PORT,GPIO_MODE_AF_PP,GPIO_OSPEED_50MHZ,usbPD_EN_PIN);
+	#endif
 	#endif
 
 	
@@ -104,6 +119,14 @@ static void v_led_pwm_init(void)
 	timer_channel_output_mode_config(ledTIMER, ledTIMER_CH, TIMER_OC_MODE_PWM0);
 	timer_channel_output_shadow_config(ledTIMER, ledTIMER_CH, TIMER_OC_SHADOW_DISABLE);
  
+	#if (boardUSB_EN)
+	// Output channel_1 is configured as PWM mode for USB PD EN
+	timer_channel_output_config(ledTIMER, TIMER_CH_1, &timer0_ocintpara);
+	timer_channel_output_pulse_value_config(ledTIMER, TIMER_CH_1, 0);
+	timer_channel_output_mode_config(ledTIMER, TIMER_CH_1, TIMER_OC_MODE_PWM0);
+	timer_channel_output_shadow_config(ledTIMER, TIMER_CH_1, TIMER_OC_SHADOW_DISABLE);
+	#endif
+
 	// Enable TIMER0 output
 	timer_primary_output_config(ledTIMER, ENABLE);
 	// Enable timer auto reload shadow
@@ -112,6 +135,9 @@ static void v_led_pwm_init(void)
 	timer_enable(ledTIMER);
 
 	ledPWR_SW_PWM_SET(0);
+	#if (boardUSB_EN)
+	usbPD_EN_OFF();
+	#endif
 }
 
 /***********************************************************************************************************************
