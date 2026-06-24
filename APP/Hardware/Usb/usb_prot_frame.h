@@ -14,6 +14,7 @@
 
 s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj);
 s8 c_usb_set_pwr_cs(u16 pwr);
+void vUSB_ControlPorts(bool b_open);
 
 bool bUsb_SendProtInit(void);
 bool bUsb_RecProtInit(void);

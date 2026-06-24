@@ -202,6 +202,7 @@ void create_screen_main_work() {
             lv_obj_set_pos(obj, 238, 51);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_image_set_src(obj, &img_icon_ol);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
         }
         {
             // b_err_icon_ot
@@ -210,6 +211,7 @@ void create_screen_main_work() {
             lv_obj_set_pos(obj, 280, 18);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_image_set_src(obj, &img_icon_ot);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
         }
         {
             // uca_err_code
@@ -217,6 +219,7 @@ void create_screen_main_work() {
             objects.uca_err_code = obj;
             lv_obj_set_pos(obj, 241, 18);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
             lv_obj_set_style_text_font(obj, &ui_font_barlow_condensed_regular_26, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_color(obj, lv_color_hex(0xf40202), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "");

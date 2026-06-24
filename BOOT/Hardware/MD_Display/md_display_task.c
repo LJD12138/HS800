@@ -206,9 +206,8 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en)
 				vDisp_TftSetBacklight(true);
 				tDisp.bLight = true;
 				
-				// 清屏并绘制静态标题
-				vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x10A3);
-				vDisp_DrawText(40, 20, "FIRMWARE UPDATE", 0xFFFF, 0x10A3, 2);
+				// 清屏，静态标题由 vDisp_UpdateModeUi 首次运行时绘制
+				vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x0000);
 				
 				//关闭息屏
 				if(fore_en == true)

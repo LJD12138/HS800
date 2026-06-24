@@ -177,8 +177,7 @@
                       "enableClose": false,
                       "icon": "svg:hierarchy"
                     }
-                  ],
-                  "active": true
+                  ]
                 },
                 {
                   "type": "tabset",
@@ -227,19 +226,9 @@
                     "permanent": true
                   },
                   "icon": "svg:page"
-                },
-                {
-                  "type": "tab",
-                  "id": "#9403979c-af6f-4eb5-967c-bc5e3a17aa65",
-                  "name": "Main_Booting",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[eez_project.eez-project]:/userPages/0",
-                    "permanent": true
-                  },
-                  "icon": "svg:page"
                 }
-              ]
+              ],
+              "active": true
             },
             {
               "type": "tabset",
@@ -1127,9 +1116,7 @@
         "0": {
           "0": {},
           "6": {},
-          "9": {
-            "$selected": true
-          },
+          "9": {},
           "10": {},
           "12": {},
           "13": {}

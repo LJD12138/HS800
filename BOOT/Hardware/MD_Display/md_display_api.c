@@ -726,4 +726,232 @@ void vDisp_DrawPillProgress(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint
     }
 }
 
+/* ====== 分段式圆环辅助函数 ====== */
+
+/* 整数开方（二分法，适用于嵌入式） */
+static uint16_t us_isqrt(uint32_t n)
+{
+    if (n == 0) return 0;
+    uint16_t lo = 0, hi = 255;
+    while (lo < hi)
+    {
+        uint16_t mid = (lo + hi + 1) >> 1;
+        if ((uint32_t)mid * mid <= n)
+            lo = mid;
+        else
+            hi = mid - 1;
+    }
+    return lo;
+}
+
+/* sin 查表 0-90 度，Q15 格式（32767 = 1.0），参考 LVGL lv_trigo_sin 实现 */
+static const int16_t s_sin_tbl[91] = {
+    0, 572, 1144, 1715, 2286, 2856, 3425, 3993, 4560, 5126,
+    5690, 6252, 6813, 7371, 7927, 8480, 9032, 9580, 10126, 10668,
+    11207, 11743, 12275, 12803, 13328, 13848, 14365, 14876, 15384, 15886,
+    16384, 16877, 17364, 17847, 18323, 18795, 19261, 19720, 20174, 20622,
+    21063, 21498, 21926, 22348, 22762, 23170, 23571, 23965, 24351, 24730,
+    25101, 25465, 25822, 26170, 26510, 26842, 27166, 27482, 27789, 28088,
+    28377, 28659, 28931, 29194, 29448, 29692, 29927, 30152, 30368, 30574,
+    30770, 30956, 31132, 31298, 31454, 31599, 31734, 31859, 31974, 32078,
+    32271, 32366, 32450, 32525, 32587, 32642, 32687, 32722, 32747, 32762,
+    32767
+};
+
+/* 整数 sin（Q15 格式），角度 0-359 度，12点钟方向为0度顺时针 */
+static int16_t isin_q15(uint16_t deg)
+{
+    deg = deg % 360;
+    if (deg <= 90)  return s_sin_tbl[deg];
+    if (deg <= 180) return s_sin_tbl[180 - deg];
+    if (deg <= 270) return -s_sin_tbl[deg - 180];
+    return -s_sin_tbl[360 - deg];
+}
+
+/* 整数 cos（Q15 格式），角度 0-359 度 */
+static int16_t icos_q15(uint16_t deg)
+{
+    return isin_q15((deg + 90) % 360);
+}
+
+/* 段边界信息（Q15 sin/cos 预计算值） */
+typedef struct {
+    int16_t sin_val;    /* 边界角度 sin（Q15） */
+    int16_t cos_val;    /* 边界角度 cos（Q15） */
+} SegBound_T;
+
+/***********************************************************************************************************************
+ * 函数功能    : RGB565 颜色混合函数
+ * 说明(备注)  : 5-bit alpha (0~32) 实现高效颜色混合
+ ************************************************************************************************************************/
+static uint16_t us_blend_color(uint16_t color1, uint16_t color2, uint8_t alpha)
+{
+    if (alpha == 0) return color2;
+    if (alpha >= 32) return color1;
+
+    uint32_t r1 = (color1 >> 11) & 0x1F;
+    uint32_t g1 = (color1 >> 5) & 0x3F;
+    uint32_t b1 = color1 & 0x1F;
+
+    uint32_t r2 = (color2 >> 11) & 0x1F;
+    uint32_t g2 = (color2 >> 5) & 0x3F;
+    uint32_t b2 = color2 & 0x1F;
+
+    uint32_t r = (r1 * alpha + r2 * (32 - alpha)) >> 5;
+    uint32_t g = (g1 * alpha + g2 * (32 - alpha)) >> 5;
+    uint32_t b = (b1 * alpha + b2 * (32 - alpha)) >> 5;
+
+    return (uint16_t)((r << 11) | (g << 5) | b);
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 绘制分段式圆环（仅环形像素，不填充内部）
+ * 说明(备注)  : 参考 energy_ring.c 设计理念优化：
+ *               1. 三档颜色（off/on/head）实现视觉层次，头部段高亮
+ *               2. 段间间隙实现分段视觉效果
+ *               3. sin/cos 查表 + 叉积法精确分类像素所属段，替代正切查表
+ *               4. 仅绘制环形像素，不填充圆环内部，减少 SPI 传输量
+ *               角度系统：12点钟方向为0度，顺时针增加
+ * 传入参数    : cx, cy: 圆心坐标; r: 半径; thickness: 线宽
+ *               lit_segs: 已点亮段数; total_segs: 总段数; gap_angle: 段间间隙角度
+ *               active_color: 已点亮段颜色; head_color: 头部段高亮颜色; inactive_color: 未点亮段颜色
+ *               bg_color: 间隙区域颜色（背景色，形成可见切口）
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_DrawSegmentedRing(uint16_t cx, uint16_t cy, uint16_t r, uint8_t thickness,
+                             uint8_t lit_segs, uint8_t total_segs, uint8_t gap_angle,
+                             uint16_t active_color, uint16_t head_color, uint16_t inactive_color,
+                             uint16_t bg_color)
+{
+    if (thickness == 0 || total_segs == 0 || r == 0) return;
+
+    /* 参数范围限制 */
+    if (lit_segs > total_segs) lit_segs = total_segs;
+    uint16_t max_step = 360 / total_segs;
+    if (gap_angle >= max_step) gap_angle = 0;
+
+    uint16_t r_outer = r + thickness / 2;
+    uint16_t r_inner = (thickness / 2 < r) ? (r - thickness / 2) : 0;
+    uint32_t r_in_sq = (uint32_t)r_inner * r_inner;
+    uint32_t r_out_sq = (uint32_t)r_outer * r_outer;
+
+    /* 预计算段角度参数 */
+    uint16_t gap_total = (total_segs > 1) ? (uint16_t)(total_segs - 1) * gap_angle : 0;
+    uint16_t seg_span = (360 - gap_total) / total_segs;
+    if (seg_span == 0) seg_span = 1;
+    uint16_t seg_step = seg_span + gap_angle;
+
+    /* 预计算每段起止边界的 sin/cos（Q15），避免运行时重复查表 */
+    SegBound_T bound_start[20];
+    SegBound_T bound_end[20];
+    uint8_t max_segs = (total_segs <= 20) ? total_segs : 20;
+
+    for (uint8_t i = 0; i < max_segs; i++)
+    {
+        uint16_t start_ang = (uint16_t)(i * seg_step);
+        uint16_t end_ang = (uint16_t)(start_ang + seg_span);
+        bound_start[i].sin_val = isin_q15(start_ang);
+        bound_start[i].cos_val = icos_q15(start_ang);
+        bound_end[i].sin_val = isin_q15(end_ang);
+        bound_end[i].cos_val = icos_q15(end_ang);
+    }
+
+    uint16_t active_swapped = us_swap_color(active_color);
+    uint16_t head_swapped = us_swap_color(head_color);
+    uint16_t inactive_swapped = us_swap_color(inactive_color);
+    uint16_t bg_swapped = us_swap_color(bg_color);
+    uint16_t row_buf[60];  /* 最大弧段宽度约 r_outer ≈ 48，60足够 */
+
+    int16_t y_start = (int16_t)cy - (int16_t)r_outer;
+    int16_t y_end = (int16_t)cy + (int16_t)r_outer;
+
+    if (y_start < 0) y_start = 0;
+    if (y_end >= dispTFT_HEIGHT) y_end = dispTFT_HEIGHT - 1;
+
+    for (int16_t y = y_start; y <= y_end; y++)
+    {
+        int16_t dy = y - (int16_t)cy;
+        int32_t dy_s32 = (int32_t)dy;
+        uint32_t dy_sq = (uint32_t)(dy_s32 * dy_s32);
+
+        if (dy_sq > r_out_sq)
+            continue;
+
+        uint16_t x_outer = us_isqrt(r_out_sq - dy_sq);
+        uint16_t x_inner = (dy_sq < r_in_sq) ? us_isqrt(r_in_sq - dy_sq) : 0;
+
+        if (x_outer <= x_inner)
+            continue;
+
+        /* 右侧弧段和左侧弧段 */
+        int16_t arc_xs[2] = { (int16_t)cx + (int16_t)x_inner, (int16_t)cx - (int16_t)x_outer };
+        int16_t arc_xe[2] = { (int16_t)cx + (int16_t)x_outer, (int16_t)cx - (int16_t)x_inner };
+
+        for (uint8_t side = 0; side < 2; side++)
+        {
+            int16_t xs = arc_xs[side];
+            int16_t xe = arc_xe[side];
+            if (xs < 0) xs = 0;
+            if (xe >= dispTFT_WIDTH) xe = dispTFT_WIDTH - 1;
+
+            if (xs > xe)
+                continue;
+
+            uint16_t width = (uint16_t)(xe - xs + 1);
+            v_disp_set_window((u16)xs, (u16)y, (u16)xe, (u16)y);
+
+            for (uint16_t i = 0; i < width; i++)
+            {
+                int16_t x = xs + (int16_t)i;
+                int16_t dx = x - (int16_t)cx;
+
+                /* 叉积法查找像素所属段并进行亚像素抗锯齿混合 */
+                uint8_t max_alpha = 0;
+                uint16_t target_color = bg_color;
+
+                for (uint8_t seg = 0; seg < max_segs; seg++)
+                {
+                    int32_t cross_start = (int32_t)bound_start[seg].sin_val * dy
+                                        + (int32_t)bound_start[seg].cos_val * dx;
+                    int32_t cross_end = (int32_t)bound_end[seg].sin_val * dy
+                                      + (int32_t)bound_end[seg].cos_val * dx;
+
+                    /* 边缘过渡带宽设为1像素 (Q15 格式中 1.0 = 32768, -0.5px 到 0.5px 为 [-16384, 16384]) */
+                    int16_t alpha_start = 32;
+                    if (cross_start < -16384) {
+                        alpha_start = 0;
+                    } else if (cross_start < 16384) {
+                        alpha_start = (int16_t)((cross_start + 16384) >> 10);
+                    }
+
+                    int16_t alpha_end = 32;
+                    if (cross_end > 16384) {
+                        alpha_end = 0;
+                    } else if (cross_end > -16384) {
+                        alpha_end = (int16_t)((16384 - cross_end) >> 10);
+                    }
+
+                    uint8_t alpha_seg = (uint8_t)((alpha_start < alpha_end) ? alpha_start : alpha_end);
+
+                    if (alpha_seg > max_alpha)
+                    {
+                        max_alpha = alpha_seg;
+                        if (lit_segs > 0 && seg < lit_segs - 1)
+                            target_color = active_color;
+                        else if (lit_segs > 0 && seg == lit_segs - 1)
+                            target_color = head_color;
+                        else
+                            target_color = inactive_color;
+                    }
+                }
+
+                uint16_t blended = us_blend_color(target_color, bg_color, max_alpha);
+                row_buf[i] = us_swap_color(blended);
+            }
+            vDisp_TftWriteBuffer((uint8_t *)row_buf, width * 2);
+        }
+    }
+}
+
 #endif  /*boardDISPLAY_EN*/

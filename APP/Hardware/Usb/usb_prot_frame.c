@@ -362,4 +362,39 @@ s8 c_usb_set_pwr_cs(u16 pwr)
 // 	return result;
 // }
 
+/***********************************************************************************************************************
+ * 函数功能    : 控制USB-A和USB-C通道开关
+ * 说明(备注)  : 解锁寄存器REG 0x15后，写入操作寄存器REG 0x16以控制开关状态
+ * 传入参数    : b_open - true: 强制开启通道；false: 强制关闭通道
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vUSB_ControlPorts(bool b_open)
+{
+	uint8_t data[1];
+	uint8_t val = b_open ? 0x28 : 0x14; /* 0x28: 强制开启1口与2口通路管; 0x14: 强制关闭1口与2口通路管 */
+
+	/* 控制第一路 USB 芯片 (IC1) */
+	data[0] = 0x20;
+	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+	data[0] = 0x40;
+	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+	data[0] = 0x80;
+	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+
+	data[0] = val;
+	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x16, data, 1);
+
+	/* 控制第二路 USB 芯片 (IC2) */
+	data[0] = 0x20;
+	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+	data[0] = 0x40;
+	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+	data[0] = 0x80;
+	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+
+	data[0] = val;
+	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x16, data, 1);
+}
+
 #endif  //boardUSB_EN

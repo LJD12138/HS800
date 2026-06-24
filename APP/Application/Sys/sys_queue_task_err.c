@@ -6,6 +6,7 @@
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
+#include <stdbool.h>
 
 #if(boardKEY_EN)
 #include "Key/Key_task.h"
@@ -117,7 +118,7 @@ void v_sys_queue_task_err(Task_T *tp_task)
 		//************************************步骤3:充电开机**************************************************
 		case 3:
 		{
-			cSys_Switch(SO_MPPT, ST_ON, false); //开机
+			cSys_Switch(SO_MPPT, ST_ON, true); //开机
 			if(uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:开启充电唤醒\r\n");
 

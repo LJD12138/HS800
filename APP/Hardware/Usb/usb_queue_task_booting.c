@@ -46,14 +46,14 @@ void v_usb_queue_task_booting(Task_T *tp_task)
 		//USB的软启动
 		case 1:
 		{
-			for (u16 duty = 0; duty <= 1000; duty += 50)
-			{
-				usbPD_EN_PWM_SET(duty);
-				usbPD2_EN_PWM_SET(duty);
-				#if(boardUSE_OS)
-				vTaskDelay(20);
-				#endif
-			}
+			// for (u16 duty = 0; duty <= 1000; duty += 15)
+			// {
+			// 	usbPD_EN_PWM_SET(duty);
+			// 	usbPD2_EN_PWM_SET(duty);
+			// 	#if(boardUSE_OS)
+			// 	vTaskDelay(20);
+			// 	#endif
+			// }
 			cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
 		}
 		break;

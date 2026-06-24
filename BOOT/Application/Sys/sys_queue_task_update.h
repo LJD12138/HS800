@@ -78,7 +78,8 @@ bool bUpdate_Init(void);
 s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type);
 s8 cUpdate_ProtoSelect(ProtoType_E proto_type);
 void vUpdate_TickTimer(void);
-#endif  //boardUPDATE
+
+#endif /* boardUPDATE */
 
 #ifdef __cplusplus
 }

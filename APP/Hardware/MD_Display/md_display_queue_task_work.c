@@ -83,20 +83,12 @@ void v_disp_queue_task_work(Task_T *tp_task)
         }
         break;
 
-        // //加载能量环数据
-        // case 1: 
-        // {
-        //     vDisp_UpdateDevParam();
-        //     uc_refresh_ui_index++;
-        // }
-        // break;
-
         // 持续刷新显示
         case 1: 
         {
             TickType_t t_now_tick = xTaskGetTickCount();
 
-            if (tDisp.bLight == true)
+            // if (tDisp.bLight == true)
             {
                 if ((s_bDispWorkDataUpdateTickValid == false) ||
                     ((t_now_tick - s_tDispWorkLastDataUpdateTick) >= pdMS_TO_TICKS(dispTASK_WORK_DATA_UPDATE_MS)))
@@ -127,13 +119,13 @@ void v_disp_queue_task_work(Task_T *tp_task)
                 }
 
                 vDisp_UiRefresh();
-                vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_LVGL_PERIOD_MS));
-                return;
+                // vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_LVGL_PERIOD_MS));
+                // return;
             }
 
-            s_bDispWorkDataUpdateTickValid = false;
+            // s_bDispWorkDataUpdateTickValid = false;
             vTaskDelay(pdMS_TO_TICKS(dispTASK_WORK_SLEEP_OFF_MS));
-            return;
+            // return;
         }
         break;
 

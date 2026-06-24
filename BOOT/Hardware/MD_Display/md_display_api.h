@@ -26,6 +26,7 @@ void vDisp_DrawFillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t
 void vDisp_DrawText(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg_color, uint8_t scale);
 void vDisp_DrawProgressCircle(uint16_t x0, uint16_t y0, uint16_t r, uint8_t thickness, uint8_t progress, uint16_t active_color, uint16_t inactive_color, uint16_t bg_color);
 void vDisp_DrawPillProgress(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t progress, uint16_t active_color, uint16_t inactive_color, uint16_t bg_color);
+void vDisp_DrawSegmentedRing(uint16_t cx, uint16_t cy, uint16_t r, uint8_t thickness, uint8_t lit_segs, uint8_t total_segs, uint8_t gap_angle, uint16_t active_color, uint16_t head_color, uint16_t inactive_color, uint16_t bg_color);
 
 #endif // boardDISPLAY_EN
 

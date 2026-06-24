@@ -8,6 +8,7 @@
 #if(boardUSB_EN)
 #include "Usb/usb_queue_task.h"
 #include "Usb/usb_iface.h"
+#include "Usb/usb_prot_frame.h"
 
 #include "app_info.h"
 
@@ -75,6 +76,7 @@ static bool b_task_param_init(void )
 bool bUsb_TaskInit(void)
 {
 	vUsb_IfaceInit();
+	vUSB_ControlPorts(false);
 
 	if(bUsb_QueueInit() == false)
 		return false;
@@ -397,6 +399,10 @@ void bUsb_SetDevState(DevState_E stat)
 		// usbPD_EN_ON();
 		// usbPD2_EN_ON();
 		// usbA_EN_ON();
+
+		usbPD_EN_OFF();
+		usbPD2_EN_OFF();
+		vUSB_ControlPorts(true);
 	}
 	else if(stat == DS_CLOSING)
 	{
@@ -404,6 +410,7 @@ void bUsb_SetDevState(DevState_E stat)
 		usbPD_EN_OFF();
 		usbPD2_EN_OFF();
 		// usbA_EN_OFF();
+		vUSB_ControlPorts(false);
 	}
 	else if(stat == DS_SHUT_DOWN)
 	{
@@ -411,6 +418,15 @@ void bUsb_SetDevState(DevState_E stat)
 		usbPD_EN_OFF();
 		usbPD2_EN_OFF();
 		// usbA_EN_OFF();
+		vUSB_ControlPorts(false);
+	}
+	else if(stat == DS_INIT)
+	{
+		vUSB_ControlPorts(false);
+	}
+	else if(stat == DS_ERR)
+	{
+		vUSB_ControlPorts(false);
 	}
 		
 }

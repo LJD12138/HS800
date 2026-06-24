@@ -1,6 +1,6 @@
 r
 halt
-Erase  0x08000000 0x8040000
+Erase  0x08000000 0x80FFFFF
 loadfile ".\build\BOOT\BOOT.hex"
 r
 go

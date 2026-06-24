@@ -233,7 +233,7 @@ static void v_mppt_auto_switch_chg_source(void)
         {
 			s_ul_xt60_start_tick++;
 			s_ul_dc_start_tick = 0;
-			if(s_ul_xt60_start_tick > (2000 / mpptTASK_CYCLE_TIME))
+			if(s_ul_xt60_start_tick > (4000 / mpptTASK_CYCLE_TIME))
             {
 				tMppt.eWorkMode = MWM_PV;
 				mpptGPIO_DC_EN_OFF();
@@ -245,7 +245,7 @@ static void v_mppt_auto_switch_chg_source(void)
         {
 			s_ul_dc_start_tick++;
 			s_ul_xt60_start_tick = 0;
-			if(s_ul_dc_start_tick > (2000 / mpptTASK_CYCLE_TIME))
+			if(s_ul_dc_start_tick > (4000 / mpptTASK_CYCLE_TIME))
             {
 				tMppt.eWorkMode = MWM_DC;
 				mpptGPIO_DC_EN_ON();	
