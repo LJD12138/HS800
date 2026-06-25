@@ -699,7 +699,7 @@ static void v_pv_update_data(void)
                 uint32_t ul_hours = ul_sec / 3600; ul_sec %= 3600;
                 uint32_t ul_mins = ul_sec / 60;
                 snprintf(buf_l, sizeof(buf_l), "Uptime");
-                snprintf(buf_r, sizeof(buf_r), "%lud%02luh%02lum", ul_days, ul_hours, ul_mins);
+                snprintf(buf_r, sizeof(buf_r), "%ud%02uh%02um", ul_days, ul_hours, ul_mins);
                 v_pv_set_row(0, buf_l, buf_r, ul_accent);
             }
 #endif

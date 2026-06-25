@@ -28,7 +28,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define			bmsREC_TASK_PRIO                    	2        //任务优先级 
-#define			bmsREC_TASK_SIZE                    	192      //任务堆栈  实际字节数 *4
+#define			bmsREC_TASK_SIZE                    	256      //任务堆栈  实际字节数 *4
 TaskHandle_t	tBmsRecTaskHandle;
 void			vBms_RecTask(void *pvParameters);
 #endif  //boardUSE_OS
@@ -130,7 +130,7 @@ void vBms_RecTask(void *pvParameters)
 		#if(boardUPDATE)
 		if(tBms.eDevState == DS_UPDATE_MODE)
 		{
-			c_result = cUpdate_ProtoCheck(tpBmsProtoRx, &tpPrintTask->tReplyBuff);
+			c_result = cUpdate_ProtoCheck(&tpBmsProtoRx->tRxBuff, &tpPrintTask->tReplyBuff);
 
 			//协议适配
 			if(c_result == PT_BAIKU || c_result == PT_XMODEM)

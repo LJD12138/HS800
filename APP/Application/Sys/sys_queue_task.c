@@ -166,6 +166,14 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 			tp_task->vp_func = v_sys_queue_task_update;
         }
         break;
+
+		case STI_UPDATE_ERR:
+		{
+			if(uPrint.tFlag.bSysTask)
+				sMyPrint("bSysTask:----装载升级错误处理任务----\r\n");
+			tp_task->vp_func = v_sys_queue_task_update_err;
+		}
+		break;
 		#endif  //boardUPDATE
 		
 		#if(boardENG_MODE_EN)

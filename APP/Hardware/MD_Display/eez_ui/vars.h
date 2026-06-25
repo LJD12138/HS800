@@ -21,7 +21,12 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_UCA_UPDATE_PROGRESS = 5,
     FLOW_GLOBAL_VARIABLE_UCA_UPDATE_COUNTDOWN = 6,
     FLOW_GLOBAL_VARIABLE_UCA_UPDATE_STATE = 7,
-    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_MSG = 8
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_MSG = 8,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_OBJ = 9,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_CHANNEL = 10,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_PROTO = 11,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_FRAME = 12,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_TIMEOUT = 13
 };
 
 // Native global variables
@@ -44,6 +49,16 @@ extern int32_t get_var_uca_update_state();
 extern void set_var_uca_update_state(int32_t value);
 extern const char *get_var_uca_update_msg();
 extern void set_var_uca_update_msg(const char *value);
+extern const char *get_var_uca_update_obj();
+extern void set_var_uca_update_obj(const char *value);
+extern const char *get_var_uca_update_channel();
+extern void set_var_uca_update_channel(const char *value);
+extern const char *get_var_uca_update_proto();
+extern void set_var_uca_update_proto(const char *value);
+extern const char *get_var_uca_update_frame();
+extern void set_var_uca_update_frame(const char *value);
+extern const char *get_var_uca_update_timeout();
+extern void set_var_uca_update_timeout(const char *value);
 
 #ifdef __cplusplus
 }

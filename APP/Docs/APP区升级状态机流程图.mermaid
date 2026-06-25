@@ -1,0 +1,40 @@
+flowchart TD
+    %% 流程图 2：下位机升级状态机及执行流程图 (Flowchart)
+    %% 可以在 https://mermaid.live/ 或 Draw.io 中导入和编辑
+    Start([系统复位启动]) --> InitBoot[读取共享内存区参数 tBootMemParam]
+    InitBoot --> ChkCmd{ulCmd 标志位?}
+    
+    ChkCmd -- "ulCmd == 0xAAAAAAAA (mainUPDATE_FLAG)" --> TaskUpdate[进入升级任务 STI_UPDATE]
+    ChkCmd -- 其他标志或正常运行 --> JumpAppDirect[跳转到 APP]
+    
+    TaskUpdate --> StateIdle["BAIKU_STATE_IDLE: 初始化百酷协议与显示"]
+    StateIdle --> SetStandby[切换状态至 BAIKU_STATE_STANDBY]
+    
+    SetStandby --> StandbyLoop[发送 NAK 0xC4 并检测串口数据]
+    StandbyLoop --> RecDataCheck{接收到有效数据?}
+    
+    RecDataCheck -- "无数据 (60秒超时)" --> TimeoutErr["触发 v_rec_end_cd(2) 跳转或返回原APP"]
+    
+    RecDataCheck -- "0xC2 (baikuCMD_SET_PROTO)" --> RecProto["解析总帧数 TotalFrameCount 回复 0xC3"]
+    RecProto --> StandbyLoop
+    
+    RecDataCheck -- "0xC5 (baikuCMD_REPLY_DATA) 且 SN==1" --> FirstPacket["执行 v_rec_start_cd() 擦除APP并设置写入地址为 flashAPP_START"]
+    FirstPacket --> WriteFlash1["调用 bFlash_WriteDataToFlash() 写入第一包数据 56 字节"]
+    WriteFlash1 --> SetReceiving["状态切至 BAIKU_STATE_RECEIVING 发送 ACK 0xC6 并期待 SN=2"]
+    
+    SetReceiving --> RecvLoop[发送 ACK 0xC6 / NAK 0xC4 并检测串口]
+    RecvLoop --> RecvCheck{接收到有效包?}
+    
+    RecvCheck -- "0xC5 且 SN == 期待帧号" --> WriteFlashN["写入 Flash (大小=224字节) 自增期待帧号 发送 ACK 0xC6"]
+    WriteFlashN --> RecvLoop
+    
+    RecvCheck -- "0xC5 且 SN 不匹配" --> ResendCheck["错误包处理 发送 NAK 0xC4 触发重传"]
+    ResendCheck --> RecvLoop
+    
+    RecvCheck -- "0xC7 (baikuCMD_REPLY_FINISH)" --> SetFinish["状态切至 BAIKU_STATE_FINISH 发送最后 ACK 0xC6"]
+    
+    RecvCheck -- "0xC8 (baikuCMD_REPLY_CANEL)" --> SetCancel["状态切至 BAIKU_STATE_CANCEL 终止升级"]
+    
+    SetFinish --> RecEnd["执行 v_rec_end_cd(0) 检查新APP栈顶指针并设置状态为 AS_FINISH"]
+    RecEnd --> TaskEnterApp[进入进入 APP 任务 STI_ENTER_APP]
+    TaskEnterApp --> JumpApp["执行 cSys_JumpToApp() 跳转运行"]

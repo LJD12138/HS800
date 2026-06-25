@@ -4,6 +4,7 @@
  *                                                                                                                *
  ******************************************************************************************************************/
 #include "MD_Display/md_display_api.h"
+#include <stdbool.h>
 
 #if(boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
@@ -296,7 +297,7 @@ void vDisp_Init(void)
     vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x10A3);
 
     /* 开启背光 */
-    vDisp_TftSetBacklight(true);
+    vDisp_TftSetBacklight(false);
 }
 
 /***********************************************************************************************************************

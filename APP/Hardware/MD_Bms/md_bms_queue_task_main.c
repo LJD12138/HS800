@@ -102,7 +102,7 @@ __STATIC_INLINE s8 c_bms_proc_rec_param(void)
 	//BMS状态不同步
 	if(bSys_IsWorkState() == true && tBmsRx.tState.ucSysState < DS_BOOTING)
 	{
-		cBms_Switch(SO_KEY, ST_ON, false);
+		cBms_Switch(SO_KEY, ST_ON, true);
 
 		if(uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)
 			log_w("bBmsTask:系统和BMS状态不一致 系统状态%d BMS状态%d \r\n",tSysInfo.eDevState,tBmsRx.tState.ucSysState);

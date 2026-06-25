@@ -140,7 +140,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         }
         break;
 
-		#if(boardUPDATA)
+		#if(boardUPDATE)
 		case DISPTI_UPDATA:
         {  
 			if(uPrint.tFlag.bDispTask)
@@ -148,7 +148,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 			tp_task->vp_func = v_disp_queue_task_updata;
         }
         break;
-		#endif  //boardUPDATA
+		#endif  /* boardUPDATE */
 		
 		#if(boardENG_MODE_EN)
 		case DISPTI_ENG:

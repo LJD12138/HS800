@@ -11,6 +11,7 @@
     "styles.h",
     "ui.c",
     "ui.h",
+    "ui_font_barlow_condensed_regular_14.c",
     "ui_font_barlow_condensed_regular_26.c",
     "ui_font_barlow_condensed_regular_50.c",
     "ui_font_barlow_condensed_regular_66.c",

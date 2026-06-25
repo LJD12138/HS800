@@ -4,6 +4,7 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Print/print_task.h"
+#include <stdbool.h>
 
 DebugPrint_U   	uPrint;
 
@@ -26,6 +27,8 @@ void          	vPrint_Task(void *pvParameters);
 #endif  //boardUSE_OS
 
 //****************************************************参数初始化**************************************************//
+Print_T tPrint;
+
 //调试缓存器
 #define       	printTX_BUFF_SIZE                     	512
 lwrb_t tPrintTxBuff;
@@ -51,8 +54,11 @@ SemaphoreHandle_t PrintSemaphoreBinary = NULL;   //二进制信号量,用于转�
 -----输出参数    none
 -----返回值      none
 ************************************************************************************************************************/
-static void b_print_task_param_init(void)
+static bool b_print_task_param_init(void)
 {
+	if(tpPrintTask == NULL)
+		return false;
+
 	#if(boardUSE_OS)
 	/* 创建二进制信号量 */
     PrintSemaphoreBinary = xSemaphoreCreateBinary(); 
@@ -69,6 +75,9 @@ static void b_print_task_param_init(void)
     vPrint_MyPrintParamInit();
 	
 	tSysInfo.uInit.tFinish.bIF_Print = 1;
+
+	tPrint.eDevState = DS_SHUT_DOWN;
+	return true;
 }
 
 
@@ -97,7 +106,8 @@ bool bPrint_TaskInit(void)
     lwrb_init(&tPrintTxBuff, uca_print_tx_buff, printTX_BUFF_SIZE);  
 
 	//任务参数初始化
-	b_print_task_param_init();
+	if(b_print_task_param_init() == false)
+		return false;
 	
 	//数据解析任务
 	#if(boardUSE_OS)

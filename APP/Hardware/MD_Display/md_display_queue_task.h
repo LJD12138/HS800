@@ -26,10 +26,10 @@ void v_disp_queue_task_booting(Task_T *tp_task);
 void v_disp_queue_task_work(Task_T *tp_task);
 void v_disp_queue_task_err(Task_T *tp_task);
 
-#if(boardUPDATA)
+#if(boardUPDATE)
 void v_disp_queue_task_updata(Task_T *tp_task);
 void vDisp_RenderUpgradePage(void);
-#endif  //boardUPDATA
+#endif  /* boardUPDATE */
 
 #if(boardENG_MODE_EN)
 void v_disp_queue_task_eng(Task_T *tp_task);

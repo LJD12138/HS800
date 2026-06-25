@@ -41,10 +41,6 @@
 #include "MD_Display/md_display_task.h"
 #endif
 
-#if(boardBMS_EN)
-#include "MD_Bms/md_bms_task.h"
-#endif
-
 #if(boardLIGHT_EN)
 #include "MD_Light/md_light_task.h"
 #endif
@@ -68,6 +64,9 @@
 #include "Sys/sys_queue_task_eng.h"
 #endif
 
+#if(boardHEAT_MANAGE_EN)
+#include "MD_HeatManage/md_hm_task.h"
+#endif  //boardHEAT_MANAGE_EN
 
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
@@ -222,43 +221,68 @@ static void v_sys_check_prote(void)
 	s16 s_min_temp = 255;
 	s16 s_max_temp = 0;
 	s16 s_board_max_temp = 0;
-	tSysInfo.usOutPwr = 0;
-	tSysInfo.usInPwr = 0;
+	s16 s_hm_temp = 0;
 
 	#if(boardUSB_EN)
 	if(tUsb.eDevState >= DS_WORK)
 	{
-		// if(tUsb.sMaxTemp >= 45)
-		// 	s_board_max_temp = MAX2(s_board_max_temp, 45);
-		// else
-			s_board_max_temp = MAX2(s_board_max_temp, tUsb.sMaxTemp);
+		if(tUsb.sMaxTemp >= 45)
+			s_hm_temp = MAX2(s_hm_temp, 45);
+		else
+			s_hm_temp = MAX2(s_hm_temp, tUsb.sMaxTemp);
 
-		tSysInfo.usOutPwr += tUsb.usOutPwr;
+		s_board_max_temp = MAX2(s_board_max_temp, tUsb.sMaxTemp);
 	}
 	#endif  //boardUSB_EN
 
 	#if(boardDC_EN)
 	if(tDc.eDevState >= DS_WORK)
 	{
-		// if(tDc.sMaxTemp >= 45)
-		// 	s_board_max_temp = MAX2(s_board_max_temp, 45);
-		// else
-			s_board_max_temp = MAX2(s_board_max_temp, tDc.sMaxTemp);
+		if(tDc.sMaxTemp >= 45)
+			s_hm_temp = MAX2(s_hm_temp, 45);
+		else
+			s_hm_temp = MAX2(s_hm_temp, tDc.sMaxTemp);
 
-		tSysInfo.usOutPwr += tDc.usOutPwr;
+		s_board_max_temp = MAX2(s_board_max_temp, tDc.sMaxTemp);
 	}
 	#endif  //boardDC_EN
-
-	#if(boardLIGHT_EN)
-	if(tLight.eDevState == DS_WORK)
-		tSysInfo.usOutPwr += tLight.usPower;
-	#endif  //boardLIGHT_EN
 	
 	#if(boardBMS_EN)
+	if(tBms.sMaxTemp >= 45)
+		s_hm_temp = MAX2(s_hm_temp, 45);
+	else
+		s_hm_temp = MAX2(s_hm_temp, tBms.sMaxTemp);
+
 	s_max_temp = MAX2(s_max_temp, tBms.sMaxTemp);
 	s_min_temp = MIN2(s_min_temp, tBms.sMinTemp);
+	#endif  //boardBMS_EN
 
 	#if(boardDCAC_EN)
+	s_hm_temp = MAX2(s_hm_temp, tDcac.sMaxTemp);
+
+	s_max_temp = MAX2(s_max_temp, tDcac.sMaxTemp);
+	#endif  //boardDCAC_EN
+
+	#if(boardMPPT_EN)
+	s_hm_temp = MAX2(s_hm_temp, tMppt.sMaxTemp);
+	
+	s_max_temp = MAX2(s_max_temp, tMppt.sMaxTemp);
+	#endif  //boardMPPT_EN
+
+	tSysInfo.sBoardTempMax = s_board_max_temp;
+
+	s_max_temp = MAX2(tSysInfo.sBoardTempMax, s_max_temp);
+
+	tSysInfo.sMinTemp = s_min_temp;
+	tSysInfo.sMaxTemp = s_max_temp;
+	tHM.sMaxTemp = s_hm_temp;
+
+
+	//------------------------------------------------功率计算-----------------------------------------------
+	tSysInfo.usOutPwr = 0;
+	tSysInfo.usInPwr = 0;
+
+	#if(boardBMS_EN && boardDCAC_EN)
 	if(ucBms_GetSoc() == 100)
 	{
 		if(tDcac.eDisChgState == IOS_WORK && tDcac.eChgState == IOS_WORK)
@@ -267,11 +291,23 @@ static void v_sys_check_prote(void)
 			tDcacRx.usInPwr = 0;
 	}
 	#endif  //boardBMS_EN
-	#endif  //boardBMS_EN
+
+	#if(boardDC_EN)
+	if(tDc.eDevState == DS_WORK)
+		tSysInfo.usOutPwr += tDc.usOutPwr;
+	#endif  //boardDC_EN
+
+	#if(boardUSB_EN)
+	if(tUsb.eDevState == DS_WORK)
+		tSysInfo.usOutPwr += tUsb.usOutPwr;
+	#endif  //boardUSB_EN
+
+	#if(boardLIGHT_EN)
+	if(tLight.eDevState == DS_WORK)
+		tSysInfo.usOutPwr += tLight.usPower;
+	#endif  //boardLIGHT_EN
 
 	#if(boardDCAC_EN)
-	s_max_temp = MAX2(s_max_temp, tDcac.sMaxTemp);
-
 	if(tDcac.eChgState == IOS_WORK)
 		tSysInfo.usInPwr += tDcacRx.usInPwr;
 
@@ -283,19 +319,9 @@ static void v_sys_check_prote(void)
 	#endif  //boardDCAC_EN
 
 	#if(boardMPPT_EN)
-	s_max_temp = MAX2(s_max_temp, tMppt.sMaxTemp);
-
 	if(tMppt.eDevState == DS_WORK)
 		tSysInfo.usInPwr += tMppt.usInPwr;
 	#endif  //boardMPPT_EN
-
-	tSysInfo.sBoardTempMax = s_board_max_temp;
-	s_max_temp = MAX2(tSysInfo.sBoardTempMax, s_max_temp);
-
-	tSysInfo.sMinTemp = s_min_temp;
-	tSysInfo.sMaxTemp = s_max_temp;
-
-
 	
 	//------------------------------------------------系统输入过压-----------------------------------------------
 	#if(boardADC_EN)
@@ -325,10 +351,12 @@ static void v_sys_check_prote(void)
 	
 	//-----------------------------------------------系统输入欠压--------------------------------------------------
 	static u16 us_low_volt_cnt = 0; 
-	if((sSys_CheckInVolt() < 0 && bSys_ExistInVolt() == false)
+	if((sSys_CheckInVolt() < 0
 		#if(boardBMS_EN)
 		|| tBms.uErrCode.tCode.uBmsCode.tCode.bCellUV
 		#endif
+		)
+		&& bSys_ExistInVolt() == false
 		)
 	{
 		if(tSysInfo.uErrCode.tCode.bUV == 0)
@@ -339,6 +367,11 @@ static void v_sys_check_prote(void)
 				us_low_volt_cnt = 0;
 				bSys_SetErrCode(SEC_UV, true);
 			}
+		}
+		else if(tpSysTask->ucID == STI_WORK)
+		{
+			cQueue_AddQueueTask(tpSysTask, STI_ERR, SEC_UV ,false);
+			us_low_volt_cnt = 0;
 		}
 	}
 	else 
@@ -435,6 +468,12 @@ static void v_sys_check_prote(void)
 	{
 		if(tSysInfo.uErrCode.tCode.b0SOC == false)
 			us_soc_low_cnt++;
+		else if(tpSysTask->ucID == STI_WORK)
+		{
+			cQueue_AddQueueTask(tpSysTask, STI_ERR, SEC_0_SOC ,false);
+			us_soc_low_cnt = 0;
+		}
+			
 		if(us_soc_low_cnt >= (2000/us_delay_time))
 		{
 			us_soc_low_cnt = 0;
@@ -801,14 +840,18 @@ bool bSys_SetDevState(DevState_E state, bool bz)
 				sMyPrint("bSysTask:----更新系统任务状态为工程模式----\r\n");
 		}
 		#endif //boardENG_MODE_EN
-		// else if(tSysInfo.eDevState == DS_UPDATA_MODE)    //工作
-		// {
-		// 	// if(tDisp.eDevState != DS_UPDATA_MODE)
-		// 	// 	cQueue_AddQueueTask(tpDispTask, DTI_UPDATA, 0, false);
+		#if(boardUPDATE)
+		else if(tSysInfo.eDevState == DS_UPDATE_MODE)    /* 升级 */
+		{
+			#if(boardDISPLAY_EN)
+			if(tDisp.eDevState != DS_UPDATE_MODE)
+				cQueue_AddQueueTask(tpDispTask, DISPTI_UPDATA, 0, false);
+			#endif  /* boardDISPLAY_EN */
 
-		// 	if(uPrint.tFlag.bSysTask)
-		// 		sMyPrint("bSysTask:----更新系统任务状态为升级模式----\r\n");
-		// }
+			if(uPrint.tFlag.bSysTask)
+				sMyPrint("bSysTask:----更新系统任务状态为升级模式----\r\n");
+		}
+		#endif  /* boardUPDATE */
 	}	
 	
 	#if(boardBUZ_EN)

@@ -98,4 +98,70 @@ void set_var_uca_update_msg(const char *value) {
     uca_update_msg[sizeof(uca_update_msg) / sizeof(char) - 1] = 0;
 }
 
+char uca_update_progress[100] = { 0 };
+
+const char *get_var_uca_update_progress() {
+    return uca_update_progress;
+}
+
+void set_var_uca_update_progress(const char *value) {
+    strncpy(uca_update_progress, value, sizeof(uca_update_progress) / sizeof(char));
+    uca_update_progress[sizeof(uca_update_progress) / sizeof(char) - 1] = 0;
+}
+
+char uca_update_obj[100] = { 0 };
+
+const char *get_var_uca_update_obj() {
+    return uca_update_obj;
+}
+
+void set_var_uca_update_obj(const char *value) {
+    strncpy(uca_update_obj, value, sizeof(uca_update_obj) / sizeof(char));
+    uca_update_obj[sizeof(uca_update_obj) / sizeof(char) - 1] = 0;
+}
+
+char uca_update_channel[100] = { 0 };
+
+const char *get_var_uca_update_channel() {
+    return uca_update_channel;
+}
+
+void set_var_uca_update_channel(const char *value) {
+    strncpy(uca_update_channel, value, sizeof(uca_update_channel) / sizeof(char));
+    uca_update_channel[sizeof(uca_update_channel) / sizeof(char) - 1] = 0;
+}
+
+char uca_update_proto[100] = { 0 };
+
+const char *get_var_uca_update_proto() {
+    return uca_update_proto;
+}
+
+void set_var_uca_update_proto(const char *value) {
+    strncpy(uca_update_proto, value, sizeof(uca_update_proto) / sizeof(char));
+    uca_update_proto[sizeof(uca_update_proto) / sizeof(char) - 1] = 0;
+}
+
+char uca_update_frame[100] = { 0 };
+
+const char *get_var_uca_update_frame() {
+    return uca_update_frame;
+}
+
+void set_var_uca_update_frame(const char *value) {
+    strncpy(uca_update_frame, value, sizeof(uca_update_frame) / sizeof(char));
+    uca_update_frame[sizeof(uca_update_frame) / sizeof(char) - 1] = 0;
+}
+
+char uca_update_timeout[100] = { 0 };
+
+const char *get_var_uca_update_timeout() {
+    return uca_update_timeout;
+}
+
+void set_var_uca_update_timeout(const char *value) {
+    strncpy(uca_update_timeout, value, sizeof(uca_update_timeout) / sizeof(char));
+    uca_update_timeout[sizeof(uca_update_timeout) / sizeof(char) - 1] = 0;
+}
+
 

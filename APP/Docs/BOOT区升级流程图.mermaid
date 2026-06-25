@@ -1,0 +1,161 @@
+%% ==========================================================================================
+%% 上位机使用百酷协议升级设备 BOOT 区 — 完整流程图
+%%
+%% 依据文件:
+%%   上位机: BaiKuProto.cs / FormFileSend.cs
+%%   协议层: baiku_proto.h / .c
+%%   BOOT态: BOOT\Hardware\Update\baiku_proto.h / .c (状态机)
+%%           BOOT\Hardware\Update\update_main.c (回调)
+%%   APP态 : print_queue_task_main.c (0x88 入口)
+%%   分区表: flash_allot_table.h
+%%
+%% 百酷协议帧格式:
+%%   [0xAA][Addr][Len][Cmd][SN][Data0..DataN][CheckSum]
+%%   总帧长 = Len + 3, 校验范围: Cmd~Data (Len-1 字节)
+%%   CheckSum = (~(Sum(Cmd..Data)) + 1) & 0xFF  (补码累加和)
+%%
+%% 升级相关指令表:
+%%   0x88 SYS_SET        Host→APP    系统设置, 触发BOOT升级 (obj=UO_CONSOLE, cmd=0xBBBBBBBB)
+%%   0x89 REPLY_SYS_SET  APP→Host    回复系统设置结果
+%%   0xC2 SET_PROTO      Host→Device 设置升级协议 (protoType=2, totalFrameCount)
+%%   0xC3 REPLY_SET_PROTO Device→Host 回复协议设置应答
+%%   0xC4 RRQ_START_SEND Device→Host  NAK: 请求开始/重发
+%%   0xC5 REPLY_DATA     Host→Device 数据帧 (SN=帧序号, Data=文件数据)
+%%   0xC6 RRQ_CONT_SEND  Device→Host ACK: 确认接收, 请求继续
+%%   0xC7 REPLY_FINISH   Host→Device EOT: 传输结束
+%%   0xC8 REPLY_CANEL    双向        CAN: 取消传输
+%%
+%% 分帧规则: 首包56字节(BaiKuFirstPacketLen), 后续每包224字节
+%%   TotalFrameCount = 1 + ceil((fileSize - 56) / 224)
+%%
+%% 渲染方式: Mermaid (https://mermaid.live) 或 VS Code Mermaid 插件
+%% ==========================================================================================
+
+flowchart TD
+    %% ===== 阶段一: 触发 BOOT 区升级 =====
+    Start([上位机发起 BOOT 区升级]) --> HostInit["上位机计算总帧数:<br/>TotalFrameCount = 1 + ceil fileSize - 56 / 224<br/>创建 BaiKuProto 实例, PacketLen=224, RetryMax=10<br/>启动 TransThread 后台线程, SendStage=WaitReceiveRequest"]
+    HostInit --> Send88["Host 发送 0x88 SYS_SET<br/>帧: AA EF 08 88 00 00 00 00 BB BB BB BB CS<br/>Payload: obj=UO_CONSOLE, cmd=0xBBBBBBBB"]
+    Send88 --> AppRecv88["APP: c_relay88_sys_set 解析 tSysSetParam<br/>校验 ucValidLen == 5<br/>obj == UO_CONSOLE, cmd == 0xBBBBBBBB"]
+    AppRecv88 --> AppReply89["APP 回复 0x89 REPLY_SYS_SET<br/>帧: AA EF 04 89 00 00 CS<br/>Payload: 0x00 成功"]
+    AppReply89 --> AppEnterUpdate["APP 进入 BOOT 升级任务模式:<br/>初始化 tBaiKuProto 状态机<br/>选择通道 CT_PRINT/CT_CONSOLE, 协议 PT_BAIKU<br/>eState = BAIKU_STATE_IDLE"]
+    AppEnterUpdate --> AppReset["bBaiKuProto_Reset:<br/>ucFrmCnt=1, usWaitStartOutTimeCnt=60s<br/>usWaitExitOutTimeCnt=10s, cBaiku_ResetRxBuff"]
+
+    %% ===== IDLE -> STANDBY =====
+    AppReset --> StateIdle["BAIKU_STATE_IDLE"]
+    StateIdle --> StateStandby["BAIKU_STATE_STANDBY<br/>v_set_work_state STANDBY"]
+
+    %% ===== 阶段二: 协议协商与握手 =====
+    StateStandby --> SbySendNAK["APP 发送 0xC4 NAK 请求开始传输<br/>帧: AA EF 03 C4 00 CS<br/>usFrmOvertimeCnt = 2s 帧间隔"]
+    SbySendNAK --> SbyRecCheck{"APP: c_frame_rec_cd<br/>收到有效数据?"}
+
+    SbyRecCheck -- "否 等待中" --> SbyTimeout{"usWaitStartOutTimeCnt<br/>== 0? 60秒超时"}
+    SbyTimeout -- "否" --> StateStandby
+    SbyTimeout -- "是" --> SbyTimeoutEnd["v_rec_end_cd 2 等待超时<br/>检查原BOOT栈顶指针合法性<br/>若合法: cBoot_CtrlUpdate false AS_OK<br/>→ BAIKU_STATE_STOP"]
+    SbyTimeoutEnd --> StateStop
+
+    SbyRecCheck -- "是" --> SbyCmd{"proto.ucCmd?"}
+
+    SbyCmd -- "0xC2 SET_PROTO" --> SbySetProto["APP 解析协议设定:<br/>protoType == PT_BAIKU 2<br/>保存 usTotalFrmValue = TotalFrameCount<br/>cUpdate_ProtoSelect PT_BAIKU"]
+    SbySetProto --> SbyReplyC3["APP 回复 0xC3 REPLY_SET_PROTO<br/>帧: AA EF 06 C3 00 02 totalFrameLow totalFrameHigh CS"]
+    SbyReplyC3 --> HostRecvC3["Host 收到 0xC3 ReplyProto<br/>IsSatrt = true<br/>SendStage = PacketSending<br/>触发 StartSend 事件"]
+    HostRecvC3 --> StateStandby
+
+    SbyCmd -- "0xC5 SN==1" --> FirstPktEntry["首包处理入口"]
+    SbyCmd -- "0xC5 SN!=1" --> SbyErr["帧号校验失败<br/>c_result <= 0"]
+    SbyErr --> StateCancel
+    SbyCmd -- "0xC7 FINISH" --> StateFinish
+    SbyCmd -- "0xC8 CANEL" --> StateCancel
+    SbyCmd -- "其他/校验失败" --> SbyErr
+
+    %% ===== 阶段三: 数据传输与 Flash 烧录 =====
+    FirstPktEntry["首包处理 SN=1<br/>帧号校验: ucFrmCnt 1 == SN 1 ✓"] --> RecStart["v_rec_start_cd:<br/>1. usRecFrameCnt = 0<br/>2. vFlash_WriteDataToFlashInit:<br/>   NextWriteAddr = flashBOOT_START<br/>   cFlash_EraseSector flashBOOT_START to flashBOOT_END<br/>3. cBoot_CtrlUpdate true AS_ERASE"]
+    RecStart --> WriteFirst["v_proc_check_ok_rec_data_cd:<br/>usRecFrameCnt++ →1<br/>bFlash_WriteDataToFlash Data 56字节<br/>写入 flashBOOT_START"]
+    WriteFirst --> ToReceiving["v_set_work_state RECEIVING<br/>ucFrmCnt++ →2"]
+    ToReceiving --> HostSendPkt1["Host: SendBaikuPacket 发送首包<br/>ProtoCreat 0xC5 data SN=1<br/>帧: AA EF 3B C5 01 Data0..55 CS"]
+    HostSendPkt1 --> SendACK1["APP 发送 0xC6 ACK 确认首包<br/>帧: AA EF 03 C6 00 CS"]
+    SendACK1 --> HostRecvACK1["Host 收到 ACK 0xC6<br/>触发 SendNextPacket<br/>fileIndex += 56, packetNo++ →2"]
+
+    HostRecvACK1 --> StateReceiving
+
+    %% ===== RECEIVING 循环 =====
+    StateReceiving["BAIKU_STATE_RECEIVING"] --> RcvCheckTimer{"usWaitStartOutTimeCnt > 0?"}
+    RcvCheckTimer -- "是" --> RcvSendACK["APP 发送 0xC6 ACK 请求继续<br/>帧: AA EF 03 C6 00 CS"]
+    RcvCheckTimer -- "否" --> RcvSendNAK["APP 发送 0xC4 NAK 请求重发<br/>帧: AA EF 03 C4 00 CS"]
+    RcvSendACK --> RcvRecCheck
+    RcvSendNAK --> RcvRecCheck
+
+    RcvRecCheck{"c_frame_rec_cd<br/>收到有效数据?"} -- "否" --> RcvExitTimeout{"usWaitExitOutTimeCnt<br/>== 0? 10秒超时"}
+    RcvExitTimeout -- "否" --> StateReceiving
+    RcvExitTimeout -- "是" --> RcvCancel["等待超时 停止升级"]
+    RcvCancel --> StateCancel
+
+    RcvRecCheck -- "是" --> RcvCmd{"proto.ucCmd?"}
+
+    RcvCmd -- "0xC5 REPLY_DATA" --> RcvSNCheck{"SN == ucFrmCnt?"}
+    RcvSNCheck -- "是" --> RcvWrite["v_proc_check_ok_rec_data_cd:<br/>usRecFrameCnt++<br/>bFlash_WriteDataToFlash Data 224字节<br/>写入地址递增<br/>ucFrmCnt++"]
+    RcvWrite --> HostSendNext["Host: SendBaikuPacket 发送下一包<br/>ProtoCreat 0xC5 data SN=packetNo<br/>帧: AA EF E3 C5 NN Data0..223 CS"]
+    HostSendNext --> HostFileEnd{"文件读取完毕?"}
+    HostFileEnd -- "否" --> StateReceiving
+    HostFileEnd -- "是" --> HostSendEOT["Host: Stop → SendStopCS<br/>发送 0xC7 EOT 传输结束<br/>帧: AA EF 03 C7 00 CS<br/>SendStage = WaitReceiveAnswerEndTransmit"]
+    HostSendEOT --> StateFinish
+
+    RcvSNCheck -- "否 SN非法<br/>SN>ucFrmCnt 或<br/>SN<ucFrmCnt-1" --> RcvSNErr["帧号非法<br/>c_result = -3"]
+    RcvSNErr --> StateCancel
+
+    RcvSNCheck -- "否 SN重复<br/>SN==ucFrmCnt-1" --> RcvSNRepeat["重复包 c_result = -4"]
+    RcvSNRepeat --> StateCancel
+
+    RcvCmd -- "0xC7 FINISH" --> StateFinish
+    RcvCmd -- "0xC8 CANEL" --> StateCancel
+    RcvCmd -- "其他" --> StateReceiving
+
+    %% ===== 阶段四: 传输结束与校验 =====
+    StateFinish["BAIKU_STATE_FINISH"] --> FinSendACK["APP 发送 0xC6 ACK 最终确认<br/>帧: AA EF 03 C6 00 CS"]
+    FinSendACK --> HostRecvFinalACK["Host 收到 ACK 0xC6<br/>SendStage == WaitReceiveAnswerEndTransmit<br/>触发 EndOfTransmit 事件<br/>显示 传输完成"]
+    HostRecvFinalACK --> FinCallBack["APP: v_rec_end_cd 0 成功收尾"]
+    FinCallBack --> FinVerify{"新BOOT栈顶指针合法?<br/>0x20000000 ==<br/>val flashBOOT_START AND 0x2FFE0000"}
+    FinVerify -- "是" --> FinCtrlUpdate["cBoot_CtrlUpdate false AS_FINISH:<br/>ulCmd = 0x88888888 INIT_FINISH<br/>eAppState = AS_FINISH<br/>ucAppFaultCnt = 0<br/>cBoot_UpdateMemParam 写入Flash"]
+    FinVerify -- "否" --> FinVerifyFail["栈顶指针非法<br/>BOOT 升级数据无效<br/>标记错误状态"]
+    FinCtrlUpdate --> FinReset["bBaiKuProto_Reset 复位协议状态机"]
+    FinReset --> FinReboot["NVIC_SystemReset 系统复位"]
+    FinReboot --> DevDone([系统复位<br/>从 flashBOOT_START 引导新 BOOT])
+    FinVerifyFail --> StateStop
+
+    %% ===== CANCEL 状态 =====
+    StateCancel["BAIKU_STATE_CANCEL"] --> CnlSendCAN["APP 发送 0xC8 CAN 取消通知<br/>帧: AA EF 03 C8 00 CS"]
+    CnlSendCAN --> CnlToStop["v_set_work_state STOP"]
+    CnlToStop --> StateStop
+
+    %% ===== STOP 状态 =====
+    StateStop["BAIKU_STATE_STOP"] --> StopCallBack["v_rec_end_cd 1 错误收尾:<br/>usRecFrameCnt = 0<br/>记录错误日志"]
+    StopCallBack --> StopReset["bBaiKuProto_Reset:<br/>eState = BAIKU_STATE_IDLE<br/>ucFrmCnt = 1<br/>cBaiku_ResetRxBuff"]
+    StopReset --> DevErrEnd([升级失败<br/>退出升级模式])
+
+    %% ===== 上位机超时/取消分支 =====
+    HostInit -.->|"后台并行"| HostTimeoutCheck{"Host: waitReceiveEvent<br/>.WaitOne 3000<br/>3秒无响应?"}
+    HostTimeoutCheck -- "是" --> HostRetry{"reTryCount<br/>> RetryMax?"}
+    HostRetry -- "否" --> HostRetryInc["reTryCount++<br/>重发协议设定帧或等待"]
+    HostRetryInc --> HostTimeoutCheck
+    HostRetry -- "是" --> HostTimeout["IsStart = false<br/>TransmitTimeOut 事件<br/>显示 传输超时"]
+    HostTimeout --> HostAbort([上位机超时退出])
+
+    HostRecvACK1 -.->|"Host 收到 CAN 0xC8"| HostAbortCAN["Host: AbortTransmit 事件<br/>显示 传输中止<br/>IsStart = false"]
+    HostAbortCAN --> HostAbortEnd([上位机中止退出])
+
+    %% ===== 数据包分帧与 Flash 写入示意 =====
+    subgraph FlashLayout["Flash 写入布局"]
+        direction LR
+        FL_Erase["flashBOOT_START<br/>擦除全部BOOT区<br/>flashBOOT_START to END"] --> FL_P1["flashBOOT_START + 0<br/>写入56字节 首包"]
+        FL_P1 --> FL_P2["flashBOOT_START + 56<br/>写入224字节 第2包"]
+        FL_P2 --> FL_PN["flashBOOT_START + 56+NN*224<br/>写入224字节 第N包"]
+        FL_PN --> FL_Last["递增地址<br/>写入剩余字节"]
+    end
+
+    %% ===== 超时参数汇总 =====
+    subgraph TimeoutParams["超时参数"]
+        T1["STANDBY 等待开始: 60秒<br/>usWaitStartOutTimeCnt"]
+        T2["RECEIVING 等待退出: 10秒<br/>usWaitExitOutTimeCnt"]
+        T3["帧间隔超时: 2秒<br/>usFrmOvertimeCnt"]
+        T4["Host 等待响应: 3秒<br/>waitReceiveEvent.WaitOne"]
+        T5["Host 最大重试: 10次<br/>reTryCount > RetryMax"]
+    end

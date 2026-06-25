@@ -25,7 +25,7 @@
 //****************************************************任务参数初始化**********************************************//
 #if(boardUSE_OS)
 #define        	BMS_TASK_PRIO                         	2                       	//任务优先级 
-#define        	BMS_TASK_SIZE                         	192                      	//任务堆栈  实际字节数 *4
+#define        	BMS_TASK_SIZE                         	256                      	//任务堆栈  实际字节数 *4
 TaskHandle_t    tBmsTaskHandler = NULL; 
 void            vBms_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -622,21 +622,21 @@ s8 cBms_CheckPerm(void)
 ************************************************************************************************************************/
 s8 cBms_GetUpdateStage(void)
 {
-	// if(tSysInfo.eDevState != DS_UPDATE_MODE ||
-	//    tUpdate.eObj != UO_BMS ||
-	//    tBms.eDevState != DS_UPDATE_MODE)
+	if(tSysInfo.eDevState != DS_UPDATE_MODE ||
+	   tUpdate.eObj != UO_BMS ||
+	   tBms.eDevState != DS_UPDATE_MODE)
 		return -1;
 
-	// if(tpBmsTask == NULL)
-	// 	return -2;
+	if(tpBmsTask == NULL)
+		return -2;
 
-	// if(tpBmsTask->ucID != BTI_UPDATE)
-	// 	return -3;
+	if(tpBmsTask->ucID != BTI_UPDATE)
+		return -3;
 
-	// if(tpBmsTask->ucStep > 1)
-	// 	return UPDATE_QUEUE_STAGE_FINISH;
+	if(tpBmsTask->ucStep > 1)
+		return UPDATE_QUEUE_STAGE_FINISH;
 
-	// return UPDATE_QUEUE_STAGE_RUNNING;
+	return UPDATE_QUEUE_STAGE_RUNNING;
 }
 #endif  //boardUPDATE
 

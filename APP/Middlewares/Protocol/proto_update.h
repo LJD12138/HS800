@@ -55,7 +55,7 @@ extern "C" {
 
 
 /* ==========================================extern======================================*/
-s8 cUpdate_ProtoCheck(BaikuProtoRx_t* proto, lwrb_t* tp_reply_param);
+s8 cUpdate_ProtoCheck(lwrb_t* proto_buff, lwrb_t* tp_reply_param);
 
 #endif  //boardUPDATE
 

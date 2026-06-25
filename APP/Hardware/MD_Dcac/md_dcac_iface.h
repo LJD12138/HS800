@@ -179,6 +179,7 @@ extern __IO bool bDcacUseFlag;
 
 void vDcac_IfaceInit(void);
 void vDcac_IfaceDeInit(void);
+bool bDcac_IfaceSetBaud(u32 baud);
 bool bDcac_DataSendStart(u8* data,u16 len);
 
 #if(boardDCAC_485_IFACE_EN)

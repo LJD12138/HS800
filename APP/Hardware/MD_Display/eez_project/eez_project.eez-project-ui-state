@@ -1,7 +1,8 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[eez_project.eez-project]:/userPages/1",
-    "selectedFontObject": "[eez_project.eez-project]:/fonts/0",
+    "selectedUserPageObject": "[eez_project.eez-project]:/userPages/3",
+    "selectedGlobalVariableObject": "[eez_project.eez-project]:/variables/globalVariables/9",
+    "selectedFontObject": "[eez_project.eez-project]:/fonts/3",
     "selectedBitmapObject": "[eez_project.eez-project]:/bitmaps/7",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
@@ -25,7 +26,7 @@
           },
           {
             "type": "border",
-            "selected": 2,
+            "selected": 1,
             "size": 350.5,
             "location": "right",
             "children": [
@@ -166,7 +167,7 @@
                 {
                   "type": "tabset",
                   "id": "#f2d0ca3e-16b4-43ee-9b75-82d1782e0f2d",
-                  "weight": 0.9117196263758233,
+                  "weight": 0.7562529848839917,
                   "enableClose": false,
                   "children": [
                     {
@@ -182,7 +183,7 @@
                 {
                   "type": "tabset",
                   "id": "#cae28cac-4268-41f4-99b4-3e9e99c5fb6b",
-                  "weight": 0.974960294101314,
+                  "weight": 1.1304269355931444,
                   "enableClose": false,
                   "children": [
                     {
@@ -193,7 +194,8 @@
                       "enableClose": false,
                       "icon": "svg:variable"
                     }
-                  ]
+                  ],
+                  "active": true
                 }
               ]
             },
@@ -201,7 +203,6 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 44.11194580693421,
-              "selected": 1,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -227,8 +228,7 @@
                   },
                   "icon": "svg:page"
                 }
-              ],
-              "active": true
+              ]
             },
             {
               "type": "tabset",
@@ -1150,9 +1150,19 @@
       "selectionFront": {},
       "selectionBack": {
         "0": {
-          "3": {},
-          "4": {},
-          "5": {}
+          "0": {},
+          "1": {
+            "6": {
+              "$selected": true
+            }
+          },
+          "2": {
+            "0": {},
+            "3": {}
+          },
+          "3": {
+            "0": {}
+          }
         }
       },
       "transform": {
@@ -1268,7 +1278,8 @@
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
     "POSITION AND SIZE",
-    "TEXT"
+    "TEXT",
+    "BORDER"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

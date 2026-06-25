@@ -18,6 +18,7 @@ typedef enum
 typedef struct
 {
     vu16              	usValue;
+	vs16				sMaxTemp;
     FanWorkMode_E    	eWordMode;
 }HM_T;              
 extern HM_T			tHM;

@@ -569,9 +569,38 @@ uint32_t ulCheck_GetCRC32(uint32_t init, uint8_t* data, uint32_t length)
     return crc32(init, data, length, true, 0xFFFFFFFF);
 }
 
+/***********************************************************************************************************************
+-----函数功能    CRC32增量更新计算（位反转/LSB模式）
+-----说明(备注)  按字节逐位计算CRC32，使用多项式0xEDB88320（位反转后的IEEE 802.3 CRC32）。
+                本函数为增量式计算，调用者需在外部维护crc_state并在最终数据完成后自行异或0xFFFFFFFF取反。
+-----传入参数    crc_state: 当前CRC状态（初始值应为0xFFFFFFFF）
+                data: 数据指针
+                len: 数据长度
+-----输出参数    none
+-----返回值      更新后的CRC32状态值（注意：非最终结果，最终需 ^0xFFFFFFFF）
+************************************************************************************************************************/
+u32 ulCheck_Crc32Update(u32 crc_state, const u8* data, u16 len)
+{
+    u16 i = 0;
+    u8 bit = 0;
 
+    if(data == NULL)
+        return crc_state;
 
+    for(i = 0; i < len; i++)
+    {
+        crc_state ^= data[i];
+        for(bit = 0; bit < 8; bit++)
+        {
+            if(crc_state & 0x00000001UL)
+                crc_state = (crc_state >> 1) ^ 0xEDB88320UL;
+            else
+                crc_state >>= 1;
+        }
+    }
 
+    return crc_state;
+}
 
 
 

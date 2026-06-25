@@ -11,8 +11,6 @@
 #include "board_config.h"
 #include "Print/print_task.h"
 #include "MD_Dcac/md_dcac_task.h"
-#include "MD_Dcac/md_dcac_rec_task.h"
-#include "MD_Mppt/md_mppt_task.h"
 
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
@@ -78,7 +76,7 @@ void vHW_Task(void *pvParameters)
 			//3S更新一次温度
 			if(++uc_update_delay >= 3)
 			{
-				Temper = tSysInfo.sMaxTemp;
+				Temper = tHM.sMaxTemp;
 				uc_update_delay = 0;
 			}
 			
@@ -97,11 +95,6 @@ void vHW_Task(void *pvParameters)
 			{
 				Temper = 41;
 			}
-
-			#if(boardDCAC_EN)
-			if(tDcacRx.usOutPwr > 1500)
-				Temper = 55;
-			#endif  //boardDCAC_EN
 			
 			switch (tHM.eWordMode)
 			{

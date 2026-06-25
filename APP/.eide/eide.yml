@@ -104,6 +104,8 @@ virtualFolder:
         - path: Middlewares/Protocol/Modbus1/modbus_proto1.h
         - path: Middlewares/Protocol/proto_update.c
         - path: Middlewares/Protocol/proto_update.h
+        - path: Middlewares/Protocol/Megmeet/megmeet_proto.c
+        - path: Middlewares/Protocol/Megmeet/megmeet_proto.h
       folders: []
     - name: MW-Lwrb
       files:
@@ -148,6 +150,7 @@ virtualFolder:
         - path: Application/Sys/sys_queue_task_eng.h
         - path: Application/Sys/sys_queue_task_update.c
         - path: Application/Sys/sys_queue_task_update.h
+        - path: Application/Sys/sys_queue_task_update_err.c
       folders: []
     - name: HW-Flash
       files:
@@ -170,6 +173,8 @@ virtualFolder:
         - path: Hardware/Print/print_iface.c
         - path: Hardware/Print/print_iface.h
         - path: Hardware/Print/print_queue_task_update.c
+        - path: Hardware/Print/print_queue_task_update.h
+        - path: Hardware/Print/print_update_dcac.c
       folders: []
     - name: HW-Adc
       files:
@@ -282,6 +287,7 @@ virtualFolder:
             - path: Hardware/MD_Display/eez_ui/ui_image_1_mirror_map.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_ol.c
             - path: Hardware/MD_Display/eez_ui/ui_image_icon_light.c
+            - path: Hardware/MD_Display/eez_ui/ui_font_barlow_condensed_regular_14.c
           folders: []
         - name: user_ui
           files:
@@ -371,6 +377,7 @@ virtualFolder:
         - path: Hardware/MD_Dcac/md_dcac_iface.h
         - path: Hardware/MD_Dcac/md_dcac_queue_task_err_proc.c
         - path: Hardware/MD_Dcac/md_dcac_queue_task_update.c
+        - path: Hardware/MD_Dcac/md_dcac_queue_task_update.h
       folders: []
     - name: MW-LVGL
       files:

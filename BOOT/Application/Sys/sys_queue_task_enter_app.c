@@ -91,7 +91,7 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
 			#endif
 			
 //			if(uPrint.tFlag.bSysTask == 1)
-				log_e("BOOT跳转APP失败,错误代码%d!!!\0",ret);
+				log_e("BOOT跳转APP失败%d,错误代码%d!!!\0",u8_illegal_addr_cnt, ret);
 			
 			cQueue_GotoStep( tp_task, STEP_FORWARD);  //返回上一步重新检测
 		}break;

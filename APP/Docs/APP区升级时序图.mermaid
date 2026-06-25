@@ -1,0 +1,42 @@
+sequenceDiagram
+    %% 流程图 1：上位机与下位机升级时序图 (Sequence Diagram)
+    %% 可以在 https://mermaid.live/ 或 Draw.io 中导入和编辑
+    autonumber
+    participant Host as 上位机 (Host)
+    participant APP as 设备运行态 (APP)
+    participant BOOT as 设备升级态 (BOOT)
+
+    Note over Host, APP: 阶段一：触发升级 (APP 态)
+    Host->>APP: 发送系统设置指令 (0x88) [baikuCMD_SYS_SET]<br/>Payload: obj=UO_CONSOLE, cmd=0xAAAAAAAA (mainUPDATE_FLAG)
+    APP-->>Host: 应答系统设置结果 (0x89) [baikuCMD_REPLY_SYS_SET]<br/>Payload: 0x00 (成功)
+    Note over APP: 保存 ulCmd = 0xAAAAAAAA 并调用 NVIC_SystemReset() 重启
+
+    Note over APP, BOOT: 系统复位并引导至 BOOT 态
+    BOOT->>BOOT: 检测到升级指令标志 (ulCmd == 0xAAAAAAAA)<br/>创建升级任务 (STI_UPDATE)，启动百酷协议状态机
+
+    Note over Host, BOOT: 阶段二：升级协议协商与握手
+    BOOT->>Host: 循环发送 NAK 请求开始传输 (0xC4) [baikuCMD_RRQ_START_SEND]
+    Host->>BOOT: 发送协议设定帧 (0xC2) [baikuCMD_SET_PROTO]<br/>Payload: 协议类型=2 (百酷), 总帧数=TotalFrameCount (小端字节序)
+    BOOT-->>Host: 应答协议设定帧 (0xC3) [baikuCMD_REPLY_SET_PROTO]
+    Note over Host: 握手成功，标记 IsSatrt = true，进入 PacketSending 状态
+
+    Note over Host, BOOT: 阶段三：数据传输与 Flash 烧录
+    Host->>BOOT: 发送第 1 包数据 (0xC5) [baikuCMD_REPLY_DATA]<br/>SN = 1, 数据长度 = 56 字节 (BaiKuFirstPacketLen)
+    Note over BOOT: 检测到 SN=1，执行 v_rec_start_cd()：<br/>1. 初始化并全擦除 APP 区 Flash<br/>2. 标记 APP 状态为 AS_ERASE<br/>3. 工作状态切至 BAIKU_STATE_RECEIVING
+    BOOT->>BOOT: 将首包数据写入 Flash (NextWriteAddr = flashAPP_START)
+    BOOT-->>Host: 发送 ACK 确认继续接收 (0xC6) [baikuCMD_RRQ_CONT_SEND]
+
+    rect rgb(240, 248, 255)
+        Note over Host, BOOT: 循环发送后续数据包 (从第 2 包至最后一包)
+        Host->>BOOT: 发送第 N 包数据 (0xC5) [baikuCMD_REPLY_DATA]<br/>SN = N, 数据长度 = 224 字节 (PacketLen)
+        BOOT->>BOOT: 校验 SN 并写入 Flash (地址递增)
+        BOOT-->>Host: 发送 ACK (0xC6) [baikuCMD_RRQ_CONT_SEND]
+    end
+
+    Note over Host, BOOT: 阶段四：传输结束与运行态切换
+    Host->>BOOT: 发送结束传输帧 (0xC7) [baikuCMD_REPLY_FINISH] (EOT)
+    Note over BOOT: 切换状态至 BAIKU_STATE_FINISH
+    BOOT-->>Host: 发送最后 ACK (0xC6) [baikuCMD_RRQ_CONT_SEND]
+    Note over Host: 触发 EndOfTransmit 事件，显示"传输完成"
+    Note over BOOT: 执行 v_rec_end_cd()：<br/>1. 检验 APP 栈顶指针合法性<br/>2. 更新 APP 状态为 AS_FINISH，设置 ulCmd = 0x88888888 (mainINIT_FINISH_FLAG)<br/>3. 触发 STI_ENTER_APP 任务
+    BOOT->>BOOT: 执行 cSys_JumpToApp() 跳转并执行新 APP

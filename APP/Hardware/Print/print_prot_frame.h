@@ -28,6 +28,10 @@ s8 c_relay82_write_mem_info(BaikuProtoRx_t* proto);
 s8 c_relay84_set_print_state(BaikuProtoRx_t* proto);
 s8 c_relay86_get_print_state(BaikuProtoRx_t* proto);
 s8 c_relay88_sys_set(BaikuProtoRx_t* proto);
+s8 c_relayC3_reply_set_proto(u8* data, u8 len);
+s8 c_relayC4_req_start_send(void);
+s8 c_relayC4_req_resend_curr(void);
+s8 c_relayC6_req_cont_send(void);
 s8 c_relay_bms_app_info(u8* data, u16 len);
 
 bool bPrint_SendProtInit(void);

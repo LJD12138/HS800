@@ -10,6 +10,7 @@ extern "C" {
 extern const lv_font_t ui_font_barlow_condensed_regular_66;
 extern const lv_font_t ui_font_barlow_condensed_regular_50;
 extern const lv_font_t ui_font_barlow_condensed_regular_26;
+extern const lv_font_t ui_font_barlow_condensed_regular_14;
 
 #ifndef EXT_FONT_DESC_T
 #define EXT_FONT_DESC_T

@@ -11,6 +11,11 @@
 #include "MD_Dcac/md_dcac_prot_frame.h"
 #include "Print/print_task.h"
 
+#if(boardUPDATE)
+#include "Sys/sys_queue_task_update.h"
+#include "Sys/sys_task.h"
+#endif  //boardUPDATE
+
 #include "lwrb.h"
 
 #if(boardMPPT_EN)
@@ -29,7 +34,7 @@
 
 //****************************************************参数初始化**************************************************//
 #define    		dcacRX_DMA_BUFF_SIZE   					256
-#define  		dcacTX_DMA_BUFF_SIZE                 	128
+#define  		dcacTX_DMA_BUFF_SIZE                 	256
 
 //0:MPPT 1:DCAC
 __IO bool bDcacUseFlag = true;
@@ -106,7 +111,7 @@ static void v_dcac_io_init(void)//IO设置
 -----输出参数    none
 -----返回值      none
 ******************************************************************************************************************/
-static void v_dcac_uasrt_config(void)
+static void v_dcac_uasrt_config(u32 baud)
 {
     /* enable USART clock */
     rcu_periph_clock_enable(dcacUSART_RCU);
@@ -116,7 +121,7 @@ static void v_dcac_uasrt_config(void)
 
     /* USART configure */
     usart_deinit(dcacUSART);
-    usart_baudrate_set(dcacUSART, dcacUSART_BAUD);
+    usart_baudrate_set(dcacUSART, baud);
     usart_word_length_set(dcacUSART, USART_WL_8BIT);
     usart_stop_bit_set(dcacUSART, USART_STB_1BIT);
     usart_parity_config(dcacUSART, USART_PM_NONE);
@@ -236,7 +241,7 @@ static void v_dcac_dma_init(void)
 void vDcac_IfaceInit(void)
 {
     v_dcac_io_init();
-    v_dcac_uasrt_config();
+    v_dcac_uasrt_config(dcacUSART_BAUD);
 	#if(boardDCAC_IFACE_DMA_EN)
 	v_dcac_dma_init();
 	#endif
@@ -261,6 +266,35 @@ void vDcac_IfaceDeInit(void)
 	#endif
 }
 
+/*****************************************************************************************************************
+-----函数功能    设置串口波特率
+-----说明(备注)  根据传入的波特率值设置串口波特率，并重新配置串口。
+-----传入参数    baud: 要设置的波特率值，必须大于0。
+-----输出参数    none
+-----返回值      true: 设置成功    false: 设置失败
+******************************************************************************************************************/
+bool bDcac_IfaceSetBaud(u32 baud)
+{
+	if(baud == 0)
+		return false;
+
+	if(dcacUSART_BAUD == baud)
+		return true;
+
+	#if(boardDCAC_485_IFACE_EN)
+	vDcac_485TransEnable(false);
+	#endif
+
+	S_DataSendCnt = 0;
+	S_DataSendSize = 0;
+
+	v_dcac_uasrt_config(baud);
+	#if(boardDCAC_IFACE_DMA_EN)
+	v_dcac_dma_init();
+	#endif
+
+	return true;
+}
 
 #if(boardLOW_POWER)
 /***********************************************************************************************************************

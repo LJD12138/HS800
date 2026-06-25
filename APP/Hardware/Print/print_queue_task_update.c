@@ -1,90 +1,299 @@
 /*****************************************************************************************************************
 *                                                                                                                *
- *                                         系统的队列函数                                                  		*
+ *                                         Print upgrade queue task                                              *
 *                                                                                                                *
 ******************************************************************************************************************/
-#include "Print/print_queue_task.h"
+#include "Print/print_queue_task_update.h"
 
 #if(boardPRINT_IFACE && boardUPDATE)
+#include "Print/print_queue_task.h"
 #include "Print/print_task.h"
+#include "Print/print_iface.h"
 #include "Print/print_prot_frame.h"
 #include "Sys/sys_queue_task_update.h"
 #include "Sys/sys_task.h"
+#include "Baiku/baiku_proto.h"
+#include "Megmeet/megmeet_proto.h"
+#include "check.h"
+#include "function.h"
 
 #if(boardBMS_EN)
 #include "MD_Bms/md_bms_rec_task.h"
 #include "MD_Bms/md_bms_task.h"
-#endif  //boardBMS_EN
+#endif
 
-#define       	printTASK_UPDATE_CYCLE_TIME               		50
+#if(boardDCAC_EN)
+#include "MD_Dcac/md_dcac_task.h"
+#include "MD_Dcac/md_dcac_queue_task_update.h"
+#endif
 
-/*****************************************************************************************************************
------函数功能    任务函数:升级任务
------说明(备注)  none
------传入参数    none:
+u8 uc_print_ready_update_step = 0;
+u16 us_char_send_dev_len = 0;
+u16 us_char_send_print_len = 0;
+
+/* ========================================== 静态函数声明 ========================================== */
+static bool b_print_check_task_valid(Task_T *tp_task);
+#if(boardBMS_EN)
+static s8 c_print_update_bms(Task_T *tp_task);
+#endif
+
+
+/***********************************************************************************************************************
+-----函数功能    打印升级队列任务主函数
+-----说明(备注)  根据升级对象分发BMS或DCAC升级流程
+-----传入参数    tp_task: 任务结构体指针
 -----输出参数    none
 -----返回值      none
-******************************************************************************************************************/
+************************************************************************************************************************/
 void v_print_queue_task_update(Task_T *tp_task)
 {
-	UpdateObj_E e_update_obj = (UpdateObj_E)tp_task->usInParam;	
-	
-	//超范围
-	if(tp_task->usInParam >= UO_INVAILD)
-	{
-		cQueue_GotoStep( tp_task, STEP_END );  //结束
-		return;
-	}
-	
-	//退出升级模式 || 队列里面有任务
-	if(tSysInfo.eDevState != DS_UPDATE_MODE || 
-		lwrb_get_full(&tp_task->tQueueBuff))
-	{
-		cQueue_GotoStep(tp_task, STEP_END);  //结束
-		return;
-	}		
+    s8 c_ret = 0;
 
-	switch(tp_task->ucStep)
-	{
-		//开始透传
-		case 0 :
-		{
-			u16 us_char_send_bms_len = lwrb_get_full(&tpPrintProtoRx->tRxBuff);
-			
-			u16 us_char_send_print_len = lwrb_get_full(&tp_task->tReplyBuff);
+    #if(boardUSE_OS)
+    /* 阻塞等待任务通知或超时 */
+    ulTaskNotifyTake(pdTRUE, printTASK_UPDATE_CYCLE_TIME);
+    #endif
 
-			#if(boardBMS_EN)
-			if(e_update_obj == UO_BMS)
+    /* 统一检查任务有效性（升级对象、缓冲区、设备状态、错误） */
+    if(b_print_check_task_valid(tp_task) == false)
+        return;
+
+    /* 获取打印口接收缓存及任务回复缓存中的数据长度 */
+    us_char_send_dev_len = lwrb_get_full(&tpPrintProtoRx->tRxBuff);
+    us_char_send_print_len = lwrb_get_full(&tp_task->tReplyBuff);
+
+    /* 根据当前步骤分发升级流程 */
+    switch(tp_task->ucStep)
+    {
+        /* 步骤0：初始化 */
+        case PRINT_UPDATE_STEP_INIT:  
+        {
+            us_char_send_dev_len = 0;
+            us_char_send_print_len = 0;
+
+            tPrint.eDevState = DS_SHUT_DOWN;
+            lwrb_reset(&tp_task->tReplyBuff);
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
+
+        /* 步骤1：等待从机初始化完成 */
+        case PRINT_UPDATE_STEP_WAIT_SLAVE_READY:
+        {
+            if(tDcac.eDevState != DS_UPDATE_MODE)
+                break;
+
+            tUpdate.eHostResult = UTR_RUNNING;
+            uc_print_ready_update_step = 0;
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
+
+        /* 步骤2：准备Print进入升级 */
+        case PRINT_UPDATE_STEP_PREPARE_UPDATE:
+        {
+            #if(boardBMS_EN)
+            if(tUpdate.eObj == UO_BMS)
 			{
-				if(us_char_send_bms_len)
-				{
-					lwrb_reset(&tpBmsTask->tReplyBuff);
-					lwrb_move(&tpBmsTask->tReplyBuff, &tpPrintProtoRx->tRxBuff);
-
-					#if(boardUSE_OS)
-					xTaskNotifyGive(tBmsTaskHandler);//通知发送任务
-					#endif  //boardUSE_OS
-				}
-				
-				if(us_char_send_print_len)
-				{
-					lwrb_reset(&tPrintTxBuff);
-					lwrb_move(&tPrintTxBuff, &tp_task->tReplyBuff);
-					bPrint_SendDataToUsart();
-				}
+				cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_BMS_UPDATE);
 			}
-			#endif  //boardBMS_EN
-		}
-		break;
-		
-		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
-			break;
-	}
-	
-	
-	#if(boardUSE_OS)
-	ulTaskNotifyTake(pdTRUE, printTASK_UPDATE_CYCLE_TIME);
-	#endif  //boardUSE_OS
+            #endif  //boardBMS_EN
+
+            #if(boardDCAC_EN)
+            if(tUpdate.eObj == UO_DCAC)
+            {
+                c_ret = c_print_dcac_prepare_update(tp_task);
+                if(c_ret < 0)
+                {
+                    uc_print_ready_update_step = 0;
+                    cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR);
+                    break;
+                }
+
+                if(c_ret == 0)
+                    break;
+                
+                uc_print_ready_update_step = 0;
+                xTaskNotifyGive(tDcacTaskHandler);
+                cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_DCAC_UPDATE);
+            }
+            #endif  //boardDCAC_EN
+
+            tPrint.eDevState = DS_UPDATE_MODE;
+            vUpdate_ResetTimeout();
+        }
+        break;
+
+        case PRINT_UPDATE_STEP_BMS_UPDATE:  /* 步骤3：执行BMS升级数据转发 */
+        {
+            #if(boardBMS_EN)
+            c_print_update_bms(tp_task);
+            #endif
+        }
+        break;
+
+        case PRINT_UPDATE_STEP_DCAC_UPDATE:  /* 步骤4：执行DCAC升级主流程 */
+        {
+            #if(boardDCAC_EN)
+            c_ret = c_print_update_dcac(tp_task);
+
+            if(c_ret < 0)
+                cQueue_GotoStep(tp_task, STEP_NEXT); /* 进入异常 */
+            else if(c_ret > 0)
+                cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_FINISH_CLEANUP); /* 升级完成 */
+            #endif
+        }
+        break;
+
+        case PRINT_UPDATE_STEP_ERROR:  /* 步骤5：升级错误 */
+        {
+            if(tUpdate.eErrCode == UEF_NONE)
+                bUpdate_SetErrCode(UEF_P_PENDING_FAIL);
+
+            if(tUpdate.eErrCode == UEF_P_CANCEL_REQ)
+                tUpdate.eHostResult = UTR_CANCEL;
+            else
+                tUpdate.eHostResult = UTR_FAIL;
+
+            cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_END);
+        }
+        break;
+
+        case PRINT_UPDATE_STEP_FINISH_CLEANUP:  /* 步骤6：Print已经升级完成,收尾 */
+        {
+			tUpdate.eHostResult = UTR_OK;
+            cQueue_GotoStep(tp_task, STEP_NEXT);
+        }
+        break;
+
+        case PRINT_UPDATE_STEP_END:  /* 步骤7：升级完成，退出升级任务 */
+        {
+            tPrint.eDevState = DS_SHUT_DOWN;
+            lwrb_reset(&tp_task->tReplyBuff);
+            cBaiku_ResetRxBuff(tpPrintProtoRx);
+            cQueue_GotoStep(tp_task, STEP_END);
+        }
+        break;
+
+        default:
+            cQueue_GotoStep(tp_task, STEP_END);
+            break;
+    }
 }
-#endif  //boardPRINT_IFACE && boardUPDATE
+
+/*****************************************************************************************************************
+-----函数功能    检查打印升级任务的有效性
+-----说明(备注)  统一的任务有效性检查逻辑，包括升级对象、缓冲区、设备状态和错误检查
+-----传入参数    tp_task: 任务结构体指针
+-----输出参数    none
+-----返回值      true: 任务有效  false: 任务无效（已设置错误码或跳转步骤）
+******************************************************************************************************************/
+static bool b_print_check_task_valid(Task_T *tp_task)
+{
+    /* 参数合法性检查：升级对象无效则结束任务 */
+    if(tUpdate.eObj >= UO_INVAILD 
+        || tp_task == NULL)
+    {
+        bUpdate_SetErrCode(UEF_P_INVALID_OBJ);
+        cQueue_GotoStep(tp_task, STEP_END);
+        return false;
+    }
+
+    /* 检查回复缓冲区是否有效 */
+    if(tp_task->tReplyBuff.buff == NULL)
+    {
+        bUpdate_SetErrCode(UEF_P_BUFF_NULL);
+        return false;
+    }
+
+    /* 检查设备是否处于升级模式，且任务队列无残留数据 */
+    if(tSysInfo.eDevState != DS_UPDATE_MODE || lwrb_get_full(&tp_task->tQueueBuff))
+    {
+        cQueue_GotoStep(tp_task, STEP_END);
+        return false;
+    }
+
+    /* 检查是否存在报错，若有错误则进入错误处理流程 */
+    if(cPrint_GetUpdateStage() != UPDATE_QUEUE_STAGE_ERR &&
+       cPrint_GetUpdateStage() != UPDATE_QUEUE_STAGE_WAIT_RESTART &&
+       tUpdate.eErrCode != UEF_NONE)
+    {
+        cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR); /* 进入错误收尾阶段 */
+        return false;
+    }
+
+    return true;
+}
+
+#if(boardBMS_EN)
+/***********************************************************************************************************************
+-----函数功能    BMS升级数据转发处理
+-----说明(备注)  将打印口接收的BMS数据转发给BMS任务，并将BMS回复数据发送到打印口
+-----传入参数    tp_task: 任务结构体指针
+-----输出参数    none
+-----返回值      0:正常
+************************************************************************************************************************/
+static s8 c_print_update_bms(Task_T *tp_task)
+{
+    /* 有来自打印口的数据，转发给BMS任务 */
+    if(us_char_send_dev_len)
+    {
+        lwrb_reset(&tpBmsTask->tReplyBuff);
+        lwrb_move(&tpBmsTask->tReplyBuff, &tpPrintProtoRx->tRxBuff);
+        vUpdate_ResetTimeout();
+
+        #if(boardUSE_OS)
+        /* 通知BMS任务处理数据 */
+        xTaskNotifyGive(tBmsTaskHandler);
+        #endif
+    }
+
+    /* 有BMS回复数据，发送到打印口 */
+    if(us_char_send_print_len)
+    {
+        lwrb_reset(&tPrintTxBuff);
+        lwrb_move(&tPrintTxBuff, &tp_task->tReplyBuff);
+        bPrint_SendDataToUsart();
+        vUpdate_ResetTimeout();
+    }
+
+    return 0;
+}
+#endif
+
+#if(boardDCAC_EN)
+
+
+
+/***********************************************************************************************************************
+-----函数功能    获取升级阶段
+-----说明(备注)  最终升级结果以tUpdate.eHostResult、tUpdate.eSlaveResult为准
+-----传入参数    none
+-----输出参数    none
+-----返回值      2:升级完成，等待重新启动  1:升级完成  0:升级中
+                 -1:设备不在升级模式  -2:任务指针为空  -3:任务ID不匹配
+************************************************************************************************************************/
+s8 cPrint_GetUpdateStage(void)
+{
+	if(tSysInfo.eDevState != DS_UPDATE_MODE ||
+	   tUpdate.eChType != CT_PRINT)
+		return -1;
+
+	if(tpPrintTask == NULL)
+		return -2;
+
+	if(tpPrintTask->ucID != PTI_UPDATE)
+		return -3;
+
+	if(tpPrintTask->ucStep == PRINT_UPDATE_STEP_ERROR)
+		return UPDATE_QUEUE_STAGE_ERR;
+
+	if(tpPrintTask->ucStep == PRINT_UPDATE_STEP_END)
+		return UPDATE_QUEUE_STAGE_WAIT_RESTART;
+
+	if(tpPrintTask->ucStep > PRINT_UPDATE_STEP_FINISH_CLEANUP)
+		return UPDATE_QUEUE_STAGE_FINISH;
+
+	return UPDATE_QUEUE_STAGE_RUNNING;
+}
+
+#endif
+#endif

@@ -106,7 +106,7 @@ void v_sys_queue_task_err(Task_T *tp_task)
 			bSys_SetDevState(DS_SHUT_DOWN, false);
 
 			#if(boardBMS_EN)
-			cBms_Switch(SO_KEY, ST_OFF, false);
+			cBms_Switch(SO_KEY, ST_OFF, true);
 			#endif  //boardBMS_EN
 
 			#if(boardUSE_OS)

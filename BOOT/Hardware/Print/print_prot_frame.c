@@ -59,7 +59,7 @@ bool bPrint_RecProtInit(void)
 {
 	s8 c_result = cBaiku_ProtoRecInit(&tpPrintProtoRx, 	//协议指针
 								printRX_FRAME_SIZE,		//协议缓存器大小
-								printDEV_ADRR,			//协议设备ID
+								sysDEV_ADRR,			//协议设备ID
 								boardREPET_TIMER_CYCLE_TMIE);//计数器采样时间
 	if(c_result <= 0)
 		return false;

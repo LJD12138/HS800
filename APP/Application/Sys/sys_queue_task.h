@@ -27,6 +27,7 @@ void v_sys_queue_task_reset(Task_T *tp_task);
 
 #if(boardUPDATE)
 void v_sys_queue_task_update(Task_T *tp_task);
+void v_sys_queue_task_update_err(Task_T *tp_task);
 #endif  //boardUPDATE
 
 #if(boardENG_MODE_EN)

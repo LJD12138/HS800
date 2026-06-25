@@ -6,7 +6,10 @@
 #include "MD_Dcac/md_dcac_task.h"
 #include "MD_Dcac/md_dcac_rec_task.h"
 #include "MD_Dcac/md_dcac_iface.h"
+#include "MD_Dcac/md_dcac_queue_task.h"
 #include "Print/print_task.h"
+#include "Megmeet/megmeet_proto.h"
+#include "Sys/sys_queue_task_update.h"
 
 #include "check.h"
 #include "function.h"
@@ -18,6 +21,9 @@
 #define  		dcacWAIT_NOTIFY_OUTTIME              	1000     //任务通知超时时间 MS
 #define       	dcacTX_PROTO_BUFF_LEN                   128
 #define       	dcacRX_PROTO_BUFF_LEN                   128
+
+#define       	dcTASK_UPDATE_FRAME_SIZE                256     /*!< DCAC升级帧缓存大小，单位：字节 */
+#define       	dcacUPDATE_IC_TYPE                       MEGMEET_IC_TYPE_AC   /*!< DCAC模块对应的Megmeet芯片类型 */
 
 //****************************************************参数初始化**************************************************//
 __ALIGNED(4) 	ModbusProtoTx_t *tpDcacProtoTx = NULL;	//发送协议
@@ -85,9 +91,9 @@ bool bDcac_SendProtInit(void)
 bool bDcac_RecProtInit(void)
 {
 	s8 c_result = cModbus_RecProtoInit(&tpDcacProtoRx, 	//协议指针
-								256,			//协议缓存器大小
-								dcacDEV_ADRR,	//协议设备ID
-								boardREPET_TIMER_CYCLE_TMIE);			//计数器采样时间
+								dcacRX_PROTO_BUFF_LEN, 	//协议缓存器大小
+								dcacDEV_ADRR,			//协议设备ID
+								boardREPET_TIMER_CYCLE_TMIE);	//计数器采样时间
 	if(c_result <= 0)
 	{
 		if(uPrint.tFlag.bDcacRecTask || uPrint.tFlag.bImportant)
@@ -376,6 +382,109 @@ static s8 c_dcac_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
 	#endif  //boardUSE_OS
 	
 	return result;
+}
+
+/* ========================================== 升级协议结构体 ========================================== */
+MegmeetProtoTx_t*  tDcacMegmeetProtoTx  = NULL;   /*!< 发送协议指针（供外部访问） */
+MegmeetProtoRx_t*  tpDcacMegmeetProtoRx = NULL;   /*!< 接收协议指针（供外部访问） */
+
+/* ========================================== 协议初始化函数 ========================================== */
+/**
+ * @brief DCAC Megmeet协议初始化
+ * @return true 成功 false 失败
+ */
+bool bDcac_MegmeetProtInit(void)
+{
+    if (cMegmeet_ProtoSendInit(&tDcacMegmeetProtoTx, dcTASK_UPDATE_FRAME_SIZE) < 0)
+    {
+        return false;
+    }
+    if (cMegmeet_ProtoRecInit(&tpDcacMegmeetProtoRx, dcTASK_UPDATE_FRAME_SIZE) < 0)
+    {
+        return false;
+    }
+    return true;
+}
+
+/* ========================================== 协议帧发送函数实现 ========================================== */
+
+/*****************************************************************************************************************
+ -----函数功能    构造并发送Megmeet协议帧
+ -----说明(备注)  根据命令码和载荷数据构造Megmeet协议帧，并通过DCAC接口发送。
+ -----传入参数    slave_addr : 从机地址（0为广播地址，其他为具体从机地址）
+                 cmd        : Megmeet命令码
+                 payload    : 载荷数据指针（可为NULL）
+                 payload_len: 载荷长度
+ -----输出参数    none
+ -----返回值      true: 发送成功  false: 发送失败
+ ******************************************************************************************************************/
+bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 cmd, const u8* payload, u16 payload_len)
+{
+    MegmeetProtoTx_t* tp_proto_tx = tDcacMegmeetProtoTx;
+    bool b_send_ok = false;
+
+    if(tp_proto_tx == NULL)
+        return false;
+
+    if(cMegmeet_FrameCreate(slave_addr, dcacUPDATE_IC_TYPE, cmd, payload, payload_len,
+                            tp_proto_tx->ucaFrameData, tp_proto_tx->usBuffSize,
+                            &tp_proto_tx->usFrameLen) <= 0)
+        return false;
+
+    b_send_ok = bDcac_DataSendStart(tp_proto_tx->ucaFrameData, tp_proto_tx->usFrameLen);
+    if(b_send_ok)
+        vUpdate_ResetTimeout();
+
+    return b_send_ok;
+}
+
+/*****************************************************************************************************************
+-----函数功能    发送F0（请求升级）帧
+-----说明(备注)  向DCAC从机发送升级请求命令，payload固定为0x00。
+-----传入参数    none
+-----输出参数    none
+-----返回值      true: 发送成功  false: 发送失败
+******************************************************************************************************************/
+bool b_dcac_send_f0(void)
+{
+    u8 uc_payload = 0x00;
+    return b_dcac_send_megmeet_frame(dcacDEV_ADRR, MEGMEET_CMD_REQ_UPDATE, &uc_payload, 1);
+}
+
+/*****************************************************************************************************************
+-----函数功能    发送F6（跳转BOOT）帧
+-----说明(备注)  命令DCAC从机跳转到BOOT模式，无payload。
+-----传入参数    none
+-----输出参数    none
+-----返回值      true: 发送成功  false: 发送失败
+******************************************************************************************************************/
+bool b_dcac_send_f6(void)
+{
+    return b_dcac_send_megmeet_frame(dcacDEV_ADRR, MEGMEET_CMD_JUMP_BOOT, NULL, 0);
+}
+
+/*****************************************************************************************************************
+-----函数功能    发送F2（设置波特率）帧
+-----说明(备注)  向DCAC从机请求切换波特率，并记录待切换的波特率模式。
+-----传入参数    us_baud: 目标波特率
+-----输出参数    none
+-----返回值      true: 发送成功  false: 发送失败
+******************************************************************************************************************/
+bool b_dcac_send_f2(u32 ul_baud)
+{
+    u8 uc_payload = 0;
+
+    if(ul_baud == 9600)
+        uc_payload = 0x00;
+    else if(ul_baud == 115200)
+        uc_payload = 0x01;
+    else
+    {
+         bUpdate_SetErrCode(UEF_D_SET_INVALID_BAUD);
+         return false;
+    }
+
+    return b_dcac_send_megmeet_frame(0, MEGMEET_CMD_SET_BAUD, &uc_payload, 1);
 }
 
 #endif  //boardDCAC_EN

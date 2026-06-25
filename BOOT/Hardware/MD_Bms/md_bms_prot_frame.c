@@ -45,7 +45,7 @@ bool bBms_SendProtInit(void)
 {
 	s8 c_result = cBaiku_ProtoSendInit(&tpBmsProtoTx, 
 								bmsTX_PROTO_BUFF_LEN, 
-								sysDEV_ADRR);
+								bmsDEV_ADRR);
 	if(c_result <= 0)
 	{
 		if(uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)
@@ -66,7 +66,7 @@ bool bBms_RecProtInit(void)
 {
 	s8 c_result = cBaiku_ProtoRecInit(&tpBmsProtoRx, 	//协议指针
 								bmsRX_PROTO_BUFF_LEN,	//协议缓存器大小
-								bmsDEV_ADRR,			//协议设备ID
+								sysDEV_ADRR,			//协议设备ID
 								boardREPET_TIMER_CYCLE_TMIE);//计数器采样时间
 	if(c_result <= 0)
 	{

@@ -46,6 +46,13 @@ bool b_dcac_cs_sys_switch(u16 temp);
 
 bool bDcac_SendProtInit(void);
 bool bDcac_RecProtInit(void);
+bool bDcac_MegmeetProtInit(void);
+
+/* 协议帧发送函数 */
+bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 cmd, const u8* payload, u16 payload_len);
+bool b_dcac_send_f0(void);
+bool b_dcac_send_f6(void);
+bool b_dcac_send_f2(u32 ul_baud);
 
 #endif  //boardDCAC_EN
 

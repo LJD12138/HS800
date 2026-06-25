@@ -6697,6 +6697,11 @@
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_font_barlow_condensed_regular_66.c</FilePath>
             </File>
             <File>
+              <FileName>ui_font_barlow_condensed_regular_14.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\eez_ui\ui_font_barlow_condensed_regular_14.c</FilePath>
+            </File>
+            <File>
               <FileName>ui_image_icon__.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\eez_ui\ui_image_icon__.c</FilePath>

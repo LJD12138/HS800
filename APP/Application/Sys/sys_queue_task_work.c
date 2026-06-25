@@ -3,9 +3,11 @@
  *                                         系统的队列函数                                                  		*
 *                                                                                                                *
 ******************************************************************************************************************/
+#include "MD_Display/md_display_queue_task.h"
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
+#include <stdbool.h>
 
 #if(boardBMS_EN)
 #include "MD_Bms/md_bms_task.h"
@@ -22,6 +24,10 @@
 #if(boardMPPT_EN)
 #include "MD_Mppt/md_mppt_rec_task.h"
 #endif
+
+#if(boardDISPLAY_EN)
+#include "MD_Display/md_display_task.h"
+#endif  //boardDISPLAY_EN
 
 #include "app_info.h"
 #include "gpio_init.h"
@@ -65,7 +71,6 @@ void v_sys_queue_task_work(Task_T *tp_task)
     {
 		case 0:
 		{
-			
 			cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
 		}
 		break;
@@ -73,6 +78,19 @@ void v_sys_queue_task_work(Task_T *tp_task)
 		case 1:
 		{
 			v_chg_pwr_manage();
+
+			//检测到不同步,样式3S强制调度显示任务
+			static vu16 us_3s_cycle = 0;
+			if(tpDispTask->ucID != DISPTI_WORK)
+			{
+				if(us_3s_cycle < 0xffff) us_3s_cycle++;
+				if(us_3s_cycle >= (3000 / sysTASK_WORK_CYCLE_TIME))
+				{
+					us_3s_cycle = 0;
+					cQueue_AddQueueTask(tpDispTask, DISPTI_WORK, 0, true);
+				}
+			}
+				
 		}
 		break;
 		

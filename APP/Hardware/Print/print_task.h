@@ -14,6 +14,10 @@
 #include "main.h"
 #include "Baiku/baiku_proto.h"
 
+#if(boardUPDATE)
+#include "Sys/sys_queue_task_update.h"
+#endif  //boardUPDATE
+
 #if(boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
@@ -79,6 +83,12 @@ typedef union
 	u32 ulFlag;
 }DebugPrint_U;
 extern DebugPrint_U     uPrint; 
+
+typedef struct
+{
+	DevState_E 			eDevState;		//设备状态
+}Print_T;
+extern Print_T tPrint;
 
 #if(boardPRINT_IFACE)
 bool bPrint_TaskInit(void);

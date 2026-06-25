@@ -16,6 +16,10 @@
 #include "MD_Bms/md_bms_task.h"
 #endif //boardBMS_EN
 
+#if(boardDISPLAY_EN)
+#include "MD_Display/md_display_task.h"
+#endif  //boardDISPLAY_EN
+
 #if(boardCONSOLE_EN)
 #include "MD_Console/md_console_task.h"
 #include "MD_Console/md_console_rec_task.h"
@@ -63,6 +67,11 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				uPrint.tFlag.bBootInfo = 1;
 			}
 			lwrb_reset(&tp_task->tQueueBuff);//清空队列
+
+			#if(boardDISPLAY_EN)
+			bDisp_TaskInit();//显示任务初始化
+			#endif  //boardDISPLAY_EN
+
 			cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
 		}break;
 		
@@ -72,6 +81,10 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			#if(boardBMS_EN)
 			vBms_Task(NULL);
 			#endif //boardBMS_EN
+
+			#if(boardDISPLAY_EN)
+			vDisp_Task(NULL);
+			#endif
 		
 			#if(boardCONSOLE_USARTX)
 			vConsole_Task(NULL);

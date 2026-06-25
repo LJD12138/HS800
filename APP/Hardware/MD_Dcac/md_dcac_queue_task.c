@@ -34,8 +34,8 @@ bool bDcac_QueueInit(void)
 {
 	s8 c_result = 1;
 	
-	//任务队列初始化，队列大小为8，回复缓存器大小为0
-	c_result = cQueue_TaskInit(&tpDcacTask, 8, 0, b_task_manage_func_cb, v_add_task_return_func_cb);
+	//任务队列初始化，队列大小为8，回复缓存器大小为256
+	c_result = cQueue_TaskInit(&tpDcacTask, 8, 256, b_task_manage_func_cb, v_add_task_return_func_cb);
 	if(c_result <= 0)
 	{
 		if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
@@ -96,8 +96,17 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
     }
     else
     {
-		tp_task->ucID = DTI_MAIN;
-		tp_task->usInParam = 0;
+		if(tSysInfo.eDevState == DS_UPDATE_MODE)
+		{
+			tp_task->ucID = DTI_NULL;
+			tp_task->usInParam = 0;
+		}
+		else
+		{
+			tp_task->ucID = DTI_MAIN;
+			tp_task->usInParam = 0;
+		}
+		
     }
     
     switch (tp_task->ucID)

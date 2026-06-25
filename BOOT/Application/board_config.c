@@ -163,9 +163,9 @@ void vBoard_StartTask(void *pvParameters)
 	bBms_RecTaskInit();      //主控接收任务
 	#endif
 	
-	#if(boardDISPLAY_EN)
-	bDisp_TaskInit();//显示任务初始化
-	#endif  //boardDISPLAY_EN
+	// #if(boardDISPLAY_EN)
+	// bDisp_TaskInit();//显示任务初始化
+	// #endif  //boardDISPLAY_EN
 	
 	#if(boardUSE_OS)
     vTaskDelete(NULL);   

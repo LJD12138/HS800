@@ -44,6 +44,7 @@ typedef enum
 	STI_WORK,			//工作中
 	STI_ENG,			//工程模式
 	STI_UPDATE,			//升级
+	STI_UPDATE_ERR,		//升级错误 10
 }SysTaskId_E;
 
 //*****************************设备初始化标志位********************************

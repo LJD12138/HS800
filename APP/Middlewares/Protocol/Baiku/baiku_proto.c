@@ -69,13 +69,18 @@ s8 cBaiku_ProtoRecInit(BaikuProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 cy
 	}
 	else 
 	{
-		#if(boardUSE_OS)
-		vPortFree((*proto)->ucpRemainData);  //先释放子内存,要不会导致崩溃
-		vPortFree((*proto));
-		#else
-		free((*proto)->ucpRemainData);  //先释放子内存,要不会导致崩溃
-		free((*proto));
-		#endif
+		if (*proto != NULL)
+		{
+			#if(boardUSE_OS)
+			if ((*proto)->ucpRemainData != NULL)
+				vPortFree((*proto)->ucpRemainData);
+			vPortFree((*proto));
+			#else
+			if ((*proto)->ucpRemainData != NULL)
+				free((*proto)->ucpRemainData);
+			free((*proto));
+			#endif
+		}
 		result =  -2;
 	}
 	#if(boardUSE_OS)
@@ -112,17 +117,14 @@ s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
     *proto = (BaikuProtoTx_t*)malloc(total_size);
 	#endif
 	
-	(*proto)->ucHead = protoHEAD_CODE;
-	(*proto)->ucAddr = dev_addr;
-	
 	if(*proto == NULL)
 	{
-		#if(boardUSE_OS)
-		vPortFree((*proto));
-		#else
-		free((*proto));
-		#endif
 		result =  -2;
+	}
+	else
+	{
+		(*proto)->ucHead = protoHEAD_CODE;
+		(*proto)->ucAddr = dev_addr;
 	}
 	#if(boardUSE_OS)
 	taskEXIT_CRITICAL();
@@ -212,7 +214,7 @@ s8 cBaiku_ProtoCheck(BaikuProtoRx_t* proto)
 				while(1)
 				{
 					//匹对成功
-					if(temp[0] == proto->ucHead && (temp[1] == proto->ucAddr || temp[1] == printCONSOLE_MASTER_ADDR || temp[1] == printCONSOLE_SLAVE_ADDR))
+					if(temp[0] == proto->ucHead && (temp[1] == proto->ucAddr))
 					{
 						lwrb_read(&proto->tRxBuff, &temp[2], 1);
 						//长度错误
@@ -297,9 +299,9 @@ s8 cBaiku_UpdateCheck(BaikuProtoRx_t* proto, u8* ucp_data, u16 len)
 	for(; i <= len - 3; i++)
 	{
 		// 检查当前元素及其后三个元素是否与目标数组匹配
-		if(ucp_data[i] == proto->ucHead && 
-		  (ucp_data[i + 1] == proto->ucAddr || ucp_data[i + 1] == printCONSOLE_MASTER_ADDR) &&
-			ucp_data[i + 2] <= len)
+		if(ucp_data[i] == proto->ucHead
+		  	&& (ucp_data[i + 1] == proto->ucAddr)
+			&& ucp_data[i + 2] <= len)
 		{
 			proto->ucHead = ucp_data [i];
 			proto->ucAddr = ucp_data [i + 1];
@@ -445,13 +447,13 @@ static s8 c_baiku_proto_decrypt(BaikuProtoRx_t* proto)
 {
 	s8 result = 1;
 	
+	if(proto == NULL || proto->ucpRemainData == NULL)
+		return -2;
+
 	//最短的指令为明文无Payload Data，6字节
 	//Len后最短长度为3
     if(proto->ucRemainLen < 3)   
         return -1;
-	
-	if(proto == NULL || proto->ucpRemainData == NULL)
-		return -2;
 	
 	#if(boardUSE_OS)
     taskENTER_CRITICAL();
