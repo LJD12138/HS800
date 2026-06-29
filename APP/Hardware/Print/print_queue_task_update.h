@@ -1,4 +1,4 @@
-﻿/***********************************************************************************************************************
+/***********************************************************************************************************************
  * Project : APP
  * Module  : G:\1-Baiku_Projects\11-G24\1.software\G2404-3\APP\Hardware\Print
  * File    : print_queue_task_update.h
@@ -30,7 +30,6 @@ extern "C" {
 #define        printTASK_UPDATE_CYCLE_TIME                 100
 
 /* ==========================================globals=====================================*/
-extern u8 uc_print_ready_update_step;
 extern u16 us_char_send_dev_len;
 extern u16 us_char_send_print_len;
 
@@ -52,9 +51,14 @@ typedef enum
 } PrintUpdateStep_E;
 
 /* ==========================================extern======================================*/
+#if(boardBMS_EN)
+s8 c_print_bms_prepare_update(Task_T* tp_task);
+s8 c_print_bms_update_firmware_transfer(Task_T *tp_task);
+#endif
+
 #if(boardDCAC_EN)
 s8 c_print_dcac_prepare_update(Task_T* tp_task);
-s8 c_print_update_dcac(Task_T *tp_task);
+s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task);
 #endif
 
 s8 cPrint_GetUpdateStage(void);

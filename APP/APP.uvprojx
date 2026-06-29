@@ -775,6 +775,16 @@
               <FileType>5</FileType>
               <FilePath>.\Middlewares\Protocol\proto_update.h</FilePath>
             </File>
+            <File>
+              <FileName>megmeet_proto.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\Protocol\Megmeet\megmeet_proto.c</FilePath>
+            </File>
+            <File>
+              <FileName>megmeet_proto.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\Protocol\Megmeet\megmeet_proto.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6251,6 +6261,11 @@
               <FileType>5</FileType>
               <FilePath>.\Application\Sys\sys_queue_task_update.h</FilePath>
             </File>
+            <File>
+              <FileName>sys_queue_task_update_err.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Application\Sys\sys_queue_task_update_err.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6340,6 +6355,21 @@
               <FileName>print_queue_task_update.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\Print\print_queue_task_update.c</FilePath>
+            </File>
+            <File>
+              <FileName>print_queue_task_update.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Print\print_queue_task_update.h</FilePath>
+            </File>
+            <File>
+              <FileName>Print_update_bms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Print\Print_update_bms.c</FilePath>
+            </File>
+            <File>
+              <FileName>print_update_dcac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Print\print_update_dcac.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -633,7 +633,13 @@ s8 cBms_GetUpdateStage(void)
 	if(tpBmsTask->ucID != BTI_UPDATE)
 		return -3;
 
-	if(tpBmsTask->ucStep > 1)
+	if(tpBmsTask->ucStep == BMS_UPDATE_STEP_ERROR_CLEANUP)
+		return UPDATE_QUEUE_STAGE_ERR;
+
+	if(tpBmsTask->ucStep == BMS_UPDATE_STEP_END)
+		return UPDATE_QUEUE_STAGE_WAIT_RESTART;
+
+	if(tpBmsTask->ucStep > BMS_UPDATE_STEP_FINISH_CLEANUP)
 		return UPDATE_QUEUE_STAGE_FINISH;
 
 	return UPDATE_QUEUE_STAGE_RUNNING;

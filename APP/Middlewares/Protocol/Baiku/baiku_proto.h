@@ -86,6 +86,7 @@ typedef struct
 	vu8             	ucHead;
 	vu8             	ucAddr;
 	vu8             	ucFrameLen;    //数据帧总长度
+	u16            		usBuffSize;    //ucaFrameData缓冲区大小
 	u8             		ucaFrameData[];  //数据帧
 }BaikuProtoTx_t;
 #pragma pack()

@@ -106,7 +106,7 @@ void vDcac_Task(void *pvParameters)
     {
 		if(tp_task == NULL
 			#if(boardUPDATE)
-			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != UO_DCAC)
+			|| (tSysInfo.eDevState == DS_UPDATE_MODE && !IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
 			#endif  //boardUPDATE
 		)
 		{

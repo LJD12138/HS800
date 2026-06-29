@@ -1,4 +1,4 @@
-﻿/***********************************************************************************************************************
+/***********************************************************************************************************************
  * Project : ProjectTeam
  * Module  : G:\1-Baiku_Projects\11-G24\1.software\G2404-3\APP\Hardware\MD_Dcac
  * File    : md_dcac_queue_task_update.h
@@ -25,45 +25,58 @@ extern "C" {
 #if(boardDCAC_EN)
 #include "Megmeet/megmeet_proto.h"
 #include "Sys/sys_queue_task_update.h"
+#include "MD_Dcac/md_dcac_prot_frame.h"
 
 /* ==========================================macros======================================*/
 
 
 /* ==========================================types=======================================*/
 
-/**
- * @brief DCAC升级队列任务步骤枚举
- * @note  升级流程：INIT -> SEND_F0 -> WAIT_F1 -> (成功:SEND_F2, 失败:SEND_F6->WAIT_F7->BOOT_DELAY->SEND_F0)
- *                                      -> SEND_F2 -> WAIT_F3 -> SEND_A1 -> WAIT_A2 -> DATA_EXCHANGE -> FINISH_CLEANUP -> END
- */
+
 typedef enum
 {
-    /* ---- 握手阶段 ---- */
-    DCAC_UPDATE_STEP_INIT = 0,              /*!< 步骤0：初始化升级环境 */
-    DCAC_UPDATE_STEP_SEND_F0,               /*!< 步骤1：发送F0请求升级 */
-    DCAC_UPDATE_STEP_WAIT_F1,               /*!< 步骤2：等待F1回复 */
-    
-    /* ---- BOOT跳转阶段 ---- */
-    DCAC_UPDATE_STEP_SEND_F6,               /*!< 步骤3：发送F6请求跳转BOOT */
-    DCAC_UPDATE_STEP_WAIT_F7,               /*!< 步骤4：等待F7回复 */
-    DCAC_UPDATE_STEP_BOOT_DELAY,            /*!< 步骤5：BOOT跳转后延时等待 */
-    
-    /* ---- 波特率设置阶段 ---- */
-    DCAC_UPDATE_STEP_SEND_F2,               /*!< 步骤6：发送F2设置波特率 */
-    DCAC_UPDATE_STEP_WAIT_F3,               /*!< 步骤7：等待F3回复 */
-    
-    /* ---- 文件头传输阶段 ---- */
-    DCAC_UPDATE_STEP_SEND_A1,               /*!< 步骤8：发送A1文件头 */
-    DCAC_UPDATE_STEP_WAIT_A2,               /*!< 步骤9：等待A2文件头回复 */
-    
-    /* ---- 数据传输阶段 ---- */
-    DCAC_UPDATE_STEP_DATA_EXCHANGE,         /*!< 步骤10：根据升级阶段执行数据交互(A3/A4/A5/A6) */
-    
-    /* ---- 结束阶段 ---- */
-    DCAC_UPDATE_STEP_ERROR_CLEANUP,         /*!< 步骤11：升级错误,收尾 */
-    DCAC_UPDATE_STEP_FINISH_CLEANUP,        /*!< 步骤12：升级完成，收尾 */
-    DCAC_UPDATE_STEP_END,                   /*!< 步骤13：结束，等待后续操作 */
+    DUS_STEP_INIT = 0,              /*!< 步骤0：初始化升级环境 */
+    DUS_STEP_PREPARE,               /*!< 步骤1：准备升级 */
+    DUS_STEP_FW_TRANS,              /*!< 步骤4：固件数据传输(A3/A4/A5/A6) */
+    DUS_STEP_ERROR_CLEANUP,         /*!< 步骤5：升级错误,收尾 */
+    DUS_STEP_FINISH_CLEANUP,        /*!< 步骤6：升级完成，收尾 */
+    DUS_STEP_END,                   /*!< 步骤7：结束，等待后续操作 */
 } DcacUpdateStep_E;
+
+//DCAC升级准备阶段
+typedef enum
+{
+    DPS_IDLE = 0,
+    DPS_SEND_F0,                    //准备阶段：发送F0请求升级
+    DPS_WAIT_F1,                    //准备阶段：等待F1回复
+    DPS_SEND_F6,                    //准备阶段：发送F6请求跳转BOOT
+    DPS_WAIT_F7,                    //准备阶段：等待F7回复
+    DPS_BOOT_DELAY,                 //准备阶段：BOOT跳转后延时等待
+    DPS_SEND_F2,                    //准备阶段：发送F2设置波特率
+    DPS_WAIT_F3,                     //准备阶段：等待F3回复
+    DPS_WAIT_PRINT_UPDATE_REQ,      //准备阶段：等待Print请求升级
+    DPS_PRINT_SEND_C4,              //准备阶段：发送C4请求数据
+    DPS_PRINT_WAIT_REPLY_C5,        //准备阶段：等待Print回复C4
+    DPS_WAIT_A2,                    //准备阶段：等待A2文件头回复
+    DPS_FINISH_CLEANUP,             //准备阶段：升级完成，收尾
+}DcacPrepStage_E;
+extern DcacPrepStage_E eDcacPrepStage;
+
+//DCAC固件传输阶段
+typedef enum
+{
+    DFTS_IDLE = 0,
+    DFTS_SLAVE_READY_OK, 	    //DCAC前置数据准备完成,如确定协议/获取文件信息
+    DFTS_HOST_REQ_DATA,	    //Print请求数据
+    DFTS_WAIT_HOST_REPLY,	    //等待Print回复
+    DFTS_SEND_FW_DATA,	        //主机发送A3固件包数据到DCAC
+    DFTS_WAIT_SLAVE_REPLY,	    //等待DCAC回复
+    DFTS_QUERY_SLAVE_RESULT,	//主机发送A5查询DCAC结果
+    DFTS_WAIT_SLAVE_RESULT_REPLY,	//等待DCAC结果回复
+    DFTS_FINISH_CLEANUP,             //升级完成，收尾
+}DcacFwTransStage_E;
+extern DcacFwTransStage_E eDcacFwTransStage;
+
 
 /* ==========================================globals=====================================*/
 extern MegmeetProtoTx_t*  tDcacMegmeetProtoTx;
@@ -71,7 +84,8 @@ extern MegmeetProtoRx_t*  tpDcacMegmeetProtoRx;
 
 /* ==========================================extern======================================*/
 
-
+bool bDcac_SetPrepStage(Task_T *tp_task ,DcacPrepStage_E stage);
+bool bDcac_SetFwTransStage(Task_T *tp_task, DcacFwTransStage_E stage);
 s8 cDcac_GetUpdateStage(void);
 
 #endif  //boardDCAC_EN

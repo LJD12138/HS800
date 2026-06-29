@@ -125,6 +125,7 @@ s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 	{
 		(*proto)->ucHead = protoHEAD_CODE;
 		(*proto)->ucAddr = dev_addr;
+		(*proto)->usBuffSize = buff_len;
 	}
 	#if(boardUSE_OS)
 	taskEXIT_CRITICAL();
@@ -152,12 +153,11 @@ s8 cBaiku_ProtoCreate(BaikuProtoTx_t* proto,u8 cmd, u8* data, u8 len)
 {
 	s8 result = 1;
 	
-	//总长度不可以超过256(250+6)
-    if(len > 250)   
-        return -1;
-	
+	//帧总长度(len+6)不可超过缓冲区大小
 	if(proto == NULL)
 		return -2;
+	if((u16)len + 6U > proto->usBuffSize)
+		return -1;
 	
 	#if(boardUSE_OS)
     taskENTER_CRITICAL();
@@ -337,7 +337,7 @@ s8 cBaiku_UpdateCheck(BaikuProtoRx_t* proto, u8* ucp_data, u16 len)
 	if(proto->ucValidLen)
 		proto->ucpValidData = (u8*)&proto->ucpRemainData[2]; 
 	else
-		proto->ucValidLen = NULL;
+		proto->ucpValidData = NULL;
 	
 	return 1;
 }
@@ -480,7 +480,7 @@ static s8 c_baiku_proto_decrypt(BaikuProtoRx_t* proto)
 			if(proto->ucValidLen)
 				proto->ucpValidData = (u8*)&proto->ucpRemainData[2]; 
 			else
-				proto->ucValidLen = NULL;
+				proto->ucpValidData = NULL;
 		}
 	}
 	#if(boardUSE_OS)

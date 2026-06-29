@@ -20,13 +20,19 @@
 #include "MD_Dcac/md_dcac_task.h"
 #endif  //boardDCAC_EN
 
+#if(boardBMS_EN)
+#include "MD_Bms/md_bms_task.h"
+#include "MD_Bms/md_bms_prot_frame.h"
+#endif  //boardBMS_EN
+
 #include "gpio_init.h"
 #include "app_info.h"
 
 
 #define     	sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME //任务时间
 #define       	updateREC_LOST_OVERTIME        			((2UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
-#define       	updateDCAC_LOST_OVERTIME      			((3UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
+#define       	updateDCAC_LOST_OVERTIME      			((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
+#define       	updateBMS_LOST_OVERTIME       			((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 #define       	updateLOST_OVERTIME        				((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 
 
@@ -64,6 +70,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
     {
 		case 0:
 		{
+			vUpdate_InitParam();
 			bSys_SetDevState(DS_UPDATE_MODE, true);
 			cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
 		}
@@ -81,7 +88,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		//等待从机进入升级准备状态
 		case 2:
 		{
-			//超时重新发送
+			//超时10S重新发送
 			tp_task->usStepWaitCnt++;
 			if(tp_task->usStepWaitCnt >= ((10 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
 			{
@@ -102,7 +109,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			#endif  //boardBMS_EN
 			
 			#if(boardDCAC_EN)
-			if(tUpdate.eObj == UO_DCAC)
+			if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
 			{
 				if(tDcac.eDevState == DS_UPDATE_MODE)
 					cQueue_GotoStep(tp_task, STEP_NEXT);
@@ -210,9 +217,14 @@ void v_sys_queue_task_update(Task_T *tp_task)
 static u16 us_update_get_lost_timeout(UpdateObj_E e_obj)
 {
 	#if(boardDCAC_EN)
-	if(e_obj == UO_DCAC)
+	if(IS_DCAC_UPDATE_OBJ(e_obj))
 		return updateDCAC_LOST_OVERTIME;
 	#endif  //boardDCAC_EN
+
+	#if(boardBMS_EN)
+	if(e_obj == UO_BMS)
+		return updateBMS_LOST_OVERTIME;
+	#endif  //boardBMS_EN
 
 	return updateLOST_OVERTIME;
 }
@@ -252,7 +264,7 @@ static bool b_update_start_object(Task_T *tp_task)
 	#endif  //boardBMS_EN
 	
 	#if(boardDCAC_EN)
-	if(tUpdate.eObj == UO_DCAC)
+	if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
 	{
 		if(tpDcacTask == NULL || tpDcacTask->tReplyBuff.buff == NULL)
 		{
@@ -299,10 +311,44 @@ static bool b_update_start_object(Task_T *tp_task)
 bool bUpdate_Init(void)
 {
 	memset(&tUpdate, 0, sizeof(tUpdate));
-	tUpdate.eHostResult = UTR_INVALID;
-	tUpdate.eSlaveResult = UTR_INVALID;
+	bUpdate_SetResult(URT_HOST_SLAVE, UTR_INVALID);
 	tUpdate.eErrCode = UEF_NONE;
 	return true;
+}
+
+/*****************************************************************************************************************
+-----函数功能    初始化升级任务参数
+-----说明(备注)  
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+******************************************************************************************************************/
+void vUpdate_InitParam(void)
+{
+	tUpdate.usRecOverTimeCnt = 0;
+	tUpdate.usLostOverTimeCnt = us_update_get_lost_timeout(tUpdate.eObj);
+	bUpdate_SetResult(URT_HOST_SLAVE, UTR_INVALID);
+
+	#if(boardDCAC_EN)
+	if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
+	{
+		cModbus_ResetTx(tpDcacProtoTx, tpDcacProtoTx->usFrameDataSize);
+		cModbus_ResetRxBuff(tpDcacProtoRx);
+	}
+	#endif  //boardDCAC_EN
+
+	#if(boardBMS_EN)
+	if (tUpdate.eObj == UO_BMS)
+	{
+		// cBaiku_ResetTx(tpBmsProtoTx, tpBmsProtoTx->usFrameDataSize);
+		cBaiku_ResetRxBuff(tpBmsProtoRx);
+	}
+	#endif  //boardBMS_EN
+
+	if(tUpdate.eChType == CT_PRINT)
+	{
+		cBaiku_ResetRxBuff(tpPrintProtoRx);
+	}
 }
 
 /*****************************************************************************************************************
@@ -363,6 +409,101 @@ bool bUpdate_SetErrCode(UpdateErrCode_E code)
 	return b_ret;
 }
 
+/***********************************************************************************************************************
+-----函数功能    设置升级结果
+-----说明(备注)  设置主机或从机的升级结果
+-----传入参数    target: 目标-URT_HOST主机  URT_SLAVE从机
+                result: 要设置的升级结果
+-----输出参数    none
+-----返回值      true:设置成功  false:参数无效
+************************************************************************************************************************/
+bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
+{
+	if(result >= UTR_INVAILD)
+		return false;
+
+	switch(result)
+	{
+		case UTR_INVALID:
+		{
+			tUpdate.ulFwSize = 0;
+			tUpdate.ulRxSize = 0;
+			tUpdate.ulFwCrc32 = 0;
+			tUpdate.ulFwCalcCrc32 = 0xFFFFFFFFUL;
+			tUpdate.ulFwPendCrc32 = 0xFFFFFFFFUL;
+			tUpdate.usPendPacketLen = 0;
+			tUpdate.usRecFrameCnt = 0;
+		}
+		break;
+
+		case UTR_RUNNING:
+		{
+			tUpdate.ulFwSize = 0;
+			tUpdate.ulRxSize = 0;
+			tUpdate.ulFwCrc32 = 0;
+			tUpdate.ulFwCalcCrc32 = 0xFFFFFFFFUL;
+			tUpdate.ulFwPendCrc32 = 0xFFFFFFFFUL;
+			tUpdate.usPendPacketLen = 0;
+			tUpdate.usRecFrameCnt = 0;
+		}
+		break;
+
+		case UTR_OK:
+		{
+			
+		}
+		break;
+
+		case UTR_LATEST:
+		{
+
+		}
+		break;
+
+		case UTR_CANCEL:
+		{
+
+		}
+		break;
+
+		case UTR_FAIL:
+		{
+
+		}
+		break;
+
+		case UTR_INVAILD:
+		{
+
+		}
+		break;
+
+		default:
+			return false;
+	}
+
+	switch(target)
+	{
+		case URT_HOST:
+			tUpdate.eHostResult = result;
+			break;
+
+		case URT_SLAVE:
+			tUpdate.eSlaveResult = result;
+			break;
+
+		case URT_HOST_SLAVE:
+			tUpdate.eHostResult = result;
+			tUpdate.eSlaveResult = result;
+			break;
+
+		default:
+			return false;
+	}
+
+	return true;
+}
+
 /*****************************************************************************************************************
 -----函数功能    选择升级通道
 -----说明(备注)  根据传入的升级对象和通道类型，选择并初始化升级通道。
@@ -407,17 +548,22 @@ s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
 			tUpdate.ulBaud = 115200;
 		}
 		break;
+
+		case UO_MGMT_AC:
+		case UO_MGMT_DC:
+		{
+			tUpdate.ulBaud = 115200;
+		}
+		break;
 		
 		default:
 			return -3;
 	}
-	
-	vUpdate_SetStage(NULL, DUS_IDLE);
-	
+
 	tUpdate.eObj = e_obj;
 	tUpdate.eChType = ch_type;
 	
-	if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, false) < 0)
+	if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, true) < 0)
 		return -2;
 
 	return 1;
@@ -437,6 +583,10 @@ s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
 {
 	if(e_obj >= UO_INVAILD || proto_type >= PT_INVAILD)
 		return -1;
+
+	/* 升级对象已确定时，协议选择必须与当前升级对象一致，防止跨对象污染 */
+	if(tUpdate.eObj != UO_DEFAULT && e_obj != tUpdate.eObj)
+		return -3;
 	
 	if(proto_type == tUpdate.eProtoType && 
 		tSysInfo.eDevState == DS_UPDATE_MODE)
@@ -446,111 +596,6 @@ s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
 	}
 	tUpdate.eProtoType = proto_type;
 	return 1;
-}
-
-/*****************************************************************************************************************
------函数功能    设置升级阶段
------说明(备注)  更新当前升级阶段，并根据选项位标志重置相关任务的等待计数或超时计数器。
------传入参数    stage: 升级阶段值
-                tp_task: 指向任务结构体的指针
------输出参数    none
------返回值      none
-******************************************************************************************************************/
-void vUpdate_SetStage(Task_T *tp_task, u8 stage)
-{
-	switch(stage)
-	{
-		case DUS_IDLE:
-		{
-			tUpdate.eHostResult = UTR_INVALID;
-			tUpdate.eSlaveResult = UTR_INVALID;
-			tUpdate.ulFwSize = 0;
-			tUpdate.ulRxSize = 0;
-			tUpdate.ulFwCrc32 = 0;
-			tUpdate.ulFwCalcCrc32 = 0xFFFFFFFFUL;
-			tUpdate.ulFwPendCrc32 = 0xFFFFFFFFUL;
-			tUpdate.usPendPacketLen = 0;
-			tUpdate.usRecOverTimeCnt = 0;
-			tUpdate.usLostOverTimeCnt = us_update_get_lost_timeout(tUpdate.eObj);
-
-			cModbus_ResetTx(tpDcacProtoTx, tpDcacProtoTx->usFrameDataSize);
-            cModbus_ResetRxBuff(tpDcacProtoRx);
-
-			cBaiku_ResetRxBuff(tpPrintProtoRx);
-		}
-		break;
-
-		case DUS_SLAVE_READY_OK:
-		{
-			#if(boardUSE_OS && boardPRINT_IFACE)
-			if(tUpdate.eChType == CT_PRINT && tPrintTaskHandler != NULL)
-				xTaskNotifyGive(tPrintTaskHandler);
-			#endif
-		}
-		break;
-
-		case DUS_HOST_REQ_DATA:
-		{
-			vUpdate_ResetTimeout();
-
-			#if(boardUSE_OS && boardPRINT_IFACE)
-			if(tUpdate.eChType == CT_PRINT && tPrintTaskHandler != NULL)
-				xTaskNotifyGive(tPrintTaskHandler);
-			#endif
-		}
-		break;
-
-		case DUS_SLAVE_SEND_DATA:
-		{
-			vUpdate_ResetTimeout();
-			
-			#if(boardUSE_OS)
-			/* 通过任务通知唤醒DCAC任务 */
-			if(tDcacTaskHandler != NULL)
-				xTaskNotifyGive(tDcacTaskHandler);
-			#endif
-		}
-		break;
-
-		case DUS_WAIT_SLAVE_REPLY:
-		{
-			vUpdate_ResetTimeout();
-		}
-		break;
-
-		case DUS_GET_SLAVE_RESULT:
-		{
-			#if(boardUSE_OS)
-			/* 通过任务通知唤醒DCAC任务 */
-			if(tDcacTaskHandler != NULL)
-				xTaskNotifyGive(tDcacTaskHandler);
-			#endif
-		}
-		break;
-
-		case DUS_WAIT_SLAVE_RESULT_REPLY:
-		{
-			vUpdate_ResetTimeout();
-
-			#if(boardUSE_OS)
-			/* 通过任务通知唤醒DCAC任务 */
-			if(tDcacTaskHandler != NULL)
-				xTaskNotifyGive(tDcacTaskHandler);
-			#endif
-		}
-		break;
-
-		default:
-			break;
-	}
-
-	tUpdate.ucStage = stage;
-
-	if(tp_task != NULL)
-	{
-		tp_task->usStepWaitCnt = 0;
-		tp_task->usStepRepeatCnt = 0;
-	}
 }
 
 /***********************************************************************************************************************
@@ -565,10 +610,7 @@ void vUpdate_TickTimer(void)
 	if(tUpdate.usRecOverTimeCnt > 0)
 	{
 		tUpdate.usRecOverTimeCnt--;
-		if(tUpdate.usRecOverTimeCnt == 0)
-		{
-			
-		}
+		/* 当前未定义帧级接收超时动作，保留计数器供后续扩展 */
 	}
 	
 	if(tUpdate.usLostOverTimeCnt > 0)

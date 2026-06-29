@@ -1,5 +1,6 @@
 
 #include "Usb/usb_prot_frame.h"
+#include <stdbool.h>
 
 #if(boardUSB_EN)
 #include "Usb/usb_queue_task.h"
@@ -372,29 +373,68 @@ s8 c_usb_set_pwr_cs(u16 pwr)
 void vUSB_ControlPorts(bool b_open)
 {
 	uint8_t data[1];
-	uint8_t val = b_open ? 0x28 : 0x14; /* 0x28: 强制开启1口与2口通路管; 0x14: 强制关闭1口与2口通路管 */
+	uint8_t val = b_open ? 0x00 : 0x01; /* 0x02: 强制开启Buck; 0x01: 强制关闭Buck */
 
-	/* 控制第一路 USB 芯片 (IC1) */
-	data[0] = 0x20;
-	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
-	data[0] = 0x40;
-	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
-	data[0] = 0x80;
-	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+	if(b_open == true)
+	{
+		/* 控制第一路 USB 芯片 (IC1) */
+		data[0] = 0x20;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+		data[0] = 0x40;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+		data[0] = 0x80;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
 
-	data[0] = val;
-	cI2C_WriteBytes(&tUSB_IC1_I2C, 0x16, data, 1);
+		data[0] = val;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x16, data, 1);
 
-	/* 控制第二路 USB 芯片 (IC2) */
-	data[0] = 0x20;
-	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
-	data[0] = 0x40;
-	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
-	data[0] = 0x80;
-	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+		data[0] = 0;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x76, data, 1);
 
-	data[0] = val;
-	cI2C_WriteBytes(&tUSB_IC2_I2C, 0x16, data, 1);
+		/* 控制第二路 USB 芯片 (IC2) */
+		data[0] = 0x20;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+		data[0] = 0x40;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+		data[0] = 0x80;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+
+		data[0] = val;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x16, data, 1);
+
+		data[0] = 0;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x76, data, 1);
+	}
+	else
+	{
+		/* 控制第一路 USB 芯片 (IC1) */
+		data[0] = 3;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x76, data, 1);
+
+		data[0] = 0x20;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+		data[0] = 0x40;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+		data[0] = 0x80;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x15, data, 1);
+
+		data[0] = val;
+		cI2C_WriteBytes(&tUSB_IC1_I2C, 0x16, data, 1);
+
+		/* 控制第二路 USB 芯片 (IC2) */
+		data[0] = 3;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x76, data, 1);
+
+		data[0] = 0x20;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+		data[0] = 0x40;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+		data[0] = 0x80;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x15, data, 1);
+
+		data[0] = val;
+		cI2C_WriteBytes(&tUSB_IC2_I2C, 0x16, data, 1);
+	}
 }
 
 #endif  //boardUSB_EN

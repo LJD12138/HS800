@@ -175,6 +175,7 @@ virtualFolder:
         - path: Hardware/Print/print_queue_task_update.c
         - path: Hardware/Print/print_queue_task_update.h
         - path: Hardware/Print/print_update_dcac.c
+        - path: Hardware/Print/Print_update_bms.c
       folders: []
     - name: HW-Adc
       files:

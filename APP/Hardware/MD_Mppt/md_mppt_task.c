@@ -4,6 +4,7 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Mppt/md_mppt_task.h"
+#include <stdbool.h>
 
 #if(boardMPPT_EN)
 #include "MD_Mppt/md_mppt_queue_task.h"
@@ -225,7 +226,8 @@ static void v_mppt_auto_switch_chg_source(void)
         return;
     }
     
-    bMppt_SetErrCode( MEC_MPPT_IN_OV, false );
+	if(tMppt.uErrCode.tCode.bMpptInOV == true)
+    	bMppt_SetErrCode( MEC_MPPT_IN_OV, false );
     
     // PV 优先逻辑
     if(tMppt.eWorkMode == MWM_NULL) {

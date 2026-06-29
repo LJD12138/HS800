@@ -1,4 +1,5 @@
 #include "Print/print_prot_frame.h"
+#include "lwrb.h"
 
 #if(boardPRINT_IFACE)
 #include "Print/print_iface.h"
@@ -65,6 +66,7 @@ vu8 uc_next_cmd = 0;
 
 //****************************************************函数声明****************************************************//
 static s8 c_print_data_trans(u8 cmd, u8* data, u8 len);
+static s8 c_print_data_trans_for_update(u8 cmd, u8* data, u8 len);
 static s8 c_get_console_ver_info(u8* data, u8* data_len);
 static s8 c_relay_console_info(BaikuProtoRx_t* proto);
 
@@ -712,7 +714,9 @@ s8 c_relay88_sys_set(BaikuProtoRx_t* proto)
 	#endif  //boardBMS_EN
 
 	#if(boardDCAC_EN)
-	else if (t_sys_set_param.obj == UO_DCAC)
+	else if (t_sys_set_param.obj == UO_DCAC ||
+			 t_sys_set_param.obj == UO_MGMT_AC ||
+			 t_sys_set_param.obj == UO_MGMT_DC)
 	{
 		//进入升级
 		if(t_sys_set_param.cmd == mainUPDATE_FLAG)
@@ -749,89 +753,6 @@ s8 c_relay_bms_app_info(u8* data, u16 len)
 	
 	return c_print_data_trans(baikuCMD_REPLY_MEM_PARAM, data, len);
 }
-
-/***********************************************************************************************************************
------函数功能    回复设置升级协议  0xC3
------说明(备注)  none
------传入参数    data:协议数据
-				len: 数据长度
------输出参数    none
------返回值      true:发送成功   false:发送失败
-************************************************************************************************************************/
-s8 c_relayC3_reply_set_proto(u8* data, u8 len)
-{
-	s8 c_ret = 0;
-
-	if(data == NULL || len == 0)
-		return -10;
-
-	c_ret = c_print_data_trans(baikuCMD_REPLY_SET_PROTO, data, len);
-	#if(boardUPDATE)
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-	#endif  //boardUPDATE
-
-	return c_ret;
-}
-
-/***********************************************************************************************************************
------函数功能    请求开始发送  0xC4
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      true:发送成功   false:发送失败
-************************************************************************************************************************/
-s8 c_relayC4_req_start_send(void)
-{
-	s8 c_ret = c_print_data_trans(baikuCMD_RRQ_START_SEND, NULL, 0);
-	#if(boardUPDATE)
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-	#endif  //boardUPDATE
-
-	return c_ret;
-}
-
-/***********************************************************************************************************************
------函数功能    请求重发当前帧  0xC4
------说明(备注)  升级数据阶段，收到错误包或等待超时时，使用 C4 要求上位机重发当前帧。
------传入参数    none
------输出参数    none
------返回值      true:发送成功   false:发送失败
-************************************************************************************************************************/
-s8 c_relayC4_req_resend_curr(void)
-{
-	s8 c_ret = c_print_data_trans(baikuCMD_RRQ_START_SEND, NULL, 0);
-	#if(boardUPDATE)
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-	#endif  //boardUPDATE
-
-	return c_ret;
-}
-
-/***********************************************************************************************************************
------函数功能    请求继续发送  0xC6
------说明(备注)  C6 只用于请求上位机继续发送下一帧数据，不携带载荷。
------传入参数    none
------输出参数    none
------返回值      true:发送成功   false:发送失败
-************************************************************************************************************************/
-s8 c_relayC6_req_cont_send(void)
-{
-	s8 c_ret = c_print_data_trans(baikuCMD_RRQ_CONT_SEND, NULL, 0);
-	#if(boardUPDATE)
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-	#endif  //boardUPDATE
-
-	return c_ret;
-}
-
-
-
-
-
 
 /***********************************************************************************************************************
 -----函数功能    回复APP信息
@@ -930,6 +851,89 @@ static s8 c_get_console_ver_info(u8* data, u8* data_len)
 }
 
 
+/***********************************************************************************************************************
+-----函数功能    回复设置升级协议  0xC3
+-----说明(备注)  none
+-----传入参数    data:协议数据
+				len: 数据长度
+-----输出参数    none
+-----返回值      true:发送成功   false:发送失败
+************************************************************************************************************************/
+#if(boardUPDATE)
+s8 c_print_cs_C3_reply_set_proto(u8* data, u8 len)
+{
+	s8 c_ret = 0;
+
+	if(data == NULL || len == 0)
+		return -1;
+
+	c_ret = c_print_data_trans(baikuCMD_REPLY_SET_PROTO, data, len);
+	if(c_ret > 0)
+		vUpdate_ResetTimeout();
+
+	return c_ret;
+}
+
+/***********************************************************************************************************************
+-----函数功能    请求开始发送  0xC4
+-----说明(备注)  none
+-----传入参数    none
+-----输出参数    none
+-----返回值      true:发送成功   false:发送失败
+************************************************************************************************************************/
+s8 c_print_cs_C4_req_start_send(void)
+{
+	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_START_SEND, NULL, 0);
+	if(c_ret > 0)
+		vUpdate_ResetTimeout();
+
+	return c_ret;
+}
+
+/***********************************************************************************************************************
+-----函数功能    请求重发当前帧  0xC4
+-----说明(备注)  升级数据阶段，收到错误包或等待超时时，使用 C4 要求上位机重发当前帧。
+-----传入参数    none
+-----输出参数    none
+-----返回值      true:发送成功   false:发送失败
+************************************************************************************************************************/
+s8 c_print_cs_C4_req_resend_curr(void)
+{
+	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_START_SEND, NULL, 0);
+	if(c_ret > 0)
+		vUpdate_ResetTimeout();
+
+	return c_ret;
+}
+
+/***********************************************************************************************************************
+-----函数功能    请求继续发送  0xC6
+-----说明(备注)  C6 只用于请求上位机继续发送下一帧数据，不携带载荷。
+-----传入参数    none
+-----输出参数    none
+-----返回值      true:发送成功   false:发送失败
+************************************************************************************************************************/
+s8 c_print_cs_C6_req_cont_send(void)
+{
+	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_CONT_SEND, NULL, 0);
+	if(c_ret > 0)
+		vUpdate_ResetTimeout();
+
+	return c_ret;
+}
+
+/*****************************************************************************************************************
+-----函数功能    指令:取消发送 C8
+-----说明(备注)  none
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+******************************************************************************************************************/
+s8 c_print_cs_C8_trans_cancel(void)
+{
+	return c_print_data_trans_for_update(baikuCMD_REPLY_CANEL, NULL, 0);
+}
+#endif  //boardUPDATE
 
 
 /***********************************************************************************************************************
@@ -957,10 +961,107 @@ static s8 c_print_data_trans(u8 cmd, u8* data, u8 len)
 	if(result > 0)
 	{
 		lwrb_write(&tPrintTxBuff, tpPrintProtoTx->ucaFrameData, tpPrintProtoTx->ucFrameLen);
-			return bPrint_SendDataToUsart();
+		return bPrint_SendDataToUsart();
 	}
 	#endif
 	return result;
 }
+
+/***********************************************************************************************************************
+-----函数功能	升级数据传输
+-----说明(备注) 
+-----传入参数	cmd:指令
+				data:指向数据指针
+				len:数据的长度
+-----输出参数	none
+-----返回值		-1:写入的Len超出最大长度
+				-2:等会回复超时
+				-3:数据发送错误
+				0:无操作
+				1:操作成功
+************************************************************************************************************************/
+#if(boardUPDATE)
+static s8 c_print_data_trans_for_update(u8 cmd, u8* data, u8 len)
+{
+	s8 result = 0;
+	
+	if(tpPrintProtoTx == NULL)
+		return 0;
+
+	#if(boardUSE_OS)
+	if(PrintSemaphoreBinary == NULL)
+		return -1;
+	#endif  //boardUSE_OS
+	
+	if(bPrint_CheckSendFinish() == false)
+		return -2;
+	
+	#if(boardPRINT_IFACE)
+	result = cBaiku_ProtoCreate(tpPrintProtoTx, cmd, data, len);
+	if(result > 0)
+	{
+		lwrb_reset(&tPrintTxBuff);
+		lwrb_write(&tPrintTxBuff, tpPrintProtoTx->ucaFrameData, tpPrintProtoTx->ucFrameLen);
+		#if(boardUSE_OS)
+		if(xSemaphoreTake(PrintSemaphoreBinary, ( TickType_t) 0 ) == pdPASS) 
+		#endif  //boardUSE_OS
+		{
+			if(bPrint_DataSendStart(tpPrintProtoTx->ucFrameLen) == false)
+				result = -3;
+			
+			//释放信号量
+			#if(boardUSE_OS)
+			xSemaphoreGive(PrintSemaphoreBinary);
+			#endif
+		}
+	}
+	#endif
+	return result;
+}
+
+/***********************************************************************************************************************
+-----函数功能	信息传输
+-----说明(备注) 
+-----传入参数	data:指向数据指针
+				len:数据的长度
+-----输出参数	none
+-----返回值		-1:写入的Len超出最大长度
+				-2:等会回复超时
+				-3:数据发送错误
+				0:无操作
+				1:操作成功
+************************************************************************************************************************/
+s8 c_print_info_trans(u8* data, u8 len)
+{
+	s8 result = 0;
+	
+	if(tpPrintProtoTx == NULL)
+		return 0;
+
+	#if(boardUSE_OS)
+	if(PrintSemaphoreBinary == NULL)
+		return -1;
+	#endif  //boardUSE_OS
+	
+	if(bPrint_CheckSendFinish() == false)
+		return -2;
+
+	lwrb_reset(&tPrintTxBuff);
+	lwrb_write(&tPrintTxBuff, data, len);
+	#if(boardUSE_OS)
+	if(xSemaphoreTake(PrintSemaphoreBinary, ( TickType_t) 0 ) == pdPASS) 
+	#endif  //boardUSE_OS
+	{
+		if(bPrint_DataSendStart(len) == false)
+			result = -3;
+		
+		//释放信号量
+		#if(boardUSE_OS)
+		xSemaphoreGive(PrintSemaphoreBinary);
+		#endif
+	}
+	return result;
+}
+#endif  //boardUPDATE
 
 #endif  //boardPRINT_IFACE

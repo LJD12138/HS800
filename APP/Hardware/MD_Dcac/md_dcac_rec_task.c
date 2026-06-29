@@ -14,8 +14,12 @@
 #include "Print/print_task.h"
 
 
+#if(boardUPDATE)
+#include "proto_update.h"
+#include "Sys/sys_queue_task_update.h"
+#include "MD_Dcac/md_dcac_queue_task_update.h"
+#endif  //boardUPDATE
 
-//#include "app_info.h"
 
 //****************************************************局部宏定义**************************************************//                                
 
@@ -23,7 +27,7 @@
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define    		dcacREC_TASK_PRIO                		2       		//任务优先级receive 
-#define        	dcacREC_TASK_SIZE                		192     		//任务堆栈  实际字节数 *4
+#define        	dcacREC_TASK_SIZE                		256     		//任务堆栈  实际字节数 *4
 TaskHandle_t    tDcacRecTaskHandle;
 void           	vDcac_RecTask(void *pvParameters);
 #endif  //boardUSE_OS
@@ -125,12 +129,39 @@ void vDcac_RecTask(void *pvParameters)
 		}
 		
 		//******************************************处理接收的数据****************************************************
-        c_result = cModbus_ProtoCheck(tpDcacProtoRx);
+		//协议解析
+		#if(boardUPDATE)
+		if(tDcac.eDevState == DS_UPDATE_MODE)
+		{
+			c_result = cUpdate_ProtoCheck(&tpDcacProtoRx->tRxBuff);
+
+			//协议适配
+			if(c_result == PT_MEGMEET)
+				cUpdate_ProtoSelect(tUpdate.eObj, (ProtoType_E)c_result);
+
+			if(c_result != PT_MEGMEET)
+				c_result = 0;
+		}
+		else
+		#endif  //boardUPDATE
+        	c_result = cModbus_ProtoCheck(tpDcacProtoRx);
+
+		//数据处理
 		if(c_result > 0)
         {
-			c_check_conn_state();
-			c_result = c_dcac_rec_proc_data(tpDcacProtoRx, tpDcacProtoTx);
-			vModbus_RecEnd(tpDcacProtoRx);
+			#if(boardUPDATE)
+			if(tDcac.eDevState == DS_UPDATE_MODE)
+			{
+				c_result = c_dcac_rec_proc_megmeet_proto(tpDcacMegmeetProtoRx);
+			}
+			else
+			#endif  //boardUPDATE
+			{
+				c_check_conn_state();
+				c_result = c_dcac_rec_proc_data(tpDcacProtoRx, tpDcacProtoTx);
+				vModbus_RecEnd(tpDcacProtoRx);
+			}
+			
 			if(c_result <= 0)
 			{
 				if(uPrint.tFlag.bDcacRecTask || uPrint.tFlag.bImportant)

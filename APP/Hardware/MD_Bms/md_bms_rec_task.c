@@ -130,17 +130,10 @@ void vBms_RecTask(void *pvParameters)
 		#if(boardUPDATE)
 		if(tBms.eDevState == DS_UPDATE_MODE)
 		{
-			c_result = cUpdate_ProtoCheck(&tpBmsProtoRx->tRxBuff, &tpPrintTask->tReplyBuff);
-
+			c_result = cUpdate_ProtoCheck(&tpBmsProtoRx->tRxBuff);
 			//协议适配
-			if(c_result == PT_BAIKU || c_result == PT_XMODEM)
+			if(c_result == PT_BAIKU)
 				cUpdate_ProtoSelect(UO_BMS, (ProtoType_E)c_result);
-			//其他未适配或未定义
-			else
-				cUpdate_ProtoSelect(UO_BMS, PT_NULL);
-
-			if(c_result != PT_BAIKU)
-				c_result = 0;
 		}
 		else
 		#endif  //boardUPDATE
@@ -149,8 +142,18 @@ void vBms_RecTask(void *pvParameters)
 		//数据处理
 		if(c_result > 0)
         {
-			c_check_conn_state();
-			c_result = c_bms_rec_proc_data(tpBmsProtoRx);
+			#if(boardUPDATE)
+			if(tBms.eDevState == DS_UPDATE_MODE)
+			{
+				c_result = c_bms_rec_proc_data_for_update(tpBmsProtoRx);
+			}
+			else
+			#endif  //boardUPDATE
+			{
+				c_check_conn_state();
+				c_result = c_bms_rec_proc_data(tpBmsProtoRx);
+			}
+
 			if(c_result <= 0)
 			{
 				if(uPrint.tFlag.bBmsRecTask || uPrint.tFlag.bImportant)

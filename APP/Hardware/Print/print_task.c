@@ -21,7 +21,7 @@ DebugPrint_U   	uPrint;
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define       	printTASK_PRIO                        	1        						//任务优先级 
-#define       	printTASK_SIZE                        	512     						//任务堆栈  实际字节数 *4
+#define       	printTASK_SIZE                        	384    							//任务堆栈  实际字节数 *4
 TaskHandle_t	tPrintTaskHandler = NULL;
 void          	vPrint_Task(void *pvParameters);
 #endif  //boardUSE_OS
@@ -30,7 +30,7 @@ void          	vPrint_Task(void *pvParameters);
 Print_T tPrint;
 
 //调试缓存器
-#define       	printTX_BUFF_SIZE                     	512
+#define       	printTX_BUFF_SIZE                     	384
 lwrb_t tPrintTxBuff;
 __ALIGNED(4) static u8 uca_print_tx_buff[printTX_BUFF_SIZE];          //用于发送数据的缓存区
 
@@ -155,12 +155,12 @@ void vPrint_Task(void *pvParameters)
 			#endif  //boardUSE_OS
 		}
 
-		// #if(boardUSB_EN)
-		// if(tUsb.eDevState == DS_SHUT_DOWN)
+		#if(boardUSB_EN)
+		if(tUsb.eDevState == DS_SHUT_DOWN)
 			printIFACE_EN_ON();
-		// else
-		// 	printIFACE_EN_OFF();
-		// #endif  //boardUSB_EN
+		else
+			printIFACE_EN_OFF();
+		#endif  //boardUSB_EN
 		
 		if(tp_task->vp_func != NULL && tp_task ->bNowRun == false)
 			tp_task->vp_func(tp_task);

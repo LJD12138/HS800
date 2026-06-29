@@ -6,8 +6,10 @@
 #if(boardDCAC_EN)
 #include "main.h"
 #include "Modbus/modbus_proto.h"
+#include "Megmeet/megmeet_proto.h"
 
 s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx);
+s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx);
 
 #endif  //boardDCAC_EN
 

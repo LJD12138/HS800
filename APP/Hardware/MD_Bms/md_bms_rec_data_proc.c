@@ -13,7 +13,7 @@
 
 
 //****************************************************函数声明****************************************************//
-static s8 c_relay08_param(BaikuProtoRx_t* proto);
+static s8 c_bms_relay08_param(BaikuProtoRx_t* proto);
 
 
 /***********************************************************************************************************************
@@ -55,7 +55,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 		//回复参数
 		case baikuCMD_REPLY_PARAM:                
         {
-			c_ret = c_relay08_param(proto);
+			c_ret = c_bms_relay08_param(proto);
 			if(c_ret <= 0)
 				return -20;
         }
@@ -104,22 +104,114 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 
 		//回复协议设置
 		#if(boardUPDATE)
-		case baikuCMD_REPLY_SET_PROTO://C3
-		{
-			if(proto->ucValidLen != 3)
-				return -80;
-
-			if((ProtoType_E)proto->ucpValidData[0] != tUpdate.eProtoType)
-				return -81;
-
-			memcpy((u8*)&tUpdate.usTotalFrmValue, &proto->ucpValidData[1], 2);
-		}
-		break;
-		
 		//请求开始发送
 		case baikuCMD_RRQ_START_SEND://C4               
         {
-			tUpdate.usRecFrameCnt = 0;
+			if(tBms.eDevState == DS_UPDATE_MODE
+				&& tSysInfo.eDevState == DS_UPDATE_MODE 
+				&& tUpdate.eObj == UO_BMS
+				&& tUpdate.eChType == CT_PRINT
+				&& tUpdate.eProtoType == PT_BAIKU)
+				return 1;
+			
+			if(tSysInfo.eDevState != DS_UPDATE_MODE)
+			{
+				cUpdate_ChSelect(UO_BMS, CT_PRINT);
+			}
+			
+			if(tUpdate.eChType != CT_PRINT)
+				if(cUpdate_ChSelect(UO_BMS, CT_PRINT) <= 0)
+					return -71;
+
+			if(tUpdate.eProtoType != PT_BAIKU)
+				if(cUpdate_ProtoSelect(UO_BMS, PT_BAIKU) <= 0)
+					return -72;
+
+			if(tBms.eDevState != DS_UPDATE_MODE)
+				cQueue_AddQueueTask(tpBmsTask, BTI_UPDATE, 0, false);
+        }
+        break;
+
+		//BMS正在升级
+		case baikuCMD_BMS_UPDATE://C9
+        {
+			#pragma pack(1)
+			struct
+			{
+				vu16				usRecFrameCnt;		//记录当前接收的帧数
+				vu16 				usTotalFrmValue; 	//总帧数
+			}t_my_param;
+			#pragma pack()
+
+
+			if(tpBmsTask == NULL || tpBmsTask->ucID == BTI_REQ_SET_CMD)
+				return -60;
+			
+			if(proto->ucValidLen != sizeof(t_my_param) || proto->ucpValidData == NULL)
+				return -61;
+			
+			memcpy((u8*)&t_my_param, proto->ucpValidData, proto->ucValidLen);
+
+			/* 校验总帧数有效且已收帧数不超过总帧数 */
+			if(t_my_param.usTotalFrmValue == 0 ||
+			   t_my_param.usRecFrameCnt > t_my_param.usTotalFrmValue)
+				return -62;
+
+			tUpdate.usRecFrameCnt = t_my_param.usRecFrameCnt;
+			tUpdate.usTotalFrmValue = t_my_param.usTotalFrmValue;
+
+			/* 升级完成 */
+			if(tUpdate.usRecFrameCnt >= tUpdate.usTotalFrmValue)
+				bUpdate_SetResult(URT_SLAVE, UTR_OK);
+			else
+				bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
+        }
+        break;
+		#endif  //boardUPDATE
+		
+		default:
+			return -99;
+	}
+	
+   return 1; 
+
+}
+
+/***********************************************************************************************************************
+-----函数功能    处理接收到的数据
+-----说明(备注)  接收BMS模块上报的数据,然后通知Print的发送任务
+-----传入参数    none
+-----输出参数    none
+-----返回值      0:没有错误  其他有错误
+************************************************************************************************************************/
+#if(boardUPDATE)
+#include "Print/print_prot_frame.h"
+s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
+{
+	s8 c_ret = 1;
+	vu16 us_temp = 0;
+
+	switch (proto->ucCmd)
+    {
+		case baikuCMD_REPLY_SET_PROTO://C3
+		{
+			if(proto->ucValidLen != 3 || proto->ucpValidData == NULL)
+				return -80;
+
+			if((ProtoType_E)proto->ucpValidData[0] >= PT_INVAILD ||
+			   (ProtoType_E)proto->ucpValidData[0] != tUpdate.eProtoType)
+				return -81;
+
+			memcpy((u8*)&tUpdate.usTotalFrmValue, &proto->ucpValidData[1], 2);
+
+			c_print_cs_C3_reply_set_proto(proto->ucpValidData, proto->ucValidLen);
+		}
+		break;
+
+		//请求开始发送
+		case baikuCMD_RRQ_START_SEND://C4               
+        {
+			c_print_cs_C4_req_start_send();
 
 			if(tBms.eDevState == DS_UPDATE_MODE
 				&& tSysInfo.eDevState == DS_UPDATE_MODE 
@@ -144,17 +236,35 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 		//继续发送
 		case baikuCMD_RRQ_CONT_SEND:  //C6
 		{
-			tUpdate.usRecFrameCnt++;
+			#if(boardUSE_OS)
+			taskENTER_CRITICAL();
+			#endif
+			u16 us_pending_len = tUpdate.usPendPacketLen;
+			tUpdate.usPendPacketLen = 0;
+			#if(boardUSE_OS)
+			taskEXIT_CRITICAL();
+			#endif
+
+			if(us_pending_len == 0)
+				return 0;
+
+			if(tUpdate.usRecFrameCnt < 0xFFFF)
+                tUpdate.usRecFrameCnt++;
+
+			tUpdate.ulRxSize += us_pending_len;
+			
+			c_print_cs_C6_req_cont_send();
 		}
 		break;
 
 		//取消发送
 		case baikuCMD_REPLY_CANEL:  //C8
 		{
-			tUpdate.usRecFrameCnt = 0;
+			c_print_cs_C8_trans_cancel();
+			bUpdate_SetResult(URT_SLAVE, UTR_CANCEL);
 		}
 		break;
-		
+
 		//BMS正在升级
 		case baikuCMD_BMS_UPDATE://C9
         {
@@ -167,7 +277,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 			#pragma pack()
 
 
-			if(tpBmsTask->ucID == BTI_REQ_SET_CMD)
+			if(tpBmsTask == NULL || tpBmsTask->ucID == BTI_REQ_SET_CMD)
 				return -60;
 			
 			if(proto->ucValidLen != sizeof(t_my_param) || proto->ucpValidData == NULL)
@@ -175,23 +285,28 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 			
 			memcpy((u8*)&t_my_param, proto->ucpValidData, proto->ucValidLen);
 
+			/* 校验总帧数有效且已收帧数不超过总帧数 */
+			if(t_my_param.usTotalFrmValue == 0 ||
+			   t_my_param.usRecFrameCnt > t_my_param.usTotalFrmValue)
+				return -62;
+
 			tUpdate.usRecFrameCnt = t_my_param.usRecFrameCnt;
 			tUpdate.usTotalFrmValue = t_my_param.usTotalFrmValue;
-			
-            if(cUpdate_ChSelect(UO_BMS, CT_NULL) <= 0)
-				return -62;
+
+			/* 升级完成 */
+			if(tUpdate.usRecFrameCnt >= tUpdate.usTotalFrmValue)
+				bUpdate_SetResult(URT_SLAVE, UTR_OK);
+			else
+				bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
         }
         break;
-		#endif  //boardUPDATE
-		
+
 		default:
 			return -99;
 	}
-	
-   return 1; 
-
+	return 1;
 }
-
+#endif  //boardUPDATE
 /***********************************************************************************************************************
 -----函数功能    回复参数  0x08
 -----说明(备注)  none
@@ -199,7 +314,7 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 -----输出参数    none
 -----返回值      true:发送成功   false:发送失败
 ************************************************************************************************************************/
-static s8 c_relay08_param(BaikuProtoRx_t* proto)
+static s8 c_bms_relay08_param(BaikuProtoRx_t* proto)
 {
 	u8 len = sizeof(tBmsRx);
 	u8 cmd = proto->ucpValidData[0];

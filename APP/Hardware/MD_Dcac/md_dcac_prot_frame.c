@@ -19,11 +19,11 @@
 
 #define       	dcacDEV_ADRR                          	0x01
 #define  		dcacWAIT_NOTIFY_OUTTIME              	1000     //任务通知超时时间 MS
-#define       	dcacTX_PROTO_BUFF_LEN                   128
-#define       	dcacRX_PROTO_BUFF_LEN                   128
+#define       	dcacTX_PROTO_BUFF_LEN                   64
+#define       	dcacRX_PROTO_BUFF_LEN                   64
 
-#define       	dcTASK_UPDATE_FRAME_SIZE                256     /*!< DCAC升级帧缓存大小，单位：字节 */
-#define       	dcacUPDATE_IC_TYPE                       MEGMEET_IC_TYPE_AC   /*!< DCAC模块对应的Megmeet芯片类型 */
+#define       	dcTASK_UPDATE_TX_FRAME_SIZE             256     /*!< DCAC升级帧缓存大小，单位：字节 */
+#define       	dcTASK_UPDATE_RX_FRAME_SIZE             64     /*!< DCAC升级帧缓存大小，单位：字节 */
 
 //****************************************************参数初始化**************************************************//
 __ALIGNED(4) 	ModbusProtoTx_t *tpDcacProtoTx = NULL;	//发送协议
@@ -102,6 +102,100 @@ bool bDcac_RecProtInit(void)
 	}
 	
 	return true;
+}
+
+/*****************************************************************************************************************
+-----函数功能    线程安全地写入DCAC升级回复缓存
+-----说明(备注)  在升级阶段，Print任务、DCAC接收任务、DCAC任务均可能访问
+                tpDcacTask->tReplyBuff，通过dcacSemaphoreMutex保证互斥。
+-----传入参数    task: 任务结构体指针
+                data: 待写入数据指针
+                len:  待写入数据长度
+-----输出参数    none
+-----返回值      true:写入成功  false:写入失败
+******************************************************************************************************************/
+bool b_dcac_update_buf_write(Task_T* task, const u8* data, u16 len)
+{
+	bool b_ret = false;
+
+	if(task == NULL || data == NULL || len == 0 || task->tReplyBuff.buff == NULL)
+		return false;
+
+	#if(boardUSE_OS)
+	if(xSemaphoreTake(dcacSemaphoreMutex, pdMS_TO_TICKS(100)) != pdPASS)
+		return false;
+	#endif
+
+	lwrb_reset(&task->tReplyBuff);
+	b_ret = (lwrb_write(&task->tReplyBuff, data, len) == len);
+
+	#if(boardUSE_OS)
+	xSemaphoreGive(dcacSemaphoreMutex);
+	#endif
+
+	return b_ret;
+}
+
+/*****************************************************************************************************************
+-----函数功能    线程安全地从DCAC升级回复缓存读取数据
+-----说明(备注)  通过dcacSemaphoreMutex保证互斥，读取后不移动读指针。
+-----传入参数    task: 任务结构体指针
+                data: 读取缓存指针
+                len:  读取数据长度
+-----输出参数    none
+-----返回值      true:读取成功  false:读取失败
+******************************************************************************************************************/
+bool b_dcac_update_buf_peek(Task_T* task, u8* data, u16 len)
+{
+	bool b_ret = false;
+
+	if(task == NULL || data == NULL || len == 0 || task->tReplyBuff.buff == NULL)
+		return false;
+
+	if(len > lwrb_get_full(&task->tReplyBuff))
+		return false;
+
+	#if(boardUSE_OS)
+	if(xSemaphoreTake(dcacSemaphoreMutex, pdMS_TO_TICKS(100)) != pdPASS)
+		return false;
+	#endif
+
+	b_ret = (lwrb_peek(&task->tReplyBuff, 0, data, len) == len);
+
+	#if(boardUSE_OS)
+	xSemaphoreGive(dcacSemaphoreMutex);
+	#endif
+
+	return b_ret;
+}
+
+/*****************************************************************************************************************
+-----函数功能    线程安全地复位DCAC升级回复缓存
+-----说明(备注)  通过dcacSemaphoreMutex保证互斥，用于A2/A4确认后清除缓存。
+-----传入参数    task: 任务结构体指针
+-----输出参数    none
+-----返回值      true:复位成功  false:复位失败
+******************************************************************************************************************/
+bool b_dcac_update_buf_reset(Task_T* task)
+{
+	bool b_ret = false;
+
+	if(task == NULL || task->tReplyBuff.buff == NULL)
+		return false;
+
+	#if(boardUSE_OS)
+	if(xSemaphoreTake(dcacSemaphoreMutex, pdMS_TO_TICKS(100)) != pdPASS)
+		return false;
+	#endif
+
+	lwrb_reset(&task->tReplyBuff);
+	b_ret = true;
+
+	#if(boardUSE_OS)
+	xSemaphoreGive(dcacSemaphoreMutex);
+	#endif
+
+	return b_ret;
 }
 
 
@@ -395,11 +489,11 @@ MegmeetProtoRx_t*  tpDcacMegmeetProtoRx = NULL;   /*!< 接收协议指针（供�
  */
 bool bDcac_MegmeetProtInit(void)
 {
-    if (cMegmeet_ProtoSendInit(&tDcacMegmeetProtoTx, dcTASK_UPDATE_FRAME_SIZE) < 0)
+    if (cMegmeet_ProtoSendInit(&tDcacMegmeetProtoTx, dcTASK_UPDATE_TX_FRAME_SIZE) < 0)
     {
         return false;
     }
-    if (cMegmeet_ProtoRecInit(&tpDcacMegmeetProtoRx, dcTASK_UPDATE_FRAME_SIZE) < 0)
+    if (cMegmeet_ProtoRecInit(&tpDcacMegmeetProtoRx, dcTASK_UPDATE_RX_FRAME_SIZE) < 0)
     {
         return false;
     }
@@ -409,16 +503,57 @@ bool bDcac_MegmeetProtInit(void)
 /* ========================================== 协议帧发送函数实现 ========================================== */
 
 /*****************************************************************************************************************
+ -----函数功能    根据升级对象获取Megmeet从机地址
+ -----说明(备注)  UO_MGMT_AC/UO_MGMT_DC时从机地址等于各自IC类型；UO_DCAC沿用旧地址保持兼容。
+                 其他对象返回0（广播）。
+ -----传入参数    e_obj: 升级对象
+ -----输出参数    none
+ -----返回值      从机地址
+ ******************************************************************************************************************/
+u8 ucDcac_GetUpdateSlaveAddr(UpdateObj_E e_obj)
+{
+    switch(e_obj)
+    {
+        case UO_MGMT_AC:   return MEGMEET_IC_TYPE_AC;     /* 0x30 */
+        case UO_MGMT_DC:   return MEGMEET_IC_TYPE_DC;     /* 0x20 */
+        case UO_DCAC:      return dcacDEV_ADRR;           /* 0x01，向后兼容 */
+        default:           return 0;                      /* 广播地址 */
+    }
+}
+
+/*****************************************************************************************************************
+ -----函数功能    根据升级对象获取Megmeet芯片ID(IC类型)
+ -----说明(备注)  UO_MGMT_AC/UO_MGMT_DC直接返回各自IC类型；UO_DCAC默认按AC处理。
+                 其他对象返回dcacUPDATE_IC_TYPE默认AC值。
+ -----传入参数    e_obj: 升级对象
+ -----输出参数    none
+ -----返回值      IC类型
+ ******************************************************************************************************************/
+u8 ucDcac_GetUpdateIcType(UpdateObj_E e_obj)
+{
+    switch(e_obj)
+    {
+        case UO_MGMT_AC:   return MEGMEET_IC_TYPE_AC;     /* 0x30 */
+        case UO_MGMT_DC:   return MEGMEET_IC_TYPE_DC;     /* 0x20 */
+        case UO_DCAC:      return dcacUPDATE_IC_TYPE;     /* 旧版默认AC */
+        default:           return dcacUPDATE_IC_TYPE;
+    }
+}
+
+/*****************************************************************************************************************
  -----函数功能    构造并发送Megmeet协议帧
  -----说明(备注)  根据命令码和载荷数据构造Megmeet协议帧，并通过DCAC接口发送。
+                 ic_type与slave_addr按调用方传入值，调用方可通过ucDcac_GetUpdateSlaveAddr/
+                 ucDcac_GetUpdateIcType(tUpdate.e_obj)获取。
  -----传入参数    slave_addr : 从机地址（0为广播地址，其他为具体从机地址）
+                 ic_type    : 芯片ID（AC/DC/ARM等）
                  cmd        : Megmeet命令码
                  payload    : 载荷数据指针（可为NULL）
                  payload_len: 载荷长度
  -----输出参数    none
  -----返回值      true: 发送成功  false: 发送失败
  ******************************************************************************************************************/
-bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 cmd, const u8* payload, u16 payload_len)
+bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payload, u16 payload_len)
 {
     MegmeetProtoTx_t* tp_proto_tx = tDcacMegmeetProtoTx;
     bool b_send_ok = false;
@@ -426,7 +561,7 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 cmd, const u8* payload, u16 pay
     if(tp_proto_tx == NULL)
         return false;
 
-    if(cMegmeet_FrameCreate(slave_addr, dcacUPDATE_IC_TYPE, cmd, payload, payload_len,
+    if(cMegmeet_FrameCreate(slave_addr, ic_type, cmd, payload, payload_len,
                             tp_proto_tx->ucaFrameData, tp_proto_tx->usBuffSize,
                             &tp_proto_tx->usFrameLen) <= 0)
         return false;
@@ -441,6 +576,7 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 cmd, const u8* payload, u16 pay
 /*****************************************************************************************************************
 -----函数功能    发送F0（请求升级）帧
 -----说明(备注)  向DCAC从机发送升级请求命令，payload固定为0x00。
+                slave_addr与ic_type按当前tUpdate.eObj动态选择。
 -----传入参数    none
 -----输出参数    none
 -----返回值      true: 发送成功  false: 发送失败
@@ -448,19 +584,24 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 cmd, const u8* payload, u16 pay
 bool b_dcac_send_f0(void)
 {
     u8 uc_payload = 0x00;
-    return b_dcac_send_megmeet_frame(dcacDEV_ADRR, MEGMEET_CMD_REQ_UPDATE, &uc_payload, 1);
+    return b_dcac_send_megmeet_frame(ucDcac_GetUpdateSlaveAddr(tUpdate.eObj),
+                                     ucDcac_GetUpdateIcType(tUpdate.eObj),
+                                     MEGMEET_CMD_REQ_UPDATE, &uc_payload, 1);
 }
 
 /*****************************************************************************************************************
 -----函数功能    发送F6（跳转BOOT）帧
 -----说明(备注)  命令DCAC从机跳转到BOOT模式，无payload。
+                slave_addr与ic_type按当前tUpdate.eObj动态选择。
 -----传入参数    none
 -----输出参数    none
 -----返回值      true: 发送成功  false: 发送失败
 ******************************************************************************************************************/
 bool b_dcac_send_f6(void)
 {
-    return b_dcac_send_megmeet_frame(dcacDEV_ADRR, MEGMEET_CMD_JUMP_BOOT, NULL, 0);
+    return b_dcac_send_megmeet_frame(ucDcac_GetUpdateSlaveAddr(tUpdate.eObj),
+                                     ucDcac_GetUpdateIcType(tUpdate.eObj),
+                                     MEGMEET_CMD_JUMP_BOOT, NULL, 0);
 }
 
 /*****************************************************************************************************************
@@ -484,7 +625,7 @@ bool b_dcac_send_f2(u32 ul_baud)
          return false;
     }
 
-    return b_dcac_send_megmeet_frame(0, MEGMEET_CMD_SET_BAUD, &uc_payload, 1);
+    return b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_SET_BAUD, &uc_payload, 1);
 }
 
 #endif  //boardDCAC_EN

@@ -30,6 +30,7 @@ extern lwrb_t tPrintTxBuff;
 
 #if(boardUSE_OS)
 extern TaskHandle_t tPrintTaskHandler;
+extern SemaphoreHandle_t PrintSemaphoreBinary;
 #endif  //boardUSE_OS
 
 

@@ -27,15 +27,11 @@
 #include "MD_Dcac/md_dcac_queue_task_update.h"
 #endif
 
-u8 uc_print_ready_update_step = 0;
 u16 us_char_send_dev_len = 0;
 u16 us_char_send_print_len = 0;
 
 /* ========================================== 静态函数声明 ========================================== */
 static bool b_print_check_task_valid(Task_T *tp_task);
-#if(boardBMS_EN)
-static s8 c_print_update_bms(Task_T *tp_task);
-#endif
 
 
 /***********************************************************************************************************************
@@ -79,11 +75,25 @@ void v_print_queue_task_update(Task_T *tp_task)
         /* 步骤1：等待从机初始化完成 */
         case PRINT_UPDATE_STEP_WAIT_SLAVE_READY:
         {
-            if(tDcac.eDevState != DS_UPDATE_MODE)
+            #if(boardBMS_EN)
+            if(tUpdate.eObj == UO_BMS)
+            {
+                if(tBms.eDevState != DS_UPDATE_MODE)
+                    break;
+            }
+            else
+            #endif  //boardBMS_EN
+            #if(boardDCAC_EN)
+            if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
+            {
+                if(tDcac.eDevState != DS_UPDATE_MODE)
+                    break;
+            }
+            else
+            #endif  //boardDCAC_EN
                 break;
 
-            tUpdate.eHostResult = UTR_RUNNING;
-            uc_print_ready_update_step = 0;
+            bUpdate_SetResult(URT_HOST, UTR_RUNNING);
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
 
@@ -92,18 +102,27 @@ void v_print_queue_task_update(Task_T *tp_task)
         {
             #if(boardBMS_EN)
             if(tUpdate.eObj == UO_BMS)
-			{
-				cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_BMS_UPDATE);
-			}
+            {
+                c_ret = c_print_bms_prepare_update(tp_task);
+                if(c_ret < 0)
+                {
+                    cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR);
+                    break;
+                }
+
+                if(c_ret == 0)
+                    break;
+
+                cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_BMS_UPDATE);
+            }
             #endif  //boardBMS_EN
 
             #if(boardDCAC_EN)
-            if(tUpdate.eObj == UO_DCAC)
+            if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
             {
                 c_ret = c_print_dcac_prepare_update(tp_task);
                 if(c_ret < 0)
                 {
-                    uc_print_ready_update_step = 0;
                     cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR);
                     break;
                 }
@@ -111,7 +130,6 @@ void v_print_queue_task_update(Task_T *tp_task)
                 if(c_ret == 0)
                     break;
                 
-                uc_print_ready_update_step = 0;
                 xTaskNotifyGive(tDcacTaskHandler);
                 cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_DCAC_UPDATE);
             }
@@ -122,10 +140,15 @@ void v_print_queue_task_update(Task_T *tp_task)
         }
         break;
 
-        case PRINT_UPDATE_STEP_BMS_UPDATE:  /* 步骤3：执行BMS升级数据转发 */
+        case PRINT_UPDATE_STEP_BMS_UPDATE:  /* 步骤3：执行BMS升级主流程 */
         {
             #if(boardBMS_EN)
-            c_print_update_bms(tp_task);
+            c_ret = c_print_bms_update_firmware_transfer(tp_task);
+
+            if(c_ret < 0)
+                cQueue_GotoStep(tp_task, STEP_NEXT); /* 进入异常 */
+            else if(c_ret > 0)
+                cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_FINISH_CLEANUP); /* 升级完成 */
             #endif
         }
         break;
@@ -133,7 +156,7 @@ void v_print_queue_task_update(Task_T *tp_task)
         case PRINT_UPDATE_STEP_DCAC_UPDATE:  /* 步骤4：执行DCAC升级主流程 */
         {
             #if(boardDCAC_EN)
-            c_ret = c_print_update_dcac(tp_task);
+            c_ret = c_print_dcac_update_firmware_transfer(tp_task);
 
             if(c_ret < 0)
                 cQueue_GotoStep(tp_task, STEP_NEXT); /* 进入异常 */
@@ -145,13 +168,10 @@ void v_print_queue_task_update(Task_T *tp_task)
 
         case PRINT_UPDATE_STEP_ERROR:  /* 步骤5：升级错误 */
         {
-            if(tUpdate.eErrCode == UEF_NONE)
-                bUpdate_SetErrCode(UEF_P_PENDING_FAIL);
-
             if(tUpdate.eErrCode == UEF_P_CANCEL_REQ)
-                tUpdate.eHostResult = UTR_CANCEL;
+                bUpdate_SetResult(URT_HOST, UTR_CANCEL);
             else
-                tUpdate.eHostResult = UTR_FAIL;
+                bUpdate_SetResult(URT_HOST, UTR_FAIL);
 
             cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_END);
         }
@@ -159,7 +179,7 @@ void v_print_queue_task_update(Task_T *tp_task)
 
         case PRINT_UPDATE_STEP_FINISH_CLEANUP:  /* 步骤6：Print已经升级完成,收尾 */
         {
-			tUpdate.eHostResult = UTR_OK;
+            bUpdate_SetResult(URT_HOST, UTR_OK);
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
@@ -204,7 +224,7 @@ static bool b_print_check_task_valid(Task_T *tp_task)
         return false;
     }
 
-    /* 检查设备是否处于升级模式，且任务队列无残留数据 */
+    /* 检查设备是否处于升级模式，且任务队列无新的任务*/
     if(tSysInfo.eDevState != DS_UPDATE_MODE || lwrb_get_full(&tp_task->tQueueBuff))
     {
         cQueue_GotoStep(tp_task, STEP_END);
@@ -212,9 +232,7 @@ static bool b_print_check_task_valid(Task_T *tp_task)
     }
 
     /* 检查是否存在报错，若有错误则进入错误处理流程 */
-    if(cPrint_GetUpdateStage() != UPDATE_QUEUE_STAGE_ERR &&
-       cPrint_GetUpdateStage() != UPDATE_QUEUE_STAGE_WAIT_RESTART &&
-       tUpdate.eErrCode != UEF_NONE)
+    if(tUpdate.eErrCode != UEF_NONE)
     {
         cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR); /* 进入错误收尾阶段 */
         return false;
@@ -222,42 +240,6 @@ static bool b_print_check_task_valid(Task_T *tp_task)
 
     return true;
 }
-
-#if(boardBMS_EN)
-/***********************************************************************************************************************
------函数功能    BMS升级数据转发处理
------说明(备注)  将打印口接收的BMS数据转发给BMS任务，并将BMS回复数据发送到打印口
------传入参数    tp_task: 任务结构体指针
------输出参数    none
------返回值      0:正常
-************************************************************************************************************************/
-static s8 c_print_update_bms(Task_T *tp_task)
-{
-    /* 有来自打印口的数据，转发给BMS任务 */
-    if(us_char_send_dev_len)
-    {
-        lwrb_reset(&tpBmsTask->tReplyBuff);
-        lwrb_move(&tpBmsTask->tReplyBuff, &tpPrintProtoRx->tRxBuff);
-        vUpdate_ResetTimeout();
-
-        #if(boardUSE_OS)
-        /* 通知BMS任务处理数据 */
-        xTaskNotifyGive(tBmsTaskHandler);
-        #endif
-    }
-
-    /* 有BMS回复数据，发送到打印口 */
-    if(us_char_send_print_len)
-    {
-        lwrb_reset(&tPrintTxBuff);
-        lwrb_move(&tPrintTxBuff, &tp_task->tReplyBuff);
-        bPrint_SendDataToUsart();
-        vUpdate_ResetTimeout();
-    }
-
-    return 0;
-}
-#endif
 
 #if(boardDCAC_EN)
 

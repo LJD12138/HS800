@@ -7,12 +7,18 @@
 #include "Print/print_task.h"
 #include "Sys/sys_task.h"
 
+#include "check.h"
+
+#if(boardUPDATE)
+#include "Sys/sys_queue_task_update.h"
+#endif  //boardUPDATE
+
 #if(boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
 #endif  //boardUSE_OS
 
-#define       	bmsTX_PROTO_BUFF_LEN                   	128
+#define       	bmsTX_PROTO_BUFF_LEN                   	256
 #define       	bmsRX_PROTO_BUFF_LEN                   	128
 
 #define     	bmsDEV_ADRR								0x10
@@ -31,7 +37,7 @@ SemaphoreHandle_t bmsSemaphoreMutex = NULL;
 
 //****************************************************函数声明****************************************************//
 static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len);
-
+static s8 c_bms_data_trans_for_update(u8 cmd, u8* data, u8 len, u8 sn);
 
 
 /***********************************************************************************************************************
@@ -164,6 +170,78 @@ s8 c_bms_cs_req_chg(void)
 }
 
 /***********************************************************************************************************************
+-----函数功能    设置升级协议  0xC2
+-----说明(备注)  none
+-----传入参数    data:协议数据
+				len: 数据长度
+-----输出参数    none
+-----返回值      true:发送成功   false:发送失败
+************************************************************************************************************************/
+s8 c_bms_cs_C2_set_update_proto(u8* data, u8 len)
+{
+	s8 c_ret = 0;
+
+	if(data == NULL || len == 0)
+		return -1;
+
+	c_ret = c_bms_data_trans_for_update(baikuCMD_SET_PROTO, data, len, 0);
+	#if(boardUPDATE)
+	if(c_ret > 0)
+		vUpdate_ResetTimeout();
+	#endif  //boardUPDATE
+
+	return c_ret;
+}
+
+/***********************************************************************************************************************
+-----函数功能    发送文件  0xC5
+-----说明(备注)  none
+-----传入参数    data:协议数据
+				len: 数据长度
+-----输出参数    none
+-----返回值      true:发送成功   false:发送失败
+************************************************************************************************************************/
+s8 c_bms_cs_C5_send_file(u8* data, u8 len, u8 ucSN)
+{
+	s8 c_ret = 0;
+
+	if(data == NULL || len == 0)
+		return -1;
+
+	c_ret = c_bms_data_trans_for_update(baikuCMD_REPLY_DATA, data, len, ucSN);
+	#if(boardUPDATE)
+	if(c_ret > 0)
+		vUpdate_ResetTimeout();
+	#endif  //boardUPDATE
+
+	return c_ret;
+}
+
+/*****************************************************************************************************************
+-----函数功能    指令:升级完成 C7
+-----说明(备注)  none
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+******************************************************************************************************************/
+s8 c_bms_cs_C7_update_finish(void)
+{
+	return c_bms_data_trans_for_update(baikuCMD_REPLY_FINISH, NULL, 0, 0);
+}
+
+/*****************************************************************************************************************
+-----函数功能    指令:取消发送 C8
+-----说明(备注)  none
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+******************************************************************************************************************/
+s8 c_bms_cs_C8_trans_cancel(void)
+{
+	return c_bms_data_trans_for_update(baikuCMD_REPLY_CANEL, NULL, 0, 0);
+}
+
+/***********************************************************************************************************************
 -----函数功能	数据传输
 -----说明(备注) 
 -----传入参数	cmd:指令
@@ -191,9 +269,7 @@ static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len)
 		return -99;
 
 	// 清除任务通知，避免历史通知干扰本次通信
-	while(ulTaskNotifyTake(pdTRUE, 0) > 0)
-	{
-	}
+	while(ulTaskNotifyTake(pdTRUE, 0) > 0){}
 	#endif  //boardUSE_OS
 	
 	result = cBaiku_ProtoCreate(tpBmsProtoTx, cmd, data, len);
@@ -223,6 +299,55 @@ static s8 c_bms_data_trans(u8 cmd, u8* data, u8 len)
 	#if(boardUSE_OS)
 	vTaskDelay(2);
 	
+	xSemaphoreGive(bmsSemaphoreMutex);
+	#endif  //boardUSE_OS
+
+	return result;
+}
+
+/***********************************************************************************************************************
+-----函数功能	升级数据传输
+-----说明(备注) 无需等待回复,发送完成即可退出
+-----传入参数	cmd:指令
+				data:指向数据指针
+				len:数据的长度
+				sn: 帧序列号
+-----输出参数	none
+-----返回值		-1:写入的Len超出最大长度
+				-2:等会回复超时
+				-3:数据发送错误
+				0:无操作
+				1:操作成功
+************************************************************************************************************************/
+static s8 c_bms_data_trans_for_update(u8 cmd, u8* data, u8 len, u8 sn)
+{
+	s8 result = 0;
+	
+	if(tpBmsProtoTx == NULL)
+		return 0;
+
+	#if(boardUSE_OS)
+	// 检查互斥锁是否已创建，并获取互斥锁保护共享资源（最多等待1秒）
+	if(bmsSemaphoreMutex == NULL)
+		return 0;
+	if(xSemaphoreTake(bmsSemaphoreMutex, pdMS_TO_TICKS(1000)) == pdFAIL)
+		return -99;
+	#endif  //boardUSE_OS
+	
+	result = cBaiku_ProtoCreate(tpBmsProtoTx, cmd, data, len);
+	if(result > 0)
+	{
+		/* 设置帧序列号并重算校验和 */
+		tpBmsProtoTx->ucaFrameData[4] = sn;
+		tpBmsProtoTx->ucaFrameData[tpBmsProtoTx->ucFrameLen - 1] =
+			ucCheck_SumReflect((u8*)&tpBmsProtoTx->ucaFrameData[3], tpBmsProtoTx->ucaFrameData[2] - 1);
+
+		if(bBms_DataSendStart(tpBmsProtoTx->ucaFrameData, tpBmsProtoTx->ucFrameLen) == false)
+			result = -3;
+	}
+
+	//释放互斥量
+	#if(boardUSE_OS)
 	xSemaphoreGive(bmsSemaphoreMutex);
 	#endif  //boardUSE_OS
 

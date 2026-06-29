@@ -14,6 +14,7 @@
 #endif  //boardUSE_OS
 
 extern BaikuProtoRx_t *tpBmsProtoRx;
+extern BaikuProtoTx_t *tpBmsProtoTx;
 
 #if(boardUSE_OS)
 extern SemaphoreHandle_t bmsSemaphoreMutex;
@@ -25,6 +26,11 @@ s8 c_bms_cs_set_cali(u8 num);
 s8 c_bms_cs_get_app_info(u16 num);
 s8 c_bms_cs_sys_set(tSysSetParam *tparam);
 s8 c_bms_cs_req_chg(void);
+
+s8 c_bms_cs_C2_set_update_proto(u8* data, u8 len);
+s8 c_bms_cs_C5_send_file(u8* data, u8 len, u8 ucSN);
+s8 c_bms_cs_C7_update_finish(void);
+s8 c_bms_cs_C8_trans_cancel(void);
 
 bool bBms_SendProtInit(void);
 bool bBms_RecProtInit(void);
