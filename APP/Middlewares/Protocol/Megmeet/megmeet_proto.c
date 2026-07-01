@@ -1,4 +1,4 @@
-﻿/*******************************************************************************************************************************
+/*******************************************************************************************************************************
  * Module  : APP/MW-Protocol
  * File    : megmeet_proto.c
  * Date    : 2026-04-29
@@ -178,7 +178,8 @@ s8 cMegmeet_FrameParse(UpdateFrame_t* tp_frame, const u8* ucp_data, u16 len)
     u16 us_proto_len = 0;
     u16 us_frame_len = 0;
     u16 us_crc16 = 0;
-    u16 us_calc_crc16 = 0;
+	u16 us_crc16_1 = 0;
+    vu16 us_calc_crc16 = 0;
     u16 offset = 0;
 
     if(tp_frame == NULL || ucp_data == NULL)
@@ -217,10 +218,12 @@ s8 cMegmeet_FrameParse(UpdateFrame_t* tp_frame, const u8* ucp_data, u16 len)
     if((len - offset) < us_frame_len)
         return -4;
 
-    us_crc16 = ((u16)ucp_data[offset + us_frame_len - 1] << 8) | 
+    us_crc16 = ((u16)ucp_data[offset + us_frame_len - 2] << 8) | 
+               (u16)ucp_data[offset + us_frame_len - 1];
+	us_crc16_1 = ((u16)ucp_data[offset + us_frame_len - 1] << 8) | 
                (u16)ucp_data[offset + us_frame_len - 2];
     us_calc_crc16 = usCheck_GetModbusCrc16((u8*)&ucp_data[offset], (u32)(us_frame_len - MEGMEET_FRAME_CRC_LEN));
-    if(us_crc16 != us_calc_crc16)
+    if(us_crc16 != us_calc_crc16 && us_crc16_1 != us_calc_crc16)
         return -5;
 
     /* 帧解析成功 */

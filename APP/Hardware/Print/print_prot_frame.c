@@ -723,6 +723,9 @@ s8 c_relay88_sys_set(BaikuProtoRx_t* proto)
 		{
 			if(cUpdate_ChSelect((UpdateObj_E)t_sys_set_param.obj, CT_PRINT) <= 0)
 				return -5;
+			
+			if(cUpdate_ProtoSelect((UpdateObj_E)t_sys_set_param.obj, PT_BAIKU) <= 0)
+				return -7;
 		}
 		else
 		{
@@ -868,9 +871,8 @@ s8 c_print_cs_C3_reply_set_proto(u8* data, u8 len)
 		return -1;
 
 	c_ret = c_print_data_trans(baikuCMD_REPLY_SET_PROTO, data, len);
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-
+	if(c_ret <= 0)
+		vUpdate_ResetRecTimeout(true);
 	return c_ret;
 }
 
@@ -884,9 +886,8 @@ s8 c_print_cs_C3_reply_set_proto(u8* data, u8 len)
 s8 c_print_cs_C4_req_start_send(void)
 {
 	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_START_SEND, NULL, 0);
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-
+	if(c_ret <= 0)
+		vUpdate_ResetRecTimeout(true);
 	return c_ret;
 }
 
@@ -900,9 +901,6 @@ s8 c_print_cs_C4_req_start_send(void)
 s8 c_print_cs_C4_req_resend_curr(void)
 {
 	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_START_SEND, NULL, 0);
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-
 	return c_ret;
 }
 
@@ -916,9 +914,8 @@ s8 c_print_cs_C4_req_resend_curr(void)
 s8 c_print_cs_C6_req_cont_send(void)
 {
 	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_CONT_SEND, NULL, 0);
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-
+	if(c_ret <= 0)
+		vUpdate_ResetRecTimeout(true);
 	return c_ret;
 }
 
@@ -931,7 +928,10 @@ s8 c_print_cs_C6_req_cont_send(void)
 ******************************************************************************************************************/
 s8 c_print_cs_C8_trans_cancel(void)
 {
-	return c_print_data_trans_for_update(baikuCMD_REPLY_CANEL, NULL, 0);
+	s8 c_ret = c_print_data_trans_for_update(baikuCMD_REPLY_CANEL, NULL, 0);
+	if(c_ret <= 0)
+		vUpdate_ResetRecTimeout(true);
+	return c_ret;
 }
 #endif  //boardUPDATE
 

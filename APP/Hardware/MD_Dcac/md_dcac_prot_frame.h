@@ -57,8 +57,9 @@ u8 ucDcac_GetUpdateSlaveAddr(UpdateObj_E e_obj);
 u8 ucDcac_GetUpdateIcType(UpdateObj_E e_obj);
 bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payload, u16 payload_len);
 bool b_dcac_send_f0(void);
-bool b_dcac_send_f6(void);
-bool b_dcac_send_f2(u32 ul_baud);
+bool b_dcac_send_f6(bool b_reset_timeout);
+bool b_dcac_send_f2(u32 ul_baud, bool b_reset_timeout);
+bool b_dcac_cs_send_fw_data(u8 cmd, const u8* payload, u16 payload_len, bool b_reset_timeout);
 
 /* 升级阶段DCAC任务回复缓存的线程安全访问接口 */
 bool b_dcac_update_buf_write(Task_T* task, const u8* data, u16 len);

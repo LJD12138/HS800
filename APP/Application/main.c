@@ -116,7 +116,7 @@ int main(void)
 	
 	vBoard_SysInit();
 	
-    #if		printSEGGER
+    #if printSEGGER
     SEGGER_RTT_printf(0,"------------------APP OK--------------------!\r\n");
     #endif	//printSEGGER
 	

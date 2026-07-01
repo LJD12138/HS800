@@ -15,8 +15,10 @@
 
 //****************************************************Includes******************************************************************//
 #include "Print/print_queue_task_update.h"
+#include "Sys/sys_queue_task_update.h"
 #include "function.h"
 #include "check.h"
+#include <stdbool.h>
 
 #if(boardUPDATE)
 #include "Print/print_task.h"
@@ -28,7 +30,6 @@
 
 //****************************************************Macros*******************************************************************//
 #define        printUPDATE_DCAC_FILE_HEAD_MAGIC_OFFSET     0
-#define        printUPDATE_DCAC_FILE_HEAD_MAGIC_SWAP       0x4D475350UL
 #define        printUPDATE_DCAC_FILE_HEAD_CRC_OFFSET       4
 #define        printUPDATE_DCAC_FILE_HEAD_IC_OFFSET        8
 #define        printUPDATE_DCAC_FILE_HEAD_SIZE_OFFSET      48
@@ -41,6 +42,11 @@
 //****************************************************Function Declaration****************************************************//
 static bool b_print_dcac_parse_file_head(const u8* data, u16 len);
 static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_crc_state);
+static bool b_dcac_c8_proc_rec_data(Task_T *tp_task);
+static s8  c_print_dcac_handle_set_proto(void);
+static s8  c_print_dcac_handle_file_head(void);
+static s8  c_print_dcac_handle_host_fw_data(Task_T* tp_task);
+static s8  c_print_dcac_handle_finish(Task_T* tp_task);
 
 
 /***********************************************************************************************************************
@@ -67,112 +73,28 @@ s8 c_print_dcac_prepare_update(Task_T* tp_task)
         {
             switch(tpPrintProtoRx->ucCmd)
             {
-                case baikuCMD_SET_PROTO:    /* C2 主机设置升级协议 */
+                /* C2 主机设置升级协议 */
+                case baikuCMD_SET_PROTO:    
                 {
-                    if(eDcacPrepStage != DPS_WAIT_PRINT_UPDATE_REQ)
-                        return 0;
-
-                    if(tpPrintProtoRx->ucValidLen != 3 || tpPrintProtoRx->ucpValidData == NULL)
-                    {
-                        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
-                        return -4;
-                    }
-
-                    /* 校验主机请求的协议类型，当前Print通道仅支持Baiku协议 */
-                    if((ProtoType_E)tpPrintProtoRx->ucpValidData[0] != PT_BAIKU)
-                    {
-                        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
-                        return -4;
-                    }
-
-                    memcpy((u8*)&tUpdate.usTotalFrmValue, &tpPrintProtoRx->ucpValidData[1], 2);
-
-                    /* 选择Baiku协议并回复确认（按当前升级对象选择协议） */
-                    cUpdate_ProtoSelect(tUpdate.eObj, PT_BAIKU);
-                    if(c_print_cs_C3_reply_set_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) <= 0)
-                    {
-                        bUpdate_SetErrCode(UEF_P_C2_REPLY_FAIL);
-                        return -5;
-                    }
-
-                    bDcac_SetPrepStage(tpDcacTask,DPS_PRINT_SEND_C4);
+                    return c_print_dcac_handle_set_proto();
                 }
-                break;
-
-                case baikuCMD_REPLY_DATA:   /* C5 主机下发文件头数据 */
+                
+                /* C5 主机下发文件头数据 */
+                case baikuCMD_REPLY_DATA:   
                 {
-                    if(eDcacPrepStage != DPS_PRINT_WAIT_REPLY_C5)
-                        return 0;
-
-                    /* 数据内容为空，请求重发 */
-                    if(tpPrintProtoRx->ucValidLen != 56 || tpPrintProtoRx->ucpValidData == NULL)
-                    {
-                        bUpdate_SetErrCode(UEF_P_C5_DATA_ERR);
-                        return -10;
-                    }
-
-                    /* 解析DCAC升级文件头 */
-                    if(b_print_dcac_parse_file_head(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
-                    {
-                        bUpdate_SetErrCode(UEF_P_HEAD_PARSE_FAIL);
-                        return -11;
-                    }
-
-                    /* 检查DCAC缓存空间是否足够（先检查，避免已下发却无法缓存导致无法重发） */
-                    if(tpPrintProtoRx->ucValidLen > lwrb_get_free(&tpDcacTask->tReplyBuff))
-                    {
-                        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
-                        return -12;
-                    }
-
-                    /* 写入数据到DCAC缓存，用于A2超时后重新发送 */
-                    if(b_dcac_update_buf_write(tpDcacTask, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
-                    {
-                        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
-                        return -13;
-                    }
-
-                    // 直接下发给DCAC模块
-                    //发送文件头,如果失败延时200ms重试3次
-                    bool b_send_ok = false;
-                    for(int i = 0; i < 3; i++)
-                    {
-                        if(b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_FILE_HEAD, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen))
-                        {
-                            b_send_ok = true;
-                            break;
-                        }
-                        vTaskDelay(pdMS_TO_TICKS(200));
-                    }
-
-                    if(b_send_ok == false)
-                    {
-                        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
-                        return -13;
-                    }
-
-                    /* 文件头已下发，切换至等待A2回复阶段 */
-                    bDcac_SetPrepStage(tpDcacTask, DPS_WAIT_A2);
-
-                    return 1;   /* 准备完成，进入下一个阶段 */
+                    return c_print_dcac_handle_file_head();
                 }
-
-                case baikuCMD_REPLY_CANEL:  /* C8 主机取消升级 */
+                
+                /* C8 主机取消升级 */
+                case baikuCMD_REPLY_CANEL:  
                 {
                     //已经成功了
                     if(tUpdate.eHostResult == UTR_OK
                        || tUpdate.eHostResult == UTR_LATEST)
                         return 1;
 
-                    bUpdate_SetErrCode(UEF_P_CANCEL_REQ);
-                    bUpdate_SetResult(URT_HOST, UTR_CANCEL);
-
-                    #if(boardUSE_OS)
-                    /* 通过任务通知唤醒DCAC任务 */
-                    if(tDcacTaskHandler != NULL)
-                        xTaskNotifyGive(tDcacTaskHandler);
-                    #endif
-                    return 1;
+                    b_dcac_c8_proc_rec_data(tp_task);
+                    return -1;
                 }
 
                 default:
@@ -194,9 +116,7 @@ s8 c_print_dcac_prepare_update(Task_T* tp_task)
 s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
 {
     s8 c_ret = 0;
-    UpdateTaskResult_E e_slave_result = tUpdate.eSlaveResult;
-    bool b_can_query_now = false;
-
+    
     /* DCAC任务未初始化或缓存未分配 */
     if(tpDcacTask == NULL)
     {
@@ -210,9 +130,9 @@ s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
         return -1;
     }
 
-    if(e_slave_result != UTR_OK 
-        && e_slave_result != UTR_LATEST
-        && e_slave_result != UTR_RUNNING)
+    if(tUpdate.eSlaveResult != UTR_OK 
+        && tUpdate.eSlaveResult != UTR_LATEST
+        && tUpdate.eSlaveResult != UTR_RUNNING)
     {
         bUpdate_SetErrCode(UEF_P_SLAVE_RESULT_ERR);
         return -1;
@@ -225,97 +145,26 @@ s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
         c_ret = cBaiku_ProtoCheck(tpPrintProtoRx);
         if(c_ret > 0)
         {
-            vUpdate_ResetTimeout();
-
             /* 根据主机命令码分发处理 */
             switch(tpPrintProtoRx->ucCmd)
             {
-                case baikuCMD_REPLY_DATA:   /* C5 主机下发固件数据 */
+                /* C5 主机下发固件数据 */
+                case baikuCMD_REPLY_DATA:   
                 {
-                    if(eDcacFwTransStage != DFTS_WAIT_HOST_REPLY)
-                        return 0;
-
-                    /* 数据内容为空，请求重发 */
-                    if(tpPrintProtoRx->ucpValidData == NULL || tpPrintProtoRx->ucValidLen == 0)
-                        return -10;
-
-                    /* 校验数据包合法性 */
-                    u32 ul_next_crc_state = 0;
-                    if(b_print_dcac_check_data_packet(tpPrintProtoRx, &ul_next_crc_state) == false)
-                        return 0;//等待超时继续发送
-
-                    // 直接下发给DCAC模块
-                    //发送固件数据,如果失败延时200ms重试3次
-                    bool b_send_ok = false;
-                    for(int i = 0; i < 3; i++)
-                    {
-                        if(b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_FIRMWARE_DATA, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen))
-                        {
-                            b_send_ok = true;
-                            break;
-                        }
-                        vTaskDelay(pdMS_TO_TICKS(200));
-                    }
-
-                    if(b_send_ok == false)
-                    {
-                        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
-                        return -13;
-                    }
-
-                    /* 写入数据到DCAC缓存，用于A4超时后重新发送 */
-                    if(b_dcac_update_buf_write(tpDcacTask, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
-                    {
-                        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
-                        return -12;
-                    }
-
-                    /* 当前包先挂起，待 A4 成功后再提交 */
-                    #if(boardUSE_OS)
-                    taskENTER_CRITICAL();
-                    #endif
-                    tUpdate.ulFwPendCrc32 = ul_next_crc_state;
-                    tUpdate.usPendPacketLen = tpPrintProtoRx->ucValidLen;
-                    #if(boardUSE_OS)
-                    taskEXIT_CRITICAL();
-                    #endif
-                    bDcac_SetFwTransStage(tp_task, DFTS_WAIT_SLAVE_REPLY);
+                    return c_print_dcac_handle_host_fw_data(tp_task);
                 }
                 break;
 
-                case baikuCMD_REPLY_FINISH: /* C7 主机发送完成帧 */
+                /* C7 主机发送完成帧 */
+                case baikuCMD_REPLY_FINISH:   
                 {
-                    b_can_query_now = (eDcacFwTransStage != DFTS_SEND_FW_DATA &&
-                                        eDcacFwTransStage != DFTS_WAIT_SLAVE_REPLY &&
-                                        eDcacFwTransStage != DFTS_WAIT_SLAVE_RESULT_REPLY);
-
-                    if(b_can_query_now)
-                        bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
-
-                    #if(boardUSE_OS)
-                    /* 通过任务通知唤醒DCAC任务 */
-                    if(tDcacTaskHandler != NULL)
-                        xTaskNotifyGive(tDcacTaskHandler);
-                    #endif
-                    return 1;
+                    return c_print_dcac_handle_finish(tp_task);
                 }
 
-                case baikuCMD_REPLY_CANEL:  /* C8 主机取消升级 */
+                /* C8 主机取消升级 */
+                case baikuCMD_REPLY_CANEL:   
                 {
-                    b_can_query_now = (eDcacFwTransStage != DFTS_SEND_FW_DATA &&
-                                        eDcacFwTransStage != DFTS_WAIT_SLAVE_REPLY &&
-                                        eDcacFwTransStage != DFTS_WAIT_SLAVE_RESULT_REPLY);
-
-                    bUpdate_SetErrCode(UEF_P_CANCEL_REQ);
-
-                    if(b_can_query_now)
-                        bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
-
-                    #if(boardUSE_OS)
-                    /* 通过任务通知唤醒DCAC任务 */
-                    if(tDcacTaskHandler != NULL)
-                        xTaskNotifyGive(tDcacTaskHandler);
-                    #endif
+                    b_dcac_c8_proc_rec_data(tp_task);
                     return -1;
                 }
 
@@ -346,9 +195,9 @@ static bool b_print_dcac_parse_file_head(const u8* data, u16 len)
     if(data == NULL || len != MEGMEET_FILE_HEAD_SIZE)
         return false;
 
-    /* 校验文件魔数 */
+    /* 校验文件标识 */
     ul_magic = ulFunc_GetLe32(&data[printUPDATE_DCAC_FILE_HEAD_MAGIC_OFFSET]);
-    if(ul_magic != MEGMEET_FILE_MAGIC && ul_magic != printUPDATE_DCAC_FILE_HEAD_MAGIC_SWAP)
+    if(ul_magic != MEGMEET_FILE_MAGIC)
         return false;
 
     /* 校验IC类型，必须与当前升级对象对应的芯片ID一致（AC/DC可分别下发对应固件） */
@@ -363,6 +212,7 @@ static bool b_print_dcac_parse_file_head(const u8* data, u16 len)
     tUpdate.ulFwCalcCrc32 = 0xFFFFFFFFUL;   /* CRC初始值 */
     tUpdate.ulFwPendCrc32 = tUpdate.ulFwCalcCrc32;
     tUpdate.usPendPacketLen = 0;
+    tUpdate.usRecFrameCnt = 0;
 
     return (tUpdate.ulFwSize != 0);
 }
@@ -385,14 +235,18 @@ static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_
     if(proto == NULL || proto->ucpValidData == NULL || proto->ucValidLen == 0 || ulp_next_crc_state == NULL)
         return false;
 
-    /* 校验帧序列号 */
-    if(proto->ucSN != ((tUpdate.usRecFrameCnt + 1) & 0x00ff))
-        return false;
-
     len = proto->ucValidLen;
     if(len > MEGMEET_FRM_PKG_SIZE)
         return false;
 
+    /* SN从2开始(SN=0为文件头,SN=1保留),减2得到0基包序号 */
+    if(proto->ucSN < 2)
+        return false;
+    tUpdate.usRecFrameCnt = proto->ucSN - 2;
+
+    /* 固件数据边界校验与CRC32完整性校验
+     * 默认启用,调试时可通过定义 boardUPDATE_DCAC_CRC_EN=0 关闭 */
+#if(!defined(boardUPDATE_DCAC_CRC_EN) || boardUPDATE_DCAC_CRC_EN)
     /* 校验数据长度与固件大小的边界关系 */
     if(tUpdate.ulFwSize != 0)
     {
@@ -423,8 +277,232 @@ static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_
     }
 
     *ulp_next_crc_state = ul_next_crc_state;
+#endif  //boardUPDATE_DCAC_CRC_EN
     return true;
 }
 
+/***********************************************************************************************************************
+-----函数功能    处理主机设置升级协议(C2)
+-----说明(备注)  校验并保存主机协议设置，回复C3确认并切换准备阶段
+-----传入参数    none
+-----输出参数    none
+-----返回值      0:继续  负值:处理失败
+************************************************************************************************************************/
+static s8 c_print_dcac_handle_set_proto(void)
+{
+    if(eDcacPrepStage != DPS_WAIT_PRINT_UPDATE_REQ)
+        return 0;
+
+    if(tpPrintProtoRx->ucValidLen != 3 || tpPrintProtoRx->ucpValidData == NULL)
+    {
+        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+        return -4;
+    }
+
+    /* 校验主机请求的协议类型，当前Print通道仅支持Baiku协议 */
+    if((ProtoType_E)tpPrintProtoRx->ucpValidData[0] != PT_BAIKU)
+    {
+        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+        return -4;
+    }
+
+    memcpy((u8*)&tUpdate.usTotalFrmValue, &tpPrintProtoRx->ucpValidData[1], 2);
+    tUpdate.usTotalFrmValue -= 2;
+    
+    /* 选择Baiku协议并回复确认（按当前升级对象选择协议） */
+    cUpdate_ProtoSelect(tUpdate.eObj, PT_BAIKU);
+    if(c_print_cs_C3_reply_set_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) <= 0)
+    {
+        bUpdate_SetErrCode(UEF_P_C2_REPLY_FAIL);
+        return -5;
+    }
+
+    vUpdate_ResetRecTimeout(true);
+    bDcac_SetPrepStage(tpDcacTask, DPS_PRINT_SEND_C4);
+
+    return 0;
+}
+
+/***********************************************************************************************************************
+-----函数功能    处理主机下发的文件头数据(C5)
+-----说明(备注)  解析并缓存文件头，转发给DCAC模块，切换至等待A2阶段
+-----传入参数    none
+-----输出参数    none
+-----返回值      1:准备完成  0:继续  负值:处理失败
+************************************************************************************************************************/
+static s8 c_print_dcac_handle_file_head(void)
+{
+    if(eDcacPrepStage != DPS_PRINT_WAIT_REPLY_C5)
+        return 0;
+
+    /* 数据内容为空，请求重发 */
+    if(tpPrintProtoRx->ucValidLen != 56 || tpPrintProtoRx->ucpValidData == NULL)
+    {
+        bUpdate_SetErrCode(UEF_P_C5_DATA_ERR);
+        return -10;
+    }
+
+    /* 解析DCAC升级文件头 */
+    if(b_print_dcac_parse_file_head(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
+    {
+        bUpdate_SetErrCode(UEF_P_HEAD_PARSE_FAIL);
+        return -11;
+    }
+
+    /* 检查DCAC缓存空间是否足够（先检查，避免已下发却无法缓存导致无法重发） */
+    if(tpPrintProtoRx->ucValidLen > lwrb_get_free(&tpDcacTask->tReplyBuff))
+    {
+        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        return -12;
+    }
+
+    /* 写入数据到DCAC缓存，用于A2超时后重新发送 */
+    if(b_dcac_update_buf_write(tpDcacTask, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
+    {
+        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        return -13;
+    }
+
+    // 直接下发给DCAC模块
+    //发送文件头,如果失败延时200ms重试3次
+    bool b_send_ok = false;
+    for(int i = 0; i < 3; i++)
+    {
+        if(b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_FILE_HEAD, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen))
+        {
+            b_send_ok = true;
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+
+    if(b_send_ok == false)
+    {
+        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        return -13;
+    }
+
+    vUpdate_ResetRecTimeout(true);
+    /* 文件头已下发，切换至等待A2回复阶段 */
+    bDcac_SetPrepStage(tpDcacTask, DPS_WAIT_A2);
+
+    return 1;   /* 准备完成，进入下一个阶段 */
+}
+
+/***********************************************************************************************************************
+-----函数功能    处理主机下发的固件数据(C5)
+-----说明(备注)  将主机下发的固件数据包转发给DCAC模块，并更新相关状态
+-----传入参数    tp_task: 任务结构体指针
+-----输出参数    none
+-----返回值      0:继续  负值:处理失败
+************************************************************************************************************************/
+static s8 c_print_dcac_handle_host_fw_data(Task_T *tp_task)
+{
+    if(eDcacFwTransStage != DFTS_WAIT_HOST_REPLY)
+        return 0;
+
+    /* 数据内容为空，请求重发 */
+    if(tpPrintProtoRx->ucpValidData == NULL || tpPrintProtoRx->ucValidLen == 0)
+        return -10;
+
+    /* 校验数据包合法性 */
+    u32 ul_next_crc_state = 0;
+    if(b_print_dcac_check_data_packet(tpPrintProtoRx, &ul_next_crc_state) == false)
+        return 0;//等待超时继续发送
+
+    /* 组装 A3 负载: [包序号-L(1) + 包序号-H(1) + 固件数据(N)] */
+    u8 uca_a3_payload[MEGMEET_FRM_PKG_SIZE + 2];
+    u16 us_a3_len = tpPrintProtoRx->ucValidLen + 2;
+    u16 us_seq = tUpdate.usRecFrameCnt;
+    uca_a3_payload[0] = (u8)(us_seq & 0x00FF);          /* 包序号 - L */
+    uca_a3_payload[1] = (u8)((us_seq >> 8) & 0x00FF);   /* 包序号 - H */
+    memcpy(&uca_a3_payload[2], tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen);
+
+    // 直接下发给DCAC模块
+    //发送固件数据,如果失败延时200ms重试3次
+    bool b_send_ok = false;
+    for(int i = 0; i < 3; i++)
+    {
+        if(b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_FIRMWARE_DATA, uca_a3_payload, us_a3_len))
+        {
+            b_send_ok = true;
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+
+    if(b_send_ok == false)
+    {
+        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        return -13;
+    }
+
+    /* 写入数据到DCAC缓存(包含2字节包序号)，用于A4超时后重新发送 */
+    if(b_dcac_update_buf_write(tpDcacTask, uca_a3_payload, us_a3_len) == false)
+    {
+        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        return -12;
+    }
+
+    /* 当前包先挂起，待 A4 成功后再提交 */
+    #if(boardUSE_OS)
+    taskENTER_CRITICAL();
+    #endif
+    tUpdate.ulFwPendCrc32 = ul_next_crc_state;
+    tUpdate.usPendPacketLen = tpPrintProtoRx->ucValidLen;
+    #if(boardUSE_OS)
+    taskEXIT_CRITICAL();
+    #endif
+    
+    vUpdate_ResetRecTimeout(true);
+    bDcac_SetFwTransStage(tp_task, DFTS_WAIT_SLAVE_REPLY);
+
+    return 0;
+}
+
+/***********************************************************************************************************************
+-----函数功能    处理主机发送完成帧(C7)
+-----说明(备注)  根据当前状态切换阶段并唤醒DCAC任务
+-----传入参数    tp_task: 任务结构体指针
+-----输出参数    none
+-----返回值      1:传输完成
+************************************************************************************************************************/
+static s8 c_print_dcac_handle_finish(Task_T *tp_task)
+{
+    if(tUpdate.eSlaveResult != UTR_OK || tUpdate.eHostResult != UTR_LATEST)
+        bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
+
+    #if(boardUSE_OS)
+    /* 通过任务通知唤醒DCAC任务 */
+    if(tDcacTaskHandler != NULL)
+        xTaskNotifyGive(tDcacTaskHandler);
+    #endif
+    return 1;
+}
+
+/***********************************************************************************************************************
+-----函数功能    处理C8主机取消升级
+-----说明(备注)  发送C8取消升级命令到BMS模块
+-----传入参数    none
+-----输出参数    none
+-----返回值     bool false 异常
+-----作者       LJD
+-----日期       2026-06-26
+************************************************************************************************************************/
+static bool b_dcac_c8_proc_rec_data(Task_T *tp_task)
+{
+    if(tUpdate.eSlaveResult != UTR_OK || tUpdate.eHostResult != UTR_LATEST)
+        bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
+
+    if(tUpdate.eHostResult != UTR_FAIL)
+        bUpdate_SetResult(URT_HOST, UTR_CANCEL);
+
+    #if(boardUSE_OS)
+    /* 通过任务通知唤醒DCAC任务 */
+    if(tDcacTaskHandler != NULL)
+        xTaskNotifyGive(tDcacTaskHandler);
+    #endif
+    return true;
+}
 
 #endif  //boardUPDATE

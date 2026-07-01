@@ -185,11 +185,6 @@ s8 c_bms_cs_C2_set_update_proto(u8* data, u8 len)
 		return -1;
 
 	c_ret = c_bms_data_trans_for_update(baikuCMD_SET_PROTO, data, len, 0);
-	#if(boardUPDATE)
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-	#endif  //boardUPDATE
-
 	return c_ret;
 }
 
@@ -209,11 +204,6 @@ s8 c_bms_cs_C5_send_file(u8* data, u8 len, u8 ucSN)
 		return -1;
 
 	c_ret = c_bms_data_trans_for_update(baikuCMD_REPLY_DATA, data, len, ucSN);
-	#if(boardUPDATE)
-	if(c_ret > 0)
-		vUpdate_ResetTimeout();
-	#endif  //boardUPDATE
-
 	return c_ret;
 }
 

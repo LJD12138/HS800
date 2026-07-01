@@ -567,9 +567,6 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payl
         return false;
 
     b_send_ok = bDcac_DataSendStart(tp_proto_tx->ucaFrameData, tp_proto_tx->usFrameLen);
-    if(b_send_ok)
-        vUpdate_ResetTimeout();
-
     return b_send_ok;
 }
 
@@ -584,9 +581,15 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payl
 bool b_dcac_send_f0(void)
 {
     u8 uc_payload = 0x00;
-    return b_dcac_send_megmeet_frame(ucDcac_GetUpdateSlaveAddr(tUpdate.eObj),
+	bool b_send_ok = false;
+    
+    b_send_ok = b_dcac_send_megmeet_frame(0,
                                      ucDcac_GetUpdateIcType(tUpdate.eObj),
                                      MEGMEET_CMD_REQ_UPDATE, &uc_payload, 1);
+	if(b_send_ok)
+		vUpdate_ResetRecTimeout(true);
+
+    return b_send_ok;
 }
 
 /*****************************************************************************************************************
@@ -597,11 +600,17 @@ bool b_dcac_send_f0(void)
 -----输出参数    none
 -----返回值      true: 发送成功  false: 发送失败
 ******************************************************************************************************************/
-bool b_dcac_send_f6(void)
+bool b_dcac_send_f6(bool b_reset_timeout)
 {
-    return b_dcac_send_megmeet_frame(ucDcac_GetUpdateSlaveAddr(tUpdate.eObj),
+	bool b_send_ok = false;
+    
+    b_send_ok = b_dcac_send_megmeet_frame(0,
                                      ucDcac_GetUpdateIcType(tUpdate.eObj),
                                      MEGMEET_CMD_JUMP_BOOT, NULL, 0);
+	if(b_send_ok && b_reset_timeout)
+		vUpdate_ResetRecTimeout(true);
+	
+    return b_send_ok;
 }
 
 /*****************************************************************************************************************
@@ -611,7 +620,7 @@ bool b_dcac_send_f6(void)
 -----输出参数    none
 -----返回值      true: 发送成功  false: 发送失败
 ******************************************************************************************************************/
-bool b_dcac_send_f2(u32 ul_baud)
+bool b_dcac_send_f2(u32 ul_baud, bool b_reset_timeout)
 {
     u8 uc_payload = 0;
 
@@ -625,7 +634,39 @@ bool b_dcac_send_f2(u32 ul_baud)
          return false;
     }
 
-    return b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_SET_BAUD, &uc_payload, 1);
+	bool b_send_ok = false;
+    
+    b_send_ok = b_dcac_send_megmeet_frame(0,
+                                     ucDcac_GetUpdateIcType(tUpdate.eObj),
+                                     MEGMEET_CMD_SET_BAUD, &uc_payload, 1);
+	if(b_send_ok && b_reset_timeout)
+		vUpdate_ResetRecTimeout(true);
+	
+    return b_send_ok;
+}
+
+
+/***********************************************************************************************************************
+-----函数功能   发送升级数据帧
+-----传入参数   cmd
+-----传入参数   payload
+-----传入参数   payload_len
+-----传入参数   b_reset_timeout
+-----返回值     bool
+-----作者       LJD
+-----日期       2026-07-01
+************************************************************************************************************************/
+bool b_dcac_cs_send_fw_data(u8 cmd, const u8* payload, u16 payload_len, bool b_reset_timeout)
+{
+	bool b_send_ok = false;
+    
+    b_send_ok = b_dcac_send_megmeet_frame(0,
+                                     ucDcac_GetUpdateIcType(tUpdate.eObj),
+                                     cmd, payload, payload_len);
+	if(b_send_ok && b_reset_timeout)
+		vUpdate_ResetRecTimeout(true);
+	
+    return b_send_ok;
 }
 
 #endif  //boardDCAC_EN

@@ -152,50 +152,50 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>241</LineNumber>
+          <LineNumber>244</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134348620</Address>
+          <Address>134389240</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>&lt;2&gt;.\Hardware\Print\Print_update_bms.c</Filename>
+          <Filename>&lt;2&gt;.\Hardware\MD_Bms\md_bms_rec_data_proc.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\APP\Hardware/Print/Print_update_bms.c\241</Expression>
+          <Expression>\\APP\Hardware/MD_Bms/md_bms_rec_data_proc.c\244</Expression>
         </Bp>
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>250</LineNumber>
+          <LineNumber>252</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134348630</Address>
+          <Address>134389266</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>&lt;2&gt;.\Hardware\Print\Print_update_bms.c</Filename>
+          <Filename>&lt;2&gt;.\Hardware\MD_Bms\md_bms_rec_data_proc.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\APP\Hardware/Print/Print_update_bms.c\250</Expression>
+          <Expression>\\APP\Hardware/MD_Bms/md_bms_rec_data_proc.c\252</Expression>
         </Bp>
         <Bp>
           <Number>2</Number>
           <Type>0</Type>
-          <LineNumber>245</LineNumber>
+          <LineNumber>253</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134371084</Address>
+          <Address>134389276</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>&lt;2&gt;.\Hardware\Print\Print_update_bms.c</Filename>
+          <Filename>&lt;2&gt;.\Hardware\MD_Bms\md_bms_rec_data_proc.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\APP\Hardware/Print/Print_update_bms.c\245</Expression>
+          <Expression>\\APP\Hardware/MD_Bms/md_bms_rec_data_proc.c\253</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -212,17 +212,52 @@
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>tpDispTask</ItemText>
+          <ItemText>tpPrintTask</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>tpPrintTask</ItemText>
+          <ItemText>tpDcacTask</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
           <WinNumber>1</WinNumber>
-          <ItemText>InfoBuffer</ItemText>
+          <ItemText>eDcacFwTransStage</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>eDcacPrepStage</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tDcac.eDevState</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tDcac.eDevState</ItemText>
+        </Ww>
+        <Ww>
+          <count>8</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tpPrintProtoRx,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>9</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tpDispTask</ItemText>
+        </Ww>
+        <Ww>
+          <count>10</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tpSysTask</ItemText>
+        </Ww>
+        <Ww>
+          <count>11</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>task</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
@@ -13912,7 +13947,7 @@
 
   <Group>
     <GroupName>Application</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -16136,7 +16171,7 @@
 
   <Group>
     <GroupName>HW-MD_Dcac</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>

@@ -164,4 +164,15 @@ void set_var_uca_update_timeout(const char *value) {
     uca_update_timeout[sizeof(uca_update_timeout) / sizeof(char) - 1] = 0;
 }
 
+char uca_update_err_info[100] = { 0 };
+
+const char *get_var_uca_update_err_info() {
+    return uca_update_err_info;
+}
+
+void set_var_uca_update_err_info(const char *value) {
+    strncpy(uca_update_err_info, value, sizeof(uca_update_err_info) / sizeof(char));
+    uca_update_err_info[sizeof(uca_update_err_info) / sizeof(char) - 1] = 0;
+}
+
 

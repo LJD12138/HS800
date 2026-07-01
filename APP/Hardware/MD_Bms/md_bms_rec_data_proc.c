@@ -202,6 +202,8 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 			   (ProtoType_E)proto->ucpValidData[0] != tUpdate.eProtoType)
 				return -81;
 
+			vUpdate_ResetRecTimeout(true);
+
 			memcpy((u8*)&tUpdate.usTotalFrmValue, &proto->ucpValidData[1], 2);
 
 			c_print_cs_C3_reply_set_proto(proto->ucpValidData, proto->ucValidLen);
@@ -211,6 +213,8 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 		//请求开始发送
 		case baikuCMD_RRQ_START_SEND://C4               
         {
+			vUpdate_ResetRecTimeout(true);
+
 			c_print_cs_C4_req_start_send();
 
 			if(tBms.eDevState == DS_UPDATE_MODE
@@ -248,8 +252,8 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 			if(us_pending_len == 0)
 				return 0;
 
-			if(tUpdate.usRecFrameCnt < 0xFFFF)
-                tUpdate.usRecFrameCnt++;
+			vUpdate_ResetRecTimeout(true);
+			vUpdate_ResetTimeout();
 
 			tUpdate.ulRxSize += us_pending_len;
 			
@@ -317,11 +321,11 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 static s8 c_bms_relay08_param(BaikuProtoRx_t* proto)
 {
 	u8 len = sizeof(tBmsRx);
-	u8 cmd = proto->ucpValidData[0];
-	
-	if(proto->ucValidLen != (len + 1) || proto->ucpValidData == NULL)
+
+	if(proto->ucpValidData == NULL || proto->ucValidLen != (len + 1))
 		return -1;
-	
+
+	u8 cmd = proto->ucpValidData[0];
 	if(cmd != 0x00 && cmd != 0x01)
 		return -2;
 	

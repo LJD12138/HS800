@@ -55,6 +55,8 @@
 ******************************************************************************************************************/
 s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 {
+	s8 c_ret = 0;
+	
     if(proto_buff == NULL)
         return -1;
 
@@ -107,11 +109,13 @@ s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 		if(tpBmsProtoRx == NULL || (us_char_len > tpBmsProtoRx->tRxBuff.size))
 			return -3;
 
-		if(cBaiku_UpdateCheck(tpBmsProtoRx, uca_buff, us_char_len) > 0)
+		c_ret = cBaiku_UpdateCheck(tpBmsProtoRx, uca_buff, us_char_len);
+		
+		if(c_ret > 0)
 			return PT_BAIKU;
 	}
 	//DCAC Megmeet协议
-	else if(tDcac.eDevState == DS_UPDATE_MODE)
+	else if(tDcac.eDevState == DS_UPDATE_MODE || tpDcacTask->ucID == DTI_UPDATE)
 	{
 		if(tpDcacMegmeetProtoRx == NULL || (us_char_len > tpDcacMegmeetProtoRx->usBuffSize))
 			return -4;
@@ -119,9 +123,10 @@ s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 		tpDcacMegmeetProtoRx->usFrameLen = us_char_len;
 		memcpy(tpDcacMegmeetProtoRx->ucaFrameData, uca_buff, us_char_len);
 
-		if(cMegmeet_FrameParse(&tpDcacMegmeetProtoRx->tFrame,
+		c_ret = cMegmeet_FrameParse(&tpDcacMegmeetProtoRx->tFrame,
 								tpDcacMegmeetProtoRx->ucaFrameData,
-								tpDcacMegmeetProtoRx->usFrameLen) > 0)
+								tpDcacMegmeetProtoRx->usFrameLen);
+		if(c_ret > 0)
 			return PT_MEGMEET;
 	}
 

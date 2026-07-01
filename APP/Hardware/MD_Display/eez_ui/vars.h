@@ -26,7 +26,8 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_UCA_UPDATE_CHANNEL = 10,
     FLOW_GLOBAL_VARIABLE_UCA_UPDATE_PROTO = 11,
     FLOW_GLOBAL_VARIABLE_UCA_UPDATE_FRAME = 12,
-    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_TIMEOUT = 13
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_TIMEOUT = 13,
+    FLOW_GLOBAL_VARIABLE_UCA_UPDATE_ERR_INFO = 14
 };
 
 // Native global variables
@@ -59,6 +60,8 @@ extern const char *get_var_uca_update_frame();
 extern void set_var_uca_update_frame(const char *value);
 extern const char *get_var_uca_update_timeout();
 extern void set_var_uca_update_timeout(const char *value);
+extern const char *get_var_uca_update_err_info();
+extern void set_var_uca_update_err_info(const char *value);
 
 #ifdef __cplusplus
 }

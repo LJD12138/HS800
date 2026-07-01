@@ -15,7 +15,6 @@
 #define       	bmsTASK_UPDATE_TIME               		50
 
 //****************************************************函数声明****************************************************//
-static bool b_send_baiku_frame(u8 cmd, u8* data, u8 len);
 static bool b_bms_check_task_valid(Task_T *tp_task);
 
 /*****************************************************************************************************************
@@ -51,7 +50,7 @@ void v_bms_queue_task_update(Task_T *tp_task)
 				cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_END);
 				break;
 			}
-
+			bBmsUseFlag = true;
 			bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
 			lwrb_reset(&tp_task->tReplyBuff);
 
@@ -161,29 +160,6 @@ static bool b_bms_check_task_valid(Task_T *tp_task)
 	}
 
 	return true;
-}
-
-
-/***********************************************************************************************************************
------函数功能    BMS升级数据组帧发送
------说明(备注)  将升级数据按照Baiku协议组帧后发送至BMS模块，不含等待回复逻辑
------传入参数    cmd:  协议命令码
-                data: 数据指针
-                len:  数据长度(最大255字节)
------输出参数    none
------返回值      true:发送成功  false:发送失败
-************************************************************************************************************************/
-__STATIC_INLINE bool b_send_baiku_frame(u8 cmd, u8* data, u8 len)
-{
-	if(tpBmsProtoTx == NULL)
-		return false;
-
-	if(cBaiku_ProtoCreate(tpBmsProtoTx, cmd, data, len) <= 0)
-		return false;
-
-	bBmsUseFlag = true;
-
-	return bBms_DataSendStart(tpBmsProtoTx->ucaFrameData, tpBmsProtoTx->ucFrameLen);
 }
 
 #endif  //boardBMS_EN  && boardUPDATE

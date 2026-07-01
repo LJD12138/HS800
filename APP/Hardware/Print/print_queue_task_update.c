@@ -136,55 +136,57 @@ void v_print_queue_task_update(Task_T *tp_task)
             #endif  //boardDCAC_EN
 
             tPrint.eDevState = DS_UPDATE_MODE;
-            vUpdate_ResetTimeout();
         }
         break;
 
-        case PRINT_UPDATE_STEP_BMS_UPDATE:  /* 步骤3：执行BMS升级主流程 */
+        /* 步骤3：执行BMS升级主流程 */
+        case PRINT_UPDATE_STEP_BMS_UPDATE:  
         {
             #if(boardBMS_EN)
             c_ret = c_print_bms_update_firmware_transfer(tp_task);
 
             if(c_ret < 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT); /* 进入异常 */
+                cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR); /* 进入异常 */
             else if(c_ret > 0)
                 cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_FINISH_CLEANUP); /* 升级完成 */
             #endif
         }
         break;
 
-        case PRINT_UPDATE_STEP_DCAC_UPDATE:  /* 步骤4：执行DCAC升级主流程 */
+        /* 步骤4：执行DCAC升级主流程 */
+        case PRINT_UPDATE_STEP_DCAC_UPDATE:  
         {
             #if(boardDCAC_EN)
             c_ret = c_print_dcac_update_firmware_transfer(tp_task);
 
             if(c_ret < 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT); /* 进入异常 */
+                cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR); /* 进入异常 */
             else if(c_ret > 0)
                 cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_FINISH_CLEANUP); /* 升级完成 */
             #endif
         }
         break;
 
-        case PRINT_UPDATE_STEP_ERROR:  /* 步骤5：升级错误 */
+        /* 步骤5：升级错误 */
+        case PRINT_UPDATE_STEP_ERROR:  
         {
-            if(tUpdate.eErrCode == UEF_P_CANCEL_REQ)
-                bUpdate_SetResult(URT_HOST, UTR_CANCEL);
-            else
+            if(tUpdate.eHostResult != UTR_CANCEL)
                 bUpdate_SetResult(URT_HOST, UTR_FAIL);
 
             cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_END);
         }
         break;
 
-        case PRINT_UPDATE_STEP_FINISH_CLEANUP:  /* 步骤6：Print已经升级完成,收尾 */
+        /* 步骤6：Print已经升级完成,收尾 */
+        case PRINT_UPDATE_STEP_FINISH_CLEANUP:  
         {
             bUpdate_SetResult(URT_HOST, UTR_OK);
             cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
 
-        case PRINT_UPDATE_STEP_END:  /* 步骤7：升级完成，退出升级任务 */
+        /* 步骤7：升级完成，退出升级任务 */
+        case PRINT_UPDATE_STEP_END:  
         {
             tPrint.eDevState = DS_SHUT_DOWN;
             lwrb_reset(&tp_task->tReplyBuff);

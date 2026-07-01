@@ -108,6 +108,7 @@ typedef struct
 	vu16				usChgFullTime;		//总的充满时间 1min
 	vu16				usDisChgEmptyTime;	//总的放空时间 1min
 	vu16				usPermMaxChgPwr;	//许可的最大充电功率 W
+	vu16				usPermMaxDisChgPwr;	//许可的最大放电功率 W
 	DevNum_T			tDevNum;   			//电池包数量   最大6台
 	State_T				tState;				//主机系统状态
 	DevInfo_T           tDevInfo[bmsDEV_NUM];//错误代码     tDevInfo[0]为主机

@@ -131,13 +131,13 @@ void vDcac_RecTask(void *pvParameters)
 		//******************************************处理接收的数据****************************************************
 		//协议解析
 		#if(boardUPDATE)
-		if(tDcac.eDevState == DS_UPDATE_MODE)
+		if(tDcac.eDevState == DS_UPDATE_MODE || tpDcacTask->ucID == DTI_UPDATE)
 		{
 			c_result = cUpdate_ProtoCheck(&tpDcacProtoRx->tRxBuff);
 
-			//协议适配
-			if(c_result == PT_MEGMEET)
-				cUpdate_ProtoSelect(tUpdate.eObj, (ProtoType_E)c_result);
+			// //协议适配
+			// if(c_result == PT_MEGMEET)
+			// 	cUpdate_ProtoSelect(tUpdate.eObj, (ProtoType_E)c_result);
 
 			if(c_result != PT_MEGMEET)
 				c_result = 0;
@@ -150,7 +150,7 @@ void vDcac_RecTask(void *pvParameters)
 		if(c_result > 0)
         {
 			#if(boardUPDATE)
-			if(tDcac.eDevState == DS_UPDATE_MODE)
+			if(tDcac.eDevState == DS_UPDATE_MODE|| tpDcacTask->ucID == DTI_UPDATE)
 			{
 				c_result = c_dcac_rec_proc_megmeet_proto(tpDcacMegmeetProtoRx);
 			}

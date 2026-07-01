@@ -141,12 +141,15 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			bFunc_SwapU16Array((u8*)&tParam2, proto_rx->ucpValidData, proto_rx->ucCharLen/2);
 			//更新数据
 			// if(tMppt.eDevState > DS_BOOTING && tDcac.eChgState == DS_SHUT_DOWN)
+				/* bit0:待机状态标志,非故障,屏蔽 */
 				tDcacRx.uErrCode.usCode[0] = tParam2.uDcErrCode & (~0x0001);
 			// else
 				// tDcacRx.uErrCode.usCode[0] = tParam2.uDcErrCode;
 
 			tDcacRx.uErrCode.usCode[1] = tParam2.uAcErrCode;
-			tDcacRx.uErrCode.usCode[2] = tParam2.uInErrCode & (~0x140);
+			/* bit2:输入欠压保护(非故障),bit8:输入缓启动中(非故障),均屏蔽 */
+			tDcacRx.uErrCode.usCode[2] = tParam2.uInErrCode & (~0x0140);
+			/* bit0:系统运行状态标志,仅保留 */
 			tDcacRx.uErrCode.usCode[3] = tParam2.usSysErr & 0x01;
 		}
 		break;
@@ -213,17 +216,6 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 	if(tpDcacTask->tReplyBuff.buff == NULL)
 		return -4;
 
-	if(uPrint.tFlag.bDcacRecTask)
-	{
-		sMyPrint("\r\n bDcacRecTask:Megmeet cmd=0x%x len=%d:", tp_frame->ucCmd, tp_frame->usPayloadLen);
-		for(int i = 0; i < tp_frame->usPayloadLen; i++)
-			sMyPrint("%x ", tp_frame->ucpPayload[i]);
-		sMyPrint("\r\n");
-	}
-
-	// 只要收到 Megmeet 回复，就认为升级链路仍然活跃，先刷新超时计时。
-	vUpdate_ResetTimeout();
-
 	switch(tp_frame->ucCmd)
 	{
 		//F1 回复请求升级
@@ -234,6 +226,8 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 
 			if(eDcacPrepStage != DPS_WAIT_F1)
 				return 0;
+
+			vUpdate_ResetRecTimeout(true);
 
 			u8 u_reply_param = tp_frame->ucpPayload[0];
 
@@ -255,6 +249,8 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 
 			if(eDcacPrepStage != DPS_WAIT_F3)
 				return 0;
+
+			vUpdate_ResetRecTimeout(true);
 
 			u8 u_reply_param = tp_frame->ucpPayload[0];
 
@@ -279,6 +275,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			}
 
 			/* 从机已确认波特率切换，本地串口已在接收中断中完成切换 */
+			
 			bDcac_SetDevState(DS_UPDATE_MODE);
 			bDcac_SetPrepStage(tpDcacTask, DPS_WAIT_PRINT_UPDATE_REQ);
 		}
@@ -295,7 +292,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 				bUpdate_SetErrCode(UEF_D_F7_CHECK_FAIL);
 				return -60;
 			}
-
+			vUpdate_ResetRecTimeout(true);
 			bDcac_SetPrepStage(tpDcacTask,DPS_BOOT_DELAY);
 		}
 		break;
@@ -303,13 +300,13 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 		// A2 文件头回复
 		case MEGMEET_CMD_FILE_HEAD_REPLY:
 		{
-			b_dcac_update_buf_reset(tpDcacTask);
-				
 			if(tp_frame->usPayloadLen != 1 || tp_frame->ucpPayload == NULL)
 				return -30;
 
 			if(eDcacPrepStage != DPS_WAIT_A2)
 				return -31;
+
+			vUpdate_ResetRecTimeout(true);
 
 			//读取数据
 			u8 u_reply_param = tp_frame->ucpPayload[0];
@@ -321,6 +318,9 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 				break;
 			}
 
+			/* A2校验通过后清空缓冲区,避免影响后续A3/A4重发 */
+			b_dcac_update_buf_reset(tpDcacTask);
+
 			/* A2 已经是最新版本 */
 			if(u_reply_param == MEGMEET_A2_VER_LATEST)
 			{
@@ -328,7 +328,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 				cQueue_GotoStep(tpDcacTask, DUS_STEP_FINISH_CLEANUP);
 				break;
 			}
-
+			
 			bDcac_SetPrepStage(tpDcacTask, DPS_FINISH_CLEANUP);
 		}
 		break;
@@ -336,8 +336,6 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 		//A4 固件数据回复
 		case MEGMEET_CMD_FIRMWARE_DATA_REPLY:
 		{
-			b_dcac_update_buf_reset(tpDcacTask);
-				
 			//读取数据
 			#pragma pack(1)
 			struct {
@@ -365,6 +363,11 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 				return -42;
 			}
 
+			/* 校验通过后再重置超时和缓冲区,避免无效数据掩盖超时 */
+			vUpdate_ResetTimeout();
+			vUpdate_ResetRecTimeout(true);
+			b_dcac_update_buf_reset(tpDcacTask);
+
 			#if(boardUSE_OS)
 			taskENTER_CRITICAL();
 			#endif
@@ -377,9 +380,6 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 
 			if(us_pending_len == 0)
 				return 0;
-			
-			if(tUpdate.usRecFrameCnt < 0xFFFF)
-                tUpdate.usRecFrameCnt++;
 
 			tUpdate.ulFwCalcCrc32 = ul_pend_crc;
 			tUpdate.ulRxSize += us_pending_len;
@@ -387,7 +387,9 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			/* A4 已经全部完成 */
 			if(u_reply_param.ucStatus == MEGMEET_A4_ALL_OK)
 			{
-				bDcac_SetFwTransStage(tpDcacTask, DFTS_QUERY_SLAVE_RESULT);
+				/* 升级完成 */
+				bUpdate_SetResult(URT_SLAVE, UTR_OK);
+				bDcac_SetFwTransStage(tpDcacTask, DFTS_FINISH_CLEANUP);
 				break;
 			}
 
@@ -416,17 +418,19 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
                 #pragma pack()
 
 			if(tp_frame->usPayloadLen != sizeof(u_reply_param) || tp_frame->ucpPayload == NULL)
-			return -50;
+				return -50;
+
+			vUpdate_ResetRecTimeout(true);
 
 			memcpy(&u_reply_param, tp_frame->ucpPayload, tp_frame->usPayloadLen);
 
 			/* 校验从机地址和芯片ID */
-		if(u_reply_param.ucSlaveAddr != ucDcac_GetUpdateSlaveAddr(tUpdate.eObj) || 
-		   u_reply_param.ucChipId != ucDcac_GetUpdateIcType(tUpdate.eObj))
-		{
-			bUpdate_SetErrCode(UEF_D_A6_CHECK_FAIL);
-			return -51;
-		}
+			if(u_reply_param.ucSlaveAddr != ucDcac_GetUpdateSlaveAddr(tUpdate.eObj) || 
+			u_reply_param.ucChipId != ucDcac_GetUpdateIcType(tUpdate.eObj))
+			{
+				bUpdate_SetErrCode(UEF_D_A6_CHECK_FAIL);
+				return -51;
+			}
 
 			//回复错误
 			if(u_reply_param.ucStatus > 100 &&
@@ -436,12 +440,11 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 				return -52;
 			}
 
-			//回复未升级完成
+			//回复未升级完成,报错
 			if(u_reply_param.ucStatus < 100)
 			{
-				bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
-				bDcac_SetFwTransStage(tpDcacTask, DFTS_QUERY_SLAVE_RESULT);
-				break;
+				bUpdate_SetErrCode(UEF_D_A6_NOT_COMPLETE);
+				return -53;
 			}
 
 			/* A6 已经是最新 */

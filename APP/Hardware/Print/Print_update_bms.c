@@ -88,7 +88,11 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
                     memcpy((u8*)&tUpdate.usTotalFrmValue, &tpPrintProtoRx->ucpValidData[1], 2);
 
                     /* 选择Baiku协议 */
-                    cUpdate_ProtoSelect(UO_BMS, PT_BAIKU);
+                    if(cUpdate_ProtoSelect(UO_BMS, PT_BAIKU) < 0)
+                    {
+                        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+                        return -4;
+                    }
 
                     /* 转发C2到BMS模块 */
                     if(c_bms_cs_C2_set_update_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
@@ -96,6 +100,8 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
                         bUpdate_SetErrCode(UEF_P_FWD_BMS_FAIL);
                         return -5;
                     }
+
+                    vUpdate_ResetRecTimeout(true);
                 }
                 break;
 
@@ -103,7 +109,6 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
                 {
                     if(b_print_c5_proc_rec_data(tpPrintProtoRx->ucSN) == false)
                         return -10;
-
                     return 1;   /* 准备完成，进入下一个阶段 */
                 }
 
@@ -114,7 +119,6 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
                        || tUpdate.eHostResult == UTR_LATEST)
                         return 1;
 
-                    bUpdate_SetErrCode(UEF_P_CANCEL_REQ);
                     b_print_c8_proc_rec_data();
                     return -1;  /* 返回负值表示取消，与正常完成区分 */
                 }
@@ -168,8 +172,6 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
         c_ret = cBaiku_ProtoCheck(tpPrintProtoRx);
         if(c_ret > 0)
         {
-            vUpdate_ResetTimeout();
-
             /* 根据主机命令码分发处理 */
             switch(tpPrintProtoRx->ucCmd)
             {
@@ -177,23 +179,14 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
                 {
                     if(b_print_c5_proc_rec_data(tpPrintProtoRx->ucSN) == false)
                         return -10;
-
-                    /* 记录本包长度，待BMS回复C6确认后再提交计数 */
-                    #if(boardUSE_OS)
-                    taskENTER_CRITICAL();
-                    #endif
-                    tUpdate.usPendPacketLen = tpPrintProtoRx->ucValidLen;
-                    #if(boardUSE_OS)
-                    taskEXIT_CRITICAL();
-                    #endif
                 }
                 break;
 
                 case baikuCMD_REPLY_FINISH: /* C7 主机发送完成帧 */
                 {
-                    /* 完成前校验：总帧数必须有效且已收帧数达到总帧数 */
+                    /* 完成前校验：总帧数必须有效且已收帧数等于总帧数 */
                     if(tUpdate.usTotalFrmValue == 0 ||
-                       tUpdate.usRecFrameCnt < tUpdate.usTotalFrmValue)
+                       tUpdate.usRecFrameCnt != tUpdate.usTotalFrmValue)
                     {
                         bUpdate_SetErrCode(UEF_P_FINISH_MISMATCH);
                         return -1;
@@ -205,7 +198,6 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
 
                 case baikuCMD_REPLY_CANEL:  /* C8 主机取消升级 */
                 {
-                    bUpdate_SetErrCode(UEF_P_CANCEL_REQ);
                     b_print_c8_proc_rec_data();
                     return -1;
                 }
@@ -234,8 +226,7 @@ static bool b_print_c5_proc_rec_data(u8 ucSN)
         bUpdate_SetErrCode(UEF_P_C5_DATA_ERR);
         return false;
     }
-
-    tUpdate.usPendPacketLen = tpPrintProtoRx->ucValidLen;
+    tUpdate.usRecFrameCnt = ucSN;
 
     /* 转发文件头到BMS任务，携带上位机下发的SN */
     if(c_bms_cs_C5_send_file(tpPrintProtoRx->ucpValidData,
@@ -245,7 +236,17 @@ static bool b_print_c5_proc_rec_data(u8 ucSN)
         bUpdate_SetErrCode(UEF_P_FWD_BMS_FAIL);
         return false;
     }
-
+    vUpdate_ResetRecTimeout(true);
+	
+	 /* 记录本包长度，待BMS回复C6确认后再提交计数 */
+	#if(boardUSE_OS)
+	taskENTER_CRITICAL();
+	#endif
+	tUpdate.usPendPacketLen = tpPrintProtoRx->ucValidLen;
+	#if(boardUSE_OS)
+	taskEXIT_CRITICAL();
+	#endif
+	
     return true;
 }
 
@@ -261,9 +262,10 @@ static bool b_print_c5_proc_rec_data(u8 ucSN)
 static bool b_print_c8_proc_rec_data(void)
 {
     /* 取消升级 */
-    bUpdate_SetResult(URT_HOST, UTR_CANCEL);
+    if(tUpdate.eHostResult != UTR_FAIL)
+        bUpdate_SetResult(URT_HOST, UTR_CANCEL);
+    
     c_bms_cs_C8_trans_cancel();
-
     #if(boardUSE_OS)
     /* 通过任务通知唤醒BMS任务 */
     if(tBmsTaskHandler != NULL)

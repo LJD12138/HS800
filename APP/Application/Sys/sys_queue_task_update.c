@@ -4,6 +4,7 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "Sys/sys_queue_task.h"
+#include <stdbool.h>
 
 #if(boardUPDATE)
 #include "Sys/sys_task.h"
@@ -30,9 +31,7 @@
 
 
 #define     	sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME //任务时间
-#define       	updateREC_LOST_OVERTIME        			((2UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
-#define       	updateDCAC_LOST_OVERTIME      			((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
-#define       	updateBMS_LOST_OVERTIME       			((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
+#define       	updateREC_LOST_OVERTIME        			((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 #define       	updateLOST_OVERTIME        				((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 
 
@@ -41,11 +40,7 @@ Update_T tUpdate;
 
 
 //****************************************************函数声明****************************************************//
-static u16 us_update_get_lost_timeout(UpdateObj_E e_obj);
 static bool b_update_start_object(Task_T *tp_task);
-
-
-
 
 
 /***********************************************************************************************************************
@@ -168,17 +163,26 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			/* 上位机和从机都结束后，进入统一收尾 */
 			if(b_host_finish && b_slave_finish)
 			{
+				/* 升级完成,延时等待模块退出,再统一收尾 */
+				tUpdate.usLostOverTimeCnt = ((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE);
 				cQueue_GotoStep(tp_task, STEP_NEXT);
 			}
 		}
 		break;
 
-		//升级完成
+		//等待退出(延时5S,等待模块退出升级模式)
 		case 6:
 		{
-			bUpdate_Init();
-			cSys_Switch(SO_KEY, ST_OFF, false);
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			if(tUpdate.usLostOverTimeCnt == 0)
+				cQueue_GotoStep(tp_task, STEP_NEXT);
+		}
+		break;
+
+		//等待队列任务退出
+		case 7:
+		{
+			if(lwrb_get_full(&tp_task->tQueueBuff) != 0)
+				cQueue_GotoStep(tp_task, STEP_END);  //结束
 		}
 		break;
 		
@@ -186,47 +190,10 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				cQueue_GotoStep(tp_task, STEP_END);  //结束
 			break;
     }
-
-	//等待10min,超时退出
-	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt > ((10 * 60* 1000) / sysTASK_UPDATE_CYCLE_TIME) && tp_task->ucStep != STEP_END)
-	{
-		if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-			log_w("bSysTask:升级任务等待超时,步骤%d", tp_task->ucStep);
-		
-		bUpdate_SetErrCode(UEF_S_TASK_OVER_TIME);
-		cQueue_GotoStep(tp_task, STEP_END);
-		return;
-	}
-		
+	
 	#if(boardUSE_OS)
 	vTaskDelay(sysTASK_UPDATE_CYCLE_TIME);
 	#endif  //boardUSE_OS
-}
-
-
-/***********************************************************************************************************************
------函数功能    获取升级丢失超时
------说明(备注)  根据升级对象获取对应的丢失超时值。
------传入参数    e_obj: 升级对象
------输出参数    none
------返回值      u16: 丢失超时值
------作者        LJD
------日期        2026-05-09
-************************************************************************************************************************/
-static u16 us_update_get_lost_timeout(UpdateObj_E e_obj)
-{
-	#if(boardDCAC_EN)
-	if(IS_DCAC_UPDATE_OBJ(e_obj))
-		return updateDCAC_LOST_OVERTIME;
-	#endif  //boardDCAC_EN
-
-	#if(boardBMS_EN)
-	if(e_obj == UO_BMS)
-		return updateBMS_LOST_OVERTIME;
-	#endif  //boardBMS_EN
-
-	return updateLOST_OVERTIME;
 }
 
 /***********************************************************************************************************************
@@ -326,7 +293,7 @@ bool bUpdate_Init(void)
 void vUpdate_InitParam(void)
 {
 	tUpdate.usRecOverTimeCnt = 0;
-	tUpdate.usLostOverTimeCnt = us_update_get_lost_timeout(tUpdate.eObj);
+	vUpdate_ResetTimeout();
 	bUpdate_SetResult(URT_HOST_SLAVE, UTR_INVALID);
 
 	#if(boardDCAC_EN)
@@ -353,14 +320,29 @@ void vUpdate_InitParam(void)
 
 /*****************************************************************************************************************
 -----函数功能    重置升级超时计数器
------说明(备注)  将升级任务的丢失超时计数器重置为默认值。
+-----说明(备注)  将升级任务的超时计数器重置为默认值,默认只有接收到从机回复收到固件才重置
 -----传入参数    none
 -----输出参数    none
 -----返回值      none
 ******************************************************************************************************************/
 void vUpdate_ResetTimeout(void)
 {
-	tUpdate.usLostOverTimeCnt = us_update_get_lost_timeout(tUpdate.eObj);
+	tUpdate.usLostOverTimeCnt = updateLOST_OVERTIME;
+}
+
+/*****************************************************************************************************************
+-----函数功能    重置升级接收超时计数器
+-----说明(备注)  将升级任务的接收超时计数器重置为默认值,发送就会重置,接收就会重置
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+******************************************************************************************************************/
+void vUpdate_ResetRecTimeout(bool reset)
+{
+	if(reset)
+		tUpdate.usRecOverTimeCnt = updateREC_LOST_OVERTIME;
+	else
+		tUpdate.usRecOverTimeCnt = 0;
 }
 
 /***********************************************************************************************************************
@@ -373,32 +355,17 @@ void vUpdate_ResetTimeout(void)
 bool bUpdate_SetErrCode(UpdateErrCode_E code)
 {
 	bool b_ret = false;
-	bool b_can_set = false;
-	static UpdateErrCode_E e_next_code;
 
-	if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-	{
-		if(e_next_code != code && code != UEF_NONE)
-			log_e("bSysTask:系统升级错误 代码%d",code);
-		e_next_code = code;
-	}
-	
 	//有错误
 	if(code != UEF_NONE)
 	{
-		b_can_set = (tUpdate.eErrCode == UEF_NONE) ? true : false;
-		if(tUpdate.eErrCode == UEF_P_CANCEL_REQ && code != UEF_P_CANCEL_REQ)
-			b_can_set = true;
-
-		if(b_can_set)
+		if(tpSysTask != NULL && tpSysTask->ucID != STI_UPDATE_ERR)
 		{
 			tUpdate.eErrCode = code;
-
-			if(code != UEF_P_CANCEL_REQ)
-				cQueue_AddQueueTask(tpSysTask, STI_UPDATE_ERR, code, true);
+			cQueue_AddQueueTask(tpSysTask, STI_UPDATE_ERR, code, true);
 		}
-
 		b_ret = true;
+		vUpdate_ResetRecTimeout(false);
 	}
 	else 
 	{
@@ -419,7 +386,7 @@ bool bUpdate_SetErrCode(UpdateErrCode_E code)
 ************************************************************************************************************************/
 bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 {
-	if(result >= UTR_INVAILD)
+	if(result >= UTR_MAX)
 		return false;
 
 	switch(result)
@@ -433,6 +400,7 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 			tUpdate.ulFwPendCrc32 = 0xFFFFFFFFUL;
 			tUpdate.usPendPacketLen = 0;
 			tUpdate.usRecFrameCnt = 0;
+			vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
@@ -450,31 +418,31 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 
 		case UTR_OK:
 		{
-			
+			vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
 		case UTR_LATEST:
 		{
-
+			vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
 		case UTR_CANCEL:
 		{
-
+			vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
 		case UTR_FAIL:
 		{
-
+			vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
-		case UTR_INVAILD:
+		case UTR_MAX:
 		{
-
+			vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
@@ -524,7 +492,7 @@ s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
 	if(ch_type == tUpdate.eChType && 
 		tSysInfo.eDevState == DS_UPDATE_MODE)
 	{
-		tUpdate.usLostOverTimeCnt = us_update_get_lost_timeout(e_obj);
+		vUpdate_ResetTimeout();
 		return 0;
 	}
 	
@@ -563,8 +531,17 @@ s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
 	tUpdate.eObj = e_obj;
 	tUpdate.eChType = ch_type;
 	
-	if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, true) < 0)
-		return -2;
+	if(tpSysTask->ucID == STI_INIT)
+	{
+		if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, false) < 0)
+			return -2;
+	}
+	else
+	{
+		if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, true) < 0)
+			return -3;
+	}
+	
 
 	return 1;
 }
@@ -588,14 +565,66 @@ s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
 	if(tUpdate.eObj != UO_DEFAULT && e_obj != tUpdate.eObj)
 		return -3;
 	
-	if(proto_type == tUpdate.eProtoType && 
+	if(proto_type == tUpdate.eProtoType &&
 		tSysInfo.eDevState == DS_UPDATE_MODE)
 	{
-		tUpdate.usRecOverTimeCnt = updateREC_LOST_OVERTIME;
 		return 0;
 	}
 	tUpdate.eProtoType = proto_type;
 	return 1;
+}
+
+/***********************************************************************************************************************
+-----函数功能    检查升级结果是否正常
+-----说明(备注)  根据升级目标判断主机/从机的升级结果是否处于正常状态(RUNNING/OK/LATEST)。
+-----传入参数   target: 升级目标 URT_HOST主机  URT_SLAVE从机  URT_HOST_SLAVE主机和从机
+-----返回值     bool
+-----作者       LJD
+-----日期       2026-07-01
+************************************************************************************************************************/
+bool bUpdate_ResultIsNormal(UpdateResultTarget_E target)
+{
+	switch(target)
+	{
+		case URT_HOST:
+		{
+			if(tUpdate.eHostResult == UTR_RUNNING 
+				|| tUpdate.eHostResult == UTR_OK 
+				|| tUpdate.eHostResult == UTR_LATEST)
+				return true;
+			else
+				return false;
+		}
+		break;
+		
+		case URT_SLAVE:
+		{
+			if(tUpdate.eSlaveResult == UTR_RUNNING 
+				|| tUpdate.eSlaveResult == UTR_OK 
+				|| tUpdate.eSlaveResult == UTR_LATEST)
+				return true;
+			else
+				return false;
+		}
+		break;
+
+		case URT_HOST_SLAVE:
+		{
+			if((tUpdate.eHostResult == UTR_RUNNING 
+				|| tUpdate.eHostResult == UTR_OK 
+				|| tUpdate.eHostResult == UTR_LATEST)
+				&& (tUpdate.eSlaveResult == UTR_RUNNING 
+				|| tUpdate.eSlaveResult == UTR_OK 
+				|| tUpdate.eSlaveResult == UTR_LATEST))
+				return true;
+			else
+				return false;
+		}
+		break;
+		
+		default:
+			return false;
+	}
 }
 
 /***********************************************************************************************************************
@@ -607,19 +636,44 @@ s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
 ************************************************************************************************************************/
 void vUpdate_TickTimer(void)
 {
+	bool b_rec_timeout = false;
+	bool b_lost_timeout = false;
+
+	#if(boardUSE_OS)
+	taskENTER_CRITICAL();
+	#endif
+
 	if(tUpdate.usRecOverTimeCnt > 0)
 	{
 		tUpdate.usRecOverTimeCnt--;
-		/* 当前未定义帧级接收超时动作，保留计数器供后续扩展 */
+		if(tUpdate.usRecOverTimeCnt == 0)
+			b_rec_timeout = true;
 	}
-	
+
+	/* 升级任务超时退出,执行关机 */
 	if(tUpdate.usLostOverTimeCnt > 0)
 	{
 		tUpdate.usLostOverTimeCnt--;
 		if(tUpdate.usLostOverTimeCnt == 0)
-		{
-			bUpdate_SetErrCode(UEF_S_LOST_OVERTIME);
-		}
+			b_lost_timeout = true;
+	}
+
+	#if(boardUSE_OS)
+	taskEXIT_CRITICAL();
+	#endif
+
+	/* 在临界区外调用,避免临界区内嵌套调度 */
+	if(b_rec_timeout)
+	{
+		tUpdate.usRecFrameCnt = 0;
+		bUpdate_SetErrCode(UEF_S_REC_OVERTIME);
+	}
+		
+
+	if(b_lost_timeout)
+	{
+		bUpdate_Init();
+		cSys_Switch(SO_KEY, ST_OFF, true);
 	}
 }
 #endif  //boardUPDATE

@@ -74,7 +74,7 @@ typedef enum
 	UTR_LATEST,
 	UTR_CANCEL,
 	UTR_FAIL,
-	UTR_INVAILD,			//超范围
+	UTR_MAX,			//超范围(与UTR_INVALID区分:INVALID=初始值,MAX=上限标记)
 }UpdateTaskResult_E;
 
 // 升级结果设置目标
@@ -102,6 +102,7 @@ typedef enum
 	UEF_D_BUFF_NULL     = 0x12,	// 回复缓冲区为空
 	UEF_D_INVALID_OBJ   = 0x22,	// 升级对象无效
 	UEF_D_SET_INVALID_BAUD = 0x23,	// 设置的波特率无效
+	UEF_D_CANCEL_REQ    = 0x2C,	// 上位机主动取消DCAC升级
 
 	// -- F0/F1 握手阶段 --
 	UEF_D_SEND_F0_FAIL  = 0x13,	// 发送F0失败
@@ -134,6 +135,7 @@ typedef enum
 	UEF_D_SEND_A5_FAIL  = 0x1F,	// 发送A5(查询)失败
 	UEF_D_A6_REPLY_ERR  = 0x21,	// A6查询结果回复错误
 	UEF_D_A6_CHECK_FAIL = 0x25,	// A6查询结果校验失败
+	UEF_D_A6_NOT_COMPLETE = 0x2B,	// A6查询结果未升级完成
 
 	// ==================== print_queue_task_update.c (0x30 ~ 0x3F) ====================
 	// -- 通用/基础错误 --
@@ -163,6 +165,7 @@ typedef enum
 	// ==================== v_sys_queue_task_update.c (0x40 ~ 0x4F) ====================
 	UEF_S_TASK_OVER_TIME = 0x40,	// 升级任务等待超时
 	UEF_S_LOST_OVERTIME  = 0x41,	// 升级任务丢失超时
+	UEF_S_REC_OVERTIME   = 0x42,	// 升级任务接收超时
 
 }UpdateErrCode_E;
 
@@ -193,10 +196,12 @@ extern Update_T  tUpdate;
 bool bUpdate_Init(void);
 void vUpdate_InitParam(void);
 void vUpdate_ResetTimeout(void);
+void vUpdate_ResetRecTimeout(bool reset);
 bool bUpdate_SetErrCode(UpdateErrCode_E code);
 bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result);
 s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type);
 s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type);
+bool bUpdate_ResultIsNormal(UpdateResultTarget_E target);
 void vUpdate_TickTimer(void);
 #endif  //boardUPDATE
 

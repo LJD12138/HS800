@@ -111,9 +111,9 @@ void vBms_Task(void *pvParameters)
 	#endif  //boardUSE_OS
     {
 		if(tp_task == NULL
-			#if(boardUPDATE)
-			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != UO_BMS)
-			#endif  //boardUPDATE
+//			#if(boardUPDATE)
+//			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != UO_BMS)
+//			#endif  //boardUPDATE
 		)
 		{
 			if(tp_task == NULL)

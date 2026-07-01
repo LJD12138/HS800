@@ -60,6 +60,7 @@ typedef struct _objects_t {
     lv_obj_t *obj_status_label;
     lv_obj_t *obj5;
     lv_obj_t *obj_countdown_label;
+    lv_obj_t *obj_err_info_label;
 } objects_t;
 
 extern objects_t objects;
