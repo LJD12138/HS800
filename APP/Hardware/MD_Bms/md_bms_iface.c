@@ -113,7 +113,6 @@ static void v_bms_usart_init(void)
     usart_receive_config(bmsUSART, USART_RECEIVE_ENABLE);
     usart_transmit_config(bmsUSART, USART_TRANSMIT_ENABLE);
 	
-	
 	#if(!boardBMS_IFACE_DMA_EN)
     usart_interrupt_flag_clear(bmsUSART, USART_INT_FLAG_RBNE);
     usart_interrupt_enable(bmsUSART, USART_INT_RBNE);   /* 接收中断 */

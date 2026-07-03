@@ -1,7 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[eez_project.eez-project]:/userPages/3",
-    "selectedGlobalVariableObject": "[eez_project.eez-project]:/variables/globalVariables/9",
+    "selectedGlobalVariableObject": "[eez_project.eez-project]:/variables/globalVariables/6",
     "selectedFontObject": "[eez_project.eez-project]:/fonts/3",
     "selectedBitmapObject": "[eez_project.eez-project]:/bitmaps/7",
     "subnavigationSelectedItems": {
@@ -26,7 +26,7 @@
           },
           {
             "type": "border",
-            "selected": 1,
+            "selected": 5,
             "size": 350.5,
             "location": "right",
             "children": [
@@ -194,15 +194,14 @@
                       "enableClose": false,
                       "icon": "svg:variable"
                     }
-                  ],
-                  "active": true
+                  ]
                 }
               ]
             },
             {
               "type": "tabset",
               "id": "EDITORS",
-              "weight": 44.11194580693421,
+              "weight": 42.91801154573451,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -228,12 +227,13 @@
                   },
                   "icon": "svg:page"
                 }
-              ]
+              ],
+              "active": true
             },
             {
               "type": "tabset",
               "id": "#54af4d0a-d7f9-4a38-b67b-80dae3e1c0c3",
-              "weight": 29.21786101690681,
+              "weight": 30.4117952781065,
               "children": [
                 {
                   "type": "tab",
@@ -1152,16 +1152,17 @@
         "0": {
           "0": {},
           "1": {
-            "6": {
-              "$selected": true
-            }
+            "6": {}
           },
           "2": {
             "0": {},
             "3": {}
           },
           "3": {
-            "0": {}
+            "0": {},
+            "1": {
+              "$selected": true
+            }
           }
         }
       },
@@ -1279,7 +1280,8 @@
   "lvglExpandedPropertiesGroup": [
     "POSITION AND SIZE",
     "TEXT",
-    "BORDER"
+    "BORDER",
+    "ARC"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

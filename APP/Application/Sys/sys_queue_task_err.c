@@ -6,7 +6,6 @@
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
-#include <stdbool.h>
 
 #if(boardKEY_EN)
 #include "Key/Key_task.h"

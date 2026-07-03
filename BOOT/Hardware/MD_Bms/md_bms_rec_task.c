@@ -50,8 +50,8 @@ static void v_rec_task_param_init(void)
 	if(tpBmsTask->tReplyBuff.buff != NULL)
 		lwrb_reset(&tpBmsTask->tReplyBuff);
 	
-	tBms.sMaxTemp = tBmsRx.tParam.tDevInfo[0].sMaxTemp;
-	tBms.sMinTemp = tBmsRx.tParam.tDevInfo[0].sMinTemp;
+	tBms.sMaxTemp = tBmsRx.tDevInfo[0].sMaxTemp;
+	tBms.sMinTemp = tBmsRx.tDevInfo[0].sMinTemp;
 	
 	cBaiku_ResetRxBuff(tpBmsProtoRx);
 }

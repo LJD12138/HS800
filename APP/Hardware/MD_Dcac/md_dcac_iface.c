@@ -46,6 +46,9 @@ static vu16  	S_DataSendCnt = 0;
 static __ALIGNED(4) u8 ucaDcacRxDmaBuffData[dcacRX_DMA_BUFF_SIZE];   //用于把数据装载到DMA发送 
 #endif
 static __ALIGNED(4) u8 ucaDcacTxDmaBuffData[dcacTX_DMA_BUFF_SIZE];         //取出接收缓存器中的数据,用于DMA发送
+
+
+
 /*****************************************************************************************************************
 -----函数功能    逆变串口相关IO初始化
 -----说明(备注)  none

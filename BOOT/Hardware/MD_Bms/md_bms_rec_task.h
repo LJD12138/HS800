@@ -80,7 +80,7 @@ typedef struct
 }DevNum_T;
 #pragma pack()
 
-#pragma pack (1)   //强制进行1字节对齐
+//*********************************任务对象**********************************
 typedef struct
 {
 	vu16				usSOC;				//总的SOC      1%
@@ -88,17 +88,9 @@ typedef struct
 	vu16				usChgFullTime;		//总的充满时间 1min
 	vu16				usDisChgEmptyTime;	//总的放空时间 1min
 	vu16				usPermMaxChgPwr;	//许可的最大充电功率 W
-	DevNum_T			tDevNum;   		//电池包数量   最大6台
+	DevNum_T			tDevNum;   			//电池包数量   最大6台
 	State_T				tState;				//主机系统状态
 	DevInfo_T           tDevInfo[bmsDEV_NUM];//错误代码     tDevInfo[0]为主机
-}BmsParam_T;  
-#pragma pack()   //取消进行1字节对齐
-
-//*********************************任务对象**********************************
-typedef struct
-{
-	vu16				usErrCode;
-	BmsParam_T     		tParam;
 }BmsRx_T;              
 extern	BmsRx_T   		tBmsRx;
 

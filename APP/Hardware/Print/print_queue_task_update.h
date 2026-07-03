@@ -59,9 +59,8 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task);
 #if(boardDCAC_EN)
 s8 c_print_dcac_prepare_update(Task_T* tp_task);
 s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task);
-#endif
-
 s8 cPrint_GetUpdateStage(void);
+#endif
 
 #endif  //boardUPDATE
 

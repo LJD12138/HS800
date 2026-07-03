@@ -68,6 +68,7 @@
 #include "MD_HeatManage/md_hm_task.h"
 #endif  //boardHEAT_MANAGE_EN
 
+
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define     	SYS_TASK_PRIO                  			2     //任务优先级 

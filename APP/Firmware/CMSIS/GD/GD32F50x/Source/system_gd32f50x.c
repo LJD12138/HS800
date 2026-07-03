@@ -38,7 +38,6 @@ OF SUCH DAMAGE.
 #define __HXTAL           (HXTAL_VALUE)            /* high speed crystal oscillator frequency */
 #define __SYS_OSC_CLK     (__IRC8M)                /* main oscillator frequency */
 
-#define VECT_TAB_OFFSET  (uint32_t)0x00            /* vector table base offset */
 
 /* select a system clock by uncommenting the following line */
 #if (defined(GD32F502) || defined(GD32F503) || defined(GD32F505))
@@ -229,12 +228,6 @@ void SystemInit(void)
 
     /* configure system clock */
     system_clock_config();
-
-#ifdef VECT_TAB_SRAM
-    nvic_vector_table_set(NVIC_VECTTAB_RAM, VECT_TAB_OFFSET);
-#else
-    nvic_vector_table_set(NVIC_VECTTAB_FLASH, VECT_TAB_OFFSET);
-#endif
 }
 
 /*!

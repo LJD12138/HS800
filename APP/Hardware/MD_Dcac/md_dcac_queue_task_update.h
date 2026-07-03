@@ -37,10 +37,10 @@ typedef enum
 {
     DUS_STEP_INIT = 0,              /*!< 步骤0：初始化升级环境 */
     DUS_STEP_PREPARE,               /*!< 步骤1：准备升级 */
-    DUS_STEP_FW_TRANS,              /*!< 步骤4：固件数据传输(A3/A4/A5/A6) */
-    DUS_STEP_ERROR_CLEANUP,         /*!< 步骤5：升级错误,收尾 */
-    DUS_STEP_FINISH_CLEANUP,        /*!< 步骤6：升级完成，收尾 */
-    DUS_STEP_END,                   /*!< 步骤7：结束，等待后续操作 */
+    DUS_STEP_FW_TRANS,              /*!< 步骤2：固件数据传输(A3/A4/A5/A6) */
+    DUS_STEP_ERROR_CLEANUP,         /*!< 步骤3：升级错误,收尾 */
+    DUS_STEP_FINISH_CLEANUP,        /*!< 步骤4：升级完成，收尾 */
+    DUS_STEP_END,                   /*!< 步骤5：结束，等待后续操作 */
 } DcacUpdateStep_E;
 
 //DCAC升级准备阶段

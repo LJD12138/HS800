@@ -277,6 +277,8 @@ static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_
     }
 
     *ulp_next_crc_state = ul_next_crc_state;
+#else
+    *ulp_next_crc_state = tUpdate.ulFwCalcCrc32;  /* CRC关闭时保持当前状态不变 */
 #endif  //boardUPDATE_DCAC_CRC_EN
     return true;
 }
@@ -469,7 +471,8 @@ static s8 c_print_dcac_handle_host_fw_data(Task_T *tp_task)
 ************************************************************************************************************************/
 static s8 c_print_dcac_handle_finish(Task_T *tp_task)
 {
-    if(tUpdate.eSlaveResult != UTR_OK || tUpdate.eHostResult != UTR_LATEST)
+    //从机未完成
+    if(tUpdate.eSlaveResult != UTR_OK && tUpdate.eSlaveResult != UTR_LATEST)
         bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
 
     #if(boardUSE_OS)
@@ -482,7 +485,7 @@ static s8 c_print_dcac_handle_finish(Task_T *tp_task)
 
 /***********************************************************************************************************************
 -----函数功能    处理C8主机取消升级
------说明(备注)  发送C8取消升级命令到BMS模块
+-----说明(备注)  取消升级并通知DCAC模块查询结果
 -----传入参数    none
 -----输出参数    none
 -----返回值     bool false 异常
@@ -491,7 +494,8 @@ static s8 c_print_dcac_handle_finish(Task_T *tp_task)
 ************************************************************************************************************************/
 static bool b_dcac_c8_proc_rec_data(Task_T *tp_task)
 {
-    if(tUpdate.eSlaveResult != UTR_OK || tUpdate.eHostResult != UTR_LATEST)
+    //从机未完成
+    if(tUpdate.eSlaveResult != UTR_OK && tUpdate.eSlaveResult != UTR_LATEST)
         bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
 
     if(tUpdate.eHostResult != UTR_FAIL)

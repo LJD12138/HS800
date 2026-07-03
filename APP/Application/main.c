@@ -52,9 +52,10 @@ OF SUCH DAMAGE.
      \  \ `-.   \_ __\ /__ _/   .-` /  /
 ======`-.____`-.___\_____/___.-`____.-'======
                    `=---='
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+===============================================================
     佛祖保佑       永不宕机     永无BUG
-***************************************************/
+===============================================================
+*/
 
 #include "main.h"
 #include "..\..\BOOT\Application\flash_allot_table.h"
@@ -65,6 +66,10 @@ OF SUCH DAMAGE.
 #if(boardPRINT_IFACE)
 #include "Print/print_task.h"
 #endif  //boardPRINT_IFACE
+
+#if(boardWDGT_EN)
+#include "fwdgt.h"
+#endif  // boardWDGT_EN
 
 //****************************************************局部宏定义**************************************************//
 //APP中断向量表地址偏移 需要在Linker选项卡勾选“USE Memory Layout from Target Dialog”，
@@ -105,8 +110,10 @@ static void nvic_init(void)
 ******************************************************************************************************************/
 int main(void)
 {
+	/* 必须先执行SystemInit()再设置VTOR，否则SystemInit()内部的
+	   nvic_vector_table_set会把VTOR覆盖回BOOT区，导致中断死循环 */
 	SystemInit();
-	
+
 	#if(USER_BOOT_EXIST == 1)
 	nvic_vector_table_set(NVIC_VECTTAB_FLASH1, VECT_TAB_OFFSET);  //设置NVIC中断向量表的偏移
 	__enable_irq();	//解除中断屏蔽
@@ -116,17 +123,21 @@ int main(void)
 	
 	vBoard_SysInit();
 	
-    #if printSEGGER
+	#if(boardWDGT_EN)
+    vFwdgt_PrintResetReason();
+    #endif  // boardWDGT_EN
+	
+    #if(boardSEGGER)
     SEGGER_RTT_printf(0,"------------------APP OK--------------------!\r\n");
     #endif	//printSEGGER
 	
 	//创建开始任务
-    xTaskCreate((TaskFunction_t )vBoard_StartTask,		//任务函数
-                (const char* )"StartTask",          	//任务名称
-                (uint16_t ) 512,                     	//任务堆栈大小
-                (void* )NULL,                       	//传递给任务函数的参数
-                (UBaseType_t ) START_TASK_PRIO,     	//任务优先级
-                (TaskHandle_t*)&StartTask_Handler); 	//任务句柄
+    xTaskCreate((TaskFunction_t )vBoard_StartTask,  //任务函数
+                (const char* )"StartTask",          //任务名称
+                (uint16_t ) 512,                    //任务堆栈大小
+                (void* )NULL,                       //传递给任务函数的参数
+                (UBaseType_t ) START_TASK_PRIO,     //任务优先级
+                (TaskHandle_t*)&StartTask_Handler); //任务句柄
     
     vTaskStartScheduler(); 
 

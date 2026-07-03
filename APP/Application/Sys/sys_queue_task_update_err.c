@@ -41,13 +41,20 @@
 #define     	sysTASK_UPDATE_ERR_KEY_LONG_TIME			(keyLONG_PRESS_TIME * keyTASK_CYCLE_TIME / sysTASK_UPDATE_ERR_CYCLE_TIME) //长按阈值(任务周期数)
 #endif  //boardKEY_EN
 
+/* 升级错误处理步骤枚举 */
+typedef enum
+{
+    UES_STEP_EXIT_HOST = 0,    /* 让Host退出升级队列 */
+    UES_STEP_EXIT_SLAVE,       /* 让Slave退出升级队列 */
+    UES_STEP_WAIT_USER,        /* 等待用户操作 */
+    UES_STEP_SHUTDOWN,         /* 开始关机 */
+} UpdateErrStep_E;
 
 //****************************************************Parameter Initialization************************************************//
 
 
 
 //****************************************************Function Declaration****************************************************//
-
 
 
 /***********************************************************************************************************************
@@ -72,7 +79,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
     switch(tp_task->ucStep)
     {
         //让Host(Print)退出升级队列
-        case 0:
+        case UES_STEP_EXIT_HOST:
         {
             //等待Host退出升级模式(由各任务自身的有效性检查触发错误收尾)
             if(tPrint.eDevState != DS_UPDATE_MODE && tpPrintTask->ucID != PTI_UPDATE)
@@ -95,7 +102,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
         break;
 
         //让Slave(BMS/DCAC)退出升级队列
-        case 1:
+        case UES_STEP_EXIT_SLAVE:
         {
             bool b_slave_exit = true;
 
@@ -143,7 +150,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
         break;
 
         //等待用户操作,点按power按键重新开始升级,长按power按键进入关机
-        case 2:
+        case UES_STEP_WAIT_USER:
         {
             #if(boardKEY_EN)
             //短按power重新开始升级,长按power进入关机
@@ -154,7 +161,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
                 {
                     //长按power,进入关机
                     vKey_PowerIsTri();  //标记已处理,防止全局按键重复触发
-                    cQueue_GotoStep(tp_task, STEP_NEXT);  //跳转到case 3
+                    cQueue_GotoStep(tp_task, STEP_NEXT);  //跳转到关机步骤
                 }
             }
             else
@@ -176,7 +183,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
         break;
 
         //开始关机
-        case 3:
+        case UES_STEP_SHUTDOWN:
         {
             bUpdate_Init();
             cSys_Switch(SO_KEY, ST_OFF, true);

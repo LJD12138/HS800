@@ -210,9 +210,12 @@ void v_print_queue_task_update(Task_T *tp_task)
 ******************************************************************************************************************/
 static bool b_print_check_task_valid(Task_T *tp_task)
 {
-    /* 参数合法性检查：升级对象无效则结束任务 */
-    if(tUpdate.eObj >= UO_INVAILD 
-        || tp_task == NULL)
+    /* 参数合法性检查：任务指针为空则直接返回 */
+    if(tp_task == NULL)
+        return false;
+
+    /* 升级对象无效则结束任务 */
+    if(tUpdate.eObj >= UO_INVAILD)
     {
         bUpdate_SetErrCode(UEF_P_INVALID_OBJ);
         cQueue_GotoStep(tp_task, STEP_END);

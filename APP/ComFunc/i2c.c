@@ -99,7 +99,7 @@ __STATIC_INLINE void v_i2c_set_sda_gpio_output(const I2cObj_T *p_i2c_obj)
 -----函数功能    设置sda为输入
 -----说明(备注)  数据接收用的
 -----传入参数    p_i2c_obj:发送对象
------输出参数    none0
+-----输出参数    none
 -----返回值      none
 ******************************************************************************************************************/
 __STATIC_INLINE void v_i2c_set_sda_gpio_input(const I2cObj_T *p_i2c_obj)

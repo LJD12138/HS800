@@ -52,7 +52,7 @@ TimerHandle_t 	tMpptRxEnTimer = NULL;     //单次定时器,MPPT的458发送延�
 #endif
 
 #if(boardDCAC_485_IFACE_EN)
-TimerHandle_t 	tDcacRxEnTimer = NULL;     //单次定时器,BMS的458发送延时切换
+TimerHandle_t 	tDcacRxEnTimer = NULL;     //单次定时器,DCAC的458发送延时切换
 #endif
 
 #if(boardBMS_EN)

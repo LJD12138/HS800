@@ -62,6 +62,8 @@ void v_dcac_queue_task_update(Task_T *tp_task)
 {
     s8 c_ret = 0;
     u16 us_cycle_time = dcacTASK_UPDATE_CYCLE_TIME;
+
+    if (tp_task == NULL) return;
     
     /* 动态调整升级固件传输阶段的轮询周期，以提升传输速率 */
     if(tp_task->ucStep == DUS_STEP_FW_TRANS)
@@ -254,6 +256,9 @@ static bool b_dcac_check_retry_limit(Task_T *tp_task, UpdateErrCode_E e_err_code
 ******************************************************************************************************************/
 static bool b_dcac_check_wait_timeout(Task_T *tp_task, u16 us_timeout_ms, u16 us_cycle_time)
 {
+    if(us_cycle_time == 0)
+        return true;  /* 周期为0视为立即超时,防止除零异常 */
+
     tp_task->usStepWaitCnt++;
     if(tp_task->usStepWaitCnt >= (us_timeout_ms / us_cycle_time))
     {

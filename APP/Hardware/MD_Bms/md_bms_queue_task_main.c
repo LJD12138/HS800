@@ -49,8 +49,8 @@ void v_bms_queue_task_main(Task_T *tp_task)
     {
         case 0:
         {
-			//主机
-			result = c_bms_cs_get_param(1);
+			//获取主机BMS参数
+			result = c_bms_cs_get_param(0x10);
 			//发送成功
 			if(result > 0)
 				cQueue_GotoStep(tp_task, STEP_NEXT);

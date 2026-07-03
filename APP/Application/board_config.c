@@ -103,7 +103,7 @@ void SysParamInit(void)
 	#if(boardPRINT_IFACE)
 	uPrint.tFlag.bImportant = 1;
 	uPrint.tFlag.bAppInfo   = 1;
-	uPrint.tFlag.bSysTask   = 1;
+	uPrint.tFlag.bSysTask   = 0;
 	uPrint.tFlag.bKeyTask   = 1;
 	uPrint.tFlag.bBmsRecTask= 0;
 	uPrint.tFlag.bBmsTask   = 0;
@@ -199,23 +199,23 @@ void vBoard_StartTask(void *pvParameters)
 	#endif  //boardDISPLAY_EN
 	
 	#if(boardBUZ_EN)
-   	bBuz_TaskInit();            //蜂鸣器任务 1
+    bBuz_TaskInit();            //蜂鸣器任务
 	#endif  //boardBUZ_EN
 	
 	#if(boardKEY_EN)
-   	vKey_TaskInit();             //按键任务
+    vKey_TaskInit();             //按键任务
 	#endif  //boardKEY_EN
 	
 	#if(boardLED_EN)
-	vLed_TaskInit();             //指示灯任务 1
+	vLed_TaskInit();             //指示灯任务
 	#endif  //boardLED_EN
 	
 	#if(boardLIGHT_EN)
-	vLight_TaskInit();           //照明灯任务 1
+	vLight_TaskInit();           //照明灯任务
 	#endif  //boardLIGHT_EN
 	
 	#if(boardHEAT_MANAGE_EN)
-	bHM_TaskInit();             //风扇散热任务 1
+	bHM_TaskInit();             //风扇散热任务
 	#endif  //boardHEAT_MANAGE_EN
 	
 	#if(boardUSB_EN)

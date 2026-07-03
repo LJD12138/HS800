@@ -129,6 +129,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			else
 				break;
 		}
+		break;
 		
 		//等待进入透传模式
 		case 4:
@@ -219,7 +220,10 @@ static bool b_update_start_object(Task_T *tp_task)
 		t_sys_set_param.obj = UO_BMS;
 		t_sys_set_param.cmd = mainUPDATE_FLAG;
 		lwrb_reset(&tpBmsTask->tReplyBuff);
-		lwrb_write(&tpBmsTask->tReplyBuff, &t_sys_set_param, sizeof(t_sys_set_param));
+		if(lwrb_get_free(&tpBmsTask->tReplyBuff) >= sizeof(t_sys_set_param))
+			lwrb_write(&tpBmsTask->tReplyBuff, &t_sys_set_param, sizeof(t_sys_set_param));
+		else
+			return false;
 
 		if(cQueue_AddQueueTask(tpBmsTask, BTI_REQ_SET_CMD, 0, true) < 0)
 		{
@@ -587,40 +591,18 @@ bool bUpdate_ResultIsNormal(UpdateResultTarget_E target)
 	switch(target)
 	{
 		case URT_HOST:
-		{
-			if(tUpdate.eHostResult == UTR_RUNNING 
+			return (tUpdate.eHostResult == UTR_RUNNING 
 				|| tUpdate.eHostResult == UTR_OK 
-				|| tUpdate.eHostResult == UTR_LATEST)
-				return true;
-			else
-				return false;
-		}
-		break;
+				|| tUpdate.eHostResult == UTR_LATEST);
 		
 		case URT_SLAVE:
-		{
-			if(tUpdate.eSlaveResult == UTR_RUNNING 
+			return (tUpdate.eSlaveResult == UTR_RUNNING 
 				|| tUpdate.eSlaveResult == UTR_OK 
-				|| tUpdate.eSlaveResult == UTR_LATEST)
-				return true;
-			else
-				return false;
-		}
-		break;
+				|| tUpdate.eSlaveResult == UTR_LATEST);
 
 		case URT_HOST_SLAVE:
-		{
-			if((tUpdate.eHostResult == UTR_RUNNING 
-				|| tUpdate.eHostResult == UTR_OK 
-				|| tUpdate.eHostResult == UTR_LATEST)
-				&& (tUpdate.eSlaveResult == UTR_RUNNING 
-				|| tUpdate.eSlaveResult == UTR_OK 
-				|| tUpdate.eSlaveResult == UTR_LATEST))
-				return true;
-			else
-				return false;
-		}
-		break;
+			return bUpdate_ResultIsNormal(URT_HOST) 
+				&& bUpdate_ResultIsNormal(URT_SLAVE);
 		
 		default:
 			return false;

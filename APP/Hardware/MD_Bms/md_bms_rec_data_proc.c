@@ -9,11 +9,15 @@
 #if(boardUPDATE)
 #include "Sys/sys_task.h"
 #include "Sys/sys_queue_task_update.h"
+#include "Print/print_prot_frame.h"
 #endif  //boardUPDATE
 
 
 //****************************************************函数声明****************************************************//
 static s8 c_bms_relay08_param(BaikuProtoRx_t* proto);
+#if(boardUPDATE)
+static s8 c_bms_handle_update_c9(BaikuProtoRx_t* proto);
+#endif  //boardUPDATE
 
 
 /***********************************************************************************************************************
@@ -135,36 +139,9 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 		//BMS正在升级
 		case baikuCMD_BMS_UPDATE://C9
         {
-			#pragma pack(1)
-			struct
-			{
-				vu16				usRecFrameCnt;		//记录当前接收的帧数
-				vu16 				usTotalFrmValue; 	//总帧数
-			}t_my_param;
-			#pragma pack()
-
-
-			if(tpBmsTask == NULL || tpBmsTask->ucID == BTI_REQ_SET_CMD)
-				return -60;
-			
-			if(proto->ucValidLen != sizeof(t_my_param) || proto->ucpValidData == NULL)
-				return -61;
-			
-			memcpy((u8*)&t_my_param, proto->ucpValidData, proto->ucValidLen);
-
-			/* 校验总帧数有效且已收帧数不超过总帧数 */
-			if(t_my_param.usTotalFrmValue == 0 ||
-			   t_my_param.usRecFrameCnt > t_my_param.usTotalFrmValue)
-				return -62;
-
-			tUpdate.usRecFrameCnt = t_my_param.usRecFrameCnt;
-			tUpdate.usTotalFrmValue = t_my_param.usTotalFrmValue;
-
-			/* 升级完成 */
-			if(tUpdate.usRecFrameCnt >= tUpdate.usTotalFrmValue)
-				bUpdate_SetResult(URT_SLAVE, UTR_OK);
-			else
-				bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
+			c_ret = c_bms_handle_update_c9(proto);
+			if(c_ret <= 0)
+				return c_ret;
         }
         break;
 		#endif  //boardUPDATE
@@ -185,7 +162,6 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 -----返回值      0:没有错误  其他有错误
 ************************************************************************************************************************/
 #if(boardUPDATE)
-#include "Print/print_prot_frame.h"
 s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 {
 	s8 c_ret = 1;
@@ -272,36 +248,9 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 		//BMS正在升级
 		case baikuCMD_BMS_UPDATE://C9
         {
-			#pragma pack(1)
-			struct
-			{
-				vu16				usRecFrameCnt;		//记录当前接收的帧数
-				vu16 				usTotalFrmValue; 	//总帧数
-			}t_my_param;
-			#pragma pack()
-
-
-			if(tpBmsTask == NULL || tpBmsTask->ucID == BTI_REQ_SET_CMD)
-				return -60;
-			
-			if(proto->ucValidLen != sizeof(t_my_param) || proto->ucpValidData == NULL)
-				return -61;
-			
-			memcpy((u8*)&t_my_param, proto->ucpValidData, proto->ucValidLen);
-
-			/* 校验总帧数有效且已收帧数不超过总帧数 */
-			if(t_my_param.usTotalFrmValue == 0 ||
-			   t_my_param.usRecFrameCnt > t_my_param.usTotalFrmValue)
-				return -62;
-
-			tUpdate.usRecFrameCnt = t_my_param.usRecFrameCnt;
-			tUpdate.usTotalFrmValue = t_my_param.usTotalFrmValue;
-
-			/* 升级完成 */
-			if(tUpdate.usRecFrameCnt >= tUpdate.usTotalFrmValue)
-				bUpdate_SetResult(URT_SLAVE, UTR_OK);
-			else
-				bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
+			c_ret = c_bms_handle_update_c9(proto);
+			if(c_ret <= 0)
+				return c_ret;
         }
         break;
 
@@ -326,21 +275,21 @@ static s8 c_bms_relay08_param(BaikuProtoRx_t* proto)
 		return -1;
 
 	u8 cmd = proto->ucpValidData[0];
-	if(cmd != 0x00 && cmd != 0x01)
+	if(cmd != 0x10)
 		return -2;
 	
 	memcpy((u8*)&tBmsRx,&proto->ucpValidData[1],len);
 
-	static vu16  last_err_state=0;
+	static vu32  s_ul_last_err_state = 0;
 	
 	ulBmsRxErrCode = 0;
 	for(int i = 0; i < bmsDEV_NUM; i++)
 		ulBmsRxErrCode |= tBmsRx.tDevInfo[i].uErrCode.ulCode;
 	
 	//----------------------------获取故障位-------------------------------------------------
-	if(last_err_state != ulBmsRxErrCode) 
+	if(s_ul_last_err_state != ulBmsRxErrCode) 
 	{
-		last_err_state = ulBmsRxErrCode;
+		s_ul_last_err_state = ulBmsRxErrCode;
 		if(ulBmsRxErrCode)
 			bBms_SetErrCode(BEC_BMS_ERR,true);
 		else 
@@ -359,7 +308,10 @@ static s8 c_bms_relay08_param(BaikuProtoRx_t* proto)
 	vs16 s_temp_min = tBmsRx.tDevInfo[0].sMinTemp;
 	if(tBmsRx.tDevNum.ucOnlineNum > 0)
 	{
-		for(int i = 1; i < tBmsRx.tDevNum.ucOnlineNum; i++)
+		u8 uc_dev_cnt = tBmsRx.tDevNum.ucOnlineNum;
+		if(uc_dev_cnt > bmsDEV_NUM)
+			uc_dev_cnt = bmsDEV_NUM;  /* 上界保护,防止越界访问 */
+		for(int i = 1; i < uc_dev_cnt; i++)
 		{
 			s_temp_max = MAX2(s_temp_max, tBmsRx.tDevInfo[i].sMaxTemp);
 			s_temp_min = MIN2(s_temp_min, tBmsRx.tDevInfo[i].sMinTemp);
@@ -370,5 +322,49 @@ static s8 c_bms_relay08_param(BaikuProtoRx_t* proto)
 	
 	return 1;
 }
+
+/***********************************************************************************************************************
+-----函数功能    处理BMS升级状态上报(C9)
+-----说明(备注)  解析BMS升级进度帧,更新接收帧数和总帧数,判断升级是否完成
+-----传入参数    proto: 拜库协议接收结构体指针
+-----输出参数    none
+-----返回值      1:处理成功  负值:处理失败
+************************************************************************************************************************/
+#if(boardUPDATE)
+static s8 c_bms_handle_update_c9(BaikuProtoRx_t* proto)
+{
+	#pragma pack(1)
+	struct
+	{
+		vu16			usRecFrameCnt;		/* 记录当前接收的帧数 */
+		vu16 			usTotalFrmValue; 	/* 总帧数 */
+	}t_my_param;
+	#pragma pack()
+
+	if(tpBmsTask == NULL || tpBmsTask->ucID == BTI_REQ_SET_CMD)
+		return -60;
+
+	if(proto->ucValidLen != sizeof(t_my_param) || proto->ucpValidData == NULL)
+		return -61;
+
+	memcpy((u8*)&t_my_param, proto->ucpValidData, proto->ucValidLen);
+
+	/* 校验总帧数有效且已收帧数不超过总帧数 */
+	if(t_my_param.usTotalFrmValue == 0 ||
+	   t_my_param.usRecFrameCnt > t_my_param.usTotalFrmValue)
+		return -62;
+
+	tUpdate.usRecFrameCnt = t_my_param.usRecFrameCnt;
+	tUpdate.usTotalFrmValue = t_my_param.usTotalFrmValue;
+
+	/* 升级完成 */
+	if(tUpdate.usRecFrameCnt >= tUpdate.usTotalFrmValue)
+		bUpdate_SetResult(URT_SLAVE, UTR_OK);
+	else
+		bUpdate_SetResult(URT_SLAVE, UTR_RUNNING);
+
+	return 1;
+}
+#endif  //boardUPDATE
 
 #endif  //boardBMS_EN

@@ -8,6 +8,11 @@
 #include "fwdgt.h"
 
 #if(boardWDGT_EN)
+#include "gd32f30x_rcu.h"
+#include "Print/print_api.h"
+
+
+reset_reason_t g_reset_reason;
 
 /*****************************************************************************************************************
 -----函数功能    看门口初始化
@@ -86,15 +91,50 @@ void vFwdgt_ExitLowPower(void)
     vFwdgt_Init();
 }
 
+/*****************************************************************************************************************
+-----函数功能    获取复位信息
+-----说明(备注)  none
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+*****************************************************************************************************************/
+void vResetReason_Capture(void)
+{
+    g_reset_reason.ext_pin   = (rcu_flag_get(RCU_FLAG_EPRST)    == SET);
+    g_reset_reason.por       = (rcu_flag_get(RCU_FLAG_PORRST)   == SET);
+    g_reset_reason.sw        = (rcu_flag_get(RCU_FLAG_SWRST)    == SET);
+    g_reset_reason.fwdgt     = (rcu_flag_get(RCU_FLAG_FWDGTRST) == SET);
+    g_reset_reason.wwdgt     = (rcu_flag_get(RCU_FLAG_WWDGTRST) == SET);
+    g_reset_reason.low_power = (rcu_flag_get(RCU_FLAG_LPRST)    == SET);
 
-#endif
+    // 读取完马上清掉，防止下次误判
+    rcu_all_reset_flag_clear();
+}
 
+/*****************************************************************************************************************
+-----函数功能    获取看门狗复位原因
+-----说明(备注)  none
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+*****************************************************************************************************************/
+void vFwdgt_PrintResetReason(void)
+{
+    vResetReason_Capture();
 
+    if(g_reset_reason.fwdgt)
+		printf("[Reset] reason: FWDGT reset\r\n");
+    else if(g_reset_reason.wwdgt)
+		printf("[Reset] reason: WWDGT reset\r\n");
+    else if(g_reset_reason.sw)
+		printf("[Reset] reason: software reset\r\n");
+    else if(g_reset_reason.ext_pin)
+		printf("[Reset] reason: external pin reset\r\n");
+    else if(g_reset_reason.por)
+		printf("[Reset] reason: power on reset\r\n");
+    else if(g_reset_reason.low_power)
+		printf("[Reset] reason: low power reset\r\n");
+}
 
-
-
-
-
-
-
+#endif  // boardWDGT_EN
 

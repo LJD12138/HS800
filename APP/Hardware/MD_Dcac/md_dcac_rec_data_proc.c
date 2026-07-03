@@ -42,7 +42,7 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 	u16 us_reg_data = 0;
 	
 	if(proto_rx == NULL || proto_tx == NULL)
-		return 0;
+		return -1;
 	
 	if(uPrint.tFlag.bDcacRecTask)
 	{
@@ -476,3 +476,4 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 }
 #endif  //boardUPDATE
 #endif  //boardDCAC_EN
+

@@ -84,7 +84,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 
 			#if(boardDISPLAY_EN)
 			vDisp_Task(NULL);
-			#endif
+			#endif  //boardDISPLAY_EN
 		
 			#if(boardCONSOLE_USARTX)
 			vConsole_Task(NULL);

@@ -2,7 +2,6 @@
 #define MD_BMS_REC_TASK_H
 
 #include "board_config.h"
-#include "main.h"
 
 #if(boardBMS_EN)
 #include "lwrb.h"

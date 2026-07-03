@@ -4,7 +4,6 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Bms/md_bms_rec_task.h"
-#include "main.h"
 
 #if(boardBMS_EN)
 #include "MD_Bms/md_bms_rec_data_proc.h"

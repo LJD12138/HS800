@@ -109,6 +109,7 @@ void vMppt_485TransEnable(bool en)
 	vDcac_485TransEnable(en);
 	#endif
 }
-#endif
+#endif  //boardMPPT_IFACE_DMA_EN
 
 #endif  /* boardMPPT_IFACE */
+

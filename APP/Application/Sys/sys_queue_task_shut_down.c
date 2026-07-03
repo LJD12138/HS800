@@ -32,8 +32,8 @@ void v_sys_queue_task_shut_down(Task_T *tp_task)
     if(tSysInfo.eDevState!= DS_SHUT_DOWN)
 		bSys_SetDevState(DS_SHUT_DOWN, false);
 
-		if(tSysInfo.uErrCode.tCode.bCloseFault)
-			bSys_SetErrCode(SEC_CLOSE_FAULT, false);
+	if(tSysInfo.uErrCode.tCode.bCloseFault)
+		bSys_SetErrCode(SEC_CLOSE_FAULT, false);
 
 	if(bSys_ExistInVolt() == true)
 	{

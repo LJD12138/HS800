@@ -737,7 +737,7 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	{
 		us_last_total_chg_pwr = us_total_chg_pwr;
 		us_total_chg_pwr_err_cnt = 0;
-		sMyPrint("设置总的充电功率 %d\r\n",us_total_chg_pwr);
+		// sMyPrint("设置总的充电功率 %d",us_total_chg_pwr);
 	}
 }
 
