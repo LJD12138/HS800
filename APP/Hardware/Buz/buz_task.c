@@ -118,7 +118,7 @@ void buz(u16 buzzNum, u16 OnTime, u16 OffTime)
     }
     
 	#if(boardDISPLAY_EN)
-	if(S_us_buz_num >= 3)       //报错蜂鸣器响的次数大于等于3次
+	if(S_us_buz_num >= 3 && tSysInfo.eDevState != DS_INIT)       //报错蜂鸣器响的次数大于等于3次
 		bDisp_Switch(ST_ON, false);
 	#endif  //boardDISPLAY_EN
 }
