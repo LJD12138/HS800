@@ -77,20 +77,6 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		
 		case 1:
 		{
-			
-			#if(boardBMS_EN)
-			vBms_Task(NULL);
-			#endif //boardBMS_EN
-
-			#if(boardDISPLAY_EN)
-			vDisp_Task(NULL);
-			#endif  //boardDISPLAY_EN
-		
-			#if(boardCONSOLE_USARTX)
-			vConsole_Task(NULL);
-			vConsole_RecTask(NULL);
-			#endif //boardCONSOLE_EN
-			
 			switch(tUpdate.eProtoType)
 			{
 				case PT_XMODEM:
@@ -231,7 +217,6 @@ s8 cUpdate_ProtoSelect(ProtoType_E type)
 	{
 		case PT_XMODEM:
 		{
-			tUpdate.usTotalFrmValue = 800;
 			tUpdate.eProtoType = PT_XMODEM;
 			bXmodem_Reset(&tXmodem);
 		}
@@ -239,7 +224,6 @@ s8 cUpdate_ProtoSelect(ProtoType_E type)
 		
 		case PT_BAIKU:
 		{
-//			tUpdate.usTotalFrmValue = 400;
 			tUpdate.eProtoType = PT_BAIKU;
 			bBaiKuProto_Reset(&tBaiKuProto, tUpdate.tpProtoRx);
 		}
@@ -266,12 +250,14 @@ void vUpdate_TickTimer(void)
 		case PT_XMODEM:
 		{
 			vXmodem_TickTime(&tXmodem);
+			tUpdate.tpProtoRx->usLostOverTimeCnt = tXmodem.usWaitStartOutTimeCnt;
 		}
 		break;
 		
 		case PT_BAIKU:
 		{
 			vBaiKuProto_TickTime(&tBaiKuProto);
+			tUpdate.tpProtoRx->usLostOverTimeCnt = tBaiKuProto.usWaitStartOutTimeCnt;
 		}
 		break;
 		

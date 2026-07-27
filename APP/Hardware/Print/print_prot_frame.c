@@ -1,5 +1,6 @@
 #include "Print/print_prot_frame.h"
 #include "lwrb.h"
+#include "main.h"
 
 #if(boardPRINT_IFACE)
 #include "Print/print_iface.h"
@@ -554,11 +555,8 @@ s8 c_relay80_get_mem_param(BaikuProtoRx_t* proto)
 	u8 uc_mode = proto->ucpValidData[0];
 	
 	if(proto->ucValidLen != 3 || proto->ucpValidData == NULL)
-		return false;
-	
-	if(uc_mode != MO_BMS && uc_mode != MO_CONSOLE)
-		return false;
-	
+		return -1;
+
 	switch(uc_mode)
 	{
 		case MO_CONSOLE://主控
@@ -576,9 +574,12 @@ s8 c_relay80_get_mem_param(BaikuProtoRx_t* proto)
 		}
 		break;
 		#endif  //boardBMS_EN
+
+		default:
+			return -2;
 	}
 	
-	return true;
+	return 1;
 }
 
 /***********************************************************************************************************************
@@ -679,8 +680,8 @@ s8 c_relay88_sys_set(BaikuProtoRx_t* proto)
 	
 	memcpy(&t_sys_set_param, proto->ucpValidData, proto->ucValidLen);
 	//主控
-	if(t_sys_set_param.obj == UO_DEFAULT ||
-		t_sys_set_param.obj == UO_CONSOLE)
+	if(t_sys_set_param.obj == MO_DEFAULT ||
+		t_sys_set_param.obj == MO_CONSOLE)
 	{
 		temp = 0x00;
 		if(c_print_data_trans(baikuCMD_REPLY_SYS_SET, &temp, 1) <= 0)
@@ -690,12 +691,12 @@ s8 c_relay88_sys_set(BaikuProtoRx_t* proto)
 	}
 	//BMS
 	#if(boardBMS_EN)
-	else if(t_sys_set_param.obj == UO_BMS)
+	else if(t_sys_set_param.obj == MO_BMS)
 	{
 		//进入升级
 		if(t_sys_set_param.cmd == mainUPDATE_FLAG)
 		{
-			if(cUpdate_ChSelect((UpdateObj_E)t_sys_set_param.obj, CT_PRINT) <= 0)
+			if(cUpdate_ChSelect((ModuleObject_E)t_sys_set_param.obj, CT_PRINT) <= 0)
 				return -5;
 		}
 		//其他设置
@@ -714,17 +715,17 @@ s8 c_relay88_sys_set(BaikuProtoRx_t* proto)
 	#endif  //boardBMS_EN
 
 	#if(boardDCAC_EN)
-	else if (t_sys_set_param.obj == UO_DCAC ||
-			 t_sys_set_param.obj == UO_MGMT_AC ||
-			 t_sys_set_param.obj == UO_MGMT_DC)
+	else if (t_sys_set_param.obj == MO_DCAC ||
+			 t_sys_set_param.obj == MO_MGMT_AC ||
+			 t_sys_set_param.obj == MO_MGMT_DC)
 	{
 		//进入升级
 		if(t_sys_set_param.cmd == mainUPDATE_FLAG)
 		{
-			if(cUpdate_ChSelect((UpdateObj_E)t_sys_set_param.obj, CT_PRINT) <= 0)
+			if(cUpdate_ChSelect((ModuleObject_E)t_sys_set_param.obj, CT_PRINT) <= 0)
 				return -5;
 			
-			if(cUpdate_ProtoSelect((UpdateObj_E)t_sys_set_param.obj, PT_BAIKU) <= 0)
+			if(cUpdate_ProtoSelect((ModuleObject_E)t_sys_set_param.obj, PT_BAIKU) <= 0)
 				return -7;
 		}
 		else
@@ -961,7 +962,7 @@ static s8 c_print_data_trans(u8 cmd, u8* data, u8 len)
 	if(result > 0)
 	{
 		lwrb_write(&tPrintTxBuff, tpPrintProtoTx->ucaFrameData, tpPrintProtoTx->ucFrameLen);
-		return bPrint_SendDataToUsart();
+			return bPrint_SendDataToUsart();
 	}
 	#endif
 	return result;

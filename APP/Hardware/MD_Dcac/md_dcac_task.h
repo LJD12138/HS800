@@ -28,7 +28,7 @@ typedef enum
     DTI_CTRL_DCAC_IN,				//控制交流输入
 	DTI_CTRL_PARA_IN,   			//控制并网放电
 	DTI_ERR_PROC,   				//错误处理
-	DTI_UPDATE,   					//升级
+	DTI_UPDATE,   					//升级 7
 }DcacTaskId_E;
 
 

@@ -36,6 +36,8 @@
 
 
 //****************************************************Parameter Initialization************************************************//
+static u8   uc_dcac_last_sn = 0;        /* 上一次收到的帧SN，用于检测SN变化 */
+static bool b_dcac_first_frame = true;  /* 首帧标志，用于跳过usRecFrameCnt的首次递增 */
 
 
 
@@ -62,7 +64,7 @@ s8 c_print_dcac_prepare_update(Task_T* tp_task)
 
     if(tp_task == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_TASK_NULL);
+        bUpdate_SetErrCode(UEF_PD_PREP_TASK_NULL);
         return -1;
     }
 
@@ -120,21 +122,25 @@ s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
     /* DCAC任务未初始化或缓存未分配 */
     if(tpDcacTask == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_TASK_NULL);
+        bUpdate_SetErrCode(UEF_PD_TRANS_TASK_NULL);
         return -1;
     }
 
     if(tpDcacTask->tReplyBuff.buff == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_BUFF_NULL);
+        bUpdate_SetErrCode(UEF_PD_TRANS_BUFF_NULL);
         return -1;
     }
 
-    if(tUpdate.eSlaveResult != UTR_OK 
-        && tUpdate.eSlaveResult != UTR_LATEST
-        && tUpdate.eSlaveResult != UTR_RUNNING)
+    //从机已经升级完成
+    if(tUpdate.eSlaveResult == UTR_OK 
+        || tUpdate.eSlaveResult == UTR_LATEST)
+        return 1;
+
+    //从机状态异常
+    if(tUpdate.eSlaveResult != UTR_RUNNING)
     {
-        bUpdate_SetErrCode(UEF_P_SLAVE_RESULT_ERR);
+        bUpdate_SetErrCode(UEF_PD_SLAVE_RESULT_ERR);
         return -1;
     }
 
@@ -153,7 +159,6 @@ s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
                 {
                     return c_print_dcac_handle_host_fw_data(tp_task);
                 }
-                break;
 
                 /* C7 主机发送完成帧 */
                 case baikuCMD_REPLY_FINISH:   
@@ -213,6 +218,8 @@ static bool b_print_dcac_parse_file_head(const u8* data, u16 len)
     tUpdate.ulFwPendCrc32 = tUpdate.ulFwCalcCrc32;
     tUpdate.usPendPacketLen = 0;
     tUpdate.usRecFrameCnt = 0;
+    uc_dcac_last_sn = 0;
+    b_dcac_first_frame = true;
 
     return (tUpdate.ulFwSize != 0);
 }
@@ -227,8 +234,6 @@ static bool b_print_dcac_parse_file_head(const u8* data, u16 len)
 ************************************************************************************************************************/
 static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_crc_state)
 {
-    u32 ul_remaining = 0;
-    u32 ul_next_crc_state = 0;
     u16 len = 0;
 
     /* 参数有效性检查 */
@@ -239,14 +244,22 @@ static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_
     if(len > MEGMEET_FRM_PKG_SIZE)
         return false;
 
-    /* SN从2开始(SN=0为文件头,SN=1保留),减2得到0基包序号 */
-    if(proto->ucSN < 2)
-        return false;
-    tUpdate.usRecFrameCnt = proto->ucSN - 2;
+    /* SN变化时递增接收帧计数(首帧除外)。
+     * 不依赖SN的具体值判断首帧，因为SN会从FF回绕到0/1/2，
+     * 用独立的首帧标志位避免回绕后误判。 */
+    if(uc_dcac_last_sn != proto->ucSN)
+    {
+        if(!b_dcac_first_frame)
+            tUpdate.usRecFrameCnt++;
+        b_dcac_first_frame = false;
+        uc_dcac_last_sn = proto->ucSN;
+    }
 
     /* 固件数据边界校验与CRC32完整性校验
      * 默认启用,调试时可通过定义 boardUPDATE_DCAC_CRC_EN=0 关闭 */
-#if(!defined(boardUPDATE_DCAC_CRC_EN) || boardUPDATE_DCAC_CRC_EN)
+	#if(boardUPDATE_DCAC_CRC_EN)
+	u32 ul_remaining = 0;
+    u32 ul_next_crc_state = 0;
     /* 校验数据长度与固件大小的边界关系 */
     if(tUpdate.ulFwSize != 0)
     {
@@ -277,9 +290,9 @@ static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_
     }
 
     *ulp_next_crc_state = ul_next_crc_state;
-#else
+	#else
     *ulp_next_crc_state = tUpdate.ulFwCalcCrc32;  /* CRC关闭时保持当前状态不变 */
-#endif  //boardUPDATE_DCAC_CRC_EN
+	#endif  //boardUPDATE_DCAC_CRC_EN
     return true;
 }
 
@@ -297,14 +310,14 @@ static s8 c_print_dcac_handle_set_proto(void)
 
     if(tpPrintProtoRx->ucValidLen != 3 || tpPrintProtoRx->ucpValidData == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+        bUpdate_SetErrCode(UEF_PD_C2_LEN_ERR);
         return -4;
     }
 
     /* 校验主机请求的协议类型，当前Print通道仅支持Baiku协议 */
     if((ProtoType_E)tpPrintProtoRx->ucpValidData[0] != PT_BAIKU)
     {
-        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+        bUpdate_SetErrCode(UEF_PD_C2_PROTO_ERR);
         return -4;
     }
 
@@ -315,7 +328,7 @@ static s8 c_print_dcac_handle_set_proto(void)
     cUpdate_ProtoSelect(tUpdate.eObj, PT_BAIKU);
     if(c_print_cs_C3_reply_set_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) <= 0)
     {
-        bUpdate_SetErrCode(UEF_P_C2_REPLY_FAIL);
+        bUpdate_SetErrCode(UEF_PD_C2_REPLY_FAIL);
         return -5;
     }
 
@@ -340,28 +353,28 @@ static s8 c_print_dcac_handle_file_head(void)
     /* 数据内容为空，请求重发 */
     if(tpPrintProtoRx->ucValidLen != 56 || tpPrintProtoRx->ucpValidData == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_C5_DATA_ERR);
+        bUpdate_SetErrCode(UEF_PD_C5_HEAD_LEN_ERR);
         return -10;
     }
 
     /* 解析DCAC升级文件头 */
     if(b_print_dcac_parse_file_head(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
     {
-        bUpdate_SetErrCode(UEF_P_HEAD_PARSE_FAIL);
+        bUpdate_SetErrCode(UEF_PD_HEAD_PARSE_FAIL);
         return -11;
     }
 
     /* 检查DCAC缓存空间是否足够（先检查，避免已下发却无法缓存导致无法重发） */
     if(tpPrintProtoRx->ucValidLen > lwrb_get_free(&tpDcacTask->tReplyBuff))
     {
-        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        bUpdate_SetErrCode(UEF_PD_CACHE_FULL);
         return -12;
     }
 
     /* 写入数据到DCAC缓存，用于A2超时后重新发送 */
     if(b_dcac_update_buf_write(tpDcacTask, tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
     {
-        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        bUpdate_SetErrCode(UEF_PD_CACHE_WRITE_FAIL);
         return -13;
     }
 
@@ -380,7 +393,7 @@ static s8 c_print_dcac_handle_file_head(void)
 
     if(b_send_ok == false)
     {
-        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        bUpdate_SetErrCode(UEF_PD_HEAD_SEND_FAIL);
         return -13;
     }
 
@@ -435,14 +448,14 @@ static s8 c_print_dcac_handle_host_fw_data(Task_T *tp_task)
 
     if(b_send_ok == false)
     {
-        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        bUpdate_SetErrCode(UEF_PD_FW_SEND_FAIL);
         return -13;
     }
 
     /* 写入数据到DCAC缓存(包含2字节包序号)，用于A4超时后重新发送 */
     if(b_dcac_update_buf_write(tpDcacTask, uca_a3_payload, us_a3_len) == false)
     {
-        bUpdate_SetErrCode(UEF_P_FWD_DCAC_FAIL);
+        bUpdate_SetErrCode(UEF_PD_FW_CACHE_FAIL);
         return -12;
     }
 

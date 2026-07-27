@@ -10,7 +10,6 @@
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
-#include "i2c.h"
 #include "app_info.h"
 
 #if(boardUSE_OS)
@@ -615,7 +614,7 @@ static void v_dc_protect_process(void)
 }
 
 /*****************************************************************************************************************
------函数功能	获取信息
+-----函数功能   初始化DC信息
 -----说明(备注)	none
 -----传入参数	none
 -----输出参数	none
@@ -695,6 +694,8 @@ static s8 c_dc_check_in_volt(void)
 	else
 		return -1;
 }
+
+
 
 
 

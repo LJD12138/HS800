@@ -53,10 +53,10 @@ bool bDcac_RecProtInit(void);
 bool bDcac_MegmeetProtInit(void);
 
 /* 协议帧发送函数 */
-u8 ucDcac_GetUpdateSlaveAddr(UpdateObj_E e_obj);
-u8 ucDcac_GetUpdateIcType(UpdateObj_E e_obj);
+u8 ucDcac_GetUpdateSlaveAddr(ModuleObject_E e_obj);
+u8 ucDcac_GetUpdateIcType(ModuleObject_E e_obj);
 bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payload, u16 payload_len);
-bool b_dcac_send_f0(void);
+bool b_dcac_send_f0(u8 uc_payload);
 bool b_dcac_send_f6(bool b_reset_timeout);
 bool b_dcac_send_f2(u32 ul_baud, bool b_reset_timeout);
 bool b_dcac_cs_send_fw_data(u8 cmd, const u8* payload, u16 payload_len, bool b_reset_timeout);

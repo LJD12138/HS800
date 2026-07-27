@@ -68,7 +68,7 @@ void v_mppt_queue_task_main(Task_T *tp_task)
 			
 			v_set_total_chg_pwr();
 			
-			cQueue_GotoStep(tp_task, 0);  //结束
+			cQueue_GotoStep(tp_task, 0);
         }
 		break;
 			
@@ -105,17 +105,17 @@ __STATIC_INLINE void v_proc_rec_param(void)
 			bMppt_SetErrCode(MEC_MPPT_IN_OV, false);
 	}
 
-	//输入欠压
-//	if(tMpptRx.uErrCode.tCode.bInUV)
-//	{
-//		if(tMppt.uErrCode.tCode.bMpptInUV == false)
-//			bMppt_SetErrCode(MEC_MPPT_IN_UV, true);
-//	}
-//	else 
-//	{
-//		if(tMppt.uErrCode.tCode.bMpptInUV == true)
-//			bMppt_SetErrCode(MEC_MPPT_IN_UV, false);
-//	}
+	// //输入欠压
+	// if(tMpptRx.uErrCode.tCode.bInUV)
+	// {
+	// 	if(tMppt.uErrCode.tCode.bMpptInUV == false)
+	// 		bMppt_SetErrCode(MEC_MPPT_IN_UV, true);
+	// }
+	// else 
+	// {
+	// 	if(tMppt.uErrCode.tCode.bMpptInUV == true)
+	// 		bMppt_SetErrCode(MEC_MPPT_IN_UV, false);
+	// }
 
 	//输入过流
 	if(tMpptRx.uErrCode.tCode.bInOC)
@@ -282,7 +282,8 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	
 	us_chg_pwr = tSysInfo.tSetChgPwr.usMPPT;
 	
-	if(abs((tMpptRx.usMaxInPwr / 10) - us_chg_pwr) > 100)
+	if(abs((tMpptRx.usMaxInPwr / 10) - us_chg_pwr) > 100 ||
+		(abs((tMpptRx.usInPwr / 10) - us_chg_pwr) > 100 && tMpptRx.usInPwr < 100))
 		us_chg_pwr_err++;
 	else 
 		us_chg_pwr_err = 0;
@@ -290,11 +291,14 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	if(us_last_chg_pwr == us_chg_pwr && us_chg_pwr_err < (5000 / mpptTASK_GET_PARAM_CYCLE_TIME))
 		return;
 
-	if(cQueue_AddQueueTask(tpMpptTask, MTI_SET_CHG_PWR, us_chg_pwr, false) > 0)
+	if(c_mppt_cs_set_pwr(us_chg_pwr) > 0)
+	// if(cQueue_AddQueueTask(tpMpptTask, MTI_SET_CHG_PWR, us_chg_pwr, false) > 0)
 	{
 		us_last_chg_pwr = us_chg_pwr;
 		us_chg_pwr_err = 0;
-		// sMyPrint("设置MPPT充电功率 %d \r\n",us_chg_pwr);
+
+		if(uPrint.tFlag.bMpptTask)
+			sMyPrint("设置MPPT充电功率 %d \r\n",us_chg_pwr);
 	}
 		
 }

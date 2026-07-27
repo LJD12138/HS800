@@ -4,9 +4,7 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "board_config.h"
-#include "timer_task.h"
 #include "gpio_init.h"
-#include "boot_info.h"
 
 #include "Sys/sys_task.h"
 #include "Led/led_task.h"

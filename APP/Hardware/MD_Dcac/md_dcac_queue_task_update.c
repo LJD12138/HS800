@@ -19,11 +19,8 @@
 #include "MD_Dcac/md_dcac_iface.h"
 #include "MD_Dcac/md_dcac_prot_frame.h"
 #include "Sys/sys_task.h"
-#include "Print/print_task.h"
 #include "Print/print_prot_frame.h"
 #include "Megmeet/megmeet_proto.h"
-#include "Baiku/baiku_proto.h"
-#include "check.h"
 
 /* ========================================== 宏定义 ========================================== */
 #define        dcacTASK_UPDATE_CYCLE_TIME                 500     /*!< DCAC升级任务周期，单位：ms */
@@ -67,21 +64,19 @@ void v_dcac_queue_task_update(Task_T *tp_task)
     
     /* 动态调整升级固件传输阶段的轮询周期，以提升传输速率 */
     if(tp_task->ucStep == DUS_STEP_FW_TRANS)
-    {
         us_cycle_time = 100;
-    }
     
     #if(boardUSE_OS)
     ulTaskNotifyTake(pdTRUE, us_cycle_time);
     #endif
     
-    /* 统一检查任务有效性（升级对象、缓冲区、设备状态、错误） */
+    //升级失败,进入收尾流程
     if(b_dcac_check_task_valid(tp_task) == false)
-        return;
+        cQueue_GotoStep(tp_task, DUS_STEP_ERROR_CLEANUP);
 
     //获取任务缓存器的返回值长度，判断是否有数据需要处理
     u16 us_reply_len = lwrb_get_full(&tp_task->tReplyBuff);
-
+	
     switch(tp_task->ucStep)
     {
         /*---------------- 步骤0：初始化升级环境 ----------------*/
@@ -89,7 +84,7 @@ void v_dcac_queue_task_update(Task_T *tp_task)
         {
             if((tDcacMegmeetProtoTx == NULL || tpDcacMegmeetProtoRx == NULL) && bDcac_MegmeetProtInit() == false)
             {
-                bUpdate_SetErrCode(UEF_D_SEND_F0_FAIL);
+                bUpdate_SetErrCode(UEF_DQ_PROTO_INIT_FAIL);
                 break;
             }
 
@@ -143,13 +138,9 @@ void v_dcac_queue_task_update(Task_T *tp_task)
             if(tUpdate.eHostResult == UTR_RUNNING)
                 c_print_cs_C8_trans_cancel();
 
-            /* 异常退出时恢复默认波特率与接口状态，避免遗留高波特率配置 */
-            bDcac_IfaceSetBaud(dcacUSART_BAUD);
-            vDcac_IfaceInit();
-
             cQueue_GotoStep(tp_task, DUS_STEP_END);
-            break;
         }
+		break;
 
         /*---------------- 步骤6：升级完成，收尾 ----------------*/
         case DUS_STEP_FINISH_CLEANUP:
@@ -158,14 +149,16 @@ void v_dcac_queue_task_update(Task_T *tp_task)
             if(tUpdate.eHostResult != UTR_OK)
                 bUpdate_SetResult(URT_HOST, UTR_OK);
 
-            vDcac_IfaceInit(); /* 升级完成后重置接口状态，准备进入正常工作模式 */
             cQueue_GotoStep(tp_task, STEP_NEXT);
-            break;
         }
+		break;
 
         /*---------------- 步骤7：结束 ---------------------------*/
         case DUS_STEP_END:
         {
+			/* 波特率恢复正常 */
+            bDcac_IfaceSetBaud(dcacUSART_BAUD);
+			
             bDcac_SetDevState(DS_SHUT_DOWN);
             lwrb_reset(&tp_task->tReplyBuff);
             cModbus_ResetTx(tpDcacProtoTx, tpDcacProtoTx->usFrameDataSize);
@@ -196,31 +189,24 @@ static bool b_dcac_check_task_valid(Task_T *tp_task)
     /* 升级对象无效则结束任务 */
     if(!IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
     {
-        bUpdate_SetErrCode(UEF_D_INVALID_OBJ);
-        cQueue_GotoStep(tp_task, STEP_END);
+        bUpdate_SetErrCode(UEF_DQ_INVALID_OBJ);
         return false;
     }
 
     /* 检查回复缓冲区是否有效 */
     if(tp_task->tReplyBuff.buff == NULL)
     {
-        bUpdate_SetErrCode(UEF_D_BUFF_NULL);
+        bUpdate_SetErrCode(UEF_DQ_BUFF_NULL);
         return false;
     }
 
     /* 检查设备是否处于升级模式，且任务队列无残留数据 */
     if(tSysInfo.eDevState != DS_UPDATE_MODE || lwrb_get_full(&tp_task->tQueueBuff))
-    {
-        cQueue_GotoStep(tp_task, STEP_END);
         return false;
-    }
 
     /* 检查是否存在报错，若有错误则进入错误处理流程 */
-    if(tUpdate.eErrCode != UEF_NONE)
-    {
-        cQueue_GotoStep(tp_task, DUS_STEP_ERROR_CLEANUP); /* 进入错误收尾阶段 */
+    if(tUpdate.eErrCode != UEF_NONE && tp_task->ucStep < DUS_STEP_ERROR_CLEANUP)
         return false;
-    }
 
     return true;
 }
@@ -281,7 +267,7 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
 {
     if(tUpdate.eHostResult == UTR_CANCEL)
     {
-        bUpdate_SetErrCode(UEF_D_CANCEL_REQ);
+        bUpdate_SetErrCode(UEF_DQ_CANCEL_REQ);
         return -1;
     }
 
@@ -298,10 +284,10 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
         /*---------------- 步骤1：发送F0请求升级 ----------------*/
         case DPS_SEND_F0:
         {
-            if(b_dcac_check_retry_limit(tp_task, UEF_D_SEND_F0_FAIL))
+            if(b_dcac_check_retry_limit(tp_task, UEF_DQ_F0_RETRY_OVER))
                 return -1;
 
-            if(b_dcac_send_f0() == false)
+            if(b_dcac_send_f0(0) == false)
             {
                 vTaskDelay(dcacUPDATE_SEND_FAIL_DELAY_MS);
                 break;
@@ -326,7 +312,7 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
         /*---------------- 步骤3：发送F6请求跳转BOOT ----------------*/
         case DPS_SEND_F6:
         {
-            if(b_dcac_check_retry_limit(tp_task, UEF_D_SEND_F6_FAIL))
+            if(b_dcac_check_retry_limit(tp_task, UEF_DQ_F6_RETRY_OVER))
                 return -4;
 
             if(b_dcac_send_f6(true) == false)
@@ -342,6 +328,14 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
         /*---------------- 步骤4：等待F7回复 ----------------*/
         case DPS_WAIT_F7:
         {
+            tp_task->usStepRepeatCnt++;
+            if(tp_task->usStepRepeatCnt > 1)
+            {
+                tp_task->usStepRepeatCnt = 0;
+                b_dcac_send_f0(0);
+                break;
+            }
+
             if(b_dcac_check_wait_timeout(tp_task, dcacUPDATE_F7_WAIT_MS, us_cycle_time) == true)
                 b_dcac_send_f6(false);
         }
@@ -358,7 +352,7 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
         /*---------------- 步骤6：发送F2设置波特率 ----------------*/
         case DPS_SEND_F2:
         {
-            if(b_dcac_check_retry_limit(tp_task, UEF_D_SEND_F2_FAIL))
+            if(b_dcac_check_retry_limit(tp_task, UEF_DQ_F2_RETRY_OVER))
                 return -6;
 
             /* 波特率已是目标值 */
@@ -382,6 +376,7 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
         /*---------------- 步骤7：等待F3回复 ------------------------*/
         case DPS_WAIT_F3:
         {
+            
             //等待超时
             if(b_dcac_check_wait_timeout(tp_task, dcacUPDATE_HS_TIMEOUT_MS, us_cycle_time))
                 b_dcac_send_f2(tUpdate.ulBaud, false);
@@ -415,7 +410,7 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
             if(b_dcac_check_wait_timeout(tp_task, 1000, us_cycle_time) == true)
             {
                 tp_task->usStepWaitCnt = 0;
-                if(b_dcac_check_retry_limit(tp_task, UEF_P_C4_TIMEOUT))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_C4_RETRY_OVER))
                     return -13;
 
                 //等待超时,重新发送C4请求
@@ -430,7 +425,7 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
             if(b_dcac_check_wait_timeout(tp_task, 1000, us_cycle_time) == true)
             {
                 tp_task->usStepWaitCnt = 0;
-                if(b_dcac_check_retry_limit(tp_task, UEF_D_A2_TIMEOUT))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_A2_RETRY_OVER))
                 {
                     lwrb_reset(&tp_task->tReplyBuff);
                     return -14;
@@ -441,14 +436,14 @@ static s8 c_dcac_prepare_update(Task_T *tp_task, u16 us_reply_len, u16 us_cycle_
                 u8 uca_buff[MEGMEET_FILE_HEAD_SIZE] = {0};
                 if(us_reply_len != MEGMEET_FILE_HEAD_SIZE)
                 {
-                    bUpdate_SetErrCode(UEF_D_HEAD_LEN_ERR);
+                    bUpdate_SetErrCode(UEF_DQ_A2_RESEND_LEN_ERR);
                     break;
                 }
 
                 //发送文件头
                 if(b_dcac_update_buf_peek(tp_task, uca_buff, us_reply_len) == false)
                 {
-                    bUpdate_SetErrCode(UEF_D_HEAD_LEN_ERR);
+                    bUpdate_SetErrCode(UEF_DQ_A2_RESEND_PEEK_FAIL);
                     break;
                 }
                 if(b_dcac_cs_send_fw_data(MEGMEET_CMD_FILE_HEAD, uca_buff, us_reply_len, false) == false)
@@ -491,13 +486,11 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
         {
             bDcac_SetFwTransStage(tp_task, DFTS_SLAVE_READY_OK);
         }
-        break;
 
         case DFTS_SLAVE_READY_OK: /* 进入请求数据阶段，通知Print准备数据 */
         {
             bDcac_SetFwTransStage(tp_task, DFTS_HOST_REQ_DATA);
         }
-        break;
 
         case DFTS_HOST_REQ_DATA: /* C6主机请求数据 */
         {
@@ -515,7 +508,7 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
             if(b_dcac_check_wait_timeout(tp_task, 1000, us_cycle_time) == true)
             {
                 tp_task->usStepWaitCnt = 0;
-                if(b_dcac_check_retry_limit(tp_task, UEF_D_C5_TIMEOUT))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_C5_RETRY_OVER))
                     return -9;
 
                 //没有回复,重复请求
@@ -530,7 +523,7 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
             u8 uca_buff[MEGMEET_FRM_PKG_SIZE + 2] = {0};
             if(us_reply_len == 0 || us_reply_len > (MEGMEET_FRM_PKG_SIZE + 2))
             {
-                if(b_dcac_check_retry_limit(tp_task, UEF_D_DATA_LEN_ERR))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_A3_LEN_RETRY_OVER))
                     return -11;
                 bDcac_SetFwTransStage(tp_task, DFTS_HOST_REQ_DATA); /* 数据长度异常，返回上一步重新请求 */
                 b_dcac_update_buf_reset(tp_task); /* 清空异常数据 */
@@ -545,7 +538,7 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
             }
 
             //重复发送计数
-            if(b_dcac_check_retry_limit(tp_task, UEF_D_SEND_A3_FAIL))
+            if(b_dcac_check_retry_limit(tp_task, UEF_DQ_A3_RETRY_OVER))
                 return -1;
 
             //发送失败
@@ -564,7 +557,7 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
             if(b_dcac_check_wait_timeout(tp_task, dcacUPDATE_HS_TIMEOUT_MS, us_cycle_time) == true)
             {
                 tp_task->usStepWaitCnt = 0;
-                if(b_dcac_check_retry_limit(tp_task, UEF_D_RESEND_FAIL))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_A4_RESEND_OVER))
                     return -2;
 
                 bDcac_SetFwTransStage(tp_task, DFTS_SEND_FW_DATA); //返回上一步继续
@@ -578,7 +571,7 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
             vTaskDelay(dcacUPDATE_RESEND_DELAY_MS);
             if(b_dcac_send_megmeet_frame(0, ucDcac_GetUpdateIcType(tUpdate.eObj), MEGMEET_CMD_QUERY_RESULT, NULL, 0) == false)
             {
-                if(b_dcac_check_retry_limit(tp_task, UEF_D_SEND_A5_FAIL))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_A5_RETRY_OVER))
                     return -6;
 
                 vTaskDelay(dcacUPDATE_RESEND_DELAY_MS);
@@ -593,7 +586,7 @@ static s8 c_dcac_update_firmware_transfer(Task_T *tp_task, u16 us_reply_len, u16
         {
             if(b_dcac_check_wait_timeout(tp_task, dcacUPDATE_HS_TIMEOUT_MS, us_cycle_time) == true)
             {
-                if(b_dcac_check_retry_limit(tp_task, UEF_D_A6_REPLY_ERR))
+                if(b_dcac_check_retry_limit(tp_task, UEF_DQ_A6_WAIT_RETRY_OVER))
                     return -7;
 
                 bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT); //返回上一步继续

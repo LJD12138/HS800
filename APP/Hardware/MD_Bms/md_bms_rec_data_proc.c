@@ -3,6 +3,7 @@
 #if(boardBMS_EN)
 #include "MD_Bms/md_bms_rec_task.h"
 #include "MD_Bms/md_bms_task.h"
+#include "MD_Bms/md_bms_prot_frame.h"
 #include "Print/print_task.h"
 #include "Baiku/baiku_proto.h"
 
@@ -113,22 +114,22 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
         {
 			if(tBms.eDevState == DS_UPDATE_MODE
 				&& tSysInfo.eDevState == DS_UPDATE_MODE 
-				&& tUpdate.eObj == UO_BMS
+				&& tUpdate.eObj == MO_BMS
 				&& tUpdate.eChType == CT_PRINT
 				&& tUpdate.eProtoType == PT_BAIKU)
 				return 1;
 			
 			if(tSysInfo.eDevState != DS_UPDATE_MODE)
 			{
-				cUpdate_ChSelect(UO_BMS, CT_PRINT);
+				cUpdate_ChSelect(MO_BMS, CT_PRINT);
 			}
 			
 			if(tUpdate.eChType != CT_PRINT)
-				if(cUpdate_ChSelect(UO_BMS, CT_PRINT) <= 0)
+				if(cUpdate_ChSelect(MO_BMS, CT_PRINT) <= 0)
 					return -71;
 
 			if(tUpdate.eProtoType != PT_BAIKU)
-				if(cUpdate_ProtoSelect(UO_BMS, PT_BAIKU) <= 0)
+				if(cUpdate_ProtoSelect(MO_BMS, PT_BAIKU) <= 0)
 					return -72;
 
 			if(tBms.eDevState != DS_UPDATE_MODE)
@@ -195,17 +196,17 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 
 			if(tBms.eDevState == DS_UPDATE_MODE
 				&& tSysInfo.eDevState == DS_UPDATE_MODE 
-				&& tUpdate.eObj == UO_BMS
+				&& tUpdate.eObj == MO_BMS
 				&& tUpdate.eChType == CT_PRINT
 				&& tUpdate.eProtoType == PT_BAIKU)
 				return 1;
 			
 			if(tUpdate.eChType != CT_PRINT)
-				if(cUpdate_ChSelect(UO_BMS, CT_PRINT) <= 0)
+				if(cUpdate_ChSelect(MO_BMS, CT_PRINT) <= 0)
 					return -71;
 
 			if(tUpdate.eProtoType != PT_BAIKU)
-				if(cUpdate_ProtoSelect(UO_BMS, PT_BAIKU) <= 0)
+				if(cUpdate_ProtoSelect(MO_BMS, PT_BAIKU) <= 0)
 					return -72;
 
 			if(tBms.eDevState != DS_UPDATE_MODE)
@@ -275,7 +276,7 @@ static s8 c_bms_relay08_param(BaikuProtoRx_t* proto)
 		return -1;
 
 	u8 cmd = proto->ucpValidData[0];
-	if(cmd != 0x10)
+	if(cmd != bmsGET_PARAM_OBJ)
 		return -2;
 	
 	memcpy((u8*)&tBmsRx,&proto->ucpValidData[1],len);

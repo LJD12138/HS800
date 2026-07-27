@@ -5,10 +5,11 @@
 *                       时钟源来自于内部低速时钟IRC40K,待机和深度睡眠模式也可工作                                  *
 ******************************************************************************************************************/
 
+#include "board_config.h"
 #include "fwdgt.h"
 
 #if(boardWDGT_EN)
-#include "gd32f30x_rcu.h"
+#include "gd32f50x_rcu.h"
 #include "Print/print_api.h"
 
 

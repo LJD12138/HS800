@@ -103,7 +103,7 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			else
 				tDcacRx.usOutCurr = LIMIT_MIN(tParam1.sOutCurr / 10, 0);
 			
-			if(tParam1.usOutPwr > 2)
+			if(tParam1.usOutPwr > 5)
 				tDcacRx.usOutPwr = tParam1.usOutPwr;
 			else
 				tDcacRx.usOutPwr = 0;
@@ -233,7 +233,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 
 			if(u_reply_param != 0x01)
 			{
-				bUpdate_SetErrCode(UEF_D_F1_CHECK_FAIL);
+				bUpdate_SetErrCode(UEF_DR_F1_CHECK_FAIL);
 				return -3;
 			}
 			
@@ -257,20 +257,20 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			/* 0xFF表示无对应波特率 */
 			if(u_reply_param == MEGMEET_BAUD_INVALID)
 			{
-				bUpdate_SetErrCode(UEF_D_F3_BAUD_REPLY);
+				bUpdate_SetErrCode(UEF_DR_F3_BAUD_INVALID);
 				return -8;
 			}
 
 			/* 0x00表示成功切换 */
 			if(u_reply_param != MEGMEET_BAUD_OK)
 			{
-				bUpdate_SetErrCode(UEF_D_F3_CHECK_FAIL);
+				bUpdate_SetErrCode(UEF_DR_F3_CHECK_FAIL);
 				return -9;
 			}
 
 			if(bDcac_IfaceSetBaud(tUpdate.ulBaud) == false)
 			{
-				bUpdate_SetErrCode(UEF_D_F3_SET_BAUD);
+				bUpdate_SetErrCode(UEF_DR_F3_SET_BAUD_FAIL);
 				return -10;
 			}
 
@@ -289,7 +289,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 
 			if(tp_frame->usPayloadLen != 0)
 			{
-				bUpdate_SetErrCode(UEF_D_F7_CHECK_FAIL);
+				bUpdate_SetErrCode(UEF_DR_F7_CHECK_FAIL);
 				return -60;
 			}
 			vUpdate_ResetRecTimeout(true);
@@ -314,7 +314,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			if(u_reply_param != MEGMEET_A2_OK &&
 				u_reply_param != MEGMEET_A2_VER_LATEST)
 			{
-				bUpdate_SetErrCode(UEF_D_A2_REPLY_ERR);
+				bUpdate_SetErrCode(UEF_DR_A2_REPLY_ERR);
 				break;
 			}
 
@@ -352,14 +352,14 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			/* 校验包序号是否匹配 */
 			if(u_reply_param.usSeqNum != tUpdate.usRecFrameCnt)
 			{
-				bUpdate_SetErrCode(UEF_D_A4_SEQ_MISMATCH);
+				bUpdate_SetErrCode(UEF_DR_A4_SEQ_MISMATCH);
 				return -41;
 			}
 
 			if(u_reply_param.ucStatus != MEGMEET_A4_OK &&
 			   u_reply_param.ucStatus != MEGMEET_A4_ALL_OK)
 			{
-				bUpdate_SetErrCode(UEF_D_A4_REPLY_ERR);
+				bUpdate_SetErrCode(UEF_DR_A4_REPLY_ERR);
 				return -42;
 			}
 
@@ -428,7 +428,7 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			if(u_reply_param.ucSlaveAddr != ucDcac_GetUpdateSlaveAddr(tUpdate.eObj) || 
 			u_reply_param.ucChipId != ucDcac_GetUpdateIcType(tUpdate.eObj))
 			{
-				bUpdate_SetErrCode(UEF_D_A6_CHECK_FAIL);
+				bUpdate_SetErrCode(UEF_DR_A6_CHECK_FAIL);
 				return -51;
 			}
 
@@ -436,14 +436,14 @@ s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx)
 			if(u_reply_param.ucStatus > 100 &&
 			   u_reply_param.ucStatus != MEGMEET_A6_VER_LATEST)
 			{
-				bUpdate_SetErrCode(UEF_D_A6_REPLY_ERR);
+				bUpdate_SetErrCode(UEF_DR_A6_REPLY_ERR);
 				return -52;
 			}
 
 			//回复未升级完成,报错
 			if(u_reply_param.ucStatus < 100)
 			{
-				bUpdate_SetErrCode(UEF_D_A6_NOT_COMPLETE);
+				bUpdate_SetErrCode(UEF_DR_A6_NOT_COMPLETE);
 				return -53;
 			}
 

@@ -112,7 +112,7 @@ void vBms_Task(void *pvParameters)
     {
 		if(tp_task == NULL
 //			#if(boardUPDATE)
-//			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != UO_BMS)
+//			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != MO_BMS)
 //			#endif  //boardUPDATE
 		)
 		{
@@ -400,6 +400,18 @@ u8 ucBms_GetSoc(void)
 	return (u8)tBmsRx.usSOC;	
 }
 
+/***********************************************************************************************************************
+-----函数功能    获取BMS许可的最大充电功率
+-----说明(备注)  BMS上报的许可功率已包含SOC和温度限制
+-----传入参数    none
+-----输出参数    none
+-----返回值      许可的最大充电功率(W), 0表示不允许充电
+************************************************************************************************************************/
+u16 usBms_GetPermMaxChgPwr(void)
+{
+	return tBmsRx.usPermMaxChgPwr;
+}
+
 
 /*****************************************************************************************************************
 -----函数功能    初始化参数
@@ -623,7 +635,7 @@ s8 cBms_CheckPerm(void)
 s8 cBms_GetUpdateStage(void)
 {
 	if(tSysInfo.eDevState != DS_UPDATE_MODE ||
-	   tUpdate.eObj != UO_BMS ||
+	   tUpdate.eObj != MO_BMS ||
 	   tBms.eDevState != DS_UPDATE_MODE)
 		return -1;
 

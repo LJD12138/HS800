@@ -70,11 +70,11 @@ s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 		return -2;
 
     u8 uca_buff[UPDATE_BUFF_SIZE];
-	lwrb_read(proto_buff, uca_buff, us_char_len);
 
     //Xmodem
 	if(us_char_len == 1)
 	{
+		lwrb_read(proto_buff, uca_buff, us_char_len);
 		u8 index = uca_buff[0];
 		switch(index)
 		{
@@ -109,6 +109,7 @@ s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 		if(tpBmsProtoRx == NULL || (us_char_len > tpBmsProtoRx->tRxBuff.size))
 			return -3;
 
+		lwrb_read(proto_buff, uca_buff, us_char_len);
 		c_ret = cBaiku_UpdateCheck(tpBmsProtoRx, uca_buff, us_char_len);
 		
 		if(c_ret > 0)
@@ -120,6 +121,10 @@ s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 		if(tpDcacMegmeetProtoRx == NULL || (us_char_len > tpDcacMegmeetProtoRx->usBuffSize))
 			return -4;
 
+		/* 使用peek预读数据,解析成功才消费,避免帧不完整或混合数据时丢失有效帧 */
+		if(lwrb_peek(proto_buff, 0, uca_buff, us_char_len) != us_char_len)
+			return 0;
+
 		tpDcacMegmeetProtoRx->usFrameLen = us_char_len;
 		memcpy(tpDcacMegmeetProtoRx->ucaFrameData, uca_buff, us_char_len);
 
@@ -127,7 +132,22 @@ s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 								tpDcacMegmeetProtoRx->ucaFrameData,
 								tpDcacMegmeetProtoRx->usFrameLen);
 		if(c_ret > 0)
+		{
+			/* 解析成功,只消费一帧的数据,剩余数据留给下次处理 */
+			lwrb_skip(proto_buff, tpDcacMegmeetProtoRx->tFrame.usFrameLen);
 			return PT_MEGMEET;
+		}
+		else if(c_ret == -2 || c_ret == -4)
+		{
+			/* 帧数据不完整,等待更多数据,不消费 */
+			return 0;
+		}
+		else
+		{
+			/* 解析错误(CRC/格式等),跳过1字节尝试重新同步 */
+			lwrb_skip(proto_buff, 1);
+			return 0;
+		}
 	}
 
     return PT_NULL;

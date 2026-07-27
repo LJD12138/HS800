@@ -1,6 +1,6 @@
 /*!
     \file    main.c
-    \brief   GPIO running led demo
+    \brief   
 
     \version 2020-09-04, V2.0.0, demo for GD32F4xx
 */
@@ -110,8 +110,6 @@ static void nvic_init(void)
 ******************************************************************************************************************/
 int main(void)
 {
-	/* 必须先执行SystemInit()再设置VTOR，否则SystemInit()内部的
-	   nvic_vector_table_set会把VTOR覆盖回BOOT区，导致中断死循环 */
 	SystemInit();
 
 	#if(USER_BOOT_EXIST == 1)

@@ -73,7 +73,7 @@ static uint16_t         S_usLastDispFrmCnt   = 0xFFFFU;
 static uint16_t         S_usLastDispTotalFrm = 0xFFFFU;
 static uint16_t         S_usLastDispPercent  = 0xFFFFU;
 static uint16_t         S_usLastDispTimeout  = 0xFFFFU;
-static UpdateObj_E      S_eLastDispObj       = UO_INVAILD;
+static ModuleObject_E      S_eLastDispObj       = MO_INVAILD;   
 static ChannelType_E    S_eLastDispCh        = CT_INVAILD;
 static ProtoType_E      S_eLastDispProto     = PT_INVAILD;
 static UpdateErrCode_E  S_eLastDispErrCode   = (UpdateErrCode_E)0xFFU;
@@ -82,7 +82,7 @@ static uint8_t          S_ucLastAnimStep     = 0xFFU;
 
 //****************************************************Function Declaration************************************************//
 static const char *pc_update_err_code_str(UpdateErrCode_E e_code);
-static const char *pc_update_obj_str(UpdateObj_E e_obj);
+static const char *pc_update_obj_str(ModuleObject_E e_obj);
 static const char *pc_update_ch_str(ChannelType_E e_ch);
 static const char *pc_update_proto_str(ProtoType_E e_proto);
 
@@ -382,7 +382,7 @@ static void v_update_ui_reset(uint32_t t_now_tick)
     S_usLastDispTotalFrm    = 0xFFFFU;
     S_usLastDispPercent     = 0xFFFFU;
     S_usLastDispTimeout     = 0xFFFFU;
-    S_eLastDispObj          = UO_INVAILD;
+    S_eLastDispObj          = MO_INVAILD;   
     S_eLastDispCh           = CT_INVAILD;
     S_eLastDispProto        = PT_INVAILD;
     S_eLastDispErrCode      = (UpdateErrCode_E)0xFFU;
@@ -592,53 +592,78 @@ static const char *pc_update_err_code_str(UpdateErrCode_E e_code)
 {
     switch(e_code)
     {
-        case UEF_NONE:                return "";
-        case UEF_DR_BAUD_REPLY:       return "0x01 F3 baud reply fail";
-        case UEF_DR_ERR_FRAME:        return "0x02 err reply frame";
-        case UEF_D_RESEND_FAIL:       return "0x10 resend fail";
-        case UEF_D_BUFF_NULL:         return "0x12 reply buff null";
-        case UEF_D_INVALID_OBJ:       return "0x22 invalid obj";
-        case UEF_D_SET_INVALID_BAUD:  return "0x23 invalid baud";
-        case UEF_D_CANCEL_REQ:        return "0x2C DCAC cancel";
-        case UEF_D_SEND_F0_FAIL:      return "0x13 send F0 fail";
-        case UEF_D_F1_CHECK_FAIL:     return "0x14 F1 check fail";
-        case UEF_D_SEND_F6_FAIL:      return "0x15 send F6 fail";
-        case UEF_D_F7_CHECK_FAIL:     return "0x29 F7 check fail";
-        case UEF_D_SEND_F2_FAIL:      return "0x17 send F2 fail";
-        case UEF_D_F3_CHECK_FAIL:     return "0x18 F3 check fail";
-        case UEF_D_F3_BAUD_REPLY:     return "0x19 F3 baud reply fail";
-        case UEF_D_F3_SET_BAUD:       return "0x1A set baud fail";
-        case UEF_D_HEAD_LEN_ERR:      return "0x1B head len err";
-        case UEF_D_A2_REPLY_ERR:      return "0x26 A2 reply err";
-        case UEF_D_A2_TIMEOUT:        return "0x28 A2 timeout";
-        case UEF_D_C5_TIMEOUT:        return "0x1E C5 timeout";
-        case UEF_D_DATA_LEN_ERR:      return "0x1D data len err";
-        case UEF_D_SEND_A3_FAIL:      return "0x2A send A3 fail";
-        case UEF_D_A4_CHECK_FAIL:     return "0x20 A4 check fail";
-        case UEF_D_A4_REPLY_ERR:      return "0x27 A4 reply err";
-        case UEF_D_A4_SEQ_MISMATCH:   return "0x24 A4 seq mismatch";
-        case UEF_D_SEND_A5_FAIL:      return "0x1F send A5 fail";
-        case UEF_D_A6_REPLY_ERR:      return "0x21 A6 reply err";
-        case UEF_D_A6_CHECK_FAIL:     return "0x25 A6 check fail";
-        case UEF_D_A6_NOT_COMPLETE:   return "0x2B A6 incomplete";
-        case UEF_P_TASK_NULL:         return "0x30 task null";
-        case UEF_P_BUFF_NULL:         return "0x35 buff null";
-        case UEF_P_INVALID_OBJ:       return "0x33 invalid obj";
-        case UEF_P_PENDING_FAIL:      return "0x31 pending fail";
-        case UEF_P_SLAVE_RESULT_ERR:  return "0x3C slave result err";
-        case UEF_P_C2_DATA_ERR:       return "0x36 C2 data err";
-        case UEF_P_C2_REPLY_FAIL:     return "0x37 C2 reply fail";
-        case UEF_P_C4_TIMEOUT:        return "0x3B C4/C2/C5 timeout";
-        case UEF_P_C5_DATA_ERR:       return "0x38 C5 data err";
-        case UEF_P_HEAD_PARSE_FAIL:   return "0x39 head parse fail";
-        case UEF_P_FWD_DCAC_FAIL:     return "0x3A fwd DCAC fail";
-        case UEF_P_FWD_BMS_FAIL:      return "0x3D fwd BMS fail";
-        case UEF_P_FINISH_MISMATCH:   return "0x3E finish mismatch";
-        case UEF_P_CANCEL_REQ:        return "0x34 cancel req";
-        case UEF_S_TASK_OVER_TIME:    return "0x40 task overtime";
-        case UEF_S_LOST_OVERTIME:     return "0x41 lost overtime";
-        case UEF_S_REC_OVERTIME:      return "0x42 rec overtime";
-        default:                      return "unknown err";
+        case UEF_NONE:                    return "";
+        /* md_dcac_rec_data_proc.c (01~12) */
+        case UEF_DR_F1_CHECK_FAIL:        return "01 F1 check fail";
+        case UEF_DR_F3_BAUD_INVALID:      return "02 F3 baud invalid";
+        case UEF_DR_F3_CHECK_FAIL:        return "03 F3 check fail";
+        case UEF_DR_F3_SET_BAUD_FAIL:     return "04 F3 set baud fail";
+        case UEF_DR_F7_CHECK_FAIL:        return "05 F7 check fail";
+        case UEF_DR_A2_REPLY_ERR:         return "06 A2 reply err";
+        case UEF_DR_A4_SEQ_MISMATCH:      return "07 A4 seq mismatch";
+        case UEF_DR_A4_REPLY_ERR:         return "08 A4 reply err";
+        case UEF_DR_A6_CHECK_FAIL:        return "09 A6 check fail";
+        case UEF_DR_A6_REPLY_ERR:         return "10 A6 reply err";
+        case UEF_DR_A6_NOT_COMPLETE:      return "11 A6 incomplete";
+        case UEF_DR_ERR_FRAME:            return "12 err frame";
+        /* md_dcac_prot_frame.c (13) */
+        case UEF_DP_F2_INVALID_BAUD:      return "13 F2 invalid baud";
+        /* md_dcac_queue_task_update.c (14~30) */
+        case UEF_DQ_PROTO_INIT_FAIL:      return "14 proto init fail";
+        case UEF_DQ_INVALID_OBJ:          return "15 invalid obj";
+        case UEF_DQ_BUFF_NULL:            return "16 buff null";
+        case UEF_DQ_CANCEL_REQ:           return "17 DCAC cancel";
+        case UEF_DQ_F0_RETRY_OVER:        return "18 F0 retry over";
+        case UEF_DQ_F6_RETRY_OVER:        return "19 F6 retry over";
+        case UEF_DQ_F2_RETRY_OVER:        return "20 F2 retry over";
+        case UEF_DQ_C4_RETRY_OVER:        return "21 C4 retry over";
+        case UEF_DQ_A2_RETRY_OVER:        return "22 A2 retry over";
+        case UEF_DQ_A2_RESEND_LEN_ERR:    return "23 A2 resend len err";
+        case UEF_DQ_A2_RESEND_PEEK_FAIL:  return "24 A2 resend peek fail";
+        case UEF_DQ_C5_RETRY_OVER:        return "25 C5 retry over";
+        case UEF_DQ_A3_LEN_RETRY_OVER:    return "26 A3 len retry over";
+        case UEF_DQ_A3_RETRY_OVER:        return "27 A3 retry over";
+        case UEF_DQ_A4_RESEND_OVER:       return "28 A4 resend over";
+        case UEF_DQ_A5_RETRY_OVER:        return "29 A5 retry over";
+        case UEF_DQ_A6_WAIT_RETRY_OVER:   return "30 A6 wait retry over";
+        /* md_bms_queue_task_update.c (31~34) */
+        case UEF_BQ_INIT_BUFF_NULL:       return "31 BMS init buff null";
+        case UEF_BQ_PENDING_FAIL:         return "32 BMS pending fail";
+        case UEF_BQ_INVALID_OBJ:          return "33 BMS invalid obj";
+        case UEF_BQ_BUFF_NULL:            return "34 BMS buff null";
+        /* print_queue_task_update.c (35~36) */
+        case UEF_PQ_INVALID_OBJ:          return "35 Print invalid obj";
+        case UEF_PQ_BUFF_NULL:            return "36 Print buff null";
+        /* print_update_dcac.c (37~50) */
+        case UEF_PD_PREP_TASK_NULL:       return "37 prep task null";
+        case UEF_PD_TRANS_TASK_NULL:      return "38 trans task null";
+        case UEF_PD_TRANS_BUFF_NULL:      return "39 trans buff null";
+        case UEF_PD_SLAVE_RESULT_ERR:     return "40 slave result err";
+        case UEF_PD_C2_LEN_ERR:           return "41 C2 len err";
+        case UEF_PD_C2_PROTO_ERR:         return "42 C2 proto err";
+        case UEF_PD_C2_REPLY_FAIL:        return "43 C2 reply fail";
+        case UEF_PD_C5_HEAD_LEN_ERR:      return "44 C5 head len err";
+        case UEF_PD_HEAD_PARSE_FAIL:      return "45 head parse fail";
+        case UEF_PD_CACHE_FULL:           return "46 cache full";
+        case UEF_PD_CACHE_WRITE_FAIL:     return "47 cache write fail";
+        case UEF_PD_HEAD_SEND_FAIL:       return "48 head send fail";
+        case UEF_PD_FW_SEND_FAIL:         return "49 fw send fail";
+        case UEF_PD_FW_CACHE_FAIL:        return "50 fw cache fail";
+        /* Print_update_bms.c (51~61) */
+        case UEF_PB_PREP_TASK_NULL:       return "51 prep task null";
+        case UEF_PB_C2_LEN_ERR:           return "52 C2 len err";
+        case UEF_PB_C2_PROTO_ERR:         return "53 C2 proto err";
+        case UEF_PB_C2_PROTO_SELECT_FAIL: return "54 C2 proto select fail";
+        case UEF_PB_C2_FWD_FAIL:          return "55 C2 fwd fail";
+        case UEF_PB_TRANS_TASK_NULL:      return "56 trans task null";
+        case UEF_PB_TRANS_BUFF_NULL:      return "57 trans buff null";
+        case UEF_PB_SLAVE_RESULT_ERR:     return "58 slave result err";
+        case UEF_PB_FINISH_MISMATCH:      return "59 finish mismatch";
+        case UEF_PB_C5_DATA_ERR:          return "60 C5 data err";
+        case UEF_PB_C5_FWD_FAIL:          return "61 C5 fwd fail";
+        /* sys_queue_task_update.c (62) */
+        case UEF_S_REC_OVERTIME:          return "62 rec overtime";
+        default:                          return "unknown err";
     }
 }
 
@@ -649,17 +674,17 @@ static const char *pc_update_err_code_str(UpdateErrCode_E e_code)
 -----作者       LJD
 -----日期       2026-07-01
 ************************************************************************************************************************/
-static const char *pc_update_obj_str(UpdateObj_E e_obj)
+static const char *pc_update_obj_str(ModuleObject_E e_obj)
 {
     switch(e_obj)
     {
-        case UO_DEFAULT: return "Host";
-        case UO_CONSOLE: return "Console";
-        case UO_BMS:     return "BMS";
-        case UO_MPPT:    return "MPPT";
-        case UO_DCAC:    return "DCAC";
-        case UO_MGMT_AC: return "MGMT_AC";
-        case UO_MGMT_DC: return "MGMT_DC";
+        case MO_DEFAULT: return "Host";
+        case MO_CONSOLE: return "Console";
+        case MO_BMS:     return "BMS";
+        case MO_MPPT:    return "MPPT";
+        case MO_DCAC:    return "DCAC";
+        case MO_MGMT_AC: return "MGMT_AC";
+        case MO_MGMT_DC: return "MGMT_DC";
         default:         return "Invalid";
     }
 }

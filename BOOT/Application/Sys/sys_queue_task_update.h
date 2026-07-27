@@ -48,17 +48,6 @@ typedef enum
 	PT_INVAILD,			//超范围
 }ProtoType_E;
 
-//升级对象
-typedef enum
-{
-    UO_DEFAULT = 0,		//当前连接设备
-    UO_CONSOLE,			//主控
-	UO_BMS,				//电池
-	UO_MPPT,			//光伏
-	UO_DCAC,			//逆变
-	UO_INVAILD,			//超范围
-}UpdateObj_E;
-
 /* ==========================================globals=====================================*/
 typedef struct
 {
@@ -78,8 +67,7 @@ bool bUpdate_Init(void);
 s8 cUpdate_ChSelect(ChannelType_E ch_type, ProtoType_E proto_type);
 s8 cUpdate_ProtoSelect(ProtoType_E proto_type);
 void vUpdate_TickTimer(void);
-
-#endif /* boardUPDATE */
+#endif  //boardUPDATE
 
 #ifdef __cplusplus
 }

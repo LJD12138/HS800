@@ -15,23 +15,17 @@
 
 //****************************************************Includes******************************************************************//
 #include "Print/print_queue_task_update.h"
+#include "main.h"
 #include <stdbool.h>
 
 #if(boardUPDATE)
 #include "Print/print_queue_task.h"
-#include "Print/print_task.h"
-#include "Print/print_iface.h"
 #include "Print/print_prot_frame.h"
 #include "Sys/sys_queue_task_update.h"
-#include "Sys/sys_task.h"
 #include "Baiku/baiku_proto.h"
-#include "check.h"
-#include "function.h"
 
 #if(boardBMS_EN)
-#include "MD_Bms/md_bms_rec_task.h"
 #include "MD_Bms/md_bms_task.h"
-#include "MD_Bms/md_bms_iface.h"
 #include "MD_Bms/md_bms_prot_frame.h"
 
 
@@ -59,7 +53,7 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
 
     if(tp_task == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_TASK_NULL);
+        bUpdate_SetErrCode(UEF_PB_PREP_TASK_NULL);
         return -1;
     }
 
@@ -74,30 +68,30 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
                 {
                     if(tpPrintProtoRx->ucValidLen != 3 || tpPrintProtoRx->ucpValidData == NULL)
                     {
-                        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+                        bUpdate_SetErrCode(UEF_PB_C2_LEN_ERR);
                         return -4;
                     }
 
                     /* 校验主机请求的协议类型，当前Print通道仅支持Baiku协议 */
                     if((ProtoType_E)tpPrintProtoRx->ucpValidData[0] != PT_BAIKU)
                     {
-                        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+                        bUpdate_SetErrCode(UEF_PB_C2_PROTO_ERR);
                         return -4;
                     }
 
                     memcpy((u8*)&tUpdate.usTotalFrmValue, &tpPrintProtoRx->ucpValidData[1], 2);
 
                     /* 选择Baiku协议 */
-                    if(cUpdate_ProtoSelect(UO_BMS, PT_BAIKU) < 0)
+                    if(cUpdate_ProtoSelect(MO_BMS, PT_BAIKU) < 0)
                     {
-                        bUpdate_SetErrCode(UEF_P_C2_DATA_ERR);
+                        bUpdate_SetErrCode(UEF_PB_C2_PROTO_SELECT_FAIL);
                         return -4;
                     }
 
                     /* 转发C2到BMS模块 */
                     if(c_bms_cs_C2_set_update_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
                     {
-                        bUpdate_SetErrCode(UEF_P_FWD_BMS_FAIL);
+                        bUpdate_SetErrCode(UEF_PB_C2_FWD_FAIL);
                         return -5;
                     }
 
@@ -147,13 +141,13 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
     /* BMS任务未初始化或缓存未分配 */
     if(tpBmsTask == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_TASK_NULL);
+        bUpdate_SetErrCode(UEF_PB_TRANS_TASK_NULL);
         return -1;
     }
 
     if(tpBmsTask->tReplyBuff.buff == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_BUFF_NULL);
+        bUpdate_SetErrCode(UEF_PB_TRANS_BUFF_NULL);
         return -2;
     }
 
@@ -161,7 +155,7 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
         && tUpdate.eSlaveResult != UTR_LATEST
         && tUpdate.eSlaveResult != UTR_RUNNING)
     {
-        bUpdate_SetErrCode(UEF_P_SLAVE_RESULT_ERR);
+        bUpdate_SetErrCode(UEF_PB_SLAVE_RESULT_ERR);
         return -3;
     }
 
@@ -188,7 +182,7 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
                     if(tUpdate.usTotalFrmValue == 0 ||
                        tUpdate.usRecFrameCnt != tUpdate.usTotalFrmValue)
                     {
-                        bUpdate_SetErrCode(UEF_P_FINISH_MISMATCH);
+                        bUpdate_SetErrCode(UEF_PB_FINISH_MISMATCH);
                         return -1;
                     }
 
@@ -220,20 +214,30 @@ s8 c_print_bms_update_firmware_transfer(Task_T *tp_task)
 ************************************************************************************************************************/
 static bool b_print_c5_proc_rec_data(u8 ucSN)
 {
+    //上一包序号
+    static u8 uc_last_sn = 0;
+
     /* 数据内容为空或长度不符，请求重发 */
     if(tpPrintProtoRx->ucValidLen == 0 || tpPrintProtoRx->ucpValidData == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_C5_DATA_ERR);
+        bUpdate_SetErrCode(UEF_PB_C5_DATA_ERR);
         return false;
     }
-    tUpdate.usRecFrameCnt = ucSN;
+    /* SN为u8(1,2,...,255,0,1,...循环),usRecFrameCnt为u16可超过255且从1开始计数;(u8)(ucSN-1)已覆盖255->0回绕。
+     * 连续帧递增;非连续(首帧/跳帧/SN回绕后重启)按本帧为第1帧置1,避免uc_last_sn残留导致少计1帧。 */
+    if(uc_last_sn == (u8)(ucSN - 1))
+        tUpdate.usRecFrameCnt ++;
+    else
+        tUpdate.usRecFrameCnt = 1;
+
+    uc_last_sn = ucSN;
 
     /* 转发文件头到BMS任务，携带上位机下发的SN */
     if(c_bms_cs_C5_send_file(tpPrintProtoRx->ucpValidData,
                                     tpPrintProtoRx->ucValidLen,
                                     ucSN) == false)
     {
-        bUpdate_SetErrCode(UEF_P_FWD_BMS_FAIL);
+        bUpdate_SetErrCode(UEF_PB_C5_FWD_FAIL);
         return false;
     }
     vUpdate_ResetRecTimeout(true);

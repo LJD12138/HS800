@@ -6,12 +6,12 @@
  * Author  : LJD(291483914@qq.com)
  * Desc    : 工程模式按键处理 - TFT+LVGL版本
  *           按键映射:
- *             AC_SHORT    -> KeyUp    (上移/增值)
- *             DC_SHORT    -> KeyDown  (下移/减值)
+ *             LIGHT_SHORT -> KeyUp    (上移/增值)
+ *             USB_SHORT   -> KeyDown  (下移/减值)
  *             POWER_SHORT -> KeyEnter (确认/选择)
- *             LIGHT_SHORT -> KeyRight (右切Tab)
- *             LIGHT_LONG  -> KeyLeft  (左切Tab)
- *             POWER_LONG  -> KeyBack  (返回/退出)
+ *             DC_SHORT    -> KeyRight (右切Tab)
+ *             AC_SHORT    -> KeyLeft  (左切Tab)
+ *             DC_LONG     -> KeyBack  (返回/退出)
  * -------------------------------------------------------
  * Copyright (c) 2026 -inc
 *******************************************************************************************************************************/
@@ -43,17 +43,13 @@
 
 
 //****************************************************Parameter Initialization************************************************//
-//进入工程模式按键组合
-u8 const KeyTriType_SetBuff[ 3 ]    = { KTE_AC_LONG, KTE_POWER_LONG, KTE_FUN_NULL};
-u8 const KeyTriType_Set1Buff[ 3 ]   = { KTE_POWER_LONG, KTE_AC_LONG, KTE_FUN_NULL};
-
 /* TFT+LVGL 按键映射 */
-u8 const KeyTriType_UpBuff[ 2 ]     = { KTE_AC_SHORT, KTE_FUN_NULL};          //上/增
-u8 const KeyTriType_DownBuff[ 2 ]   = { KTE_DC_SHORT, KTE_FUN_NULL};          //下/减
-u8 const KeyTriType_EnterBuff[ 2 ]  = { KTE_POWER_SHORT, KTE_FUN_NULL};       //确认
-u8 const KeyTriType_RightBuff[ 2 ]  = { KTE_LIGHT_SHORT, KTE_FUN_NULL};       //右切Tab
-u8 const KeyTriType_LeftBuff[ 2 ]   = { KTE_LIGHT_LONG, KTE_FUN_NULL};        //左切Tab
-u8 const KeyTriType_BackBuff[ 2 ]   = { KTE_POWER_LONG, KTE_FUN_NULL};        //返回
+u8 const KeyTriType_UpBuff[ 2 ]     = { KTE_LIGHT_SHORT, KTE_FUN_NULL};         //上/增
+u8 const KeyTriType_DownBuff[ 2 ]   = { KTE_USB_SHORT, KTE_FUN_NULL};          	//下/减
+u8 const KeyTriType_EnterBuff[ 2 ]  = { KTE_POWER_SHORT, KTE_FUN_NULL};       	//确认
+u8 const KeyTriType_RightBuff[ 2 ]  = { KTE_DC_SHORT, KTE_FUN_NULL};       		//右切Tab
+u8 const KeyTriType_LeftBuff[ 2 ]   = { KTE_AC_SHORT, KTE_FUN_NULL};        	//左切Tab
+u8 const KeyTriType_BackBuff[ 2 ]   = { KTE_DC_LONG, KTE_FUN_NULL};       		//返回
 
 
 //****************************************************Function Declaration****************************************************//

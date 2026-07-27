@@ -190,8 +190,8 @@ s8 c_relay88_sys_set(BaikuProtoRx_t* proto)
 	
 	memcpy(&tparam, proto->ucpValidData, proto->ucValidLen);
 	//BMS
-	if(tparam.obj == UO_DEFAULT ||
-		tparam.obj == UO_BMS)
+	if(tparam.obj == MO_DEFAULT ||
+		tparam.obj == MO_BMS)
 	{
 		if(tparam.cmd == mainUPDATE_FLAG)
 		{

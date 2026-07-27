@@ -51,6 +51,14 @@
 #include "Update/update_main.h"
 #endif  //boardUPDATE
 
+#if(boardBMS_EN)
+#include "MD_Bms/md_bms_task.h"
+#endif  //boardBMS_EN
+
+#if(boardCONSOLE_USARTX)
+#include "Console/console_task.h"
+#endif  //boardCONSOLE_USARTX_EN
+
 //****************************************************参数初始化**************************************************//
 
 
@@ -96,6 +104,23 @@ int main(void)
 			#if(boardLED_EN)
 			vLed_Task(NULL);
 			#endif  //boardLED_EN
+
+			//确保tick稳定
+			if(tpSysTask->ucID == STI_UPDATE)
+			{
+				#if(boardBMS_EN)
+				vBms_Task(NULL);
+				#endif //boardBMS_EN
+			
+				#if(boardCONSOLE_USARTX)
+				vConsole_Task(NULL);
+				vConsole_RecTask(NULL);
+				#endif //boardCONSOLE_EN
+				
+				#if(boardDISPLAY_EN)
+				vDisp_Task(NULL);
+				#endif
+			}
 		}
 
 		if(bSystick_100MsFlag)
@@ -103,6 +128,8 @@ int main(void)
 			bSystick_100MsFlag = false;
 			
 			vTimer_Task();
+			
+		
 		}
 		
 		#if(boardPRINT_IFACE)

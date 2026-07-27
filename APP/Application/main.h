@@ -209,10 +209,14 @@ typedef enum
 //模块对象
 typedef enum
 {
-	MO_CONSOLE=0,
-	MO_BMS,
-	MO_MPPT,
-	MO_DCAC,
+	MO_DEFAULT = 0,		//当前连接设备
+    MO_CONSOLE,			//主控
+	MO_BMS,				//电池
+	MO_MPPT,			//光伏
+	MO_DCAC,			//逆变
+	MO_MGMT_AC,			//MEGMEET_IC_TYPE_AC
+	MO_MGMT_DC,			//MEGMEET_IC_TYPE_DC
+	MO_INVAILD,			//超范围
 }ModuleObject_E;
 
 typedef union

@@ -30,7 +30,7 @@ void			vBms_RecTask(void *pvParameters);
 
 //****************************************************参数初始化**************************************************//
 __ALIGNED(4) BmsRx_T tBmsRx;
-
+vu32 ulBmsRxErrCode = 0;
 
 //****************************************************函数声明****************************************************//
 static u8 c_check_conn_state(void);
@@ -50,8 +50,8 @@ static void v_rec_task_param_init(void)
 	if(tpBmsTask->tReplyBuff.buff != NULL)
 		lwrb_reset(&tpBmsTask->tReplyBuff);
 	
-	tBms.sMaxTemp = tBmsRx.tDevInfo[0].sMaxTemp;
-	tBms.sMinTemp = tBmsRx.tDevInfo[0].sMinTemp;
+	tBms.sMaxTemp = 25;
+	tBms.sMinTemp = 25;
 	
 	cBaiku_ResetRxBuff(tpBmsProtoRx);
 }

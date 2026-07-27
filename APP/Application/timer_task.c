@@ -41,6 +41,10 @@
 #include "MD_Dcac/md_dcac_rec_task.h"
 #endif
 
+#if(boardWDGT_EN)
+#include "fwdgt.h"
+#endif  //boardWDGT_EN
+
 
 //****************************************************任务初始化**************************************************//
 #if(boardBMS_485_IFACE_EN)	
@@ -95,7 +99,7 @@ void vTimer_TaskInit(void)
 							
 	#if(boardDCAC_485_IFACE_EN)
     tDcacRxEnTimer = xTimerCreate("acdc_exit_485_tx_timer", //软件定时器的名字  
-                            4,       	                    //定时器周期(ms),单位时钟节拍
+                            3,       	                    //定时器周期(ms),单位时钟节拍
                             pdFALSE,                        //定时器模式，pdTRUE为周期定时器，pdFALSE为单次定时器
                             (void*)3,        	            //定时器的ID号=1
                             vTimer_SignalCallback); 	    //定时器回调函数
@@ -262,8 +266,23 @@ static void vTimer_RepetCallback( TimerHandle_t xTimer )
 //进入低功耗
 void vCount_EnterLowPower(void)
 {
-	xTimerDelete(tSignalTimer,100);
-	xTimerDelete(tRepetTimer,100);
+	#if(boardBMS_485_IFACE_EN)
+	xTimerDelete(tBmsRxEnTimer, 100);
+	#endif  //boardBMS_485_IFACE_EN
+
+	#if(boardBMS_EN)
+	xTimerDelete(tWakeUpBmsTimer, 100);
+	#endif  //boardBMS_EN
+
+	#if(boardDCAC_485_IFACE_EN)
+	xTimerDelete(tDcacRxEnTimer, 100);
+	#endif  //boardDCAC_485_IFACE_EN
+
+	#if(boardMPPT_485_IFACE_EN)
+	xTimerDelete(tMpptRxEnTimer, 100);
+	#endif  //boardMPPT_485_IFACE_EN
+
+	xTimerDelete(tRepetTimer, 100);
 }
 
 //退出低功耗

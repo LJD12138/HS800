@@ -645,18 +645,18 @@ static void energy_ring_timer_cb(lv_timer_t *tp_timer)
         
         if(tp_ring->bAnimDirDec)
         {
-            /* 递减阶段：逐步减少活动segment数 */
-            if(tp_ring->usActiveSeg > us_soc_base_seg)
-            {
-                tp_ring->usActiveSeg--;
-            }
-            else
+            // /* 递减阶段：逐步减少活动segment数 */
+            // if(tp_ring->usActiveSeg > us_soc_base_seg)
+            // {
+            //     tp_ring->usActiveSeg--;
+            // }
+            // else
             {
                 tp_ring->usActiveSeg = us_soc_base_seg;
             }
             
             /* 到达或低于起始SOC对应的segment数时，切换为递增阶段 */
-            if(tp_ring->usActiveSeg <= us_soc_base_seg)
+            // if(tp_ring->usActiveSeg <= us_soc_base_seg)
             {
                 tp_ring->bAnimDirDec = false;
             }
@@ -667,9 +667,9 @@ static void energy_ring_timer_cb(lv_timer_t *tp_timer)
             tp_ring->usActiveSeg++;
             
             /* 到达或超过总segment数时，切换为递减阶段 */
-            if(tp_ring->usActiveSeg >= tp_ring->usSegCount)
+            // if(tp_ring->usActiveSeg >= tp_ring->usSegCount)
             {
-                tp_ring->usActiveSeg = tp_ring->usSegCount;
+                // tp_ring->usActiveSeg = tp_ring->usSegCount;
                 tp_ring->bAnimDirDec = true;
             }
         }

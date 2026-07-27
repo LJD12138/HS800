@@ -169,7 +169,7 @@ static s8 c_mppt_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
 	
 	cModbus_ResetTx(tpMpptProtoTx, mpptTX_PROTO_BUFF_LEN);
 	
-	vTaskDelay(5);
+	vTaskDelay(7);
 	
 	#if(boardUSE_OS)
 	if(dcacSemaphoreMutex != NULL)

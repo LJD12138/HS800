@@ -2,8 +2,6 @@
 #if(boardUPDATE)
 #include "Print/print_task.h"
 
-#include "boot_info.h"
-#include "check.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -17,6 +17,10 @@ DebugPrint_U   	uPrint;
 #include "Usb/usb_task.h"
 #endif  //boardUSB_EN
 
+#if(boardWDGT_EN)
+#include "fwdgt.h"
+#endif  //boardWDGT_EN
+
 //****************************************************任务初始化**************************************************//
 #if(boardUSE_OS)
 #define       	printTASK_PRIO                        	1        						//任务优先级 

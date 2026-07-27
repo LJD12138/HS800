@@ -6,13 +6,10 @@
 #include "MD_Dcac/md_dcac_task.h"
 #include "MD_Dcac/md_dcac_rec_task.h"
 #include "MD_Dcac/md_dcac_iface.h"
-#include "MD_Dcac/md_dcac_queue_task.h"
 #include "Print/print_task.h"
 #include "Megmeet/megmeet_proto.h"
 #include "Sys/sys_queue_task_update.h"
 
-#include "check.h"
-#include "function.h"
 #include "app_info.h"
 
 
@@ -436,9 +433,7 @@ static s8 c_dcac_data_trans(u8 cmd, u16 reg_addr, u8* data, u8 len)
 		return -99;
 
 	// 清除任务通知，避免历史通知干扰本次通信
-	while(ulTaskNotifyTake(pdTRUE, 0) > 0)
-	{
-	}
+	while(ulTaskNotifyTake(pdTRUE, 0) > 0){}
 	#endif  //boardUSE_OS
 
 	#if(boardDCAC_IFACE)
@@ -504,38 +499,38 @@ bool bDcac_MegmeetProtInit(void)
 
 /*****************************************************************************************************************
  -----函数功能    根据升级对象获取Megmeet从机地址
- -----说明(备注)  UO_MGMT_AC/UO_MGMT_DC时从机地址等于各自IC类型；UO_DCAC沿用旧地址保持兼容。
+ -----说明(备注)  MO_MGMT_AC/MO_MGMT_DC时从机地址等于各自IC类型；MO_DCAC沿用旧地址保持兼容。
                  其他对象返回0（广播）。
  -----传入参数    e_obj: 升级对象
  -----输出参数    none
  -----返回值      从机地址
  ******************************************************************************************************************/
-u8 ucDcac_GetUpdateSlaveAddr(UpdateObj_E e_obj)
+u8 ucDcac_GetUpdateSlaveAddr(ModuleObject_E e_obj)
 {
     switch(e_obj)
     {
-        case UO_MGMT_AC:   return MEGMEET_IC_TYPE_AC;     /* 0x30 */
-        case UO_MGMT_DC:   return MEGMEET_IC_TYPE_DC;     /* 0x20 */
-        case UO_DCAC:      return dcacDEV_ADRR;           /* 0x01，向后兼容 */
+        case MO_MGMT_AC:   return MEGMEET_IC_TYPE_AC;     /* 0x30 */
+        case MO_MGMT_DC:   return MEGMEET_IC_TYPE_DC;     /* 0x20 */
+        case MO_DCAC:      return dcacDEV_ADRR;           /* 0x01，向后兼容 */
         default:           return 0;                      /* 广播地址 */
     }
 }
 
 /*****************************************************************************************************************
  -----函数功能    根据升级对象获取Megmeet芯片ID(IC类型)
- -----说明(备注)  UO_MGMT_AC/UO_MGMT_DC直接返回各自IC类型；UO_DCAC默认按AC处理。
+ -----说明(备注)  MO_MGMT_AC/MO_MGMT_DC直接返回各自IC类型；MO_DCAC默认按AC处理。
                  其他对象返回dcacUPDATE_IC_TYPE默认AC值。
  -----传入参数    e_obj: 升级对象
  -----输出参数    none
  -----返回值      IC类型
  ******************************************************************************************************************/
-u8 ucDcac_GetUpdateIcType(UpdateObj_E e_obj)
+u8 ucDcac_GetUpdateIcType(ModuleObject_E e_obj)
 {
     switch(e_obj)
     {
-        case UO_MGMT_AC:   return MEGMEET_IC_TYPE_AC;     /* 0x30 */
-        case UO_MGMT_DC:   return MEGMEET_IC_TYPE_DC;     /* 0x20 */
-        case UO_DCAC:      return dcacUPDATE_IC_TYPE;     /* 旧版默认AC */
+        case MO_MGMT_AC:   return MEGMEET_IC_TYPE_AC;     /* 0x30 */
+        case MO_MGMT_DC:   return MEGMEET_IC_TYPE_DC;     /* 0x20 */
+        case MO_DCAC:      return dcacUPDATE_IC_TYPE;     /* 旧版默认AC */
         default:           return dcacUPDATE_IC_TYPE;
     }
 }
@@ -566,6 +561,8 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payl
                             &tp_proto_tx->usFrameLen) <= 0)
         return false;
 
+    /* 确保UART接收数据路由到DCAC缓冲区,防止bDcacUseFlag被其他任务修改 */
+    bDcacUseFlag = true;
     b_send_ok = bDcac_DataSendStart(tp_proto_tx->ucaFrameData, tp_proto_tx->usFrameLen);
     return b_send_ok;
 }
@@ -578,9 +575,8 @@ bool b_dcac_send_megmeet_frame(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payl
 -----输出参数    none
 -----返回值      true: 发送成功  false: 发送失败
 ******************************************************************************************************************/
-bool b_dcac_send_f0(void)
+bool b_dcac_send_f0(u8 uc_payload)
 {
-    u8 uc_payload = 0x00;
 	bool b_send_ok = false;
     
     b_send_ok = b_dcac_send_megmeet_frame(0,
@@ -630,7 +626,7 @@ bool b_dcac_send_f2(u32 ul_baud, bool b_reset_timeout)
         uc_payload = 0x01;
     else
     {
-         bUpdate_SetErrCode(UEF_D_SET_INVALID_BAUD);
+         bUpdate_SetErrCode(UEF_DP_F2_INVALID_BAUD);
          return false;
     }
 

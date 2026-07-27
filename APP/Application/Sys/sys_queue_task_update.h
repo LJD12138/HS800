@@ -31,7 +31,7 @@ extern "C" {
 #define UPDATE_QUEUE_STAGE_WAIT_RESTART  ((s8)3)
 
 /*!< 判断升级对象是否为DCAC系列（逆变器/AC管理/DC管理） */
-#define IS_DCAC_UPDATE_OBJ(obj)  ((obj) == UO_DCAC || (obj) == UO_MGMT_AC || (obj) == UO_MGMT_DC)
+#define IS_DCAC_UPDATE_OBJ(obj)  ((obj) == MO_DCAC || (obj) == MO_MGMT_AC || (obj) == MO_MGMT_DC)
 
 /* ==========================================types=======================================*/
 //通道选择
@@ -53,19 +53,6 @@ typedef enum
 	PT_INVAILD,			//超范围
 }ProtoType_E;
 
-//升级对象
-typedef enum
-{
-    UO_DEFAULT = 0,		//当前连接设备
-    UO_CONSOLE,			//主控
-	UO_BMS,				//电池
-	UO_MPPT,			//光伏
-	UO_DCAC,			//逆变
-	UO_MGMT_AC,			//MEGMEET_IC_TYPE_AC
-	UO_MGMT_DC,			//MEGMEET_IC_TYPE_DC
-	UO_INVAILD,			//超范围
-}UpdateObj_E;
-
 typedef enum
 {
 	UTR_INVALID = 0,
@@ -86,86 +73,94 @@ typedef enum
 	URT_INVAILD,	//超范围
 }UpdateResultTarget_E;
 
-// 升级失败错误码（每个调用点唯一，方便定位问题）
-// 编码规则：按模块和阶段分组，0x00 保留，0x01~0x0F 接收处理，0x10~0x2F DCAC升级，0x30~0x3F Print升级，0x40~0x4F 系统升级
+// 升级失败错误码（每个调用点唯一，方便精准定位故障点）
+// 编码规则：使用十进制数值，确保数码管显示值与源码值一一对应（Display_ShowErrCode 仅显示2位十进制）。
+//           按模块分组：01~12 DCAC接收处理, 13 DCAC协议帧, 14~30 DCAC升级队列,
+//                       31~34 BMS升级队列, 35~36 Print升级队列, 37~50 Print-DCAC转发,
+//                       51~61 Print-BMS转发, 62 系统升级。
+// 命名前缀：DR=dcac_rec  DP=dcac_prot  DQ=dcac_queue  BQ=bms_queue
+//           PQ=print_queue  PD=print_dcac  PB=print_bms  S=sys
 typedef enum
 {
-	UEF_NONE = 0,				// 无错误
+	UEF_NONE = 0,               // 无错误
 
-	// ==================== md_dcac_rec_data_proc.c (0x01 ~ 0x0F) ====================
-	UEF_DR_BAUD_REPLY = 0x01,	// F3波特率回复处理失败
-	UEF_DR_ERR_FRAME  = 0x02,	// 收到MEGMEET错误回复帧
+	// ==================== md_dcac_rec_data_proc.c (01~12) DCAC接收数据处理 ====================
+	UEF_DR_F1_CHECK_FAIL     = 1,   // F1回复参数非0x01
+	UEF_DR_F3_BAUD_INVALID   = 2,   // F3回复波特率无效(0xFF)
+	UEF_DR_F3_CHECK_FAIL     = 3,   // F3回复切换失败(非0x00)
+	UEF_DR_F3_SET_BAUD_FAIL  = 4,   // F3本地设置波特率失败
+	UEF_DR_F7_CHECK_FAIL     = 5,   // F7回复payload长度非0
+	UEF_DR_A2_REPLY_ERR      = 6,   // A2回复状态非OK/LATEST
+	UEF_DR_A4_SEQ_MISMATCH   = 7,   // A4包序号不匹配
+	UEF_DR_A4_REPLY_ERR      = 8,   // A4回复状态非OK/ALL_OK
+	UEF_DR_A6_CHECK_FAIL     = 9,   // A6从机地址/芯片ID不匹配
+	UEF_DR_A6_REPLY_ERR      = 10,  // A6回复状态>100且非LATEST
+	UEF_DR_A6_NOT_COMPLETE   = 11,  // A6回复状态<100未完成
+	UEF_DR_ERR_FRAME         = 12,  // 收到0xFF错误回复帧
 
-	// ==================== md_dcac_queue_task_update.c (0x10 ~ 0x2F) ====================
-	// -- 通用/基础错误 --
-	UEF_D_RESEND_FAIL   = 0x10,	// 重发当前帧失败
-	UEF_D_BUFF_NULL     = 0x12,	// 回复缓冲区为空
-	UEF_D_INVALID_OBJ   = 0x22,	// 升级对象无效
-	UEF_D_SET_INVALID_BAUD = 0x23,	// 设置的波特率无效
-	UEF_D_CANCEL_REQ    = 0x2C,	// 上位机主动取消DCAC升级
+	// ==================== md_dcac_prot_frame.c (13) DCAC协议帧 ====================
+	UEF_DP_F2_INVALID_BAUD   = 13,  // F2波特率非9600/115200
 
-	// -- F0/F1 握手阶段 --
-	UEF_D_SEND_F0_FAIL  = 0x13,	// 发送F0失败
-	UEF_D_F1_CHECK_FAIL = 0x14,	// F1校验出错
+	// ==================== md_dcac_queue_task_update.c (14~30) DCAC升级队列 ====================
+	UEF_DQ_PROTO_INIT_FAIL   = 14,  // Megmeet协议初始化失败
+	UEF_DQ_INVALID_OBJ       = 15,  // 升级对象非DCAC
+	UEF_DQ_BUFF_NULL         = 16,  // 回复缓冲区为空
+	UEF_DQ_CANCEL_REQ        = 17,  // 上位机取消DCAC升级
+	UEF_DQ_F0_RETRY_OVER     = 18,  // F0发送重试超限
+	UEF_DQ_F6_RETRY_OVER     = 19,  // F6发送重试超限
+	UEF_DQ_F2_RETRY_OVER     = 20,  // F2发送重试超限
+	UEF_DQ_C4_RETRY_OVER     = 21,  // C4/C5握手重试超限
+	UEF_DQ_A2_RETRY_OVER     = 22,  // A2回复重试超限
+	UEF_DQ_A2_RESEND_LEN_ERR = 23,  // A2重发时回复长度不符
+	UEF_DQ_A2_RESEND_PEEK_FAIL = 24,// A2重发时peek缓存失败
+	UEF_DQ_C5_RETRY_OVER     = 25,  // C5主机数据等待重试超限
+	UEF_DQ_A3_LEN_RETRY_OVER = 26,  // A3数据长度异常重试超限
+	UEF_DQ_A3_RETRY_OVER     = 27,  // A3发送重试超限
+	UEF_DQ_A4_RESEND_OVER    = 28,  // A4回复等待重发重试超限
+	UEF_DQ_A5_RETRY_OVER     = 29,  // A5查询发送重试超限
+	UEF_DQ_A6_WAIT_RETRY_OVER= 30,  // A6回复等待重试超限
 
-	// -- F6/F7 跳转BOOT阶段 --
-	UEF_D_SEND_F6_FAIL  = 0x15,	// 发送F6失败
-	UEF_D_F7_CHECK_FAIL = 0x29,	// F7校验出错
+	// ==================== md_bms_queue_task_update.c (31~34) BMS升级队列 ====================
+	UEF_BQ_INIT_BUFF_NULL    = 31,  // BMS初始化回复缓存为空
+	UEF_BQ_PENDING_FAIL      = 32,  // BMS错误收尾时无具体错误码
+	UEF_BQ_INVALID_OBJ       = 33,  // BMS升级对象非MO_BMS
+	UEF_BQ_BUFF_NULL         = 34,  // BMS回复缓冲区为空
 
-	// -- F2/F3 波特率设置阶段 --
-	UEF_D_SEND_F2_FAIL  = 0x17,	// 发送F2失败
-	UEF_D_F3_CHECK_FAIL = 0x18,	// F3校验出错
-	UEF_D_F3_BAUD_REPLY = 0x19,	// F3波特率回复处理失败
-	UEF_D_F3_SET_BAUD   = 0x1A,	// F3设置波特率失败
+	// ==================== print_queue_task_update.c (35~36) Print升级队列 ====================
+	UEF_PQ_INVALID_OBJ       = 35,  // Print升级对象无效
+	UEF_PQ_BUFF_NULL         = 36,  // Print回复缓存为空
 
-	// -- A1/A2 文件头下发阶段 --
-	UEF_D_HEAD_LEN_ERR  = 0x1B,	// 文件头长度错误
-	UEF_D_A2_REPLY_ERR  = 0x26,	// A2文件头回复错误
-	UEF_D_A2_TIMEOUT    = 0x28,	// A2文件头回复超时
+	// ==================== print_update_dcac.c (37~50) Print-DCAC转发 ====================
+	UEF_PD_PREP_TASK_NULL    = 37,  // prepare_update任务指针空
+	UEF_PD_TRANS_TASK_NULL   = 38,  // firmware_transfer tpDcacTask空
+	UEF_PD_TRANS_BUFF_NULL   = 39,  // tpDcacTask回复缓存空
+	UEF_PD_SLAVE_RESULT_ERR  = 40,  // 从机结果状态异常
+	UEF_PD_C2_LEN_ERR        = 41,  // C2长度非3或数据空
+	UEF_PD_C2_PROTO_ERR      = 42,  // C2协议类型非BAIKU
+	UEF_PD_C2_REPLY_FAIL     = 43,  // C3回复失败
+	UEF_PD_C5_HEAD_LEN_ERR   = 44,  // C5文件头长度非56或空
+	UEF_PD_HEAD_PARSE_FAIL   = 45,  // DCAC文件头解析失败
+	UEF_PD_CACHE_FULL        = 46,  // DCAC缓存空间不足
+	UEF_PD_CACHE_WRITE_FAIL  = 47,  // DCAC缓存写入失败
+	UEF_PD_HEAD_SEND_FAIL    = 48,  // DCAC文件头下发失败
+	UEF_PD_FW_SEND_FAIL      = 49,  // DCAC固件数据下发失败
+	UEF_PD_FW_CACHE_FAIL     = 50,  // DCAC固件数据缓存写入失败
 
-	// -- A3/A4 固件数据传输阶段 --
-	UEF_D_C5_TIMEOUT    = 0x1E,	// C5握手超时
-	UEF_D_DATA_LEN_ERR  = 0x1D,	// 数据包长度错误
-	UEF_D_SEND_A3_FAIL  = 0x2A,	// 发送A3(固件数据)失败
-	UEF_D_A4_CHECK_FAIL = 0x20,	// A4固件数据校验失败
-	UEF_D_A4_REPLY_ERR  = 0x27,	// A4固件数据回复错误
-	UEF_D_A4_SEQ_MISMATCH = 0x24,	// A4包序号不匹配
+	// ==================== Print_update_bms.c (51~61) Print-BMS转发 ====================
+	UEF_PB_PREP_TASK_NULL    = 51,  // prepare_update任务指针空
+	UEF_PB_C2_LEN_ERR        = 52,  // C2长度非3或数据空
+	UEF_PB_C2_PROTO_ERR      = 53,  // C2协议类型非BAIKU
+	UEF_PB_C2_PROTO_SELECT_FAIL = 54,// C2 ProtoSelect失败
+	UEF_PB_C2_FWD_FAIL       = 55,  // C2转发BMS失败
+	UEF_PB_TRANS_TASK_NULL   = 56,  // firmware_transfer tpBmsTask空
+	UEF_PB_TRANS_BUFF_NULL   = 57,  // tpBmsTask回复缓存空
+	UEF_PB_SLAVE_RESULT_ERR  = 58,  // 从机结果状态异常
+	UEF_PB_FINISH_MISMATCH   = 59,  // C7总帧数/已收帧数不匹配
+	UEF_PB_C5_DATA_ERR       = 60,  // C5数据空或长度0
+	UEF_PB_C5_FWD_FAIL       = 61,  // C5转发BMS失败
 
-	// -- A5/A6 查询结果阶段 --
-	UEF_D_SEND_A5_FAIL  = 0x1F,	// 发送A5(查询)失败
-	UEF_D_A6_REPLY_ERR  = 0x21,	// A6查询结果回复错误
-	UEF_D_A6_CHECK_FAIL = 0x25,	// A6查询结果校验失败
-	UEF_D_A6_NOT_COMPLETE = 0x2B,	// A6查询结果未升级完成
-
-	// ==================== print_queue_task_update.c (0x30 ~ 0x3F) ====================
-	// -- 通用/基础错误 --
-	UEF_P_TASK_NULL     = 0x30,	// 任务指针为空
-	UEF_P_BUFF_NULL     = 0x35,	// 缓冲区为空
-	UEF_P_INVALID_OBJ   = 0x33,	// 升级对象无效
-	UEF_P_PENDING_FAIL  = 0x31,	// pending result为FAIL
-	UEF_P_SLAVE_RESULT_ERR = 0x3C,	// 从机结果状态异常
-
-	// -- C2/C3 协议设置阶段 --
-	UEF_P_C2_DATA_ERR   = 0x36,	// C2数据长度或内容错误
-	UEF_P_C2_REPLY_FAIL = 0x37,	// C2回复设置协议失败
-
-	// -- C4/C5 文件头阶段 --
-	UEF_P_C4_TIMEOUT    = 0x3B,	// C4/C2/C5握手超时
-	UEF_P_C5_DATA_ERR   = 0x38,	// C5数据长度或内容错误
-	UEF_P_HEAD_PARSE_FAIL = 0x39,	// DCAC文件头解析失败
-
-	// -- 数据转发阶段 --
-	UEF_P_FWD_DCAC_FAIL = 0x3A,	// 转发到DCAC任务失败
-	UEF_P_FWD_BMS_FAIL  = 0x3D,	// 转发到BMS任务失败
-
-	// -- C7/C8 结束阶段 --
-	UEF_P_FINISH_MISMATCH = 0x3E,	// C7完成帧时总帧数/已收帧数不匹配
-	UEF_P_CANCEL_REQ    = 0x34,	// 上位机主动取消升级
-
-	// ==================== v_sys_queue_task_update.c (0x40 ~ 0x4F) ====================
-	UEF_S_TASK_OVER_TIME = 0x40,	// 升级任务等待超时
-	UEF_S_LOST_OVERTIME  = 0x41,	// 升级任务丢失超时
-	UEF_S_REC_OVERTIME   = 0x42,	// 升级任务接收超时
+	// ==================== sys_queue_task_update.c (62) 系统升级 ====================
+	UEF_S_REC_OVERTIME       = 62,  // 升级接收超时
 
 }UpdateErrCode_E;
 
@@ -185,7 +180,7 @@ typedef struct
 	u16					usPendPacketLen;	// pending packet len
 	UpdateTaskResult_E  eHostResult;		//主机升级结果
 	UpdateTaskResult_E  eSlaveResult;		//从机升级结果
-	UpdateObj_E			eObj;				//升级对象
+	ModuleObject_E		eObj;				//升级对象
 	ChannelType_E		eChType;			//通道类型
 	ProtoType_E 		eProtoType;			//协议类型
 	UpdateErrCode_E		eErrCode;			//升级失败错误码
@@ -199,8 +194,8 @@ void vUpdate_ResetTimeout(void);
 void vUpdate_ResetRecTimeout(bool reset);
 bool bUpdate_SetErrCode(UpdateErrCode_E code);
 bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result);
-s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type);
-s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type);
+s8 cUpdate_ChSelect(ModuleObject_E e_obj, ChannelType_E ch_type);
+s8 cUpdate_ProtoSelect(ModuleObject_E e_obj, ProtoType_E proto_type);
 bool bUpdate_ResultIsNormal(UpdateResultTarget_E target);
 void vUpdate_TickTimer(void);
 #endif  //boardUPDATE

@@ -112,7 +112,7 @@ void v_sys_queue_task_eng(Task_T *tp_task)
 			{
 				if(tEngMode.cEngModeState == 1)
 				{
-//					if(bApp_MemParamUpdate(NULL,NULL,false) == true)
+					if(cApp_UpdateMemParam(tAppMemParamStr) > 0)
 						goto shut_down;
 				}
 			}
@@ -120,7 +120,7 @@ void v_sys_queue_task_eng(Task_T *tp_task)
 			{
 				if(tEngMode.cEngModeState == 1)
 				{
-//					if(bApp_SysInfoInit(true) == true)
+					if(cApp_MemParamInit(tAppMemParamStr) > 0)
 						goto shut_down;
 				}
 			}

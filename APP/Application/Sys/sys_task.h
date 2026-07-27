@@ -95,6 +95,7 @@ typedef enum
 	SEC_0_SOC,			//0%SOC
 	SEC_CLOSE_FAULT,	//关闭失败
 	SEC_BOOT_FAULT,		//开启失败
+	SEC_DISCHG_OL,		//放电过功率(BMS许可功率限制)
 }SysErrCode_E;
 
 typedef union
@@ -109,6 +110,7 @@ typedef union
 		u16 			b0SOC :1;
 		u16 			bCloseFault :1;
 		u16 			bBootFault :1;
+		u16 			bDisChgOL :1;	//放电过功率
 	}tCode;
 	u16 usCode;
 }SysErrCode_U;

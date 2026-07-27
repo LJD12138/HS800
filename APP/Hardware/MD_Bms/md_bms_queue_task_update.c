@@ -46,7 +46,7 @@ void v_bms_queue_task_update(Task_T *tp_task)
 				if(uPrint.tFlag.bBmsTask)
 					log_w("bBmsTask:任务返回参数缓存器异常");
 
-				bUpdate_SetErrCode(UEF_P_BUFF_NULL);
+				bUpdate_SetErrCode(UEF_BQ_INIT_BUFF_NULL);
 				cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_END);
 				break;
 			}
@@ -83,7 +83,7 @@ void v_bms_queue_task_update(Task_T *tp_task)
 		case BMS_UPDATE_STEP_ERROR_CLEANUP:
 		{
 			if(tUpdate.eErrCode == UEF_NONE)
-				bUpdate_SetErrCode(UEF_P_PENDING_FAIL);
+				bUpdate_SetErrCode(UEF_BQ_PENDING_FAIL);
 
 			cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_END);
 		}
@@ -131,9 +131,9 @@ static bool b_bms_check_task_valid(Task_T *tp_task)
 		return false;
 
 	/* 升级对象无效则结束任务 */
-	if(tUpdate.eObj != UO_BMS)
+	if(tUpdate.eObj != MO_BMS)
 	{
-		bUpdate_SetErrCode(UEF_P_INVALID_OBJ);
+		bUpdate_SetErrCode(UEF_BQ_INVALID_OBJ);
 		cQueue_GotoStep(tp_task, STEP_END);
 		return false;
 	}
@@ -141,7 +141,7 @@ static bool b_bms_check_task_valid(Task_T *tp_task)
 	/* 检查回复缓冲区是否有效 */
 	if(tp_task->tReplyBuff.buff == NULL)
 	{
-		bUpdate_SetErrCode(UEF_P_BUFF_NULL);
+		bUpdate_SetErrCode(UEF_BQ_BUFF_NULL);
 		return false;
 	}
 

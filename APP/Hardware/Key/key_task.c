@@ -237,10 +237,9 @@ void vKey_Task(void *pvParameters)
 		
 		//更改按键触发方式
 		#if(boardENG_MODE_EN)
-		if((tSysInfo.eDevState == DS_SHUT_DOWN || 
-			tSysInfo.eDevState == DS_ENG_MODE))
+		if(tSysInfo.eDevState == DS_ENG_MODE)
 		{
-			tKeyPower.bEnMulitFunKey = false;
+			tKeyPower.bEnMulitFunKey = true;
 		}
 		#else
 		if(tSysInfo.eDevState == DS_SHUT_DOWN)

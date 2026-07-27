@@ -1,5 +1,3 @@
-
-
 #include "MD_Bms/md_bms_prot_frame.h"
 
 #if(boardBMS_EN)

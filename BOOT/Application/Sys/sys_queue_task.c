@@ -6,8 +6,6 @@
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
-#include "Adc/adc_task.h"
-#include "Led/led_iface.h"
 
 #if(boardPRINT_IFACE)
 #include "Print/print_iface.h"
@@ -17,9 +15,17 @@
 #include "MD_Bms/md_bms_iface.h"
 #endif //boardBMS_EN
 
-#if(boardUPDATE)
-#include "Update/update_main.h"
-#endif
+#if(boardADC_EN)
+#include "Adc/adc_iface.h"
+#endif  //boardADC_EN
+
+#if(boardWDGT_EN)
+#include "fwdgt.h"
+#endif  //boardWDGT_EN
+
+#if(boardLED_EN)
+#include "Led/led_iface.h"
+#endif  //boardLED_EN
 
 #include "systick.h"
 #include "boot_info.h"
@@ -71,37 +77,37 @@ bool bSys_QueueInit(void)
 ******************************************************************************************************************/
 static bool b_task_manage_func_cb(Task_T *tp_task)
 {
-	static vu16 uc_temp = 0;
-	
-	tp_task->bNowRun = false;
-	tp_task->ucStep = 0;
-	tp_task->usTaskWaitCnt = 0;
-	tp_task->usTaskWaitCnt = 0;
-	tp_task->usStepRepeatCnt = 0;
-	
-	uc_temp = lwrb_get_full(&tp_task->tQueueBuff);
-	if(uc_temp%3 != 0 && uc_temp != 0)
-	{
-		if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-			log_e("bSysTask:任务队列长度异常 长度%d",uc_temp);
-		lwrb_reset(&tp_task->tQueueBuff);
-		return false;
-	}	
-	
-	if(tSysInfo.uInit.tFinish.bIF_SysTask == 0)
-	{
-		tp_task->ucID = STI_INIT;           
-		tp_task->usInParam = 0;
-	}
+    static vu16 uc_temp = 0;
+    
+    tp_task->bNowRun = false;
+    tp_task->ucStep = 0;
+    tp_task->usTaskWaitCnt = 0;
+    tp_task->usTaskWaitCnt = 0;
+    tp_task->usStepRepeatCnt = 0;
+    
+    uc_temp = lwrb_get_full(&tp_task->tQueueBuff);
+    if(uc_temp%3 != 0 && uc_temp != 0)
+    {
+        if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
+            log_e("bSysTask:任务队列长度异常 长度%d",uc_temp);
+        lwrb_reset(&tp_task->tQueueBuff);
+        return false;
+    }    
+    
+    if(tSysInfo.uInit.tFinish.bIF_SysTask == 0)
+    {
+        tp_task->ucID = STI_INIT;           
+        tp_task->usInParam = 0;
+    }
     else if(uc_temp)//队列里面有任务   
     {
         lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->ucID, 1);
-		lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->usInParam, 2);
+        lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->usInParam, 2);
     }
     else
     {
-		tp_task->ucID = STI_NULL;           
-		tp_task->usInParam = 0;
+        tp_task->ucID = STI_NULL;           
+        tp_task->usInParam = 0;
     }
     
     switch (tp_task->ucID)
@@ -109,41 +115,41 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         case STI_INIT:
             tp_task->vp_func = v_sys_queue_task_init;
         break;
-		
-		case STI_ENTER_APP:
-			tp_task->vp_func = v_sys_queue_task_enter_app;
+        
+        case STI_ENTER_APP:
+            tp_task->vp_func = v_sys_queue_task_enter_app;
         break;
-		
-		case STI_ERR:
-			tp_task->vp_func = v_sys_queue_task_err;
+        
+        case STI_ERR:
+            tp_task->vp_func = v_sys_queue_task_err;
         break;
-		
-		case STI_RESET: 
-			tp_task->vp_func = v_sys_queue_task_reset;
+        
+        case STI_RESET: 
+            tp_task->vp_func = v_sys_queue_task_reset;
         break;
-		
-		#if(boardUPDATE)
-		case STI_UPDATE:	
-			tp_task->vp_func = v_sys_queue_task_update;
+        
+        #if(boardUPDATE)
+        case STI_UPDATE:	
+            tp_task->vp_func = v_sys_queue_task_update;
         break;
-		#endif
-		
-		#if(boardDISPLAY_EN)
-		case STI_DISPLAY: 
-			tp_task->vp_func = v_sys_queue_task_disp;
+        #endif
+        
+        #if(boardDISPLAY_EN)
+        case STI_DISPLAY: 
+            tp_task->vp_func = v_sys_queue_task_disp;
         break;
-		#endif
-		
-		#if(boardLOW_POWER)
-		case STI_LOW_POWER: 
-			tp_task->vp_func = v_sys_queue_task_low_power;
+        #endif
+        
+        #if(boardLOW_POWER)
+        case STI_LOW_POWER: 
+            tp_task->vp_func = v_sys_queue_task_low_power;
         break;
-		#endif
+        #endif
 
-		case STI_NULL:
+        case STI_NULL:
         default:
             tp_task->vp_func = NULL;
-			tp_task->usInParam = 0;
+            tp_task->usInParam = 0;
         break;
     }
 
@@ -221,7 +227,7 @@ s8 cSys_JumpToApp(void)
 	
 	JumpAddress = *(__IO uint32_t*)(flashAPP_START + 4);	//Reset_Handler 入口地址
 	
-	application = (pAppFunction) JumpAddress;
+	application = (pAppFunction)(uintptr_t)JumpAddress;
 	
 	__set_MSP(*(__IO uint32_t*) flashAPP_START);	        //APP程序堆栈指针起始(用户代码区的第一个字用于存放栈顶地址)
 	

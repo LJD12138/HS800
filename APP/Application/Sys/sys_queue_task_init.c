@@ -267,11 +267,12 @@ void v_sys_queue_task_init(Task_T *tp_task)
 			break;
     }
 	
-	//初始化等待5S,超时退出
+	//初始化等待10S,超时强制关机退出
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt > (5000 / sysTASK_INIT_CYCLE_TIME))
+	if(tp_task->usTaskWaitCnt > (10000 / sysTASK_INIT_CYCLE_TIME))
 	{
-//		gpioASSIST_OPEN_OFF();
+		gpioASSIST_OPEN_OFF();
+		cBms_Switch(SO_KEY, ST_OFF, false);
 	}
 	
 	#if(boardUSE_OS)

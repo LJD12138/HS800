@@ -119,7 +119,7 @@ void vMppt_Task(void *pvParameters)
     {
 		if(tp_task == NULL
 			#if(boardUPDATE)
-			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != UO_MPPT)
+			|| (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != MO_MPPT)
 			#endif  //boardUPDATE
 		)
 		{

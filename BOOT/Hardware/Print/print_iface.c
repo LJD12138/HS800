@@ -485,7 +485,7 @@ void printUSART_IRQ_HANDLER(void)
         
         if(S_DataSendCnt < S_DataSendSize)
         {    
-           	USART_DATA(printUSART) = ucaPrintTxDmaBuffData[S_DataSendCnt];
+            USART_DATA(printUSART) = ucaPrintTxDmaBuffData[S_DataSendCnt];
 			S_DataSendCnt++;
         }
         else

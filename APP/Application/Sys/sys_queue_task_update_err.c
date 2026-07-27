@@ -48,6 +48,7 @@ typedef enum
     UES_STEP_EXIT_SLAVE,       /* 让Slave退出升级队列 */
     UES_STEP_WAIT_USER,        /* 等待用户操作 */
     UES_STEP_SHUTDOWN,         /* 开始关机 */
+	UES_STEP_AGAIN,			   /* 重新开始 */
 } UpdateErrStep_E;
 
 //****************************************************Parameter Initialization************************************************//
@@ -69,20 +70,13 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
     if(tp_task == NULL)
         return;
 
-    //有任务退出
-    if(lwrb_get_full(&tp_task->tQueueBuff)) //队列里面有任务
-    {
-        tUpdate.eErrCode = UEF_NONE;
-        cQueue_GotoStep( tp_task, STEP_END ); //结束
-    }
-
     switch(tp_task->ucStep)
     {
         //让Host(Print)退出升级队列
         case UES_STEP_EXIT_HOST:
         {
             //等待Host退出升级模式(由各任务自身的有效性检查触发错误收尾)
-            if(tPrint.eDevState != DS_UPDATE_MODE && tpPrintTask->ucID != PTI_UPDATE)
+            if(tpPrintTask->ucID != PTI_UPDATE)
             {
                 cQueue_GotoStep(tp_task, STEP_NEXT);
             }
@@ -94,8 +88,8 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
                 {
                     //超时强制退出
                     bQueue_Reset(tpPrintTask);
+					cQueue_AddQueueTask(tpPrintTask, PTI_MAIN, 0, true);
                     tPrint.eDevState = DS_SHUT_DOWN;
-                    cQueue_GotoStep(tp_task, STEP_NEXT);
                 }
             }
         }
@@ -104,15 +98,16 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
         //让Slave(BMS/DCAC)退出升级队列
         case UES_STEP_EXIT_SLAVE:
         {
-            bool b_slave_exit = true;
+			//从机退出
+            bool b_slave_exit = false;
 
             #if(boardBMS_EN)
-            if(tUpdate.eObj == UO_BMS && tBms.eDevState == DS_UPDATE_MODE && tpBmsTask->ucID != BTI_UPDATE)
-                b_slave_exit = false;
+            if(tUpdate.eObj == MO_BMS && tpBmsTask->ucID != BTI_UPDATE)
+                b_slave_exit = true;
             #endif
             #if(boardDCAC_EN)
-            if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj) && tDcac.eDevState == DS_UPDATE_MODE && tpDcacTask->ucID != DTI_UPDATE)
-                b_slave_exit = false;
+            if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj) && tpDcacTask->ucID != DTI_UPDATE)
+                b_slave_exit = true;
             #endif
 
             if(b_slave_exit)
@@ -123,15 +118,17 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
             }
             else
             {
+				//等待退出,超时强制重置
                 tp_task->usStepWaitCnt++;
                 if(tp_task->usStepWaitCnt >= sysTASK_UPDATE_ERR_EXIT_OVERTIME)
                 {
                     //超时强制退出
                     #if(boardBMS_EN)
-                    if(tUpdate.eObj == UO_BMS)
+                    if(tUpdate.eObj == MO_BMS)
                     {
                         bQueue_Reset(tpBmsTask);
                         bBms_SetDevState(DS_SHUT_DOWN);
+						cQueue_GotoStep(tpBmsTask, STEP_END);
                     }
                     #endif
                     #if(boardDCAC_EN)
@@ -139,11 +136,9 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
                     {
                         bQueue_Reset(tpDcacTask);
                         bDcac_SetDevState(DS_SHUT_DOWN);
+						cQueue_GotoStep(tpDcacTask, STEP_END);
                     }
                     #endif
-                    //等待用户操作,超时由vUpdate_TickTimer自动进入关机
-                    tUpdate.usLostOverTimeCnt = ((60UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE); //延时等待60S
-                    cQueue_GotoStep(tp_task, STEP_NEXT);
                 }
             }
         }
@@ -173,8 +168,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
                     //短按power,重新开始升级
                     vKey_PowerIsTri();  //标记已处理,防止全局按键重复触发
                     bUpdate_Init();
-                    cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, true);
-                    cQueue_GotoStep(tp_task, STEP_END);
+                    cQueue_GotoStep(tp_task, UES_STEP_AGAIN);
                 }
                 tp_task->usStepWaitCnt = 0;
             }
@@ -188,9 +182,16 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
             bUpdate_Init();
             cSys_Switch(SO_KEY, ST_OFF, true);
             cQueue_GotoStep(tp_task, STEP_END);
-
         }
         break;
+		
+		case UES_STEP_AGAIN:
+		{
+			//有任务退出
+			if(lwrb_get_full(&tp_task->tQueueBuff)) //队列里面有任务
+				cQueue_GotoStep( tp_task, STEP_END ); //结束
+		}
+		break;
 
         default:
             cQueue_GotoStep(tp_task, STEP_END);

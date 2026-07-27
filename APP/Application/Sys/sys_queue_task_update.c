@@ -32,7 +32,7 @@
 
 #define     	sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME //任务时间
 #define       	updateREC_LOST_OVERTIME        			((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
-#define       	updateLOST_OVERTIME        				((360UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
+#define       	updateLOST_OVERTIME        				((60UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 
 
 //****************************************************参数初始化**************************************************//
@@ -92,8 +92,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			}
 
 			#if(boardBMS_EN)
-			tSysSetParam t_sys_set_param = {0};
-			if(tUpdate.eObj == UO_BMS)
+			if(tUpdate.eObj == MO_BMS)
 			{
 				if(tBms.eDevState == DS_UPDATE_MODE)
 					cQueue_GotoStep(tp_task, STEP_NEXT);
@@ -209,7 +208,7 @@ static bool b_update_start_object(Task_T *tp_task)
 {
 	#if(boardBMS_EN)
 	tSysSetParam t_sys_set_param = {0};
-	if(tUpdate.eObj == UO_BMS)
+	if(tUpdate.eObj == MO_BMS)
 	{
 		if(tpBmsTask == NULL || tpBmsTask->tReplyBuff.buff == NULL)
 		{
@@ -217,7 +216,7 @@ static bool b_update_start_object(Task_T *tp_task)
 			return false;
 		}
 
-		t_sys_set_param.obj = UO_BMS;
+		t_sys_set_param.obj = MO_BMS;
 		t_sys_set_param.cmd = mainUPDATE_FLAG;
 		lwrb_reset(&tpBmsTask->tReplyBuff);
 		if(lwrb_get_free(&tpBmsTask->tReplyBuff) >= sizeof(t_sys_set_param))
@@ -309,7 +308,7 @@ void vUpdate_InitParam(void)
 	#endif  //boardDCAC_EN
 
 	#if(boardBMS_EN)
-	if (tUpdate.eObj == UO_BMS)
+	if (tUpdate.eObj == MO_BMS)
 	{
 		// cBaiku_ResetTx(tpBmsProtoTx, tpBmsProtoTx->usFrameDataSize);
 		cBaiku_ResetRxBuff(tpBmsProtoRx);
@@ -488,13 +487,13 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
                 -2: 添加任务失败
                 -3: 未知升级对象
 ******************************************************************************************************************/
-s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
+s8 cUpdate_ChSelect(ModuleObject_E e_obj, ChannelType_E ch_type)
 {
-	if(e_obj >= UO_INVAILD || ch_type >= CT_INVAILD)
+	if(e_obj >= MO_INVAILD || ch_type >= CT_INVAILD)
 		return -1;
 	
 	if(ch_type == tUpdate.eChType && 
-		tSysInfo.eDevState == DS_UPDATE_MODE)
+		tpSysTask->ucID == STI_UPDATE)
 	{
 		vUpdate_ResetTimeout();
 		return 0;
@@ -502,27 +501,27 @@ s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
 	
 	switch(e_obj)
 	{
-		case UO_DEFAULT:
-		case UO_CONSOLE:
+		case MO_DEFAULT:
+		case MO_CONSOLE:
 		{
 			tUpdate.ulBaud = 115200;
 		}
 		break;
 		
-		case UO_BMS:
+		case MO_BMS:
 		{
 			tUpdate.ulBaud = 115200;
 		}
 		break;
 
-		case UO_DCAC:
+		case MO_DCAC:
 		{
 			tUpdate.ulBaud = 115200;
 		}
 		break;
 
-		case UO_MGMT_AC:
-		case UO_MGMT_DC:
+		case MO_MGMT_AC:
+		case MO_MGMT_DC:
 		{
 			tUpdate.ulBaud = 115200;
 		}
@@ -560,13 +559,13 @@ s8 cUpdate_ChSelect(UpdateObj_E e_obj, ChannelType_E ch_type)
                 0: 协议未改变
                 -1: 参数无效
 ******************************************************************************************************************/
-s8 cUpdate_ProtoSelect(UpdateObj_E e_obj, ProtoType_E proto_type)
+s8 cUpdate_ProtoSelect(ModuleObject_E e_obj, ProtoType_E proto_type)
 {
-	if(e_obj >= UO_INVAILD || proto_type >= PT_INVAILD)
+	if(e_obj >= MO_INVAILD || proto_type >= PT_INVAILD)
 		return -1;
 
 	/* 升级对象已确定时，协议选择必须与当前升级对象一致，防止跨对象污染 */
-	if(tUpdate.eObj != UO_DEFAULT && e_obj != tUpdate.eObj)
+	if(tUpdate.eObj != MO_DEFAULT && e_obj != tUpdate.eObj)
 		return -3;
 	
 	if(proto_type == tUpdate.eProtoType &&

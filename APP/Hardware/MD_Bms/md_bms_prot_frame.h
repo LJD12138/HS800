@@ -13,6 +13,8 @@
 #include "semphr.h"
 #endif  //boardUSE_OS
 
+#define     	bmsGET_PARAM_OBJ					0x10
+
 extern BaikuProtoRx_t *tpBmsProtoRx;
 extern BaikuProtoTx_t *tpBmsProtoTx;
 

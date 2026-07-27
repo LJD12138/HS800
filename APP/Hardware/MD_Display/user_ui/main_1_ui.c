@@ -621,23 +621,23 @@ void vDisp_SetAcWorkMode(ImgAnimMode_E eMode)
 	switch(eMode)
 	{
 		case IMG_ANIM_MODE_NONE:
-			vImgAnim_SetMode(IMG_ANIM_MODE_NONE, 800);
+			vImgAnim_SetMode(IMG_ANIM_MODE_NONE, 1500);
 			break;
 		
 		case IMG_ANIM_MODE_CHARGE_SLOW:
-			vImgAnim_SetMode(IMG_ANIM_MODE_CHARGE_SLOW, 800);
+			vImgAnim_SetMode(IMG_ANIM_MODE_CHARGE_SLOW, 1500);
 			break;
 		
 		case IMG_ANIM_MODE_CHARGE_FAST:
-			vImgAnim_SetMode(IMG_ANIM_MODE_CHARGE_FAST, 800);
+			vImgAnim_SetMode(IMG_ANIM_MODE_CHARGE_FAST, 1500);
 			break;
 		
 		case IMG_ANIM_MODE_DISCHARGE:
-			vImgAnim_SetMode(IMG_ANIM_MODE_DISCHARGE, 800);
+			vImgAnim_SetMode(IMG_ANIM_MODE_DISCHARGE, 1500);
 			break;
 		
 		case IMG_ANIM_MODE_CHG_DISCHG:
-			vImgAnim_SetMode(IMG_ANIM_MODE_CHG_DISCHG, 800);
+			vImgAnim_SetMode(IMG_ANIM_MODE_CHG_DISCHG, 1500);
 			break;
 		
 		default:

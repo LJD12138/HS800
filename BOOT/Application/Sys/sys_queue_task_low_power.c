@@ -9,6 +9,10 @@
 #include "Print/print_task.h"
 #include "rtc_wakeup.h"
 
+#if(boardWDGT_EN)
+#include "fwdgt.h"
+#endif  //boardWDGT_EN
+
 //****************************************************函数声明****************************************************//
 void v_enter_sleep(uint16_t time)
 

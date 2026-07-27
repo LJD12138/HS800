@@ -4,15 +4,18 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "timer_task.h"
-#include "gpio_init.h"
 #include "board_config.h"
 
 #include "Sys/sys_task.h"
-//#include "eng_mode.h"
 
 #if(boardCONSOLE_EN)
 #include "MD_Console/md_console_rec_task.h"
 #endif
+
+#if(boardWDGT_EN)
+#include "fwdgt.h"
+#endif  //boardWDGT_EN
+
 
 /***********************************************************************************************************************
 -----函数功能    定时器函数
@@ -52,14 +55,13 @@ void vTimer_Task(void)
 //进入低功耗
 void vCount_EnterLowPower(void)
 {
-	xTimerDelete(tSignalTimer,100);
-	xTimerDelete(tRepetTimer,100);
+	timer_cnt = 0;
 }
 
 //退出低功耗
 void vCount_ExitLowPower(void)
 {
-	vTimer_TaskInit();
+	timer_cnt = 0;
 }
 #endif
 

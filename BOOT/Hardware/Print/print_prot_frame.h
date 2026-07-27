@@ -26,3 +26,4 @@ bool bPrint_RecProtInit(void);
 #endif  //boardPRINT_IFACE
 
 #endif  //MD_PRINT_PROT_FRAME_H_
+

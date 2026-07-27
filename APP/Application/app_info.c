@@ -210,6 +210,15 @@ s8 cApp_AppInfoInit(void)
 	//---------已经初始化过----------
 	if(tAppMemParam.tParam.usInitFinish == 0xAAAA)  //不需要初始化
 	{
+		c_ret = cApp_GetMemParam(tSysMemParamStr);
+		//读取参数失败
+		if(c_ret < 0)
+		{
+			if(uPrint.tFlag.bAppInfo)
+				sMyPrint("bAppInfo:tSYS参数读取失败 代码%d\r\n",c_ret);
+			return -5;
+		}
+
 		if(uPrint.tFlag.bAppInfo)
 		{
 			v_print_info();
@@ -228,6 +237,14 @@ s8 cApp_AppInfoInit(void)
 			sMyPrint("bAppInfo:APP参数初始化失败 代码%d\r\n",c_ret);
 		return -2;
 	}
+
+	c_ret = cApp_MemParamInit(tSysMemParamStr);
+	if(c_ret <= 0)
+	{
+		if(uPrint.tFlag.bAppInfo)
+			sMyPrint("bAppInfo:tSYS参数初始化失败 代码%d\r\n",c_ret);
+		return -3;
+	}
 	
 	//标记
 	tAppMemParam.tParam.usInitFinish = 0xAAAA;
@@ -237,7 +254,7 @@ s8 cApp_AppInfoInit(void)
 	{
 		if(uPrint.tFlag.bAppInfo)
 			sMyPrint("bAppInfo:APP参数更新失败 代码%d\r\n",c_ret);
-		return -3;
+		return -4;
 	}
 	
 	if(uPrint.tFlag.bAppInfo)

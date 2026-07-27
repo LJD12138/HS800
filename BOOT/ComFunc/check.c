@@ -569,6 +569,44 @@ uint32_t ulCheck_GetCRC32(uint32_t init, uint8_t* data, uint32_t length)
     return crc32(init, data, length, true, 0xFFFFFFFF);
 }
 
+/*******************************************************************************************************************
+	\brief      CRC32增量更新校验
+	\param[in]  crc:当前CRC状态值
+				data:输入要校验的字节数组
+				len:数据的长度
+	\param[out] none
+	\retval     更新后的CRC32值
+*******************************************************************************************************************/
+uint32_t ulCheck_Crc32Update(uint32_t crc, const uint8_t* data, uint32_t length)
+{
+    uint32_t dwPolynomial = 0x04c11db7;
+    uint32_t xbit;
+    uint32_t data_byte;
+    
+    for (uint32_t i = 0; i < length; i++)
+    {
+        xbit = 0x80;
+        data_byte = data[i];
+        data_byte = (uint32_t)ul_data_reflect(data_byte, 8);
+
+        for (int bits = 0; bits < 8; bits++)
+        {
+            if ((crc & 0x80000000) > 0)
+            {
+                crc <<= 1;
+                crc ^= dwPolynomial;
+            }
+            else
+                crc <<= 1;
+
+            if ((data_byte & xbit) > 0)
+                crc ^= dwPolynomial;
+            xbit >>= 1;
+        }
+    }
+    return crc;
+}
+
 
 
 

@@ -78,8 +78,9 @@ s8 c_mppt_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			
 			t_mppt_chg.us_in_pwr = (proto_rx->ucpValidData[0] << 8) | proto_rx->ucpValidData[1];
 
-			lwrb_reset(&tpMpptTask->tReplyBuff);
-			lwrb_write(&tpMpptTask->tReplyBuff, (u8*)&t_mppt_chg, sizeof(t_mppt_chg));
+			// lwrb_reset(&tpMpptTask->tReplyBuff);
+			// lwrb_write(&tpMpptTask->tReplyBuff, (u8*)&t_mppt_chg, sizeof(t_mppt_chg));
+			tMpptRx.usMaxInPwr = t_mppt_chg.us_in_pwr * 10;
 		}
 		break;
 		

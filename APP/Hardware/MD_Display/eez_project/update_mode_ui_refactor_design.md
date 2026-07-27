@@ -24,7 +24,7 @@ typedef struct {
     vu16  usTotalFrmValue;    // 总帧数
     vu16  usRecOverTimeCnt;   // 帧超时计数
     vu16  usLostOverTimeCnt;  // 接收超时计数
-    UpdateObj_E   eObj;       // 升级对象 (Host/Console/BMS/MPPT/DCAC)
+    ModuleObject_E   eObj;       // 升级对象 (Host/Console/BMS/MPPT/DCAC/MGMT_AC/MGMT_DC)
     ChannelType_E eChType;    // 通道类型 (None/Console/Print)
     ProtoType_E   eProtoType; // 协议类型 (None/Xmodem/Baiku)
 } Update_T;

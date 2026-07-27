@@ -323,7 +323,40 @@ static void v_sys_check_prote(void)
 	if(tMppt.eDevState == DS_WORK)
 		tSysInfo.usInPwr += tMppt.usInPwr;
 	#endif  //boardMPPT_EN
-	
+
+	//-----------------------------------------放电过功率保护(BMS许可功率限制)----------------------------------------
+	#if(boardBMS_EN)
+	static vu16 us_dischg_ol_set_cnt = 0;
+	static vu16 us_dischg_ol_clr_cnt = 0;
+	u16 us_perm_dischg = tBmsRx.usPermMaxDisChgPwr;
+	vs16 s_bat_out_pwr = tSysInfo.usOutPwr - tSysInfo.usInPwr;
+
+	if(us_perm_dischg > 0 && s_bat_out_pwr > us_perm_dischg)
+	{
+		us_dischg_ol_clr_cnt = 0;
+		if(tSysInfo.uErrCode.tCode.bDisChgOL == 0)
+		{
+			if(++us_dischg_ol_set_cnt >= (500 / us_delay_time))	//0.5s防抖
+			{
+				us_dischg_ol_set_cnt = 0;
+				bSys_SetErrCode(SEC_DISCHG_OL, true);
+			}
+		}
+	}
+	else
+	{
+		us_dischg_ol_set_cnt = 0;
+		if(tSysInfo.uErrCode.tCode.bDisChgOL == 1)
+		{
+			if(++us_dischg_ol_clr_cnt >= (2000 / us_delay_time))	//2s
+			{
+				us_dischg_ol_clr_cnt = 0;
+				bSys_SetErrCode(SEC_DISCHG_OL, false);
+			}
+		}
+	}
+	#endif  //boardBMS_EN
+
 	//------------------------------------------------系统输入过压-----------------------------------------------
 	#if(boardADC_EN)
 	static u16 us_over_volt_cnt = 0; 
@@ -544,6 +577,7 @@ static void v_sys_get_perm(void)
 	if(tSysInfo.uPerm.tPerm.bForceClose == 1	||	//强制关闭
 	   tSysInfo.eDevState == DS_CLOSING			||	//开始关闭
 	   tSysInfo.uErrCode.tCode.b0SOC == 1		||	//低SOC
+	   tSysInfo.uErrCode.tCode.bDisChgOL == 1	||	//放电过载
 	   tSysInfo.uErrCode.tCode.bUV == 1    			//欠压
 
 	   #if(boardBMS_EN)

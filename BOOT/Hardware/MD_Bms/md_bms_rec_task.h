@@ -35,25 +35,43 @@ typedef union
 {
 	struct 
 	{
-		vu16			bCellOV:1;			//单体过压
-		vu16			bCellUV:1;			//单体欠压
-		vu16			bEnvOT:1;			//环境过温
-		vu16			bEnvUT:1;			//环境低温
-		vu16			bCOT:1;				//充电过温
-		vu16			bCUT:1;				//充电低温
-		vu16			bDCOT:1;			//放电过温
-		vu16			bDCUT:1;			//放电低温
+		vu32			bCellOV:1;			//单体过压
+		vu32			bCellUV:1;			//单体欠压
+		vu32			bEnvOT:1;			//环境过温
+		vu32			bEnvUT:1;			//环境低温
+		vu32			bCOT:1;				//充电过温
+		vu32			bCUT:1;				//充电低温
+		vu32			bDCOT:1;			//放电过温
+		vu32			bDCUT:1;			//放电低温
 
-		vu16			bCOC:1;				//充电过流
-		vu16			bDCOC:1;			//放电过流
-		vu16			bSC:1;				//短路保护
-		vu16			bBatFull:1;			//充满状态
-		vu16			bAfeLost:1;			//AFE丢失
-		vu16			bCurrErr:1;			//电流异常
-		vu16			bPerchgFault:1;		//预存异常
-		vu16			bLowVoltOL:1;		//低电压过载报警
+		vu32			bCOC:1;				//充电过流
+		vu32			bDCOC:1;			//放电过流
+		vu32			bSC:1;				//短路保护
+		vu32			bBatFull:1;			//充满状态
+		vu32			bAfeLost:1;			//AFE丢失
+		vu32			bCurrErr:1;			//电流异常
+		vu32			bPrechgFault:1;		//预充异常
+		vu32			bLowVoltOL:1;		//低电压过载报警
+
+		vu32 			bParaLost :1;		////并机丢失
+		vu32 			bConsoleLost :1;	//通信丢失
+		vu32 			bDisChgMosErr :1;	//放电MOS错误
+		vu32 			bChgMosErr :1;		//充电MOS错误
+		vu32 			bMosErr1 :1;		//MOS故障1
+		vu32 			bMosErr2 :1;		//MOS故障2
+		vu32 			bMosErr3 :1;		//MOS故障3
+		vu32 			bAfeErr :1;			//AFE故障
+		
+		vu32 			bReserved1 :1;    	//预留1
+		vu32 			bVoltLow :1;		//电压过低
+		vu32 			bNtcLost :1;		//NTC丢失
+		vu32 			bCloseFault :1;		//关机故障
+		vu32 			bBootFault :1;		//启动故障
+		vu32 			bBmsErr :1;			//BMS错误
+		vu32 			bUnbalanced :1;		//不平衡
+		vu32 			bBalanceWireLost :1;//平衡线丢失
 	}tCode;
-	vu16   usCode;
+	vu32   ulCode;
 }ErrCode_U;
 #pragma pack()
 
@@ -81,6 +99,7 @@ typedef struct
 #pragma pack()
 
 //*********************************任务对象**********************************
+#pragma pack (1)   //强制进行1字节对齐
 typedef struct
 {
 	vu16				usSOC;				//总的SOC      1%
@@ -88,11 +107,15 @@ typedef struct
 	vu16				usChgFullTime;		//总的充满时间 1min
 	vu16				usDisChgEmptyTime;	//总的放空时间 1min
 	vu16				usPermMaxChgPwr;	//许可的最大充电功率 W
+	vu16				usPermMaxDisChgPwr;	//许可的最大放电功率 W
 	DevNum_T			tDevNum;   			//电池包数量   最大6台
 	State_T				tState;				//主机系统状态
 	DevInfo_T           tDevInfo[bmsDEV_NUM];//错误代码     tDevInfo[0]为主机
-}BmsRx_T;              
+}BmsRx_T;
+#pragma pack()   //取消进行1字节对齐         
 extern	BmsRx_T   		tBmsRx;
+
+extern vu32 ulBmsRxErrCode;
 
 bool bBms_RecTaskInit(void);
 void vBms_RecTickTimer(void);

@@ -32,6 +32,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 OF SUCH DAMAGE.
 */
 
+#include "board_config.h"
+
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #include "gd32f50x.h"
 #else

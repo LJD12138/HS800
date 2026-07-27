@@ -142,6 +142,7 @@ bool bBms_SetDevState(DevState_E state);
 bool bBms_SetErrCode(BmsErrCode_E code, bool set);
 s8 cBms_Switch(SwitchObject_E obj, SwitchType_E type, bool fore_en);
 u8 ucBms_GetSoc(void);
+u16 usBms_GetPermMaxChgPwr(void);
 bool bBms_MemParamInit(BmsMemParam_T* p_bms_mem);
 void vBms_MemParamSet(u8 item, bool add);
 bool bBms_SetPerm(BmsPermObject_E obj, bool en);

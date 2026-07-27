@@ -52,7 +52,7 @@ void v_print_queue_task_update(Task_T *tp_task)
 
     /* 统一检查任务有效性（升级对象、缓冲区、设备状态、错误） */
     if(b_print_check_task_valid(tp_task) == false)
-        return;
+        cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR);
 
     /* 获取打印口接收缓存及任务回复缓存中的数据长度 */
     us_char_send_dev_len = lwrb_get_full(&tpPrintProtoRx->tRxBuff);
@@ -76,7 +76,7 @@ void v_print_queue_task_update(Task_T *tp_task)
         case PRINT_UPDATE_STEP_WAIT_SLAVE_READY:
         {
             #if(boardBMS_EN)
-            if(tUpdate.eObj == UO_BMS)
+            if(tUpdate.eObj == MO_BMS)
             {
                 if(tBms.eDevState != DS_UPDATE_MODE)
                     break;
@@ -101,7 +101,7 @@ void v_print_queue_task_update(Task_T *tp_task)
         case PRINT_UPDATE_STEP_PREPARE_UPDATE:
         {
             #if(boardBMS_EN)
-            if(tUpdate.eObj == UO_BMS)
+            if(tUpdate.eObj == MO_BMS)
             {
                 c_ret = c_print_bms_prepare_update(tp_task);
                 if(c_ret < 0)
@@ -215,33 +215,26 @@ static bool b_print_check_task_valid(Task_T *tp_task)
         return false;
 
     /* 升级对象无效则结束任务 */
-    if(tUpdate.eObj >= UO_INVAILD)
+    if(tUpdate.eObj >= MO_INVAILD)
     {
-        bUpdate_SetErrCode(UEF_P_INVALID_OBJ);
-        cQueue_GotoStep(tp_task, STEP_END);
+        bUpdate_SetErrCode(UEF_PQ_INVALID_OBJ);
         return false;
     }
 
     /* 检查回复缓冲区是否有效 */
     if(tp_task->tReplyBuff.buff == NULL)
     {
-        bUpdate_SetErrCode(UEF_P_BUFF_NULL);
+        bUpdate_SetErrCode(UEF_PQ_BUFF_NULL);
         return false;
     }
 
     /* 检查设备是否处于升级模式，且任务队列无新的任务*/
     if(tSysInfo.eDevState != DS_UPDATE_MODE || lwrb_get_full(&tp_task->tQueueBuff))
-    {
-        cQueue_GotoStep(tp_task, STEP_END);
         return false;
-    }
 
     /* 检查是否存在报错，若有错误则进入错误处理流程 */
-    if(tUpdate.eErrCode != UEF_NONE)
-    {
-        cQueue_GotoStep(tp_task, PRINT_UPDATE_STEP_ERROR); /* 进入错误收尾阶段 */
+    if(tUpdate.eErrCode != UEF_NONE && tp_task->ucStep < PRINT_UPDATE_STEP_ERROR)
         return false;
-    }
 
     return true;
 }

@@ -132,7 +132,7 @@ void vBms_RecTask(void *pvParameters)
 			c_result = cUpdate_ProtoCheck(&tpBmsProtoRx->tRxBuff);
 			//协议适配
 			if(c_result == PT_BAIKU)
-				cUpdate_ProtoSelect(UO_BMS, (ProtoType_E)c_result);
+				cUpdate_ProtoSelect(MO_BMS, (ProtoType_E)c_result);
 		}
 		else
 		#endif  //boardUPDATE

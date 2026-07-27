@@ -4,6 +4,7 @@
 *                                                                                                                *
 ******************************************************************************************************************/
 #include "MD_Dcac/md_dcac_queue_task.h"
+#include "main.h"
 
 #if(boardDCAC_EN)
 #include "MD_Dcac/md_dcac_task.h"
@@ -12,6 +13,10 @@
 #include "Adc/adc_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
+
+#if(boardBMS_EN)
+#include "MD_Bms/md_bms_task.h"
+#endif
 
 #include "app_info.h"
 
@@ -28,6 +33,7 @@ static void v_check_dischg_or_chg_perm(void);
 static void v_check_close_dischg(void);
 static void v_set_total_chg_pwr(void);
 static void v_set_ac_chg_pwr(void);
+static void v_check_freq_auto_mem(void);
 static u16 us_get_total_chg_pwr_by_in_curr(vu16 us_total_chg_pwr);
 
 /*****************************************************************************************************************
@@ -107,6 +113,8 @@ void v_dcac_queue_task_main(Task_T *tp_task)
 			v_set_total_chg_pwr();
 			//设置AC的充电功率
 			v_set_ac_chg_pwr();
+			//频率自动记忆
+			v_check_freq_auto_mem();
 			
 			cQueue_GotoStep(tp_task, 0);
         }
@@ -697,39 +705,29 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	vu16 us_total_chg_pwr = 0;
 	static vu16 us_last_total_chg_pwr = 0;
 	static vu16 us_total_chg_pwr_err_cnt = 0;
-	
+
 	if(tSysInfo.eDevState != DS_WORK)
 		return;
 
+	//===== 核心改造: 直接使用BMS许可功率作为总功率 =====
+	//BMS上报的usPermMaxChgPwr已包含SOC和温度限制
 	if(tDcac.uPerm.tPerm.bChgPerm == false)
 		us_total_chg_pwr = 0;
 	else if(bSys_LowVoltReqChg() == true)
 		us_total_chg_pwr = 100;
-	else if(ucBms_GetSoc() >= 98)
-		us_total_chg_pwr = sysCHG_PWR_LEVEL1;
-	else if(ucBms_GetSoc() <= 2 || ucBms_GetSoc() >= 90)
-		us_total_chg_pwr = sysCHG_PWR_LEVEL2;
 	else
-		us_total_chg_pwr = sysCHG_PWR_LEVEL3;
+		us_total_chg_pwr = MIN2(tBmsRx.usPermMaxChgPwr, sysCHG_PWR_LEVEL3);
 
+	//充电源分配均为0时, 总功率也置0
 	if((tSysInfo.tSetChgPwr.usDCAC + tSysInfo.tSetChgPwr.usMPPT) == 0)
 		us_total_chg_pwr = 0;
 
-	//电芯温度超过45°,降低功率
-	if(tBms.sMaxTemp >= 45)
-	{
-		if(us_total_chg_pwr > (sysCHG_PWR_LEVEL3 / 2))
-			us_total_chg_pwr = sysCHG_PWR_LEVEL3 / 2;
-	}
-
-	// us_total_chg_pwr = us_get_total_chg_pwr_by_in_curr(us_total_chg_pwr);
-
 	if(abs(tDcacRx.usChgPwr - us_total_chg_pwr) > 100)
 		us_total_chg_pwr_err_cnt++;
-	else 
+	else
 		us_total_chg_pwr_err_cnt = 0;
 
-	if(us_total_chg_pwr == us_last_total_chg_pwr && 
+	if(us_total_chg_pwr == us_last_total_chg_pwr &&
 		(us_total_chg_pwr_err_cnt < (5000 / dcacTASK_GET_PARAM_CYCLE_TIME)))
 		return;
 
@@ -737,7 +735,9 @@ __STATIC_INLINE void v_set_total_chg_pwr(void)
 	{
 		us_last_total_chg_pwr = us_total_chg_pwr;
 		us_total_chg_pwr_err_cnt = 0;
-		// sMyPrint("设置总的充电功率 %d",us_total_chg_pwr);
+
+		if(uPrint.tFlag.bDcacTask)
+			sMyPrint("设置总的充电功率 %d \r\n",us_total_chg_pwr);
 	}
 }
 
@@ -793,5 +793,64 @@ __STATIC_INLINE void v_set_ac_chg_pwr(void)
 		us_chg_pwr_err = 0;
 		sMyPrint("设置AC充电功率 %d\r\n",us_chg_pwr);
 	}	
+}
+
+/*****************************************************************************************************************
+-----函数功能    频率自动记忆:当实际输出频率与记忆频率不一致时,以实际频率为准重新记忆
+-----说明(备注)  避免usOutFreq轻微波动导致的误判,使用阈值+连续计数双重防抖
+-----传入参数    none
+-----输出参数    none
+-----返回值      none
+******************************************************************************************************************/
+__STATIC_INLINE void v_check_freq_auto_mem(void)
+{
+	//频率自动记忆:当实际输出频率与记忆频率不一致时,以实际频率为准重新记忆
+	static vu16 us_freq_diff_cnt = 0;
+	vu16 us_expected_freq;
+	vu16 us_new_freq;
+	
+	//只有在逆变输出工作时才检测频率
+	if(tDcac.eDisChgState != IOS_WORK)
+	{
+		us_freq_diff_cnt = 0;
+		return;
+	}
+	
+	//根据记忆的频率设置计算期望值(0.1Hz): 0->50Hz(500), 1->60Hz(600)
+	if(tAppMemParam.tDCAC.usAcOutFreq == 1)
+		us_expected_freq = 600;  //60Hz
+	else
+		us_expected_freq = 500;  //50Hz
+	
+	//检测实际频率与期望频率是否差异过大(允许±5Hz的波动,避免轻微波动误判)
+	if(abs((s16)tDcacRx.usOutFreq - (s16)us_expected_freq) > 50)
+	{
+		//以实际频率为准,判断是50Hz还是60Hz
+		us_new_freq = (tDcacRx.usOutFreq > 550) ? 1 : 0;
+		
+		//只有判断出的新频率与当前记忆不同才需要更新
+		if(us_new_freq != tAppMemParam.tDCAC.usAcOutFreq)
+		{
+			us_freq_diff_cnt++;
+			//连续3次检测到不一致才确认(约3秒,避免瞬时波动误判)
+			if(us_freq_diff_cnt >= 3)
+			{
+				us_freq_diff_cnt = 0;
+				
+				tAppMemParam.tDCAC.usAcOutFreq = us_new_freq;
+				
+				//保存到EEPROM
+				cApp_UpdateMemParam(tDcacMemParamStr);
+				
+				if(uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
+					log_i("bDcacTask:频率自动记忆,更新为%sHZ",
+						tAppMemParam.tDCAC.usAcOutFreq ? "60" : "50");
+			}
+		}
+		else
+			us_freq_diff_cnt = 0;
+	}
+	else
+		us_freq_diff_cnt = 0;
 }
 #endif  //boardDCAC_EN
