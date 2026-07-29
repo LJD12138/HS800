@@ -15,6 +15,7 @@
 
 //****************************************************Includes******************************************************************//
 #include "MD_Display/user_ui/eng_mode_ui.h"
+#include <stdbool.h>
 
 #if(boardENG_MODE_EN && boardDISPLAY_EN)
 
@@ -146,6 +147,7 @@ typedef struct
     uint8_t ucTickCnt;              /* 刷新计数器 */
     bool bExitReq;                  /* 退出请求 */
     bool bNeedRefresh;              /* 需要数据刷新 */
+    bool bPsEditing;                /* 参数设置编辑模式(true=调值, false=选项目) */
 } EngModeState_T;
 
 
@@ -259,7 +261,6 @@ static void v_ps_update_data(void);
 static void v_ps_update_selection(void);
 static void v_ss_update_selection(void);
 static void v_cfm_update_selection(void);
-static void v_ps_adjust_param(bool b_add);
 
 
 //****************************************************辅助函数**************************************************//
@@ -551,7 +552,7 @@ static void v_pv_update_data(void)
         case 0: /* BMS */
         {
             snprintf(buf_l, sizeof(buf_l), "ErrCode");
-            snprintf(buf_r, sizeof(buf_r), "0x%X", tBms.uErrCode.ullCode);
+            snprintf(buf_r, sizeof(buf_r), "0x%x", tBms.uErrCode.ullCode);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "Permit");
@@ -580,11 +581,11 @@ static void v_pv_update_data(void)
             v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "PermMaxChgPwr");
-            snprintf(buf_r, sizeof(buf_r), "%.1fW", tBmsRx.usPermMaxDisChgPwr);
+            snprintf(buf_r, sizeof(buf_r), "%dW", tBmsRx.usPermMaxChgPwr);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "PermMaxDisChgPwr");
-            snprintf(buf_r, sizeof(buf_r), "%.1fW", tBmsRx.usPermMaxDisChgPwr);
+            snprintf(buf_r, sizeof(buf_r), "%dW", tBmsRx.usPermMaxDisChgPwr);
             v_pv_set_row(7, buf_l, buf_r, ul_accent);
 
             v_pv_hide_rows(8);
@@ -920,6 +921,7 @@ static void v_ps_switch_tab(uint8_t uc_tab)
 
     S_tState.ucPsTab = uc_tab;
     S_tState.ucPsItem = 0;
+    S_tState.bPsEditing = false;
 
     /* 更新Tab标题 */
     lv_obj_set_style_text_color(S_tObjs.p_ps_tab_title,
@@ -1151,9 +1153,24 @@ static void v_ps_update_selection(void)
         {
             lv_obj_set_style_bg_color(S_tObjs.p_ps_items[i],
                 lv_color_hex(ENG_CLR_SEL_BG), LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_obj_set_style_border_width(S_tObjs.p_ps_items[i], 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_obj_set_style_border_color(S_tObjs.p_ps_items[i],
-                lv_color_hex(ENG_CLR_SELECTED), LV_PART_MAIN | LV_STATE_DEFAULT);
+            if(S_tState.bPsEditing)
+            {
+                /* 编辑模式: 加粗橙色左边框, 区别于浏览模式的青色细边框 */
+                lv_obj_set_style_border_width(S_tObjs.p_ps_items[i], 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_color(S_tObjs.p_ps_items[i],
+                    lv_color_hex(ENG_CLR_DCAC), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_side(S_tObjs.p_ps_items[i],
+                    LV_BORDER_SIDE_LEFT, LV_PART_MAIN | LV_STATE_DEFAULT);
+            }
+            else
+            {
+                /* 浏览模式: 青色细边框 */
+                lv_obj_set_style_border_width(S_tObjs.p_ps_items[i], 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_color(S_tObjs.p_ps_items[i],
+                    lv_color_hex(ENG_CLR_SELECTED), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_side(S_tObjs.p_ps_items[i],
+                    LV_BORDER_SIDE_FULL, LV_PART_MAIN | LV_STATE_DEFAULT);
+            }
             lv_obj_set_style_text_color(S_tObjs.p_ps_lbl_n[i],
                 lv_color_hex(ENG_CLR_SELECTED), LV_PART_MAIN | LV_STATE_DEFAULT);
         }
@@ -1172,117 +1189,6 @@ static void v_ps_update_selection(void)
     {
         lv_obj_scroll_to_view(S_tObjs.p_ps_items[S_tState.ucPsItem], LV_ANIM_ON);
     }
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 调整当前选中的参数值
- * 说明(备注)  : b_add=true增加, b_add=false减少; 对于只读/开关类型项做特殊处理
- ************************************************************************************************************************/
-static void v_ps_adjust_param(bool b_add)
-{
-/***********************************************************************************************************************
- -----函数功能    调整记忆参数设置页当前选中参数值
- -----说明(备注)  按键任务上下文(只改后端tEngMode/tAppMemParam, 不调LVGL):
-				  b_add=true增加/置1, false减少/置0; 同步ucEngModeItem+cEngModeState;
-				  设置S_tState.bNeedRefresh由DispTask在下一个tick刷新UI
-				  只读项(版本号)直接忽略; 风扇强制开关走vFan_ForceOpenFan
- -----传入参数    b_add: true=增加/置1, false=减少/置0
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
-    uint8_t uc_tab = S_tState.ucPsTab;
-    uint8_t uc_item = S_tState.ucPsItem;
-
-    /* 同步 tEngMode 以便后台任务处理 */
-    tEngMode.ucEngModeItem = uc_item;
-
-    switch(uc_tab)
-    {
-        case 0: /* SYS */
-        {
-            if(uc_item == 0)
-            {
-                /* 版本号: 只读, 不调整 */
-            }
-            else if(uc_item == 1)
-            {
-                /* 风扇控制: 开关类型 */
-                #if(boardHEAT_MANAGE_EN)
-                if(b_add)
-                    vFan_ForceOpenFan(true);
-                else
-                    vFan_ForceOpenFan(false);
-                #endif
-                tEngMode.cEngModeState = b_add ? 1 : 0;
-            }
-            else if(uc_item == 6)
-            {
-                /* 蜂鸣器开关: 取反 */
-                tAppMemParam.tSYS.bBuzSwitchOff = b_add ? 0 : 1;
-                tEngMode.cEngModeState = b_add ? 1 : 0;
-            }
-            else
-            {
-                /* 可调参数项 2~5 */
-                vSys_MemParamSet(uc_item, b_add);
-                tEngMode.cEngModeState = b_add ? 1 : -1;
-            }
-        }break;
-
-#if(boardDISPLAY_EN)
-        case 1: /* LCD */
-        {
-            tEngMode.ucEngModeItem = uc_item;
-            vDisp_MemParamSet(b_add);
-            tEngMode.cEngModeState = b_add ? 1 : -1;
-        }break;
-#endif
-
-#if(boardBMS_EN)
-        case 2: /* BAT */
-        {
-            vBms_MemParamSet(uc_item, b_add);
-            tEngMode.cEngModeState = b_add ? 1 : -1;
-        }break;
-#endif
-
-#if(boardMPPT_EN)
-        case 3: /* MPPT */
-        {
-            vMppt_MemParamSet(uc_item, b_add);
-            tEngMode.cEngModeState = b_add ? 1 : -1;
-        }break;
-#endif
-
-#if(boardDCAC_EN)
-        case 4: /* DCAC */
-        {
-            vDcac_MemParamSet(uc_item, b_add);
-            tEngMode.cEngModeState = b_add ? 1 : -1;
-        }break;
-#endif
-
-#if(boardUSB_EN)
-        case 5: /* USB */
-        {
-            vUsb_MemParamSet(uc_item, b_add);
-            tEngMode.cEngModeState = b_add ? 1 : -1;
-        }break;
-#endif
-
-#if(boardDC_EN)
-        case 6: /* DC */
-        {
-            vDc_MemParamSet(uc_item, b_add);
-            tEngMode.cEngModeState = b_add ? 1 : -1;
-        }break;
-#endif
-
-        default:
-            break;
-    }
-
-    S_tState.bNeedRefresh = true;
 }
 
 
@@ -1624,8 +1530,20 @@ void vEngMode_KeyUp(void)
 
         case ENG_PAGE_PARAM_SET:
         {
-            /* 增加参数值(仅操作后端数据, UI刷新由DispTask通过bNeedRefresh执行) */
-            v_ps_adjust_param(true);
+            if(S_tState.bPsEditing)
+            {
+                /* 编辑模式: 增加参数值 */
+                vEng_AdjustParam(S_tState.ucPsTab, S_tState.ucPsItem, true);
+                S_tState.bNeedRefresh = true;
+            }
+            else
+            {
+                /* 浏览模式: 上移选中项 */
+                if(S_tState.ucPsItem > 0)
+                    S_tState.ucPsItem--;
+                tEngMode.ucEngModeItem = S_tState.ucPsItem;
+                S_tState.eUiAction = ENG_UI_ACTION_PS_ITEM;
+            }
         }break;
 
         case ENG_PAGE_SYS_SET:
@@ -1666,8 +1584,21 @@ void vEngMode_KeyDown(void)
 
         case ENG_PAGE_PARAM_SET:
         {
-            /* 减少参数值(仅操作后端数据, UI刷新由DispTask通过bNeedRefresh执行) */
-            v_ps_adjust_param(false);
+            if(S_tState.bPsEditing)
+            {
+                /* 编辑模式: 减少参数值 */
+                vEng_AdjustParam(S_tState.ucPsTab, S_tState.ucPsItem, false);
+                S_tState.bNeedRefresh = true;
+            }
+            else
+            {
+                /* 浏览模式: 下移选中项 */
+                uint8_t uc_cnt = S_aucPsItemCount[S_tState.ucPsTab];
+                if(S_tState.ucPsItem < uc_cnt - 1)
+                    S_tState.ucPsItem++;
+                tEngMode.ucEngModeItem = S_tState.ucPsItem;
+                S_tState.eUiAction = ENG_UI_ACTION_PS_ITEM;
+            }
         }break;
 
         case ENG_PAGE_SYS_SET:
@@ -1792,13 +1723,8 @@ void vEngMode_KeyEnter(void)
 
         case ENG_PAGE_PARAM_SET:
         {
-            /* 切换到下一个参数 */
-            uint8_t uc_cnt = S_aucPsItemCount[S_tState.ucPsTab];
-            if(S_tState.ucPsItem < uc_cnt - 1)
-                S_tState.ucPsItem++;
-            else
-                S_tState.ucPsItem = 0;
-
+            /* 进入编辑模式 */
+            S_tState.bPsEditing = true;
             tEngMode.ucEngModeItem = S_tState.ucPsItem;
             tEngMode.cEngModeState = 0;
             S_tState.eUiAction = ENG_UI_ACTION_PS_ITEM;
@@ -1819,8 +1745,8 @@ void vEngMode_KeyEnter(void)
                     {
                         /* 保存所有参数到 Flash */
                         cApp_UpdateMemParam("tAppMemParam");
-                        /* 退出工程模式 -> 开机工作 (UI删除由显示任务在bExitReq时执行) */
-                        cSys_Switch(SO_KEY, ST_ON, false);
+                        /* 退出工程模式 -> 关机 */
+                        cSys_Switch(SO_KEY, ST_OFF, true);
                         S_tState.bExitReq = true;
                     }break;
 
@@ -1830,8 +1756,8 @@ void vEngMode_KeyEnter(void)
                         cApp_MemParamInit("tAppMemParam");
                         /* 保存到 Flash */
                         cApp_UpdateMemParam("tAppMemParam");
-                        /* 退出工程模式 -> 关机 (UI删除由显示任务在bExitReq时执行) */
-                        cSys_Switch(SO_KEY, ST_OFF, false);
+                        /* 退出工程模式 -> 关机) */
+                        cSys_Switch(SO_KEY, ST_OFF, true);
                         S_tState.bExitReq = true;
                     }break;
 
@@ -1869,9 +1795,22 @@ void vEngMode_KeyBack(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_PARAM_VIEW:
-        case ENG_PAGE_PARAM_SET:
         case ENG_PAGE_SYS_SET:
             S_tState.ePendingPage = ENG_PAGE_MAIN_MENU;
+            break;
+
+        case ENG_PAGE_PARAM_SET:
+            if(S_tState.bPsEditing)
+            {
+                /* 编辑模式: 退出编辑, 恢复浏览 */
+                S_tState.bPsEditing = false;
+                S_tState.eUiAction = ENG_UI_ACTION_PS_ITEM;
+            }
+            else
+            {
+                /* 浏览模式: 返回主菜单 */
+                S_tState.ePendingPage = ENG_PAGE_MAIN_MENU;
+            }
             break;
 
         case ENG_PAGE_CONFIRM:
@@ -2015,6 +1954,8 @@ void vEngMode_UiTick(void)
     {
         v_page_show(S_tState.ePendingPage);
         S_tState.ePendingPage = ENG_PAGE_MAX;
+        /* 页面切换后, 旧页面的LVGL对象已被销毁, 清除遗留的UI动作请求以防止访问已释放对象 */
+        S_tState.eUiAction = ENG_UI_ACTION_NONE;
     }
 
     /* 执行按键产生的UI更新请求(在显示任务上下文中操作LVGL对象, 避免跨任务并发) */

@@ -217,14 +217,8 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 		//继续发送
 		case baikuCMD_RRQ_CONT_SEND:  //C6
 		{
-			#if(boardUSE_OS)
-			taskENTER_CRITICAL();
-			#endif
 			u16 us_pending_len = tUpdate.usPendPacketLen;
 			tUpdate.usPendPacketLen = 0;
-			#if(boardUSE_OS)
-			taskEXIT_CRITICAL();
-			#endif
 
 			if(us_pending_len == 0)
 				return 0;

@@ -240,17 +240,10 @@ static bool b_print_c5_proc_rec_data(u8 ucSN)
         bUpdate_SetErrCode(UEF_PB_C5_FWD_FAIL);
         return false;
     }
+    
     vUpdate_ResetRecTimeout(true);
 	
-	 /* 记录本包长度，待BMS回复C6确认后再提交计数 */
-	#if(boardUSE_OS)
-	taskENTER_CRITICAL();
-	#endif
 	tUpdate.usPendPacketLen = tpPrintProtoRx->ucValidLen;
-	#if(boardUSE_OS)
-	taskEXIT_CRITICAL();
-	#endif
-	
     return true;
 }
 

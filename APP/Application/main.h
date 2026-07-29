@@ -88,11 +88,11 @@ OF SUCH DAMAGE.
 
 #define     	BIT_GET(obj, XX_CODE)        			((obj >> XX_CODE) & (0x01))
 
-#define     	ERR_SET(obj, ERR_CODE)         			BIT_SET(obj, ((u16)0x1 << ERR_CODE))
-#define     	ERR_CLR(obj, ERR_CODE)         			BIT_CLR(obj, ((u16)0x1 << ERR_CODE))
+#define     	ERR_SET(obj, ERR_CODE)         			BIT_SET(obj, ((u64)0x1 << ERR_CODE))
+#define     	ERR_CLR(obj, ERR_CODE)         			BIT_CLR(obj, ((u64)0x1 << ERR_CODE))
 
-#define     	STAT_SET(obj, STAT_CODE)        		BIT_SET(obj, ((u16)0x1 << STAT_CODE))
-#define     	STAT_CLR(obj, STAT_CODE)        		BIT_CLR(obj, ((u16)0x1 << STAT_CODE))
+#define     	STAT_SET(obj, STAT_CODE)        		BIT_SET(obj, ((u64)0x1 << STAT_CODE))
+#define     	STAT_CLR(obj, STAT_CODE)        		BIT_CLR(obj, ((u64)0x1 << STAT_CODE))
 
 
 

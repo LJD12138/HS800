@@ -1,4 +1,5 @@
 #include "MD_Dcac/md_dcac_rec_data_proc.h"
+#include "app_info.h"
 #include <string.h>
 
 #if(boardDCAC_EN)
@@ -168,6 +169,10 @@ s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx)
 			tDcacRx.usInPwr = LIMIT_MIN(tParam3.sAcInPwr, 0);
 			tDcacRx.usInChgPwr = LIMIT_MIN(tParam3.sAcChgPwr, 0);
 			tDcacRx.usChgPwr = LIMIT_MIN(tParam3.sBatInPwr, 0);
+
+
+			if(tDcacRx.usInVolt < tAppMemParam.tDCAC.usMinInVolt)
+				tParam3.sAcInCurr = 0;
 
 			//G3604 0.1A     G2404 0.01A
 			if(strstr(boardSOFTWARE_VERSION, "G3604") != NULL)

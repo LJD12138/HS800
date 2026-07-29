@@ -21,7 +21,7 @@
 #include "app_info.h"
 
 
-#define       	dcacTASK_GET_PARAM_CYCLE_TIME			1000
+#define       	dcacTASK_GET_PARAM_CYCLE_TIME			100
 
 
 //****************************************************参数初始化**************************************************//
@@ -117,6 +117,7 @@ void v_dcac_queue_task_main(Task_T *tp_task)
 			v_check_freq_auto_mem();
 			
 			cQueue_GotoStep(tp_task, 0);
+			vTaskDelay(1000 - (dcacTASK_GET_PARAM_CYCLE_TIME * 4));
         }
 		break;
 			
@@ -417,15 +418,15 @@ __STATIC_INLINE void v_proc_rec_param(void)
 		}
 		else if(tDcacRx.usOutPwr >= us_overload_pwr)
 		{
-			if(us_temp != 28)
+			if(us_temp != 10)
 				us_overload_cnt = 0;
-			us_temp = 28;
+			us_temp = 10;
 		}
 		else
 		{
-			if(us_temp != 85)
+			if(us_temp != 60)
 				us_overload_cnt = 0;
-			us_temp = 85;
+			us_temp = 60;
 		}
 				
 		us_overload_cnt++;

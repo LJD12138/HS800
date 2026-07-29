@@ -422,7 +422,8 @@ static void v_sys_check_prote(void)
 	//------------------------------------------------系统输入过温-----------------------------------------------------
 	if(
 	   #if(boardDCAC_EN)
-	   tDcac.uErrCode.tCode.bSysOT == 1
+	   tDcac.uErrCode.tCode.bDcacOT == 1
+	   || tDcac.uErrCode.tCode.bSysOT == 1
 	   #else
 	   false
 	   #endif  //boardDCAC_EN
@@ -430,6 +431,8 @@ static void v_sys_check_prote(void)
 	   #if(boardBMS_EN)
 	   || tBms.uErrCode.tCode.bSysChgOT == 1
 	   || tBms.uErrCode.tCode.bSysDisChgOT == 1
+	   || tBms.uErrCode.tCode.uBmsCode.tCode.bDCOT == 1
+	   || tBms.uErrCode.tCode.uBmsCode.tCode.bCOT == 1
 	   #endif  //boardBMS_EN
 
 	   #if(boardDC_EN)
@@ -454,8 +457,10 @@ static void v_sys_check_prote(void)
 	//---------------------------------------------系统输入低温 ---------------------------------------------------
 	if(
 	   #if(boardBMS_EN)
-	   tBms.uErrCode.tCode.bSysChgUT == 1     || 
-	   tBms.uErrCode.tCode.bSysDisChgUT == 1
+	   tBms.uErrCode.tCode.bSysChgUT == 1
+		|| tBms.uErrCode.tCode.bSysDisChgUT == 1
+		|| tBms.uErrCode.tCode.uBmsCode.tCode.bDCUT == 1
+		|| tBms.uErrCode.tCode.uBmsCode.tCode.bCUT == 1
 	   #else
 	   false
 	   #endif  //boardBMS_EN
@@ -473,7 +478,8 @@ static void v_sys_check_prote(void)
 	//-----------------------------------------系统过载保护---------------------------------------------------
 	if(
 	   #if(boardDCAC_EN)
-	   bDcac_GetOverLoadState() == true 
+	   tDcac.uErrCode.tCode.bDcacOL == 1
+		|| tDcac.uErrCode.tCode.bSysOutOL == 1
 	   #else
 	   false
 	   #endif  //boardDCAC_EN

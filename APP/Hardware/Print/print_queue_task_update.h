@@ -27,7 +27,7 @@ extern "C" {
 #include "Baiku/baiku_proto.h"
 
 /* ==========================================macros======================================*/
-#define        printTASK_UPDATE_CYCLE_TIME                 100
+#define        printTASK_UPDATE_CYCLE_TIME                 10
 
 /* ==========================================globals=====================================*/
 extern u16 us_char_send_dev_len;

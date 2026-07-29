@@ -196,7 +196,6 @@ void vDcac_TickTimer(void);
 void vDcac_RefreshOffTime(void);
 bool bDcac_SetAutoOffTime(u16 time);
 bool bDcac_InProteFuncSwitch(bool sw);
-bool bDcac_GetOverLoadState(void);
 bool bDcac_SetPerm(DcacPermObject_E obj, bool en);
 bool bDcac_MemParamInit(DcacMemParam_T* p_dcac_mem);
 void vDcac_MemParamSet(u8 item, bool add);

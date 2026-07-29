@@ -9,8 +9,8 @@
  *             LIGHT_SHORT -> KeyUp    (上移/增值)
  *             USB_SHORT   -> KeyDown  (下移/减值)
  *             POWER_SHORT -> KeyEnter (确认/选择)
- *             DC_SHORT    -> KeyRight (右切Tab)
- *             AC_SHORT    -> KeyLeft  (左切Tab)
+ *             DC_SHORT    -> KeyLeft  (左切Tab)
+ *             AC_SHORT    -> KeyRight (右切Tab)
  *             DC_LONG     -> KeyBack  (返回/退出)
  * -------------------------------------------------------
  * Copyright (c) 2026 -inc
@@ -47,8 +47,8 @@
 u8 const KeyTriType_UpBuff[ 2 ]     = { KTE_LIGHT_SHORT, KTE_FUN_NULL};         //上/增
 u8 const KeyTriType_DownBuff[ 2 ]   = { KTE_USB_SHORT, KTE_FUN_NULL};          	//下/减
 u8 const KeyTriType_EnterBuff[ 2 ]  = { KTE_POWER_SHORT, KTE_FUN_NULL};       	//确认
-u8 const KeyTriType_RightBuff[ 2 ]  = { KTE_DC_SHORT, KTE_FUN_NULL};       		//右切Tab
-u8 const KeyTriType_LeftBuff[ 2 ]   = { KTE_AC_SHORT, KTE_FUN_NULL};        	//左切Tab
+u8 const KeyTriType_RightBuff[ 2 ]  = { KTE_AC_SHORT, KTE_FUN_NULL};        	//右切Tab
+u8 const KeyTriType_LeftBuff[ 2 ]   = { KTE_DC_SHORT, KTE_FUN_NULL};       		//左切Tab
 u8 const KeyTriType_BackBuff[ 2 ]   = { KTE_DC_LONG, KTE_FUN_NULL};       		//返回
 
 

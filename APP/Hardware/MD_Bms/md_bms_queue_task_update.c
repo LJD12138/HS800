@@ -27,14 +27,13 @@ static bool b_bms_check_task_valid(Task_T *tp_task);
 ******************************************************************************************************************/
 void v_bms_queue_task_update(Task_T *tp_task)
 {
-	/* 统一检查任务有效性（升级对象、缓冲区、设备状态、错误） */
+	#if(boardUSE_OS)
+	ulTaskNotifyTake(pdTRUE, bmsTASK_UPDATE_TIME);
+	#endif  //boardUSE_OS
+
+	//升级失败,进入收尾流程
 	if(b_bms_check_task_valid(tp_task) == false)
-	{
-		#if(boardUSE_OS)
-		ulTaskNotifyTake(pdTRUE, bmsTASK_UPDATE_TIME);
-		#endif  //boardUSE_OS
-		return;
-	}
+		cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_ERROR_CLEANUP);
 
 	switch(tp_task->ucStep)
 	{
@@ -110,10 +109,6 @@ void v_bms_queue_task_update(Task_T *tp_task)
 			cQueue_GotoStep(tp_task, STEP_END);
 		break;
 	}
-
-	#if(boardUSE_OS)
-	ulTaskNotifyTake(pdTRUE, bmsTASK_UPDATE_TIME);
-	#endif  //boardUSE_OS
 }
 
 
@@ -134,7 +129,6 @@ static bool b_bms_check_task_valid(Task_T *tp_task)
 	if(tUpdate.eObj != MO_BMS)
 	{
 		bUpdate_SetErrCode(UEF_BQ_INVALID_OBJ);
-		cQueue_GotoStep(tp_task, STEP_END);
 		return false;
 	}
 
@@ -147,17 +141,11 @@ static bool b_bms_check_task_valid(Task_T *tp_task)
 
 	/* 检查设备是否处于升级模式，且任务队列无新的任务 */
 	if(tSysInfo.eDevState != DS_UPDATE_MODE || lwrb_get_full(&tp_task->tQueueBuff))
-	{
-		cQueue_GotoStep(tp_task, STEP_END);
 		return false;
-	}
 
 	/* 检查是否存在报错，若有错误则进入错误处理流程 */
-	if(tUpdate.eErrCode != UEF_NONE)
-	{
-		cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_ERROR_CLEANUP);
+	if(tUpdate.eErrCode != UEF_NONE && tp_task->ucStep < BMS_UPDATE_STEP_ERROR_CLEANUP)
 		return false;
-	}
 
 	return true;
 }

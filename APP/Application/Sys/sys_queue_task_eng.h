@@ -8,21 +8,17 @@
 #include "main.h"
 #include "queue_task.h"
 
-//工程步骤
+//工程模式后台步骤(对应PARAM_SET各Tab, 由S_aucPsTabToEms映射)
 typedef enum
 {
-	EMS_INIT = 0,
-	EMS_SYS,
-	EMS_LCD,
-	EMS_BAT,
-	EMS_DCAC,
-	EMS_MPPT,
-	EMS_USB,
-	EMS_DC,
-	EMS_ADC,
-	EMS_LIGHT,
-	EMS_SET,
-	EMS_FINISH,
+	EMS_INIT = 0,	/* 初始(系统任务启动时) */
+	EMS_SYS,		/* SYS Tab: 风扇/蜂鸣器持续控制 */
+	EMS_LCD,		/* LCD Tab */
+	EMS_BAT,		/* BAT Tab */
+	EMS_DCAC,		/* DCAC Tab */
+	EMS_MPPT,		/* MPPT Tab */
+	EMS_USB,		/* USB Tab */
+	EMS_DC,			/* DC Tab */
 }EngModeStep_E;
 
 
@@ -35,8 +31,8 @@ typedef struct
 
 extern EngMode_T tEngMode;
 
-void vEng_TaskFunc(Task_T *tp_task);
 void vEng_RefreshEngModeTime(void);
+void vEng_AdjustParam(uint8_t uc_tab, uint8_t uc_item, bool b_add);
 
 
 #endif //boardENG_MODE_EN
