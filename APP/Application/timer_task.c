@@ -195,7 +195,7 @@ static void vTimer_RepetCallback( TimerHandle_t xTimer )
 	#endif  //boardUPDATE
 	
 	timer_cnt++;
-	if(timer_cnt >= (1000/boardREPET_TIMER_CYCLE_TMIE)) //1S计时 
+	if(timer_cnt >= (1000 / boardREPET_TIMER_CYCLE_TMIE)) //1S计时 
 	{
 		timer_cnt = 0;
 		vSys_TickTimer();

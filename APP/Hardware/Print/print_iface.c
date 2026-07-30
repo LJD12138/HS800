@@ -167,7 +167,11 @@ static void v_print_usart_init( void )
     
     usart_interrupt_flag_clear(printUSART, USART_INT_FLAG_TBE);
     usart_interrupt_disable(printUSART, USART_INT_TBE); 	
-    #endif	
+	
+    //串口空闲中断
+    usart_interrupt_flag_clear(printUSART, USART_INT_FLAG_IDLE);
+    usart_interrupt_enable(printUSART, USART_INT_IDLE); 
+    #endif
 
     usart_enable(printUSART);
 }
@@ -470,6 +474,20 @@ void printUSART_IRQ_HANDLER(void)
 ************************************************************************************************************************/
 void printUSART_IRQ_HANDLER(void)
 {
+    //串口空闲中断：一帧数据接收完成
+    if(RESET != usart_interrupt_flag_get(printUSART, USART_INT_FLAG_IDLE))
+    {
+        //清除空闲中断标志
+        usart_interrupt_flag_clear(printUSART, USART_INT_FLAG_IDLE);
+        //清除空闲标志位
+        usart_data_receive(printUSART);
+        //通知接收任务处理数据
+        #if(boardUSE_OS)
+        if(tPrintTaskHandler != NULL)
+            vTaskNotifyGiveFromISR(tPrintTaskHandler, NULL);
+        #endif  //boardUSE_OS
+    }
+
     if(RESET != usart_interrupt_flag_get(printUSART, USART_INT_FLAG_RBNE))
 	{
 		usart_interrupt_flag_clear(printUSART, USART_INT_FLAG_RBNE);

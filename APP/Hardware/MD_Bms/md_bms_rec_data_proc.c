@@ -120,9 +120,8 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 				return 1;
 			
 			if(tSysInfo.eDevState != DS_UPDATE_MODE)
-			{
-				cUpdate_ChSelect(MO_BMS, CT_PRINT);
-			}
+				if(cUpdate_ChSelect(MO_BMS, CT_PRINT) <= 0)
+					return -73;
 			
 			if(tUpdate.eChType != CT_PRINT)
 				if(cUpdate_ChSelect(MO_BMS, CT_PRINT) <= 0)
@@ -132,8 +131,8 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t* proto)
 				if(cUpdate_ProtoSelect(MO_BMS, PT_BAIKU) <= 0)
 					return -72;
 
-			if(tBms.eDevState != DS_UPDATE_MODE)
-				cQueue_AddQueueTask(tpBmsTask, BTI_UPDATE, 0, false);
+//			if(tBms.eDevState != DS_UPDATE_MODE)
+//				cQueue_AddQueueTask(tpBmsTask, BTI_UPDATE, 0, false);
         }
         break;
 
@@ -190,8 +189,6 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t* proto)
 		//请求开始发送
 		case baikuCMD_RRQ_START_SEND://C4               
         {
-			vUpdate_ResetRecTimeout(true);
-
 			c_print_cs_C4_req_start_send();
 
 			if(tBms.eDevState == DS_UPDATE_MODE

@@ -281,9 +281,6 @@ bool bDcac_IfaceSetBaud(u32 baud)
 	if(baud == 0)
 		return false;
 
-	if(dcacUSART_BAUD == baud)
-		return true;
-
 	#if(boardDCAC_485_IFACE_EN)
 	vDcac_485TransEnable(false);
 	#endif

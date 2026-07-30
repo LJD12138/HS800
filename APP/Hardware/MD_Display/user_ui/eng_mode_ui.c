@@ -552,19 +552,19 @@ static void v_pv_update_data(void)
         case 0: /* BMS */
         {
             snprintf(buf_l, sizeof(buf_l), "ErrCode");
-            snprintf(buf_r, sizeof(buf_r), "0x%x", tBms.uErrCode.ullCode);
+            snprintf(buf_r, sizeof(buf_r), "0x%llx", tBms.uErrCode.ullCode);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "Permit");
             snprintf(buf_r, sizeof(buf_r), "0x%X", tBms.uPerm.ucPerm);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "Online");
+            snprintf(buf_l, sizeof(buf_l), "State");
             {
                 const char *p_st = "NULL";
                 if(tBms.eWorkState == BWS_DISCHG) p_st = "DISG";
                 else if(tBms.eWorkState == BWS_CHG) p_st = "CHG";
-                snprintf(buf_r, sizeof(buf_r), "%u St:%s", tBmsRx.tDevNum.ucOnlineNum, p_st);
+                snprintf(buf_r, sizeof(buf_r), "Online:%d WorkMode:%s", tBmsRx.tDevNum.ucOnlineNum, p_st);
             }
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
@@ -603,173 +603,177 @@ static void v_pv_update_data(void)
             snprintf(buf_r, sizeof(buf_r), "0x%d", tMppt.bChgPerm);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
+            snprintf(buf_l, sizeof(buf_l), "WorkMode");
+            {
+                const char *p_work_mode = "NULL";
+                if(tMppt.eWorkMode == MWM_PV)
+                    p_work_mode = "PV";
+                else if(tMppt.eWorkMode == MWM_DC)
+                    p_work_mode = "DC";
+                snprintf(buf_r, sizeof(buf_r), "%s", p_work_mode);
+            }
+            v_pv_set_row(2, buf_l, buf_r, ul_accent);
+
             snprintf(buf_l, sizeof(buf_l), "InVolt");
             snprintf(buf_r, sizeof(buf_r), "%.1fV", tMpptRx.usInVolt * 0.1f);
-            v_pv_set_row(2, buf_l, buf_r, ul_accent);
+            v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "InCurr");
             snprintf(buf_r, sizeof(buf_r), "%.2fA", tMpptRx.usInCurr * 0.01f);
-            v_pv_set_row(3, buf_l, buf_r, ul_accent);
+            v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "InPwr");
             snprintf(buf_r, sizeof(buf_r), "%.1fW", tMpptRx.usInPwr * 0.1f);
-            v_pv_set_row(4, buf_l, buf_r, ul_accent);
+            v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "MaxTemp");
             snprintf(buf_r, sizeof(buf_r), "%dC", tMpptRx.sMaxTemp);
-            v_pv_set_row(5, buf_l, buf_r, ul_accent);
-
-            snprintf(buf_l, sizeof(buf_l), "InType");
-            snprintf(buf_r, sizeof(buf_r), "T:%u C:%u",
-                (uint8_t)tMpptRx.uInType, (uint8_t)tMppt.bChgPerm);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
-            
-            v_pv_hide_rows(7);
+
+            snprintf(buf_l, sizeof(buf_l), "MaxInPwr");
+            snprintf(buf_r, sizeof(buf_r), "%dW", tMpptRx.usMaxInPwr);
+            v_pv_set_row(7, buf_l, buf_r, ul_accent);
+
+            v_pv_hide_rows(8);
         }break;
         #endif  /* boardMPPT_EN */
 
         #if(boardDCAC_EN)
         case 2: /* DCAC */
         {
-            snprintf(buf_l, sizeof(buf_l), "V_ac_in");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV", tDcacRx.usInVolt * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "ErrCode");
+            snprintf(buf_r, sizeof(buf_r), "0x%X", tDcac.uErrCode.ulCode);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "I_ac_in");
-            snprintf(buf_r, sizeof(buf_r), "%.1fA", tDcacRx.usInCurr * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "Permit");
+            {
+                const char *p_c = (tDcac.uPerm.tPerm.bChgPerm) ? "ON" : "OFF";
+                const char *p_d = (tDcac.uPerm.tPerm.bDisChgPerm) ? "ON" : "OFF";
+                snprintf(buf_r, sizeof(buf_r), "Chg:%s DisChg:%s", p_c, p_d);
+            }
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "P_ac_in");
-            snprintf(buf_r, sizeof(buf_r), "%uW %.1fHz", tDcacRx.usInPwr, tDcacRx.usInFreq * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "In Volt Curr Freq");
+            snprintf(buf_r, sizeof(buf_r), "%.1fV %.2fA %.1fHz", 
+                    tDcacRx.usInVolt * 0.1f, tDcacRx.usInCurr * 0.01f, tDcacRx.usInFreq * 0.1f);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "V_ac_out");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV %.1fA",
-                tDcacRx.usOutVolt * 0.1f, tDcacRx.usOutCurr * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "Out Volt Curr Freq");
+            snprintf(buf_r, sizeof(buf_r), "%.1fV %.2fA %.1fHz",
+                tDcacRx.usOutVolt * 0.1f, tDcacRx.usOutCurr * 0.01f, tDcacRx.usOutFreq * 0.1f);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "P_ac_out");
-            snprintf(buf_r, sizeof(buf_r), "%uW %.1fHz", tDcacRx.usOutPwr, tDcacRx.usOutFreq * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "Temp");
+            snprintf(buf_r, sizeof(buf_r), "Max:%dC Min:%dC", tDcacRx.sMaxTemp, tDcacRx.sMinTemp);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "ChgSt");
-            {
-                const char *p_c = (tDcac.eChgState == IOS_WORK) ? "CHG" : "OFF";
-                const char *p_d = (tDcac.eDisChgState == IOS_WORK) ? "DISG" : "OFF";
-                snprintf(buf_r, sizeof(buf_r), "C:%s D:%s", p_c, p_d);
-            }
-            v_pv_set_row(5, buf_l, buf_r, ul_accent);
-
-            snprintf(buf_l, sizeof(buf_l), "Temp");
-            snprintf(buf_r, sizeof(buf_r), "H:%dC L:%dC", tDcacRx.sMaxTemp, tDcacRx.sMinTemp);
-            v_pv_set_row(6, buf_l, buf_r, ul_accent);
-
-            snprintf(buf_l, sizeof(buf_l), "State");
-            snprintf(buf_r, sizeof(buf_r), "0x%04X E:0x%04X",
-                tDcacRx.uState.usState, tDcacRx.uErrCode.usCode[0]);
-            v_pv_set_row(7, buf_l, buf_r, ul_accent);
-
-            v_pv_hide_rows(8);
+            v_pv_hide_rows(5);
         }break;
         #endif  /* boardDCAC_EN */
 
         #if(boardUSB_EN)
         case 3: /* USB */
         {
-            snprintf(buf_l, sizeof(buf_l), "V_in");
+            snprintf(buf_l, sizeof(buf_l), "InVolt");
             snprintf(buf_r, sizeof(buf_r), "%.1fV", tUsb.usInVolt * 0.1f);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "I_in");
-            snprintf(buf_r, sizeof(buf_r), "%.1fA", tUsb.usInCurr * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "InCurr");
+            snprintf(buf_r, sizeof(buf_r), "%.2fA", tUsb.usInCurr * 0.01f);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "P_out");
+            snprintf(buf_l, sizeof(buf_l), "OutPwr");
             snprintf(buf_r, sizeof(buf_r), "%uW", tUsb.usOutPwr);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "P_wc/pd");
+            snprintf(buf_l, sizeof(buf_l), "WcPwr/PdPwr");
             snprintf(buf_r, sizeof(buf_r), "%uW/%uW", tUsb.usWcPwr, tUsb.usPdPwr);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "Temp");
+            snprintf(buf_l, sizeof(buf_l), "MaxTemp");
             snprintf(buf_r, sizeof(buf_r), "%d C", tUsb.sMaxTemp);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "State");
-            snprintf(buf_r, sizeof(buf_r), "St:%u E:0x%02X",
-                (uint8_t)tUsb.eDevState, tUsb.uErrCode.ucErrCode);
+            snprintf(buf_l, sizeof(buf_l), "DevState");
+            snprintf(buf_r, sizeof(buf_r), "%u",(uint8_t)tUsb.eDevState);
             v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
-            v_pv_hide_rows(6);
+            snprintf(buf_l, sizeof(buf_l), "ErrCode");
+            snprintf(buf_r, sizeof(buf_r), "0x%02X", tUsb.uErrCode.ucErrCode);
+            v_pv_set_row(6, buf_l, buf_r, ul_accent);
+
+            v_pv_hide_rows(7);
         }break;
         #endif  /* boardUSB_EN */
 
         #if(boardDC_EN) 
         case 4: /* DC */
         {
-            snprintf(buf_l, sizeof(buf_l), "V_in");
+            snprintf(buf_l, sizeof(buf_l), "InVolt");
             snprintf(buf_r, sizeof(buf_r), "%.1fV", tDc.usInVolt * 0.1f);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "I_in");
-            snprintf(buf_r, sizeof(buf_r), "%.1fA", tDc.usInCurr * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "InCurr");
+            snprintf(buf_r, sizeof(buf_r), "%.2fA", tDc.usInCurr * 0.1f);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "V_out");
+            snprintf(buf_l, sizeof(buf_l), "OutVolt");
             snprintf(buf_r, sizeof(buf_r), "%.1fV", tDc.usOutVolt * 0.1f);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "I_out");
-            snprintf(buf_r, sizeof(buf_r), "%.1fA", tDc.usOutCurr * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "OutCurr");
+            snprintf(buf_r, sizeof(buf_r), "%.2fA", tDc.usOutCurr * 0.01f);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "P_out");
+            snprintf(buf_l, sizeof(buf_l), "OutPwr");
             snprintf(buf_r, sizeof(buf_r), "%uW", tDc.usOutPwr);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "Temp");
+            snprintf(buf_l, sizeof(buf_l), "MaxTemp");
             snprintf(buf_r, sizeof(buf_r), "%d C", tDc.sMaxTemp);
             v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "State");
-            snprintf(buf_r, sizeof(buf_r), "St:%u E:0x%02X",
-                (uint8_t)tDc.eDevState, tDc.uErrCode.ucErrCode);
+            snprintf(buf_l, sizeof(buf_l), "DevState");
+            snprintf(buf_r, sizeof(buf_r), "%u",(uint8_t)tDc.eDevState);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
-            v_pv_hide_rows(7);
+            snprintf(buf_l, sizeof(buf_l), "ErrCode");
+            snprintf(buf_r, sizeof(buf_r), "0x%02X", tDc.uErrCode.ucErrCode);
+            v_pv_set_row(7, buf_l, buf_r, ul_accent);
+
+            v_pv_hide_rows(8);
         }break;
         #endif  /* boardDC_EN */
 
         #if(boardADC_EN)
         case 5: /* ADC */
         {
-            snprintf(buf_l, sizeof(buf_l), "V_sys");
-            snprintf(buf_r, sizeof(buf_r), "%.2fV", tAdcSamp.usSysInVolt * 0.01f);
+            snprintf(buf_l, sizeof(buf_l), "SYS_VOLT_ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcSYS_IN_VOLT]);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "KeyPwr");
-            snprintf(buf_r, sizeof(buf_r), "%u AD", tAdcSamp.usKeyPower);
+            snprintf(buf_l, sizeof(buf_l), "DC_TEMP_ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_OUT_TEMP]);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "DC_Temp");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tAdcSamp.sDcOutTemp);
+            snprintf(buf_l, sizeof(buf_l), "DC_CURR_ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_OUT_CURR]);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "DC_Curr");
-            snprintf(buf_r, sizeof(buf_r), "%.2fA", (double)tAdcSamp.fDcOutCurr);
+            snprintf(buf_l, sizeof(buf_l), "DC_VOLT_ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_OUT_VOLT]);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "DC_Vout");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV", tAdcSamp.usDcOutVolt * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "KEY_POWER _ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcKEY_POWER]);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "DC_Vin1");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV", tAdcSamp.usDcIn1Volt * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "DC_VIN1_ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_IN_1]);
             v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "DC_Vin2");
-            snprintf(buf_r, sizeof(buf_r), "%.1fV", tAdcSamp.usDcIn2Volt * 0.1f);
+            snprintf(buf_l, sizeof(buf_l), "DC_VIN2_ADC");
+            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_IN_2]);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
             v_pv_hide_rows(7);
@@ -790,19 +794,15 @@ static void v_pv_update_data(void)
             snprintf(buf_r, sizeof(buf_r), "0x%04X", tSysInfo.uErrCode.usCode);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "MaxTemp");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tSysInfo.sMaxTemp);
+            snprintf(buf_l, sizeof(buf_l), "Temp");
+            snprintf(buf_r, sizeof(buf_r), "%dC %dC %dC", tSysInfo.sMaxTemp, tSysInfo.sMinTemp, tSysInfo.sBoardTempMax);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "MinTemp");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tSysInfo.sMinTemp);
+            snprintf(buf_l, sizeof(buf_l), "SetChgPwr");
+            snprintf(buf_r, sizeof(buf_r), "Mppt:%dW Dcac:%dW", tSysInfo.tSetChgPwr.usMPPT, tSysInfo.tSetChgPwr.usDCAC);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "BoardTempMax");
-            snprintf(buf_r, sizeof(buf_r), "%d C", tSysInfo.sBoardTempMax);
-            v_pv_set_row(5, buf_l, buf_r, ul_accent);
-
-            v_pv_hide_rows(6);
+            v_pv_hide_rows(5);
         }break;
 
         default:

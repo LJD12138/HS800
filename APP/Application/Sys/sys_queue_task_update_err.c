@@ -180,6 +180,7 @@ void v_sys_queue_task_update_err(Task_T *tp_task)
         case UES_STEP_SHUTDOWN:
         {
             bUpdate_Init();
+            vUpdate_InitParam();
             cSys_Switch(SO_KEY, ST_OFF, true);
             cQueue_GotoStep(tp_task, STEP_END);
         }

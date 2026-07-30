@@ -62,15 +62,15 @@ void v_bms_queue_task_update(Task_T *tp_task)
 		/* 步骤1：等待升级完成 */
 		case BMS_UPDATE_STEP_FORWARD_DATA:
 		{
-			/* 检查从机升级结果，完成则进入收尾 */
-			if(tUpdate.eSlaveResult == UTR_OK || tUpdate.eSlaveResult == UTR_LATEST)
+			/* 检查主机升级结果，完成则进入收尾 */
+			if(tUpdate.eHostResult == UTR_OK || tUpdate.eHostResult == UTR_LATEST)
 			{
 				cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_FINISH_CLEANUP);
 				break;
 			}
 
 			//升级失败或取消
-			if(tUpdate.eSlaveResult == UTR_FAIL || tUpdate.eSlaveResult == UTR_CANCEL)
+			if(tUpdate.eHostResult == UTR_FAIL || tUpdate.eHostResult == UTR_CANCEL)
 			{
 				cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_ERROR_CLEANUP);
 				break;
@@ -81,9 +81,7 @@ void v_bms_queue_task_update(Task_T *tp_task)
 		/* 步骤2：升级错误,收尾 */
 		case BMS_UPDATE_STEP_ERROR_CLEANUP:
 		{
-			if(tUpdate.eErrCode == UEF_NONE)
-				bUpdate_SetErrCode(UEF_BQ_PENDING_FAIL);
-
+			bUpdate_SetResult(URT_SLAVE, UTR_FAIL);
 			cQueue_GotoStep(tp_task, BMS_UPDATE_STEP_END);
 		}
 		break;
@@ -91,6 +89,7 @@ void v_bms_queue_task_update(Task_T *tp_task)
 		/* 步骤3：升级完成，收尾 */
 		case BMS_UPDATE_STEP_FINISH_CLEANUP:
 		{
+			bUpdate_SetResult(URT_SLAVE, UTR_OK);
 			cQueue_GotoStep(tp_task, STEP_NEXT);
 		}
 		break;

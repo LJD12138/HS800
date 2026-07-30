@@ -34,7 +34,6 @@
 #define       	updateREC_LOST_OVERTIME        			((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 #define       	updateLOST_OVERTIME        				((60UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
 
-
 //****************************************************参数初始化**************************************************//
 Update_T tUpdate;
 
@@ -63,7 +62,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 
     switch (tp_task->ucStep)
     {
-		case 0:
+		case US_STEP_INIT:
 		{
 			vUpdate_InitParam();
 			bSys_SetDevState(DS_UPDATE_MODE, true);
@@ -72,7 +71,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		break;
 		
 		//启动升级对象
-		case 1:
+		case US_STEP_START_OBJECT:
 		{
 			if(b_update_start_object(tp_task) == false)
 				break;
@@ -81,7 +80,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		}
 		
 		//等待从机进入升级准备状态
-		case 2:
+		case US_STEP_WAIT_SLAVE_READY:
 		{
 			//超时10S重新发送
 			tp_task->usStepWaitCnt++;
@@ -116,7 +115,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		}
 		
 		//开启升级通道
-		case 3:
+		case US_STEP_OPEN_CHANNEL:
 		{
 			if(tUpdate.eChType == CT_PRINT)
 			{
@@ -131,7 +130,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		break;
 		
 		//等待进入透传模式
-		case 4:
+		case US_STEP_WAIT_TRANSPARENT:
 		{
 			//超时重新发送
 			tp_task->usStepWaitCnt++;
@@ -153,7 +152,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		}
 		
 		//等待升级完成
-		case 5:
+		case US_STEP_WAIT_COMPLETE:
 		{
 			bool b_host_finish = (tUpdate.eHostResult == UTR_OK ||
 								 tUpdate.eHostResult == UTR_LATEST);
@@ -170,8 +169,8 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		}
 		break;
 
-		//等待退出(延时5S,等待模块退出升级模式)
-		case 6:
+		//升级完成, 等待退出(延时5S,等待模块退出升级模式)
+		case US_STEP_WAIT_EXIT:
 		{
 			if(tUpdate.usLostOverTimeCnt == 0)
 				cQueue_GotoStep(tp_task, STEP_NEXT);
@@ -179,7 +178,7 @@ void v_sys_queue_task_update(Task_T *tp_task)
 		break;
 
 		//等待队列任务退出
-		case 7:
+		case US_STEP_WAIT_QUEUE_EXIT:
 		{
 			if(lwrb_get_full(&tp_task->tQueueBuff) != 0)
 				cQueue_GotoStep(tp_task, STEP_END);  //结束
@@ -304,6 +303,8 @@ void vUpdate_InitParam(void)
 	{
 		cModbus_ResetTx(tpDcacProtoTx, tpDcacProtoTx->usFrameDataSize);
 		cModbus_ResetRxBuff(tpDcacProtoRx);
+		bDcac_SetDevState(DS_SHUT_DOWN);
+		cQueue_GotoStep(tpDcacTask, STEP_END);
 	}
 	#endif  //boardDCAC_EN
 
@@ -312,12 +313,16 @@ void vUpdate_InitParam(void)
 	{
 		// cBaiku_ResetTx(tpBmsProtoTx, tpBmsProtoTx->usFrameDataSize);
 		cBaiku_ResetRxBuff(tpBmsProtoRx);
+		bBms_SetDevState(DS_SHUT_DOWN);
+		cQueue_GotoStep(tpBmsTask, STEP_END);
 	}
 	#endif  //boardBMS_EN
 
 	if(tUpdate.eChType == CT_PRINT)
 	{
 		cBaiku_ResetRxBuff(tpPrintProtoRx);
+		tPrint.eDevState = DS_SHUT_DOWN;
+		cQueue_GotoStep(tpPrintTask, STEP_END);
 	}
 }
 
@@ -350,7 +355,7 @@ void vUpdate_ResetRecTimeout(bool reset)
 
 /***********************************************************************************************************************
 -----函数功能    设置设备错误代码
------说明(备注)  none
+-----说明(备注)  只标记第一个错误
 -----传入参数    ERR_CODE
 -----输出参数    none
 -----返回值      true:标记了错误  false:没有错误
@@ -371,10 +376,7 @@ bool bUpdate_SetErrCode(UpdateErrCode_E code)
 		vUpdate_ResetRecTimeout(false);
 	}
 	else 
-	{
-		tUpdate.eErrCode = code;
 		b_ret = false;
-	}
 
 	return b_ret;
 }
@@ -433,13 +435,13 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 
 		case UTR_CANCEL:
 		{
-			vUpdate_ResetRecTimeout(false);
+			// vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
 		case UTR_FAIL:
 		{
-			vUpdate_ResetRecTimeout(false);
+			// vUpdate_ResetRecTimeout(false);
 		}
 		break;
 
@@ -654,6 +656,7 @@ void vUpdate_TickTimer(void)
 	if(b_lost_timeout)
 	{
 		bUpdate_Init();
+        vUpdate_InitParam();
 		cSys_Switch(SO_KEY, ST_OFF, true);
 	}
 }

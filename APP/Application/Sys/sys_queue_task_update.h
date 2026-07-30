@@ -73,6 +73,19 @@ typedef enum
 	URT_INVAILD,	//超范围
 }UpdateResultTarget_E;
 
+/* 升级任务步骤枚举 */
+typedef enum
+{
+    US_STEP_INIT = 0,            /* 初始化升级参数 */
+    US_STEP_START_OBJECT,        /* 启动升级对象 */
+    US_STEP_WAIT_SLAVE_READY,    /* 等待从机进入升级准备状态 */
+    US_STEP_OPEN_CHANNEL,        /* 开启升级通道 */
+    US_STEP_WAIT_TRANSPARENT,    /* 等待进入透传模式 */
+    US_STEP_WAIT_COMPLETE,       /* 等待升级完成 */
+    US_STEP_WAIT_EXIT,           /* 等待退出(延时5S) */
+    US_STEP_WAIT_QUEUE_EXIT,     /* 等待队列任务退出 */
+} UpdateStep_E;
+
 // 升级失败错误码（每个调用点唯一，方便精准定位故障点）
 // 编码规则：使用十进制数值，确保数码管显示值与源码值一一对应（Display_ShowErrCode 仅显示2位十进制）。
 //           按模块分组：01~12 DCAC接收处理, 13 DCAC协议帧, 14~30 DCAC升级队列,

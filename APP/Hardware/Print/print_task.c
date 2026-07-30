@@ -160,7 +160,7 @@ void vPrint_Task(void *pvParameters)
 		}
 
 		#if(boardUSB_EN)
-		if(tUsb.eDevState == DS_SHUT_DOWN)
+		if(tUsb.eDevState == DS_SHUT_DOWN || tSysInfo.eDevState == DS_UPDATE_MODE)
 			printIFACE_EN_ON();
 		else
 			printIFACE_EN_OFF();

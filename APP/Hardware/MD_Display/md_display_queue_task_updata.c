@@ -95,8 +95,8 @@ static void     v_update_ui_refresh_info(void);
 static uint16_t us_update_calc_percent(void);
 static void     v_update_enter_step(DispUpdateStep_E e_step, uint32_t t_now_tick);
 
-static void     v_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick);
-static void     v_update_upgrading_step(Task_T *tp_task, uint32_t t_now_tick);
+static s8       c_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick);
+static s8       c_update_upgrading_step(Task_T *tp_task, uint32_t t_now_tick);
 static void     v_update_success_step(Task_T *tp_task, uint32_t t_now_tick);
 static void     v_update_failure_step(Task_T *tp_task, uint32_t t_now_tick);
 
@@ -111,6 +111,8 @@ static void     v_update_failure_step(Task_T *tp_task, uint32_t t_now_tick);
 ************************************************************************************************************************/
 void v_disp_queue_task_updata(Task_T *tp_task)
 {
+    s8 c_ret = 0;
+
     /* 边界检查：任务指针为空 */
     if(tp_task == NULL)
         return;
@@ -129,15 +131,6 @@ void v_disp_queue_task_updata(Task_T *tp_task)
         return;
     }
 	
-	if(tUpdate.eHostResult == UTR_CANCEL
-		|| tUpdate.eHostResult == UTR_FAIL
-		|| tUpdate.eSlaveResult == UTR_CANCEL
-		|| tUpdate.eSlaveResult == UTR_FAIL)
-	{
-		v_update_ui_set_status_color(dispCOLOR_STATUS_FAILURE);
-		cQueue_GotoStep(tp_task, DUPD_STEP_FAILURE);
-	}
-
     uint32_t t_now_tick = xTaskGetTickCount();
 
     switch(tp_task->ucStep)
@@ -147,6 +140,7 @@ void v_disp_queue_task_updata(Task_T *tp_task)
         {
             if(tDisp.eDevState != DS_UPDATE_MODE)
                 bDisp_SetDevState(DS_UPDATE_MODE);
+
             bDisp_Switch(ST_ON, false);
 
             /* 载入升级专属屏幕 */
@@ -165,14 +159,34 @@ void v_disp_queue_task_updata(Task_T *tp_task)
         /*---------------- 步骤1：准备升级（等待握手/首帧） ----------------*/
         case DUPD_STEP_PREPARE:
         {
-            v_update_prepare_step(tp_task, t_now_tick);
+            c_ret = c_update_prepare_step(tp_task, t_now_tick);
+            if(c_ret < 0)
+            {
+                cQueue_GotoStep(tp_task, DUPD_STEP_FAILURE);
+                break;
+            }
+
+            if(c_ret == 0)
+                break;
+
+            cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
 
         /*---------------- 步骤2：升级进行中 ----------------*/
         case DUPD_STEP_UPGRADING:
         {
-            v_update_upgrading_step(tp_task, t_now_tick);
+            c_ret = c_update_upgrading_step(tp_task, t_now_tick);
+            if(c_ret < 0)
+            {
+                cQueue_GotoStep(tp_task, DUPD_STEP_FAILURE);
+                break;
+            }
+
+            if(c_ret == 0)
+                break;
+
+            cQueue_GotoStep(tp_task, STEP_NEXT);
         }
         break;
 
@@ -211,7 +225,7 @@ void v_disp_queue_task_updata(Task_T *tp_task)
                 t_now_tick: 当前 Tick
 -----返回值     无
 ************************************************************************************************************************/
-static void v_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick)
+static s8 c_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick)
 {
     v_update_ui_set_state(DUPD_STEP_PREPARE);
     v_update_ui_refresh_info();
@@ -221,8 +235,7 @@ static void v_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick)
     {
         v_update_enter_step(DUPD_STEP_FAILURE, t_now_tick);
         v_update_ui_set_spinner_visible(false);
-        cQueue_GotoStep(tp_task, DUPD_STEP_FAILURE);
-        return;
+        return -1;
     }
 
     /* 检测到首帧接收，进入升级中状态：隐藏 Spinner，显示进度 Arc */
@@ -230,8 +243,7 @@ static void v_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick)
     {
         v_update_ui_set_spinner_visible(false);
         v_update_enter_step(DUPD_STEP_UPGRADING, t_now_tick);
-        cQueue_GotoStep(tp_task, DUPD_STEP_UPGRADING);
-        return;
+        return 1;
     }
 
     /* 等待动画，每约 200ms 步进一次，仅在变化时刷新，减少 UI 开销 */
@@ -251,6 +263,8 @@ static void v_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick)
         else
             set_var_uca_update_msg("Waiting for update...");
     }
+
+    return 0;
 }
 
 /***********************************************************************************************************************
@@ -260,7 +274,7 @@ static void v_update_prepare_step(Task_T *tp_task, uint32_t t_now_tick)
                 t_now_tick: 当前 Tick
 -----返回值     无
 ************************************************************************************************************************/
-static void v_update_upgrading_step(Task_T *tp_task, uint32_t t_now_tick)
+static s8 c_update_upgrading_step(Task_T *tp_task, uint32_t t_now_tick)
 {
     uint16_t percent = us_update_calc_percent();
 
@@ -272,8 +286,7 @@ static void v_update_upgrading_step(Task_T *tp_task, uint32_t t_now_tick)
     {
         v_update_enter_step(DUPD_STEP_FAILURE, t_now_tick);
         v_update_ui_set_status_color(dispCOLOR_STATUS_FAILURE);
-        cQueue_GotoStep(tp_task, DUPD_STEP_FAILURE);
-        return;
+        return -1;
     }
 
     set_var_uca_update_msg("Upgrading...");
@@ -295,13 +308,14 @@ static void v_update_upgrading_step(Task_T *tp_task, uint32_t t_now_tick)
     }
 
     /* 接收完所有帧，跳转升级成功 */
-    if(percent >= 100U)
+    if(tpSysTask->ucStep > US_STEP_WAIT_COMPLETE)
     {
         v_update_enter_step(DUPD_STEP_SUCCESS, t_now_tick);
         v_update_ui_set_status_color(dispCOLOR_STATUS_SUCCESS);
-        cQueue_GotoStep(tp_task, STEP_NEXT);
-        return;
+        return 1;
     }
+
+    return 0;
 }
 
 /***********************************************************************************************************************
@@ -334,7 +348,7 @@ static void v_update_success_step(Task_T *tp_task, uint32_t t_now_tick)
         S_ulLastCountdownTick = t_now_tick;
 
     char c_countdown_ok[24];
-    snprintf(c_countdown_ok, sizeof(c_countdown_ok), "Reboot in %us", tUpdate.usLostOverTimeCnt / 10);
+    snprintf(c_countdown_ok, sizeof(c_countdown_ok), "Reboot in %us", UPDATE_TICK_TO_SEC(tUpdate.usLostOverTimeCnt));
     set_var_uca_update_countdown(c_countdown_ok);
 }
 
@@ -347,9 +361,23 @@ static void v_update_success_step(Task_T *tp_task, uint32_t t_now_tick)
 ************************************************************************************************************************/
 static void v_update_failure_step(Task_T *tp_task, uint32_t t_now_tick)
 {
+    /* 错误已清除,说明升级已重启,回退到准备阶段 */
+    if(tUpdate.eErrCode == UEF_NONE)
+    {
+        v_update_ui_reset(t_now_tick);
+        v_update_ui_init();
+        v_update_ui_set_spinner_visible(true);
+        cQueue_GotoStep(tp_task, DUPD_STEP_PREPARE);
+        return;
+    }
+
     v_update_ui_set_state(DUPD_STEP_FAILURE);
 
+    #if(boardKEY_EN)
+    set_var_uca_update_msg("Failed! Short:retry Long:off");
+    #else
     set_var_uca_update_msg("Update Failed!");
+    #endif
 
     /* 刷新错误码信息，确保用户界面展示最新故障原因 */
     v_update_ui_refresh_info();
@@ -362,7 +390,7 @@ static void v_update_failure_step(Task_T *tp_task, uint32_t t_now_tick)
         S_ulLastCountdownTick = t_now_tick;
 
     char c_countdown_err[24];
-    snprintf(c_countdown_err, sizeof(c_countdown_err), "Reboot in %us", tUpdate.usLostOverTimeCnt / 10);
+    snprintf(c_countdown_err, sizeof(c_countdown_err), "Reboot in %us", UPDATE_TICK_TO_SEC(tUpdate.usLostOverTimeCnt));
     set_var_uca_update_countdown(c_countdown_err);
 }
 

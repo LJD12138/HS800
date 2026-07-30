@@ -887,8 +887,6 @@ s8 c_print_cs_C3_reply_set_proto(u8* data, u8 len)
 s8 c_print_cs_C4_req_start_send(void)
 {
 	s8 c_ret = c_print_data_trans_for_update(baikuCMD_RRQ_START_SEND, NULL, 0);
-	if(c_ret <= 0)
-		vUpdate_ResetRecTimeout(true);
 	return c_ret;
 }
 
