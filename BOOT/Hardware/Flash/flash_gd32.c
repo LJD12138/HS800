@@ -1,6 +1,7 @@
 #include "Flash/flash_gd32.h"
 #include "Print/print_task.h"
 #include "flash_allot_table.h"
+#include "fwdgt.h"
 
 #define FMC_PAGE_SIZE           FLASH_PAGE_SIZE
 
@@ -46,6 +47,9 @@ bool bFlash_Gd32EraseSector(uint32_t StartAddr,uint32_t EndAddr)
 				sMyPrint("bOperFlash:第%d页擦除失败\r\n", num+EraseCounter );	
 		}
 		fmc_flag_clear(FMC_FLAG_BANK0_END | FMC_FLAG_BANK0_WPERR | FMC_FLAG_BANK0_PGERR);
+		#if(boardWDGT_EN)
+		vFwdgt_Reload();  //每擦除一页后喂狗,防止擦除整个APP区耗时过长导致看门狗复位
+		#endif
     }
 
     /* lock the main FMC after the erase operation */

@@ -119,7 +119,7 @@ virtualFolder:
         - path: Application/Sys/sys_queue_task_reset.c
         - path: Application/Sys/sys_queue_task_update.c
       folders: []
-    - name: HW-Updata
+    - name: HW-Update
       files:
         - path: Hardware/Update/baiku_proto.c
         - path: Hardware/Update/baiku_proto.h

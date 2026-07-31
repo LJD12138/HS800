@@ -5,6 +5,7 @@
 #include "Print/print_task.h"
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_queue_task_update.h"
+#include "fwdgt.h"
 
 #include "boot_info.h"
 
@@ -381,7 +382,13 @@ static void v_rec_start_cd(void)
 {
 	tUpdate.usRecFrameCnt = 0;
 	vFlash_WriteDataToFlashInit();  // 初始化Flash
+	#if(boardWDGT_EN)
+	vFwdgt_Reload();  //擦除Flash完成后喂狗
+	#endif
 	cBoot_CtrlUpdate(true, AS_ERASE);
+	#if(boardWDGT_EN)
+	vFwdgt_Reload();  //写Boot参数完成后喂狗
+	#endif
 }
 
 /*****************************************************************************************************************

@@ -209,7 +209,7 @@ static uint16_t us_get_countdown_sec(void)
 {
     if (tUpdate.tpProtoRx == NULL)
         return 0;
-    return tUpdate.tpProtoRx->usLostOverTimeCnt / 10;
+    return tUpdate.tpProtoRx->usLostOverTimeCnt / 100;
 }
 
 /*****************************************************************************************************************

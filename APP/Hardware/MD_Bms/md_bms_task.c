@@ -501,15 +501,15 @@ void vBms_MemParamSet(u8 item, bool add)
 		}
 		else if(item == 4)
 		{
-			tAppMemParam.tBMS.usMaxVolt++;
+			tAppMemParam.tBMS.usMaxVolt--;
 		}
 		else if(item == 5)
 		{
-			tAppMemParam.tBMS.usMinVolt++;
+			tAppMemParam.tBMS.usMinVolt--;
 		}
 		else if(item == 6)
 		{
-			tAppMemParam.tBMS.usChgVolt++;
+			tAppMemParam.tBMS.usChgVolt--;
 		}
 	}
 }

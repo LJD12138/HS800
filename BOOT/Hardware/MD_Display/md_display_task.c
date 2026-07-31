@@ -30,7 +30,9 @@ void vDisp_Task(void *pvParameters);
 #endif  //boardUSE_OS
 
 //****************************************************参数初始化**************************************************//
-Disp_T   tDisp; 
+Disp_T   tDisp;
+
+bool bDispIfaceInit = false;
 
 /***********************************************************************************************************************
 -----函数功能    参数初始化
@@ -69,7 +71,7 @@ bool bDisp_TaskInit(void)
                 (UBaseType_t ) dispTASK_PRIO,           //任务优先级
                 (TaskHandle_t*)&tDispTaskHandler);      //任务句柄
 	#endif  //boardUSE_OS
-	
+	bDispIfaceInit = true;
 	return true;
 }
 
@@ -86,7 +88,7 @@ void vDisp_Task(void *pvParameters)
 	for(;;)
 	#endif  //boardUSE_OS
 	{
-		if(tpSysTask == NULL)
+		if(tpSysTask == NULL || bDispIfaceInit == false)
 		{
 			#if(boardUSE_OS)
 			vTaskDelay(100);
@@ -207,7 +209,8 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en)
 				tDisp.bLight = true;
 				
 				// 清屏，静态标题由 vDisp_UpdateModeUi 首次运行时绘制
-				vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x0000);
+				if(bDispIfaceInit == true)
+					vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x0000);
 				
 				//关闭息屏
 				if(fore_en == true)
