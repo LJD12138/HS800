@@ -643,35 +643,22 @@ static void energy_ring_timer_cb(lv_timer_t *tp_timer)
         /* 获取SOC对应segment数 */
         us_soc_base_seg = energy_ring_soc_to_seg_count(tp_ring, tp_ring->ucSocValue);
         
-        if(tp_ring->bAnimDirDec)
+        if(tp_ring->usActiveSeg < us_soc_base_seg)
         {
-            // /* 递减阶段：逐步减少活动segment数 */
-            // if(tp_ring->usActiveSeg > us_soc_base_seg)
-            // {
-            //     tp_ring->usActiveSeg--;
-            // }
-            // else
-            {
-                tp_ring->usActiveSeg = us_soc_base_seg;
-            }
-            
-            /* 到达或低于起始SOC对应的segment数时，切换为递增阶段 */
-            // if(tp_ring->usActiveSeg <= us_soc_base_seg)
-            {
-                tp_ring->bAnimDirDec = false;
-            }
+            /* 递增阶段：从当前值逐步点亮至SOC对应位置，实现0→SOC递增动画 */
+            tp_ring->usActiveSeg++;
+        }
+        else if(tp_ring->usActiveSeg > us_soc_base_seg)
+        {
+            /* 高于SOC基准（脉冲前沿回落或SOC下调）：逐步回落到SOC基准 */
+            tp_ring->usActiveSeg--;
         }
         else
         {
-            /* 递增阶段：逐步增加活动segment数 */
-            tp_ring->usActiveSeg++;
-            
-            /* 到达或超过总segment数时，切换为递减阶段 */
-            // if(tp_ring->usActiveSeg >= tp_ring->usSegCount)
-            {
-                // tp_ring->usActiveSeg = tp_ring->usSegCount;
-                tp_ring->bAnimDirDec = true;
-            }
+            /* 等于SOC基准：头部前探一个segment，形成单段脉冲表示充电进行中 */
+            if(us_soc_base_seg < tp_ring->usSegCount)
+                tp_ring->usActiveSeg = (u16)(us_soc_base_seg + 1U);
+            /* SOC满段(100%)时不前探，保持在usSegCount，避免溢出 */
         }
     }
 
@@ -1167,13 +1154,8 @@ void EnergyRing_UpdateSoc(EnergyRing_T *p_ring, u8 uc_soc, bool b_charging)
         /* 充电模式下为动态 */
         p_ring->eSocMode = ENERGY_RING_SOC_CHARGING;
         
-        /* 计算SOC对应的segment数 */
-        us_soc_seg_count = energy_ring_soc_to_seg_count(p_ring, uc_soc);
-        
-        /* 缓存active_seg为SOC对应的segment数 */
-        p_ring->usActiveSeg = us_soc_seg_count;
-        
-        /* 重置动画方向为递增 */
+        /* 不直接跳变到SOC：保持当前usActiveSeg，由定时器从当前值逐步递增到SOC，
+           这样关机充电激活开机时能量环会从0开始递增到对应SOC，而非瞬间跳变 */
         p_ring->bAnimDirDec = false;
         
         /* 使能定时器 */

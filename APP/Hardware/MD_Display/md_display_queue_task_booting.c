@@ -71,6 +71,10 @@ void v_disp_queue_task_booting(Task_T *tp_task)
             vDisp_UiRefresh();
             bDisp_Switch(ST_ON, false);
             cQueue_GotoStep(tp_task, STEP_END);
+
+            //系统已经已经切换到工作状态, 则强制调度显示任务为工作
+            if(tSysInfo.eDevState == DS_WORK)
+                cQueue_AddQueueTask(tpDispTask, DISPTI_WORK, 0, false);
             return;
         }
 

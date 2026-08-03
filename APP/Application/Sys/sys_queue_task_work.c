@@ -79,15 +79,18 @@ void v_sys_queue_task_work(Task_T *tp_task)
 		{
 			v_chg_pwr_manage();
 
-			//检测到不同步,样式3S强制调度显示任务
+			//检测到不同步,样式5S强制调度显示任务
 			static vu16 us_3s_cycle = 0;
-			if(tpDispTask->ucID != DISPTI_WORK)
+			if(tpDispTask->ucID != DISPTI_WORK && tpDispTask->ucID != DISPTI_BOOTING)
 			{
 				if(us_3s_cycle < 0xffff) us_3s_cycle++;
-				if(us_3s_cycle >= (3000 / sysTASK_WORK_CYCLE_TIME))
+				if(us_3s_cycle >= (5000 / sysTASK_WORK_CYCLE_TIME))
 				{
 					us_3s_cycle = 0;
-					cQueue_AddQueueTask(tpDispTask, DISPTI_WORK, 0, true);
+					cQueue_AddQueueTask(tpDispTask, DISPTI_BOOTING, 0, true);
+
+					if(uPrint.tFlag.bSysTask)
+						sMyPrint("bSysTask:强制调度显示任务为引导屏\r\n");
 				}
 			}
 				
