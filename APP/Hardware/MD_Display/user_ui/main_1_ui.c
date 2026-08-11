@@ -30,18 +30,27 @@
 #include "MD_Display/user_ui/energy_ring.h"
 #include "Sys/sys_task.h"
 
+#if(boardDCAC_EN)
 #include "MD_Dcac/md_dcac_task.h"
+#endif
+
 #if(boardMPPT_EN)
 #include "MD_Mppt/md_mppt_task.h"
 #endif
 
+#if(boardUSB_EN)
 #include "Usb/usb_task.h"
+#endif
+
+#if(boardDC_EN)
 #include "Dc/dc_task.h"
+#endif
+
 #if(boardLIGHT_EN)
 #include "MD_Light/md_light_task.h"
 #endif
-#include <stdio.h>
 
+#include <stdio.h>
 #include "lvgl.h"
 
 //****************************************************Macros*******************************************************************//
@@ -276,11 +285,35 @@ static bool b_update_error_states(bool b_force)
 static bool b_update_ac_work_mode(bool b_force)
 {
 	bool b_ret = false;
+	bool b_chg_flag = false;
+	bool b_dis_chg_flag = false;
+
+	if(cSys_IsChgState() > 0)
+		b_chg_flag = true;
+
+	if(
+		#if(boardUSB_EN)
+		tUsb.eDevState		>= DS_BOOTING	//USB工作
+		#endif
+
+		#if(boardLIGHT_EN)
+	    || tLight.eDevState	>= DS_WORK			//照明工作
+		#endif
+
+		#if(boardDC_EN)
+	    || tDc.eDevState		>= DS_BOOTING	//DC工作
+		#endif
+		
+		#if(boardDCAC_EN)
+		|| tDcac.eDisChgState 	>= IOS_WORK		//逆变开启
+		#endif
+	)
+		b_dis_chg_flag = true;
 	
 	//更新AC工作模式
 	static ImgAnimMode_E s_last_ac_mode = (ImgAnimMode_E)-1;
 	//充放电
-	if((cSys_IsChgState()> 0 && tDcac.eDisChgState == IOS_WORK) || S_bTestAllParam)
+	if((b_chg_flag && b_dis_chg_flag) || S_bTestAllParam)
 	{
 		if(s_last_ac_mode != IMG_ANIM_MODE_CHG_DISCHG || b_force)
 		{
@@ -290,10 +323,10 @@ static bool b_update_ac_work_mode(bool b_force)
 		}
 	}
 	//充电
-	else if(cSys_IsChgState() == 2 && tDcac.eDisChgState != IOS_WORK)
+	else if(b_chg_flag)
 	{
 		//快充
-		if(ucBms_GetSoc() > 2 && ucBms_GetSoc() < 90)
+		// if(ucBms_GetSoc() > 2 && ucBms_GetSoc() < 90)
 		{
 			if(s_last_ac_mode != IMG_ANIM_MODE_CHARGE_FAST || b_force)
 			{
@@ -303,18 +336,18 @@ static bool b_update_ac_work_mode(bool b_force)
 			}
 		}
 		//慢充
-		else
-		{
-			if(s_last_ac_mode != IMG_ANIM_MODE_CHARGE_SLOW || b_force)
-			{
-				s_last_ac_mode = IMG_ANIM_MODE_CHARGE_SLOW;
-				vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHARGE_SLOW);
-				b_ret |= true;
-			}
-		}
+		// else
+		// {
+		// 	if(s_last_ac_mode != IMG_ANIM_MODE_CHARGE_SLOW || b_force)
+		// 	{
+		// 		s_last_ac_mode = IMG_ANIM_MODE_CHARGE_SLOW;
+		// 		vDisp_SetAcWorkMode(IMG_ANIM_MODE_CHARGE_SLOW);
+		// 		b_ret |= true;
+		// 	}
+		// }
 	}
 	//放电
-	else if(tDcac.eChgState != IOS_WORK && tDcac.eDisChgState == IOS_WORK)
+	else if(b_dis_chg_flag)
 	{
 		if(s_last_ac_mode != IMG_ANIM_MODE_DISCHARGE || b_force)
 		{

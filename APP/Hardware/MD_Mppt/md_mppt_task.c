@@ -263,7 +263,7 @@ static void v_mppt_auto_switch_chg_source(void)
     } else if(tMppt.eWorkMode == MWM_PV) {
         s_ul_xt60_start_tick = 0;
         s_ul_dc_start_tick = 0;
-        if(usXT60InVolt < (tAppMemParam.tMPPT.usMinInVolt * 0.5f)) {
+        if(usXT60InVolt < (tAppMemParam.tMPPT.usMinInVolt)) {
             tMppt.eWorkMode = MWM_NULL;
             mpptGPIO_DC_EN_OFF();
             mpptGPIO_XT60_EN_OFF();
@@ -271,7 +271,7 @@ static void v_mppt_auto_switch_chg_source(void)
     } else if(tMppt.eWorkMode == MWM_DC) {
         s_ul_xt60_start_tick = 0;
         s_ul_dc_start_tick = 0;
-        if(usDcInVolt < (tAppMemParam.tMPPT.usMinInVolt * 0.5f)) {
+        if(usDcInVolt < (tAppMemParam.tMPPT.usMinInVolt)) {
             tMppt.eWorkMode = MWM_NULL;
             mpptGPIO_DC_EN_OFF();
             mpptGPIO_XT60_EN_OFF();
