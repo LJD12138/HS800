@@ -75,10 +75,10 @@
 #define     	adcDC_IN_1_CH             				ADC_CHANNEL_15
 
 //DC_DC_IN    	电压 XT-INAD
-#define     	adcDC_IN_2_RCU            				RCU_GPIOB
-#define     	adcDC_IN_2_PORT           				GPIOB
-#define     	adcDC_IN_2_PIN            				GPIO_PIN_0
-#define     	adcDC_IN_2_CH             				ADC_CHANNEL_8
+#define     	adcDC_IN_2_RCU            				RCU_GPIOC
+#define     	adcDC_IN_2_PORT           				GPIOC
+#define     	adcDC_IN_2_PIN            				GPIO_PIN_4
+#define     	adcDC_IN_2_CH             				ADC_CHANNEL_14
 
 
 

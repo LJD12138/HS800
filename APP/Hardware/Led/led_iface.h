@@ -35,9 +35,9 @@
 #define     	ledUSB_SW_ON()    						GPIO_BOP(ledUSB_SW_PORT) = ledUSB_SW_PIN
 #define     	ledUSB_SW_OFF()    						GPIO_BC(ledUSB_SW_PORT)  = ledUSB_SW_PIN
 
-#define     	ledLight_SW_RCU    						RCU_GPIOC
-#define     	ledLight_SW_PORT   						GPIOC
-#define     	ledLight_SW_PIN    						GPIO_PIN_4
+#define     	ledLight_SW_RCU    						RCU_GPIOB
+#define     	ledLight_SW_PORT   						GPIOB
+#define     	ledLight_SW_PIN    						GPIO_PIN_0
 #define     	ledLight_SW_ON()   						GPIO_BOP(ledLight_SW_PORT) = ledLight_SW_PIN
 #define     	ledLight_SW_OFF()  						GPIO_BC(ledLight_SW_PORT)  = ledLight_SW_PIN
 

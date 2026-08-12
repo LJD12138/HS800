@@ -400,8 +400,8 @@ void bUsb_SetDevState(DevState_E stat)
 		// usbPD2_EN_ON();
 		// usbA_EN_ON();
 
-		usbPD_EN_OFF();
-		usbPD2_EN_OFF();
+		usbPD_EN_ON();
+		usbPD2_EN_ON();
 		vUSB_ControlPorts(true);
 	}
 	else if(stat == DS_CLOSING)

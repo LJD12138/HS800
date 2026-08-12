@@ -834,7 +834,7 @@ __STATIC_INLINE void v_check_freq_auto_mem(void)
 		{
 			us_freq_diff_cnt++;
 			//连续3次检测到不一致才确认(约3秒,避免瞬时波动误判)
-			if(us_freq_diff_cnt >= 3)
+			if(us_freq_diff_cnt >= 5)
 			{
 				us_freq_diff_cnt = 0;
 				

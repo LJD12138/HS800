@@ -374,6 +374,9 @@ void vUSB_ControlPorts(bool b_open)
 {
 	uint8_t data[1];
 	uint8_t val = b_open ? 0x00 : 0x01; /* 0x02: 强制开启Buck; 0x01: 强制关闭Buck */
+	
+	//下面代码无需执行
+	return;
 
 	if(b_open == true)
 	{
