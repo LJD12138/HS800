@@ -73,7 +73,7 @@
         <LExpSel>0</LExpSel>
       </OPTXL>
       <OPTFL>
-        <tvExp>0</tvExp>
+        <tvExp>1</tvExp>
         <tvExpOptDlg>0</tvExpOptDlg>
         <IsCurrentTarget>1</IsCurrentTarget>
       </OPTFL>
@@ -156,7 +156,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\MD_Bms\md_bms_rec_data_proc.c</Filename>
+          <Filename>&lt;2&gt;.\Hardware\MD_Bms\md_bms_rec_data_proc.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/MD_Bms/md_bms_rec_data_proc.c\194</Expression>
         </Bp>
@@ -172,7 +172,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Hardware\Print\print_prot_frame.c</Filename>
+          <Filename>&lt;2&gt;.\Hardware\Print\print_prot_frame.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Hardware/Print/print_prot_frame.c\690</Expression>
         </Bp>
@@ -188,7 +188,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\Application\app_info.c</Filename>
+          <Filename>&lt;2&gt;.\Application\app_info.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\APP\Application/app_info.c\110</Expression>
         </Bp>
@@ -13939,7 +13939,7 @@
 
   <Group>
     <GroupName>Application</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -14055,7 +14055,7 @@
 
   <Group>
     <GroupName>App-Sys</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
