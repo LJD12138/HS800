@@ -208,7 +208,7 @@ void vBms_RecTask(void *pvParameters)
 static u8 c_check_conn_state(void)	
 {
 	//-----------------------丢失后第一次连接-----------------------------------------------
-	if(tBms.eDevState == DS_LOST)
+	if(tBms.eDevState == DS_LOST || tBms.uErrCode.tCode.bSysDevLost == true)
 	{
 		bBms_SetErrCode(BEC_SYS_DEV_LOST, false);
 		
