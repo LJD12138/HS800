@@ -13,7 +13,7 @@
 
 #include "app_info.h"
 
-#define       	bmsTASK_PARAM_CYCLE_TIME               		500
+#define       	bmsTASK_PARAM_CYCLE_TIME               		250
 
 
 //****************************************************函数声明****************************************************//

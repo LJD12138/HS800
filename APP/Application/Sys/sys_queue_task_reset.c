@@ -44,6 +44,8 @@ void v_sys_queue_task_reset(Task_T *tp_task)
 					sMyPrint("bAppInfo:APP参数更新失败 代码%d\r\n",c_ret);
 				break;
 			}
+
+			cApp_BootInfoInit();
 			
 			cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
 		}break;

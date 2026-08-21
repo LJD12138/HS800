@@ -103,7 +103,7 @@ void SysParamInit(void)
 	#if(boardPRINT_IFACE)
 	uPrint.tFlag.bImportant = 1;
 	uPrint.tFlag.bAppInfo   = 1;
-	uPrint.tFlag.bSysTask   = 0;
+	uPrint.tFlag.bSysTask   = 1;
 	uPrint.tFlag.bKeyTask   = 1;
 	uPrint.tFlag.bBmsRecTask= 0;
 	uPrint.tFlag.bBmsTask   = 0;
