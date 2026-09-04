@@ -59,7 +59,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 	tp_task->bNowRun = false;
 	tp_task->ucStep = 0;
 	tp_task->usTaskWaitCnt = 0;
-	tp_task->usTaskWaitCnt = 0;
+	tp_task->usStepWaitCnt = 0;
 	tp_task->usStepRepeatCnt = 0;
 	
 	uc_temp = lwrb_get_full(&tp_task->tQueueBuff);

@@ -84,10 +84,11 @@ bool bFlash_Gd32Write16Bit(uint32_t WriteAddr,uint16_t *wData,uint32_t wNum)
 		wData++;
 	}
     
-	//数据为单数,补上最后一个字节
+	//数据为单数,补上最后一个字节(高字节填充0xFF保留未写入区域)
 	if(wNum % 2 != 0)
 	{
-		uint16_t data_temp = *wData & 0x00FF;  //取低位
+		uint16_t data_temp = 0xFFFF;
+		memcpy(&data_temp, wData, 1);
 		if(fmc_halfword_program(WriteAddr, data_temp) != FMC_READY)
 		{
 			return false;
@@ -132,11 +133,12 @@ bool bFlash_Gd32Write32Bit(uint32_t WriteAddr,const uint32_t *wData,uint32_t wNu
 		wData++;
 	}
     
-	//数据为单数,补上最后字节
+	//数据为非4字节对齐,补齐未写字节为0xFF后写入
 	int len = wNum % 4;
 	if(len != 0)
 	{
-		uint16_t data_temp = *wData & (0xFFFFFFFF>>(4-len));  //取低位
+		uint32_t data_temp = 0xFFFFFFFF;
+		memcpy(&data_temp, wData, len);
 		if(fmc_word_program(WriteAddr, data_temp) != FMC_READY)
 		{
 			return false;

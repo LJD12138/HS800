@@ -855,10 +855,18 @@ s16 cApp_BootGetMemParam(const char* id_str)
 		read_len = sizeof(tBootMemParam.tVerInfo);
 		return_len = ef_get_env_blob(tBootVerInfoStr, &tBootMemParam.tVerInfo, read_len, NULL);
 		if(return_len != read_len)
-			return -2;
+						return -2;
 		
 		read_len = sizeof(tBootMemParam.tParam);
 		return_len = ef_get_env_blob(tBootParamStr, &tBootMemParam.tParam, read_len, NULL);
+		if(return_len == 0)
+		{
+			tBootMemParam.tParam.ulCmd = mainINIT_FINISH_FLAG;
+			tBootMemParam.tParam.eAppState = AS_OK;
+			tBootMemParam.tParam.ucAppFaultCnt = 0;
+			cApp_BootUpdateMemParam(tBootParamStr);
+			return 2;
+		}
 		if(return_len != read_len)
 			return -3;
 	}
@@ -876,7 +884,15 @@ s16 cApp_BootGetMemParam(const char* id_str)
 		read_len = sizeof(tBootMemParam.tParam);
 		return_len = ef_get_env_blob(id_str, &tBootMemParam.tParam, read_len, NULL);
 		if(return_len == 0)
-			return 0;
+		{
+			tBootMemParam.tParam.ulCmd = mainINIT_FINISH_FLAG;
+			tBootMemParam.tParam.eAppState = AS_OK;
+			tBootMemParam.tParam.ucAppFaultCnt = 0;
+			cApp_BootUpdateMemParam(tBootParamStr);
+			return 3;
+		}
+		if(return_len != read_len)
+			return -4;
 	}
 	else
 		return -99;

@@ -514,7 +514,7 @@ static void v_sys_check_prote(void)
 			us_soc_low_cnt = 0;
 		}
 			
-		if(us_soc_low_cnt >= (2000/us_delay_time))
+		if(us_soc_low_cnt >= (2000 / us_delay_time))
 		{
 			us_soc_low_cnt = 0;
 			bSys_SetErrCode(SEC_0_SOC, true);

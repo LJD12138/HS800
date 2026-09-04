@@ -76,16 +76,8 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
     }
     else
     {
-//		if(tSysInfo.eDevState == DS_UPDATE_MODE)
-//		{
-//			tp_task->ucID = PTI_NULL;
-//			tp_task->usInParam = 0;
-//		}
-//		else
-		{
-			tp_task->ucID = PTI_MAIN;
-			tp_task->usInParam = 0;
-		}
+		tp_task->ucID = PTI_MAIN;
+		tp_task->usInParam = 0;
     }
     
     switch (tp_task->ucID)

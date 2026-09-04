@@ -89,7 +89,7 @@ s8 c_print_bms_prepare_update(Task_T* tp_task)
                     }
 
                     /* 转发C2到BMS模块 */
-                    if(c_bms_cs_C2_set_update_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) == false)
+                    if(c_bms_cs_C2_set_update_proto(tpPrintProtoRx->ucpValidData, tpPrintProtoRx->ucValidLen) <= 0)
                     {
                         bUpdate_SetErrCode(UEF_PB_C2_FWD_FAIL);
                         return -5;
@@ -235,7 +235,7 @@ static bool b_print_c5_proc_rec_data(u8 ucSN)
     /* 转发文件头到BMS任务，携带上位机下发的SN */
     if(c_bms_cs_C5_send_file(tpPrintProtoRx->ucpValidData,
                                     tpPrintProtoRx->ucValidLen,
-                                    ucSN) == false)
+                                    ucSN) <= 0)
     {
         bUpdate_SetErrCode(UEF_PB_C5_FWD_FAIL);
         return false;
