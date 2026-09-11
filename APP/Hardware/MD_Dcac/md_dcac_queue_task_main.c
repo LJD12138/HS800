@@ -326,7 +326,8 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	//供电低压
 	static vu16  us_pwr_volt_low_cnt = 0;
 	if(tAdcSamp.usSysInVolt < tAppMemParam.tDCAC.usMinOpenVolt ||
-		(ucBms_GetSoc() <= 5 && tDcacRx.usOutPwr > 1500))  
+		(ucBms_GetSoc() <= 5 && tDcacRx.usOutPwr > 1500) ||
+		(tAdcSamp.usSysInVolt < tAppMemParam.tDCAC.usMinOpenVolt + 20 && tDcacRx.usOutPwr > 400))  
 	{
 		if(tDcac.uErrCode.tCode.bSysLV == 0 && tDcac.eDisChgState >= IOS_STARTING)
 		{
