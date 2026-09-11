@@ -22,6 +22,7 @@
 
 
 #define       	dcacTASK_GET_PARAM_CYCLE_TIME			100
+#define       	dcacOL_TRIP_CNT							60		//过载累计计数目标,60拍(约60S)
 
 
 //****************************************************参数初始化**************************************************//
@@ -394,8 +395,8 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	
 	vu16  us_overload_pwr = 0;
 	vu16  us_overload_pwr1 = 0;
-	static vu16  us_temp = 0;
-	static vu16  us_overload_cnt=0;
+	static vu16  us_overload_cnt = 0;   //过载累计计数,目标dcacOL_TRIP_CNT
+	static vu16  us_ol_dip_cnt = 0;     //功率跌破过载阈值的连续计数
 
 	// if(tDcac.eChgState > IOS_STARTING)
 	// {
@@ -410,27 +411,19 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	
 	if(tDcacRx.usOutPwr > tAppMemParam.tDCAC.usOverLoadPwr)
 	{
+		vu16 us_step;
+
+		us_ol_dip_cnt = 0;              //回到过载区,清除波动计时
+
 		if(tDcacRx.usOutPwr >= us_overload_pwr1)
-		{
-			if(us_temp != 2)
-				us_overload_cnt = 0;
-			us_temp = 2;
-		}
+			us_step = 30;
 		else if(tDcacRx.usOutPwr >= us_overload_pwr)
-		{
-			if(us_temp != 10)
-				us_overload_cnt = 0;
-			us_temp = 10;
-		}
+			us_step = 6;                //≥1.5倍额定:60/6=10拍触发
 		else
-		{
-			if(us_temp != 60)
-				us_overload_cnt = 0;
-			us_temp = 60;
-		}
-				
-		us_overload_cnt++;
-		if(us_overload_cnt >= us_temp || tDcacRx.usOutPwr >= us_overload_pwr1)
+			us_step = 1;                //过载阈值~1.5倍:60拍触发
+
+		us_overload_cnt += us_step;
+		if(us_overload_cnt >= dcacOL_TRIP_CNT)
 		{
 			us_overload_cnt = 0;
 			bDcac_SetErrCode(DEC_SYS_OUT_OL,true);
@@ -438,7 +431,19 @@ __STATIC_INLINE void v_proc_rec_param(void)
 	}
 	else 
 	{
-		us_overload_cnt = 0;
+		if(tDcac.sMaxTemp >= 70)
+		{
+			us_ol_dip_cnt = 0;
+			if(us_overload_cnt)
+				us_overload_cnt--;
+		}
+		else
+		{
+			if(us_ol_dip_cnt < 2)
+				us_ol_dip_cnt++;
+			else
+				us_overload_cnt = 0;
+		}
 	}
 	
 	//输出状态检测

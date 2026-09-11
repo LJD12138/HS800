@@ -598,6 +598,7 @@ s8 cBms_CheckPerm(void)
 	if(tBmsRx.tState.bImpermDisChg == 1		||	//不许可放电
 		tBms.uErrCode.tCode.bSysDisChgUT == 1		||	//放电低温
 		tBms.uErrCode.tCode.bSysDisChgOT == 1		||	//放电高温
+		tBms.uErrCode.tCode.uBmsCode.tCode.bLowVoltOL == 1	||	//低压过载
 		ucBms_GetSoc() == 0)
 	{
 		if(tBms.uPerm.tPerm.bDisChgPerm == true)
