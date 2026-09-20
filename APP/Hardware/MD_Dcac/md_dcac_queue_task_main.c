@@ -767,7 +767,7 @@ __STATIC_INLINE void v_set_ac_chg_pwr(void)
 	//设置AC充电状态
 	if(tDcacRx.usInVolt > tAppMemParam.tDCAC.usMinInVolt)
 	{
-		if(tDcac.uErrCode.ulCode != 0)
+		if(tDcac.uErrCode.ulCode != 0 && tDcac.uPerm.tPerm.bChgPerm == false)
 			bDcac_SetAcState(OO_CHG, IOS_ERR);
 		else if(tDcac.eChgState != IOS_WORK && tDcac.eChgState != IOS_STARTING)
 			bDcac_SetAcState(OO_CHG, IOS_STARTING);
