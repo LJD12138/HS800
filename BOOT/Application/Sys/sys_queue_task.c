@@ -1,264 +1,282 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         系统总任务的队列函数                                                  *
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Application\Sys
+ * File    : sys_queue_task.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 系统总任务队列调度分发实现
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
-#if(boardPRINT_IFACE)
+#if (boardPRINT_IFACE)
 #include "Print/print_iface.h"
-#endif  //boardPRINT_IFACE
+#endif  /* boardPRINT_IFACE */
 
-#if(boardBMS_EN)
+#if (boardBMS_EN)
 #include "MD_Bms/md_bms_iface.h"
-#endif //boardBMS_EN
+#endif  /* boardBMS_EN */
 
-#if(boardADC_EN)
+#if (boardADC_EN)
 #include "Adc/adc_iface.h"
-#endif  //boardADC_EN
+#endif  /* boardADC_EN */
 
-#if(boardWDGT_EN)
+#if (boardWDGT_EN)
 #include "fwdgt.h"
-#endif  //boardWDGT_EN
+#endif  /* boardWDGT_EN */
 
-#if(boardLED_EN)
+#if (boardLED_EN)
 #include "Led/led_iface.h"
-#endif  //boardLED_EN
+#endif  /* boardLED_EN */
 
 #include "systick.h"
 #include "boot_info.h"
 #include "flash_allot_table.h"
 
+#if (1)
+//****************************************************Macros********************************************************************//
+typedef void (*pAppFunction)(void);
 
-//****************************************************参数初始化**************************************************//
-//结构体
-__ALIGNED(4) 	Task_T *tpSysTask = NULL;  	//队列任务
+//****************************************************Parameter Initialization**************************************************//
+__ALIGNED(4) Task_T *tpSysTask = NULL;      /* 系统总任务控制块指针 */
 
-
-//****************************************************函数声明****************************************************//
-static bool b_task_manage_func_cb(Task_T *tp_task);
+//****************************************************Function Declaration******************************************************//
+static bool b_task_manage_func_cb(Task_T *p_task);
+static void v_add_task_return_func_cb(Task_T *p_task, u8 num);
 
 /***********************************************************************************************************************
------函数功能    任务参数初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
+ * 函数功能    : 系统任务队列初始化
+ * 说明(备注)  : 初始化系统主任务队列对象并注册装载与返回回调函数
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : bool: true 成功, false 失败
+ ************************************************************************************************************************/
 bool bSys_QueueInit(void)
 {
-	//任务队列初始化
-	if(cQueue_TaskInit(&tpSysTask, 8, 0, b_task_manage_func_cb, NULL) <= 0)
-	{
-		if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-			log_e("bSysTask:tpSysTask任务对象初始化失败");
-		
-		return false;
-	}
-	else if(tpSysTask == NULL)
-	{
-		if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-			log_e("bSysTask:tpSysTask任务对象创建失败");
-		
-		return false;
-	}
-	
-	return true;
+    if (cQueue_TaskInit(&tpSysTask, 8, 12, b_task_manage_func_cb, v_add_task_return_func_cb) <= 0)
+    {
+        if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
+            log_e("bSysTask:tpSysTask任务对象初始化失败");
+        return false;
+    }
+    else if (tpSysTask == NULL)
+    {
+        if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
+            log_e("bSysTask:tpSysTask任务对象创建失败");
+        return false;
+    }
+
+    return true;
 }
 
-/*****************************************************************************************************************
------函数功能    装载任务函数
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      true:成功   false:失败 
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 任务管理装载回调函数
+ * 说明(备注)  : 根据系统当前状态或队列消息分发装载下一任务处理函数
+ * 传入参数    : p_task: 队列任务指针
+ * 输出参数    : p_task: 装载目标任务函数与参数
+ * 返回值      : bool: true 成功, false 失败
+ ************************************************************************************************************************/
 static bool b_task_manage_func_cb(Task_T *tp_task)
 {
-    static vu16 uc_temp = 0;
-    
-    tp_task->bNowRun = false;
-    tp_task->ucStep = 0;
-    tp_task->usTaskWaitCnt = 0;
-    tp_task->usTaskWaitCnt = 0;
-    tp_task->usStepRepeatCnt = 0;
-    
-    uc_temp = lwrb_get_full(&tp_task->tQueueBuff);
-    if(uc_temp%3 != 0 && uc_temp != 0)
-    {
-        if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-            log_e("bSysTask:任务队列长度异常 长度%d",uc_temp);
-        lwrb_reset(&tp_task->tQueueBuff);
+    TaskItem_T t_item;
+
+    if (tp_task == NULL)
         return false;
-    }    
-    
-    if(tSysInfo.uInit.tFinish.bIF_SysTask == 0)
+
+    vQueue_ResetTaskState(tp_task);
+
+    if (tSysInfo.uInit.tFinish.bIF_SysTask == 0)
     {
-        tp_task->ucID = STI_INIT;           
+        tp_task->ucID = STI_INIT;
         tp_task->usInParam = 0;
     }
-    else if(uc_temp)//队列里面有任务   
+    else if (bQueue_PopTask(tp_task, &t_item))
     {
-        lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->ucID, 1);
-        lwrb_read(&tp_task->tQueueBuff, (u8*)&tp_task->usInParam, 2);
+        tp_task->ucID = t_item.ucId;
+        tp_task->usInParam = t_item.usParam;
     }
     else
     {
-        tp_task->ucID = STI_NULL;           
+        tp_task->ucID = STI_NULL;
         tp_task->usInParam = 0;
     }
-    
+
     switch (tp_task->ucID)
     {
         case STI_INIT:
+        {
             tp_task->vp_func = v_sys_queue_task_init;
+        }
         break;
-        
+
         case STI_ENTER_APP:
+        {
             tp_task->vp_func = v_sys_queue_task_enter_app;
+        }
         break;
-        
+
         case STI_ERR:
+        {
             tp_task->vp_func = v_sys_queue_task_err;
+        }
         break;
-        
-        case STI_RESET: 
+
+        case STI_RESET:
+        {
             tp_task->vp_func = v_sys_queue_task_reset;
+        }
         break;
-        
-        #if(boardUPDATE)
-        case STI_UPDATE:	
+
+        #if (boardUPDATE)
+        case STI_UPDATE:
+        {
             tp_task->vp_func = v_sys_queue_task_update;
+        }
         break;
-        #endif
-        
-        #if(boardDISPLAY_EN)
-        case STI_DISPLAY: 
+        #endif  /* boardUPDATE */
+
+        #if (boardDISPLAY_EN)
+        case STI_DISPLAY:
+        {
             tp_task->vp_func = v_sys_queue_task_disp;
+        }
         break;
-        #endif
-        
-        #if(boardLOW_POWER)
-        case STI_LOW_POWER: 
+        #endif  /* boardDISPLAY_EN */
+
+        #if (boardLOW_POWER)
+        case STI_LOW_POWER:
+        {
             tp_task->vp_func = v_sys_queue_task_low_power;
+        }
         break;
-        #endif
+        #endif  /* boardLOW_POWER */
 
         case STI_NULL:
         default:
+        {
             tp_task->vp_func = NULL;
             tp_task->usInParam = 0;
+        }
         break;
     }
 
-    return true;       
+    return true;
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 队列事件及添加回调函数
+ * 说明(备注)  : 处理任务入队等事件
+ * 传入参数    : tp_task: 任务控制块指针; num: 事件类型/回调编号
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+static void v_add_task_return_func_cb(Task_T *tp_task, u8 num)
+{
+    (void)tp_task;
 
-/**********************************************************************************************************
-*	函 数 名: JumpToApp
-*	功能说明: 跳转到APP程序 0x0800 2000
-*	形    参: 无
-*	返 回 值: 无
-**********************************************************************************************************/
-/* 开关全局中断的宏 */
-#define ENABLE_INT()	__set_PRIMASK(0)	/* 使能全局中断 */
-#define DISABLE_INT()	__set_PRIMASK(1)	/* 禁止全局中断 */
-typedef void (*pAppFunction) (void);
-pAppFunction  application;
+    switch (num)
+    {
+        case QE_TASK_POSTED:
+        {
+            #if (boardUSE_OS)
+            xTaskNotifyGive(tSysTaskHandler);
+            #endif  /* boardUSE_OS */
+        }
+        break;
+
+        default:
+        {
+        }
+        break;
+    }
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 跳转到 APP 应用程序
+ * 说明(备注)  : 验证栈顶指针与复位向量合法性，反初始化外设与中断后执行跳转
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 成功不返回; 失败返回负错误码 (-1: 栈顶错误, -2: 处于擦除态, -3: 跳转异常, -4: 地址范围非法, -5: 标志落盘失败)
+ ************************************************************************************************************************/
 s8 cSys_JumpToApp(void)
 {
-	uint32_t JumpAddress = 0;
-	
-	/* APP栈顶指针合法 */
-	if(0x20000000 != ((*(__IO uint32_t*)flashAPP_START) & 0x2FFE0000))
-		return -1;
-	
-	if(tBootMemParam.tParam.eAppState == AS_ERASE)
-		return -2;
-	
-//	1)关闭所有外设的时钟
-//	2) 关闭使用的PLL
-//	3) 禁用所有中断 
-//	4) 清除所有挂起的中断标志位
-	
-	#if(boardADC_EN)
-	vAdc_DeInit();
-	#endif  //boardADC_EN
-	
-	#if(boardLED_EN)
-	vLed_IfaceDeInit();
-	#endif  //boardLED_EN
-	
-	#if(boardLOW_POWER)
-	vPrint_EnterLowPower();                                 //关闭串口
-	#endif
-	
-	#if(boardLOW_POWER)
-	vGPIO_EnterApp();                                       //关闭中断
-	vAdc_IoEnterLowPower();                                 //关闭AD
-	#endif  //boardLOW_POWER
-	
-	#if(boardBMS_EN)
-	vBms_IfaceDeInit();
-	#endif
-	
-	#if( boardPRINT_IFACE )
-	cBoot_CtrlUpdate(false, AS_OK);                               //把tBootInfo.ulCmd标志位设置为跳转到APP,下次重启就会直接进来APP
-	vPrint_DeInit();
-	#endif
-	
-	vSys_MsDelay(2);
-	
-	#if boardWDGT_EN
-	vFwdgt_Reload();
-	#endif
-	
-//		3) 禁用所有中断
-//		4) 清除所有挂起的中断标志位
-	__disable_irq();	                                    //关闭所有中断,如果有开外设也要关掉
-	
-	/* 关闭滴答定时器，复位到默认值 */
-	SysTick->CTRL = 0;
-	SysTick->LOAD = 0;
-	SysTick->VAL = 0;
-	
-	JumpAddress = *(__IO uint32_t*)(flashAPP_START + 4);	//Reset_Handler 入口地址
-	
-	application = (pAppFunction)(uintptr_t)JumpAddress;
-	
-	__set_MSP(*(__IO uint32_t*) flashAPP_START);	        //APP程序堆栈指针起始(用户代码区的第一个字用于存放栈顶地址)
-	
-	application();	                                        //跳转到Reset_Handler即APP
+    uint32_t JumpAddress = 0;
 
-	/* 跳转成功的话，不会执行到这里，用户可以在这里添加代码 */
-	return -3;
+    /* APP 栈顶指针合法性检查 (SRAM 范围: 0x20000000 ~ 0x2001FFFF) */
+    if (0x20000000 != ((*(__IO uint32_t *)flashAPP_START) & 0x2FFE0000))
+        return -1;
+
+    /* APP 复位中断入口地址合法性检查 (必须在 APP 代码区范围内且 Thumb 模式位为 1) */
+    JumpAddress = *(__IO uint32_t *)(flashAPP_START + 4);
+    if (JumpAddress < flashAPP_START || JumpAddress > flashAPP_END || (JumpAddress & 0x01) == 0)
+        return -4;
+
+    if (tBootMemParam.tParam.eAppState == AS_ERASE)
+        return -2;
+
+    #if (boardADC_EN)
+    vAdc_DeInit();
+    #endif  /* boardADC_EN */
+
+    #if (boardLED_EN)
+    vLed_IfaceDeInit();
+    #endif  /* boardLED_EN */
+
+    #if (boardLOW_POWER)
+    vPrint_EnterLowPower();                                 /* 关闭串口 */
+    vGPIO_EnterApp();                                       /* 关闭中断 */
+    vAdc_IoEnterLowPower();                                 /* 关闭 AD */
+    #endif  /* boardLOW_POWER */
+
+    #if (boardBMS_EN)
+    vBms_IfaceDeInit();
+    #endif  /* boardBMS_EN */
+
+    #if (boardPRINT_IFACE)
+    /* 设置下次重启直接进 APP;落盘失败禁止带病跳转,由任务重试机制兜底 */
+    if (cBoot_CtrlUpdate(false, AS_OK) <= 0)
+        return -5;
+    vPrint_DeInit();
+    #endif  /* boardPRINT_IFACE */
+
+    vSys_MsDelay(2);
+
+    #if (boardWDGT_EN)
+    vFwdgt_Reload();
+    #endif  /* boardWDGT_EN */
+
+    __disable_irq();                                        /* 关闭所有中断 */
+
+    /* 关闭所有 NVIC 中断并清除所有挂起中断标志 */
+    for (int i = 0; i < 8; i++)
+    {
+        NVIC->ICER[i] = 0xFFFFFFFF;
+        NVIC->ICPR[i] = 0xFFFFFFFF;
+    }
+
+    /* 关闭滴答定时器，复位到默认值 */
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
+
+    pAppFunction p_application = (pAppFunction)(uintptr_t)JumpAddress;
+
+    __set_CONTROL(0);                                       /* 确保处于特权线程模式使用 MSP */
+    __set_MSP(*(__IO uint32_t *)flashAPP_START);           /* 加载 APP 堆栈指针 */
+    __ISB();
+    __DSB();
+
+    p_application();                                        /* 跳转到 Reset_Handler 即 APP */
+
+    return -3;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif  /* 1 */

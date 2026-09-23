@@ -1,28 +1,59 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\ComFunc
+ * File    : ntc.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : NTC 温度查表与转换计算模块头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef NTC_H
 #define NTC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//****************************************************Includes******************************************************************//
 #include "main.h"
-#include <math.h>
 
-#define 		ntc10K_B3950_RES_TABLE_SIZE     		161
-#define 		ntc10K_B3950_INDEX_ZERO_TEMP          	-40
-extern const u32 ula10K_B3950_RES_TABLE[ntc10K_B3950_RES_TABLE_SIZE];
+#if (1)
+//****************************************************Macros********************************************************************//
+                
+#define			ntc10K_B3950_RES_TABLE_SIZE				161
+#define			ntc10K_B3950_INDEX_ZERO_TEMP			(-40)
 
-#define 		ntc100K_B3950_RES_TABLE_SIZE     		161
-#define 		ntc100K_B3950_INDEX_ZERO_TEMP          	-40
-extern const u32 ula100K_B3950_RES_TABLE[ntc100K_B3950_RES_TABLE_SIZE];
+#define			ntc100K_B3950_RES_TABLE_SIZE			161
+#define			ntc100K_B3950_INDEX_ZERO_TEMP			(-40)
 
+
+//****************************************************Types*********************************************************************//
 typedef struct
 {
-    double         		sys_vol;     		/* 电压 */
-    u16   				volt_res;    		/* ntc分压电阻*/
-    u16   				ntc_res;     		/* ntc额定电阻 */
-    u16   				hex_x;      		/* ADC分辨率 -12Bit_4096 10Bit_1025 8Bit_256 */
-    u16   				b_x;         		/* B值*/
-}ntc_val_t;
+	float				sys_vol;			//电压
+	u16					volt_res;			//ntc分压电阻
+	u16					ntc_res;			//ntc额定电阻
+	u16					hex_x;				//ADC分辨率 -12Bit_4096 10Bit_1025 8Bit_256
+	u16					b_x;				//B值
+}NtcVal_T;
 
-extern void vNtc_Init(ntc_val_t *val, double sys_vol, u16 volt_res, u16 ntc_res, u16 hex_x, u16 b_x);
-extern s16 sNtc_GetTempByRes(const u32 *buff, const s16 zero_index_temp, const u16 len, const u32 res);
-extern double fNtc_CulcTempByAD(ntc_val_t *val,u16 adc_val);
+//****************************************************Globals*******************************************************************//
+typedef NtcVal_T ntc_val_t;                 /* 兼容旧类型定义 */
+
+//****************************************************Extern********************************************************************//
+void vNtc_Init(ntc_val_t *p_val, float sys_vol, u16 volt_res, u16 ntc_res, u16 hex_x, u16 b_x);
+s16  sNtc_GetTempByRes(const u32 *p_buff, const s16 zero_index_temp, const u16 len, const u32 res);
+
+#endif  /* 1 */
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif  /* NTC_H */
 

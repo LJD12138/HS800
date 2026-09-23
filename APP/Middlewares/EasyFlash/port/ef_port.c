@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "board_config.h"
+#include "main.h"
 
 #if(boardEASY_FLASH)
 #include "Print/print_task.h"
@@ -55,7 +55,7 @@
 SemaphoreHandle_t 	EasyFlashSemaphoreMutex = NULL;
 #endif  //boardUSE_OS
 
-char log_buf[256];
+static char s_log_buf[256];
 
 #endif  //boardEASY_FLASH
 
@@ -81,7 +81,7 @@ EfErrCode ef_port_init(ef_env const **default_env, size_t *default_env_size) {
 		result = EF_ENV_INIT_FAILED;
 
     *default_env = default_env_set;
-    *default_env_size = usApp_GetMemParamSize();
+    *default_env_size = sApp_GetMemParamSize();
 	#endif  //boardEASY_FLASH
 	
     return result;
@@ -137,7 +137,7 @@ EfErrCode ef_port_erase(uint32_t addr, size_t size) {
 	
 	#if(boardEASY_FLASH)
 	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
-	if(bFlash_Gd32EraseSector(addr, addr + size) == false){
+	if(bFlash_Gd32EraseSector(addr, addr + size - 1) == false){
         result = EF_ERASE_ERR;
     }
 	#elif(boardIC_TYPE == boardIC_STM32H7XX)
@@ -171,8 +171,8 @@ EfErrCode ef_port_erase(uint32_t addr, size_t size) {
 EfErrCode ef_port_write(uint32_t addr, const uint32_t *buf, size_t size) {
     EfErrCode result = EF_NO_ERR;
 	
-	__ALIGNED(4) u32 buff[size];
-	memcpy(buff, buf, size);
+	// __ALIGNED(4) u32 buff[size];
+	// memcpy(buff, buf, size);
 	
 	#if(boardEASY_FLASH)
 	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
@@ -204,7 +204,12 @@ void ef_port_env_lock(void) {
 	if(EasyFlashSemaphoreMutex == NULL)
 		return;
 	
-	xSemaphoreTake(EasyFlashSemaphoreMutex, pdMS_TO_TICKS(portMAX_DELAY));
+	if (xSemaphoreTake(EasyFlashSemaphoreMutex, pdMS_TO_TICKS(3000)) != pdTRUE)
+	{
+		#if (boardPRINT_IFACE)
+		sMyPrint("[EASYFLASH WARN] EasyFlashSemaphoreMutex take timeout (3s)!\r\n");
+		#endif
+	}
 	#else
 	__disable_irq();
 	#endif  //boardUSE_OS
@@ -246,8 +251,8 @@ void ef_log_debug(const char *file, const long line, const char *format, ...) {
     va_start(args, format);
     printf("[Flash](%s:%ld) ", file, line);
     /* must use vprintf to print */
-    vsprintf(log_buf, format, args);
-    printf("%s", log_buf);
+    vsprintf(s_log_buf, format, args);
+    printf("%s", s_log_buf);
     va_end(args);
 
 #endif
@@ -270,10 +275,10 @@ void ef_log_info(const char *format, ...)
     va_start(args, format);
 
     /* must use vprintf to print */
-    vsprintf(log_buf, format, args);
+    vsprintf(s_log_buf, format, args);
 	
     va_end(args);
-	sMyPrint("%s", log_buf);
+	sMyPrint("%s", s_log_buf);
 	#endif  //boardEASY_FLASH
 }
 /**
@@ -290,9 +295,9 @@ void ef_print(const char *format, ...)
     va_start(args, format);
 
     /* must use vprintf to print */
-    vsprintf(log_buf, format, args);
+    vsprintf(s_log_buf, format, args);
 	
     va_end(args);
-	sMyPrint("%s", log_buf);
+	sMyPrint("%s", s_log_buf);
 	#endif  //boardEASY_FLASH
 }

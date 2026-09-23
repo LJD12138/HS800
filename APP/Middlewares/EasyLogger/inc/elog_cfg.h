@@ -42,7 +42,7 @@
 /* 启用断言检查 */
 #define ELOG_ASSERT_ENABLE
 /* 每行日志的缓冲区大小 */
-#define ELOG_LINE_BUF_SIZE                      1024
+#define ELOG_LINE_BUF_SIZE                      256
 /* 输出行号的最大长度 */
 #define ELOG_LINE_NUM_MAX_LEN                   5
 /* 输出过滤器的标签最大长度 */

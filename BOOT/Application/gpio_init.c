@@ -1,13 +1,35 @@
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Application
+ * File    : gpio_init.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : GPIO引脚配置与低功耗/跳转控制实现
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "gpio_init.h"
-#include "Print/print_iface.h"
+
+//****************************************************Macros********************************************************************//
+
+//****************************************************Parameter Initialization**************************************************//
+
+//****************************************************Function Declaration******************************************************//
+
+//****************************************************Function Declaration******************************************************//
 
 /***********************************************************************************************************************
------函数功能    IO口初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/ 
+ * 函数功能    : GPIO引脚初始配置
+ * 说明(备注)  : 将所有端口默认配置为模拟输入以降低功耗，并配置必要的外设引脚
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vGPIO_Init(void)
 {
 //	//	//初始化所有IO,已达到最低功耗.
@@ -44,13 +66,12 @@ void vGPIO_Init(void)
 //	gpio_init(GPIOG, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
 //	#endif
 	
-	
 	rcu_periph_clock_enable(KEY_POWER_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
 	gpio_mode_set(KEY_POWER_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, KEY_POWER_PIN);
 	#else
-	gpio_init(KEY_POWER_GPIO,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);
-	#endif
+	gpio_init(KEY_POWER_GPIO, GPIO_MODE_IPU, GPIO_OSPEED_2MHZ, KEY_POWER_PIN);
+	#endif  /* boardIC_TYPE */
 	
 	rcu_periph_clock_enable(gpioASSIST_OPEN_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
@@ -58,45 +79,42 @@ void vGPIO_Init(void)
 	gpio_output_options_set(gpioASSIST_OPEN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, gpioASSIST_OPEN_PIN);
 	#else
 	gpio_init(gpioASSIST_OPEN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, gpioASSIST_OPEN_PIN);
-	#endif
+	#endif  /* boardIC_TYPE */
 	gpioASSIST_OPEN_ON();
 }
 
 /***********************************************************************************************************************
------函数功能    获取跳转到APP程序信号
------说明(备注)  1MS刷新
------传入参数    none
------输出参数    none
------返回值      true:跳转APP   false:留在Boot
-************************************************************************************************************************/ 
+ * 函数功能    : 获取跳转到APP程序信号
+ * 说明(备注)  : 1ms周期刷新判定
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : true: 跳转APP, false: 留在Boot
+ ************************************************************************************************************************/
 bool bGPIO_BootJumpApp(void)
 {
-//	static  u8  uc_key_tri_cnt;
-	
-//	if(KEY_POWER_IsPress() == true)
-	{
-//		if(++uc_key_tri_cnt >= 30)
-		{
-//			uc_key_tri_cnt = 0;
-			return true;
-		}
-	}
-//	else 
+//	static u8 uc_key_tri_cnt;
+//	if (KEY_POWER_IsPress() == true)
 //	{
-//		uc_key_tri_cnt = 0;
+//		if (++uc_key_tri_cnt >= 30)
+//		{
+//			uc_key_tri_cnt = 0;
+//			return true;
+//		}
 //	}
+//	else 
+//		uc_key_tri_cnt = 0;
 //	return false;
+	return true;
 }
 
-
-#if(boardLOW_POWER)
+#if (boardLOW_POWER)
 /***********************************************************************************************************************
------函数功能    IO口进入低功耗
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/ 
+ * 函数功能    : 配置GPIO进入低功耗状态
+ * 说明(备注)  : 关闭非必要外设时钟并配置唤醒按键外部中断
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vKey_EnterLowPower(void)
 {
 	rcu_periph_clock_disable(RCU_GPIOA);
@@ -106,7 +124,7 @@ void vKey_EnterLowPower(void)
 	#if (boardIC_TYPE != boardIC_GD32F50X)
 	rcu_periph_clock_disable(RCU_GPIOF);
 	rcu_periph_clock_disable(RCU_GPIOG);
-	#endif
+	#endif  /* boardIC_TYPE */
 	
 	/* enable clock */
     rcu_periph_clock_enable(RCU_PMU);
@@ -123,12 +141,12 @@ void vKey_EnterLowPower(void)
 	gpio_mode_set(attiSENSOR_INT_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, attiSENSOR_INT_PIN);
 	gpio_mode_set(PRINT_RX_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, PRINT_RX_PIN);
 	#else
-	gpio_init(KEY_POWER_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //中断 电源按键 PC13
-	gpio_init(KEY_WP_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //中断 唤醒脚 PA0
-	gpio_init(KEY_KEY1_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_KEY1_PIN);
-	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //中断 状态传感器 PA9
-	gpio_init(PRINT_RX_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //中断 串口接收   PD2
-	#endif
+	gpio_init(KEY_POWER_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_2MHZ, KEY_POWER_PIN);             //中断 电源按键 PC13
+	gpio_init(KEY_WP_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_2MHZ, KEY_WP_PIN);                   //中断 唤醒脚 PA0
+	gpio_init(KEY_KEY1_GPIO, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, KEY_KEY1_PIN);
+	gpio_init(attiSENSOR_INT_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_2MHZ, attiSENSOR_INT_PIN);   //中断 状态传感器 PA9
+	gpio_init(PRINT_RX_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_2MHZ, PRINT_RX_PIN);               //中断 串口接收   PD2
+	#endif  /* boardIC_TYPE */
 	
 	/* enable and set key EXTI interrupt to the lowest priority */
 	nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
@@ -151,33 +169,31 @@ void vKey_EnterLowPower(void)
 	exti_interrupt_flag_clear(EXTI_9);
 	exti_interrupt_flag_clear(EXTI_2);
 	exti_interrupt_flag_clear(EXTI_0);
-	exti_interrupt_enable(EXTI_13);//
-	exti_interrupt_enable(EXTI_9);//
-	exti_interrupt_enable(EXTI_2);//
-	exti_interrupt_enable(EXTI_0);//
+	exti_interrupt_enable(EXTI_13);
+	exti_interrupt_enable(EXTI_9);
+	exti_interrupt_enable(EXTI_2);
+	exti_interrupt_enable(EXTI_0);
 }
 
 /***********************************************************************************************************************
------函数功能    IO口退出低功耗
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/ 
+ * 函数功能    : GPIO退出低功耗
+ * 说明(备注)  : 重新初始化系统GPIO引脚
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vGPIO_ExitLowPower(void)
 {
 	vGPIO_Init();
 }
 
-
-
 /***********************************************************************************************************************
------函数功能    IO口进入APP程序
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/ 
+ * 函数功能    : 配置GPIO进入APP运行状态
+ * 说明(备注)  : 禁用并清理低功耗唤醒中断线
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vGPIO_EnterApp(void)
 {
 	#if (boardIC_TYPE == boardIC_GD32F50X)
@@ -187,12 +203,12 @@ void vGPIO_EnterApp(void)
 	gpio_mode_set(attiSENSOR_INT_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, attiSENSOR_INT_PIN);
 //	gpio_mode_set(PRINT_RX_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, PRINT_RX_PIN);
 	#else
-	gpio_init(KEY_POWER_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_POWER_PIN);             //中断 电源按键   PC13
+	gpio_init(KEY_POWER_GPIO, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, KEY_POWER_PIN);             //模拟输入 电源按键 PC13
 	gpio_init(KEY_WP_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_WP_PIN);                   //中断 唤醒脚     PA0
 	gpio_init(KEY_KEY1_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,KEY_KEY1_PIN);
 	gpio_init(attiSENSOR_INT_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,attiSENSOR_INT_PIN);   //中断 状态传感器 PA9
 //	gpio_init(PRINT_RX_GPIO,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,PRINT_RX_PIN);               //中断 串口接收   PD2
-	#endif
+	#endif  /* boardIC_TYPE */
 	
 	nvic_irq_disable(EXTI10_15_IRQn);
 	nvic_irq_disable(EXTI5_9_IRQn);
@@ -203,15 +219,10 @@ void vGPIO_EnterApp(void)
 	exti_interrupt_flag_clear(EXTI_9);
 	exti_interrupt_flag_clear(EXTI_2);
 	exti_interrupt_flag_clear(EXTI_0);
-	exti_interrupt_disable(EXTI_13);//
-	exti_interrupt_disable(EXTI_9);//
-	exti_interrupt_disable(EXTI_2);//
-	exti_interrupt_disable(EXTI_0);//
+	exti_interrupt_disable(EXTI_13);
+	exti_interrupt_disable(EXTI_9);
+	exti_interrupt_disable(EXTI_2);
+	exti_interrupt_disable(EXTI_0);
 }
-
-#endif
-
-
-
-
+#endif  /* boardLOW_POWER */
 

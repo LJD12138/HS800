@@ -1,17 +1,37 @@
+/*******************************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\Usb
+ * File    : usb_iface.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : USB 底层硬件接口驱动实现文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Usb/usb_iface.h"
 
-#if(boardUSB_EN)
-I2cObj_T  		tUSB_IC1_I2C;
-I2cObj_T  		tUSB_IC2_I2C;
+#if (boardUSB_EN)
 
-/*****************************************************************************************************************
------函数功能    DC相关IO初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
+//****************************************************Parameter Initialization**************************************************//
+I2cObj_T tUSB_IC1_I2C;
+I2cObj_T tUSB_IC2_I2C;
 
+//****************************************************Function Declaration******************************************************//
+static void v_usb_gpio_init(void);
+
+
+/***********************************************************************************************************************
+ * 函数功能    : USB 相关 IO 与 I2C 初始化
+ * 说明(备注)  : 配置使能引脚与 SW3516 模拟 I2C 总线引脚参数
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 static void v_usb_gpio_init(void)
 {
     /* usbPD_EN_PIN is initialized as PWM output (TIMER3_CH1) in led_iface.c */
@@ -22,8 +42,8 @@ static void v_usb_gpio_init(void)
 	gpio_output_options_set(usbPD_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, usbPD_EN_PIN);
 	#else
     gpio_init(usbPD_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, usbPD_EN_PIN);
-	#endif
-    #endif
+	#endif  /* boardIC_TYPE */
+    #endif  /* 0 */
     usbPD_EN_OFF();
 
     /* usbPD2_EN_PIN is initialized as PWM output (TIMER0_CH2) in md_light_iface.c */
@@ -34,8 +54,8 @@ static void v_usb_gpio_init(void)
 	gpio_output_options_set(usbPD2_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, usbPD2_EN_PIN);
 	#else
     gpio_init(usbPD2_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, usbPD2_EN_PIN);
-	#endif
-    #endif
+	#endif  /* boardIC_TYPE */
+    #endif  /* 0 */
     usbPD2_EN_OFF();
 	
 	// rcu_periph_clock_enable(usbPOWER_EN_RCU);
@@ -71,34 +91,16 @@ static void v_usb_gpio_init(void)
     vI2C_ObjInit(&tUSB_IC2_I2C);
 }
 
-
 /***********************************************************************************************************************
------函数功能    LED初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
+ * 函数功能    : USB 接口初始化
+ * 说明(备注)  : 完成底层 GPIO 与 I2C 初始化
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vUsb_IfaceInit(void)
 {
 	v_usb_gpio_init();
 }
 
-#endif  //boardUSB_EN
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif  /* boardUSB_EN */

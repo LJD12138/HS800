@@ -1,9 +1,30 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\Led
+ * File    : led_iface.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 指示灯底层 GPIO 与 PWM 配置接口头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef LED_IFACE_H_
 #define LED_IFACE_H_
 
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-#if(boardLED_EN)
+//****************************************************Includes******************************************************************//
+#include "main.h"
+
+#if (boardLED_EN)
+
+//****************************************************Macros********************************************************************//
 #define 		ledTIMER                           		TIMER3
 #define 		ledTIMER_RCU                       		RCU_TIMER3
 #define 		ledTIMER_CH                        		TIMER_CH_3
@@ -47,13 +68,25 @@
 #define     	ledDC_SW_ON()     						GPIO_BOP(ledDC_SW_PORT) = ledDC_SW_PIN
 #define     	ledDC_SW_OFF()     						GPIO_BC(ledDC_SW_PORT)  = ledDC_SW_PIN
 
+//****************************************************Types*********************************************************************//
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Extern********************************************************************//
+
+//****************************************************Extern********************************************************************//
 void vLed_IfaceInit(void);
-
 void vLed_IfaceDeInit(void);
-	
-#if(boardLOW_POWER)
-void vLed_IoEnterLowPower(void);
-#endif  //boardLOW_POWER
 
-#endif  //boardLED_EN
-#endif  //LED_IFACE_H_
+#if (boardLOW_POWER)
+void vLed_IoEnterLowPower(void);
+#endif  /* boardLOW_POWER */
+
+#endif  /* boardLED_EN */
+
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* LED_IFACE_H_ */
+

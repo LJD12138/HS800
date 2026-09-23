@@ -29,7 +29,7 @@
 #ifndef EF_CFG_H_
 #define EF_CFG_H_
 
-#include "board_config.h"
+#include "main.h"
 #include "..\..\BOOT\Application\flash_allot_table.h"
 
 /* 环境变量 */
@@ -76,9 +76,12 @@
 /* backup area start address */
 #define EF_START_ADDR             (flashAPP_INFO_SATRT) /* from the SPI Flash position: 0KB*/
 /* ENV area size. It's at least one empty sector for GC. So it's definination must more then or equal 2 flash sector size. */
-#define ENV_AREA_SIZE             (5 * EF_ERASE_MIN_SIZE)      /* 4K */
+#define ENV_AREA_SIZE             (5 * EF_ERASE_MIN_SIZE)      /* 10K (5 sectors) */
 /* saved log area size */
-#define LOG_AREA_SIZE             (5 * EF_ERASE_MIN_SIZE)      /* 20K */
+#define LOG_AREA_SIZE             (5 * EF_ERASE_MIN_SIZE)      /* 10K (5 sectors) */
+
+/* the sector cache table size, match all 5 physical sectors to prevent cache thrashing */
+#define EF_SECTOR_CACHE_TABLE_SIZE 5
 
 /* print debug information of flash */
 //#define PRINT_DEBUG

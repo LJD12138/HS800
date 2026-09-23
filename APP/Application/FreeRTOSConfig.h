@@ -1,11 +1,24 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Application
+ * File    : FreeRTOSConfig.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : FreeRTOS 实时操作系统内核裁剪与硬件特性配置文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
 
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-#if  defined(__ICCARM__) || defined(__CC_ARM) || defined(__TASKING__) || defined(__GNUC__)
+#if defined(__ICCARM__) || defined(__CC_ARM) || defined(__TASKING__) || defined(__GNUC__)
 #include <stdint.h>
 extern uint32_t SystemCoreClock;
-#endif
+#endif  /* defined(__ICCARM__) || defined(__CC_ARM) || defined(__TASKING__) || defined(__GNUC__) */
 
 #include "board_config.h"
 
@@ -165,7 +178,7 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //<h>        	钩子函数
 //-------------------------------------------------------------------
 //          	<q0> 使能空闲任务钩子函数
-#define 		configUSE_IDLE_HOOK						 0
+#define 		configUSE_IDLE_HOOK						 1
 //<i> 0:默认
 //<i> 1:需自己实现vApplicationIdleHook
 //-------------------------------------------------------------------
@@ -181,7 +194,7 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //<i> 0:默认
 //-------------------------------------------------------------------
 //          	<q0> 使能动态内存申请失败钩子函数
-#define 		configUSE_MALLOC_FAILED_HOOK			 0
+#define 		configUSE_MALLOC_FAILED_HOOK			 1
 //<i> 0:默认
 //<i> 1:使能使用动态内存分配失败钩子函数,需自定义相关钩子函数
 //-------------------------------------------------------------------
@@ -193,26 +206,22 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //-------------------------------------------------------------------
 //</h>       	钩子函数
 
-#if(boardUSE_OS_DEBUG_OUT)
 //=============================================================================================================
 //====================================运行时间和任务状态统计相关定义===========================================
 //=============================================================================================================
 //<h>        	运行时间和任务状态统计
 //-------------------------------------------------------------------
-//          	<q0> 使能运行时间统计功能
-#define 		configGENERATE_RUN_TIME_STATS			 0
-//<i> 0:默认
-//<i> 1:使能任务运行时间统计功能,此时用户需要提供两个函数，
-//<i> 	一个是用于配置任务运行时间统计功能的函数portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()，
-//<i> 	一般是完成定时器的初始化，
-//<i> 	另一个函数是portGET_RUN_TIME_COUNTER_VALUE()，
-//<i> 	该函数用于获取定时器的计时值
+//<q0>  使能运行时间统计功能
+#define 		configGENERATE_RUN_TIME_STATS			 boardHEALTH_MONITOR_EN
+//<i>  跟随 board_config.h 健康监控总开关:
+//<i>  1:调试期开启,时基复用 1kHz SysTick tick 计数(见文件尾 port 宏),
+//<i>	零外设占用,统计精度 1ms,适合 CPU 占用率累计统计;纳秒级延迟剖析请用 SEGGER SystemView
+//<i>  0:量产后关闭,任务切换零统计负担
 //-------------------------------------------------------------------
 //          	<q0> 使能可视化追踪功能
 #define 		configUSE_TRACE_FACILITY				 1
 //<i> 0:默认
-//<i> 1:该配置通常在调试时才会使用，在真正发布程序时必须将其关闭，
-//<i> 	因为其对于FreeRTOS的性能是有影响的
+//<i> 1:使能uxTaskGetSystemState()等系统状态与任务栈深查询API
 //-------------------------------------------------------------------
 //          	<q0> 使能编译vTaskList()和vTaskGetRunTimeStats()
 #define 		configUSE_STATS_FORMATTING_FUNCTIONS	 1  
@@ -237,7 +246,6 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //<i>	如果不使用内核调试器的话此宏设置为 0 即可。
 //-------------------------------------------------------------------
 //</h>       	运行时间和任务状态统计
-#endif  //boardUSE_OS_DEBUG_OUT
 
 
 //=============================================================================================================
@@ -258,7 +266,7 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //<i> 	软件定时器的开启、停止与销毁等操作都是通过队列实现的
 //-------------------------------------------------------------------
 //          	<o0> 定义软件定时器任务的栈空间大小
-#define 		configTIMER_TASK_STACK_DEPTH			 (configMINIMAL_STACK_SIZE * 5)
+#define 		configTIMER_TASK_STACK_DEPTH			 (configMINIMAL_STACK_SIZE * 2)
 //<i>	单位: Word, 无默认,configUSE_TIMERS为1需定义
 //-------------------------------------------------------------------
 //</h>       	软件定时器
@@ -327,7 +335,7 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
     #define 	configPRIO_BITS							 __NVIC_PRIO_BITS
 #else
     #define 	configPRIO_BITS							 4        /* 15 priority levels */
-#endif
+#endif  /* __NVIC_PRIO_BITS */
 
 /*========================================== SysTick中断优先级配置 ============================================*/
 //<i>Cortex-M内核使用8bit来配置优先级，但是STM32只使用了高4bit，数值越小，优先级越高。
@@ -378,14 +386,20 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 #define 		xPortPendSVHandler 					PendSV_Handler
 #define 		xPortSysTickHandler					SysTick_Handler
 
-
-#include "board_config.h"
 #if boardSEGGER
 #define 		INCLUDE_xTaskGetIdleTaskHandle			 1
 #define 		INCLUDE_pxTaskGetStackStart				 1
-#endif
+#endif  /* boardSEGGER */
 
 /* normal assert() semantics without relying on the provision of an assert.h header file */
-#define configASSERT( x )                              if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); } 
+#define configASSERT( x )                              if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
+
+/*========================================== 运行时统计时基 ============================================*/
+/* 复用 1kHz SysTick tick 计数作为运行时间统计计数器:
+ * - 零外设占用、零新增中断,计数器 32 位 @1kHz 约 49.7 天回绕,产品运行周期内单调可用
+ * - 统计精度 1ms,对 CPU 占用率累计统计误差 <1%;微秒级延迟剖析请使用 SEGGER SystemView */
+extern uint32_t xTaskGetTickCount( void );
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()       do { } while( 0 )
+#define portGET_RUN_TIME_COUNTER_VALUE()                xTaskGetTickCount()
 
 #endif /* FREERTOS_CONFIG_H */

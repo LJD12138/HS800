@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Firmware\CMSIS;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Application;.\ComFunc;.\Middlewares\SeggerRtt;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Hardware</IncludePath>
+              <IncludePath>.\Firmware\CMSIS;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Application;.\ComFunc;.\Middlewares\SeggerRtt;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\MultiFuncKey;.\Hardware</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -649,6 +649,21 @@
               <FileName>ef_def.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Middlewares\EasyFlash\inc\ef_def.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>MW-MultiFuncKey</GroupName>
+          <Files>
+            <File>
+              <FileName>mf_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\MultiFuncKey\mf_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>mf_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\MultiFuncKey\mf_key.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1011,6 +1026,16 @@
         <Group>
           <GroupName>HW-Key</GroupName>
           <Files>
+            <File>
+              <FileName>key_iface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Key\key_iface.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_iface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Key\key_iface.h</FilePath>
+            </File>
             <File>
               <FileName>key_func.c</FileName>
               <FileType>1</FileType>

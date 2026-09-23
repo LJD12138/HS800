@@ -90,7 +90,16 @@ virtualFolder:
         - path: ComFunc/i2c.c
         - path: ComFunc/filtration.c
         - path: ComFunc/ntc.c
-        - path: ComFunc/queue_task.c
+      folders: []
+    - name: MW-TaskQueue
+      files:
+        - path: Middlewares/TaskQueue/queue_task.c
+        - path: Middlewares/TaskQueue/queue_task.h
+      folders: []
+    - name: MW-MultiFuncKey
+      files:
+        - path: Middlewares/MultiFuncKey/mf_key.c
+        - path: Middlewares/MultiFuncKey/mf_key.h
       folders: []
     - name: Application
       files:
@@ -153,6 +162,8 @@ virtualFolder:
       files:
         - path: Hardware/Key/key_func.c
         - path: Hardware/Key/key_func.h
+        - path: Hardware/Key/key_iface.c
+        - path: Hardware/Key/key_iface.h
         - path: Hardware/Key/key_task.c
         - path: Hardware/Key/key_task.h
       folders: []
@@ -221,6 +232,8 @@ targets:
         - Middlewares/LightweightRingBuffer/src
         - Middlewares/EasyFlash/inc
         - Middlewares/Protocol
+        - Middlewares/TaskQueue
+        - Middlewares/MultiFuncKey
         - Hardware
         - .cmsis/include
         - RTE/_BOOT

@@ -63,11 +63,14 @@ Revision: $Rev: 24316 $
 #endif
 
 /*********************************************************************
-*
-*       Defines, configurable
-*
+RTT_USE_ASM == 1（汇编加速模式）： 启用针对特定 CPU 架构（如 ARMv7-M / ARMv8-M）手写的专用汇编算法函数
+RTT_USE_ASM == 0（纯 C 语言模式）： 强制使用纯标准 C 语言实现所有的缓冲区读写、指针回环与数据拷贝逻辑
 **********************************************************************
 */
+#ifndef RTT_USE_ASM
+  #define RTT_USE_ASM                               (0)
+#endif
+
 
 //
 // Take in and set to correct values for Cortex-A systems with CPU cache
@@ -79,11 +82,6 @@ Revision: $Rev: 24316 $
 // Up-channel 0: RTT
 // Up-channel 1: SystemView
 //
-/* ARMCLANG下禁用RTT汇编优化,使用C实现替代 */
-#ifndef   RTT_USE_ASM
-  #define RTT_USE_ASM (0)
-#endif
-
 #ifndef   SEGGER_RTT_MAX_NUM_UP_BUFFERS
   #define SEGGER_RTT_MAX_NUM_UP_BUFFERS             (3)     // Max. number of up-buffers (T->H) available on this target    (Default: 3)
 #endif

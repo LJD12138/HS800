@@ -1,15 +1,35 @@
+/***********************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\MD_Display
+ * File    : md_display_iface.h
+ * Date    : 2026-09-22
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : TFT 显示底层接口头文件：SPI 模式选择、引脚定义与屏幕尺寸等硬件抽象宏
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef MD_DISPLAY_IFACE_H_
 #define MD_DISPLAY_IFACE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//****************************************************Includes******************************************************************//
 #include "main.h"
 #include "board_config.h"
 
 #if(boardDISPLAY_EN)
 
+//****************************************************Macros********************************************************************//
 #define         dispTFT_SPI_MODE_SW                     0U
 #define         dispTFT_SPI_MODE_HW                     1U
 #ifndef         boardDISP_SPI_MODE
-#define         boardDISP_SPI_MODE                     dispTFT_SPI_MODE_HW
+#define			boardDISP_SPI_MODE						dispTFT_SPI_MODE_HW
 #endif
 
 #define         dispTFT_WIDTH                           320U
@@ -71,6 +91,7 @@
 #define     	dispTFT_DMA_TX_IRQ_HANDLER  			DMA1_Channel0_IRQHandler
 #endif
 
+//****************************************************Extern********************************************************************//
 void vDisp_IfaceInit(void);
 void vDisp_SpiSendByte(const u8 *data, u16 len);
 void vDisp_TftSetBacklight(bool on);
@@ -81,4 +102,8 @@ void vDisp_TftWriteBuffer(const u8 *data, u32 len);
 bool bDisp_TftWriteColorAsync(const u8 *data, u32 len);
 
 #endif  /*boardDISPLAY_EN*/
-#endif  //MD_DISPLAY_IFACE_H_
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* MD_DISPLAY_IFACE_H_ */

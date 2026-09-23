@@ -214,10 +214,11 @@ static bool in_recovery_check = false;
 
 #ifdef EF_ENV_USING_CACHE
 /* ENV cache table */
-struct env_cache_node env_cache_table[EF_ENV_CACHE_TABLE_SIZE] = { 0 };
+static struct env_cache_node env_cache_table[EF_ENV_CACHE_TABLE_SIZE] = { 0 };
 /* sector cache table, it caching the sector info which status is current using */
-struct sector_cache_node sector_cache_table[EF_SECTOR_CACHE_TABLE_SIZE] = { 0 };
+static struct sector_cache_node sector_cache_table[EF_SECTOR_CACHE_TABLE_SIZE] = { 0 };
 #endif /* EF_ENV_USING_CACHE */
+
 
 static size_t set_status(uint8_t status_table[], size_t status_num, size_t status_index)
 {

@@ -26,7 +26,7 @@
  *
  */
 
-#include "FreeRTOS.h"
+#include "freertos.h"
 #include "task.h"
 #include "croutine.h"
 

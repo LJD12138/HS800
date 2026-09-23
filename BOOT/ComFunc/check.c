@@ -1,32 +1,29 @@
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\ComFunc
+ * File    : check.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 数据校验算法库实现，包含累加和、CRC8、CRC16及CRC32算法
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "check.h"
 #include "function.h"
 
-/*******************************************************
- *                Variables Declarations
- *******************************************************/
-//CRC8 X8+X5+X4+1查询表
-static const uint8_t crc8541_table[] ={
-    0x00,0x31,0x62,0x53,0xc4,0xf5,0xa6,0x97,0xb9,0x88,0xdb,0xea,0x7d,0x4c,0x1f,0x2e,\
-    0x43,0x72,0x21,0x10,0x87,0xb6,0xe5,0xd4,0xfa,0xcb,0x98,0xa9,0x3e,0x0f,0x5c,0x6d,\
-    0x86,0xb7,0xe4,0xd5,0x42,0x73,0x20,0x11,0x3f,0x0e,0x5d,0x6c,0xfb,0xca,0x99,0xa8,\
-    0xc5,0xf4,0xa7,0x96,0x01,0x30,0x63,0x52,0x7c,0x4d,0x1e,0x2f,0xb8,0x89,0xda,0xeb,\
-    0x3d,0x0c,0x5f,0x6e,0xf9,0xc8,0x9b,0xaa,0x84,0xb5,0xe6,0xd7,0x40,0x71,0x22,0x13,\
-    0x7e,0x4f,0x1c,0x2d,0xba,0x8b,0xd8,0xe9,0xc7,0xf6,0xa5,0x94,0x03,0x32,0x61,0x50,\
-    0xbb,0x8a,0xd9,0xe8,0x7f,0x4e,0x1d,0x2c,0x02,0x33,0x60,0x51,0xc6,0xf7,0xa4,0x95,\
-    0xf8,0xc9,0x9a,0xab,0x3c,0x0d,0x5e,0x6f,0x41,0x70,0x23,0x12,0x85,0xb4,0xe7,0xd6,\
-    0x7a,0x4b,0x18,0x29,0xbe,0x8f,0xdc,0xed,0xc3,0xf2,0xa1,0x90,0x07,0x36,0x65,0x54,\
-    0x39,0x08,0x5b,0x6a,0xfd,0xcc,0x9f,0xae,0x80,0xb1,0xe2,0xd3,0x44,0x75,0x26,0x17,\
-    0xfc,0xcd,0x9e,0xaf,0x38,0x09,0x5a,0x6b,0x45,0x74,0x27,0x16,0x81,0xb0,0xe3,0xd2,\
-    0xbf,0x8e,0xdd,0xec,0x7b,0x4a,0x19,0x28,0x06,0x37,0x64,0x55,0xc2,0xf3,0xa0,0x91,\
-    0x47,0x76,0x25,0x14,0x83,0xb2,0xe1,0xd0,0xfe,0xcf,0x9c,0xad,0x3a,0x0b,0x58,0x69,\
-    0x04,0x35,0x66,0x57,0xc0,0xf1,0xa2,0x93,0xbd,0x8c,0xdf,0xee,0x79,0x48,0x1b,0x2a,\
-    0xc1,0xf0,0xa3,0x92,0x05,0x34,0x67,0x56,0x78,0x49,0x1a,0x2b,0xbc,0x8d,0xde,0xef,\
-    0x82,0xb3,0xe0,0xd1,0x46,0x77,0x24,0x15,0x3b,0x0a,0x59,0x68,0xff,0xce,0x9d,0xac
-};
+#if (1)
+//****************************************************Macros********************************************************************//
 
+//****************************************************Parameter Initialization**************************************************//
 
-const uint8_t  CRC8Table[]=
-{							//120424-1			CRC Table
+/* CRC8 查表法常量表 (X8+X2+X1+1, Poly = 0x07) */
+static const uint8_t S_ucaCrc8Table[256] =
+{
 	0x00,0x07,0x0E,0x09,0x1C,0x1B,0x12,0x15,0x38,0x3F,0x36,0x31,0x24,0x23,0x2A,0x2D,
 	0x70,0x77,0x7E,0x79,0x6C,0x6B,0x62,0x65,0x48,0x4F,0x46,0x41,0x54,0x53,0x5A,0x5D,
 	0xE0,0xE7,0xEE,0xE9,0xFC,0xFB,0xF2,0xF5,0xD8,0xDF,0xD6,0xD1,0xC4,0xC3,0xCA,0xCD,
@@ -45,10 +42,108 @@ const uint8_t  CRC8Table[]=
 	0xDE,0xD9,0xD0,0xD7,0xC2,0xC5,0xCC,0xCB,0xE6,0xE1,0xE8,0xEF,0xFA,0xFD,0xF4,0xF3
 };
 
+/* MODBUS-CRC16 高位字节值表 */
+static const uint8_t S_ucaCrcHi[256] =
+{
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
+	0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
+	0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
+	0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
+	0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 
+	0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
+	0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 
+	0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
+	0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
+	0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
+	0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 
+	0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
+	0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
+	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
+	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40 
+};
 
+/* MODBUS-CRC16 低位字节值表 */
+static const uint8_t S_ucaCrcLo[256] =
+{
+	0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 
+	0x07, 0xC7, 0x05, 0xC5, 0xC4, 0x04, 0xCC, 0x0C, 0x0D, 0xCD, 
+	0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09, 
+	0x08, 0xC8, 0xD8, 0x18, 0x19, 0xD9, 0x1B, 0xDB, 0xDA, 0x1A, 
+	0x1E, 0xDE, 0xDF, 0x1F, 0xDD, 0x1D, 0x1C, 0xDC, 0x14, 0xD4, 
+	0xD5, 0x15, 0xD7, 0x17, 0x16, 0xD6, 0xD2, 0x12, 0x13, 0xD3, 
+	0x11, 0xD1, 0xD0, 0x10, 0xF0, 0x30, 0x31, 0xF1, 0x33, 0xF3, 
+	0xF2, 0x32, 0x36, 0xF6, 0xF7, 0x37, 0xF5, 0x35, 0x34, 0xF4, 
+	0x3C, 0xFC, 0xFD, 0x3D, 0xFF, 0x3F, 0x3E, 0xFE, 0xFA, 0x3A, 
+	0x3B, 0xFB, 0x39, 0xF9, 0xF8, 0x38, 0x28, 0xE8, 0xE9, 0x29, 
+	0xEB, 0x2B, 0x2A, 0xEA, 0xEE, 0x2E, 0x2F, 0xEF, 0x2D, 0xED, 
+	0xEC, 0x2C, 0xE4, 0x24, 0x25, 0xE5, 0x27, 0xE7, 0xE6, 0x26, 
+	0x22, 0xE2, 0xE3, 0x23, 0xE1, 0x21, 0x20, 0xE0, 0xA0, 0x60, 
+	0x61, 0xA1, 0x63, 0xA3, 0xA2, 0x62, 0x66, 0xA6, 0xA7, 0x67, 
+	0xA5, 0x65, 0x64, 0xA4, 0x6C, 0xAC, 0xAD, 0x6D, 0xAF, 0x6F, 
+	0x6E, 0xAE, 0xAA, 0x6A, 0x6B, 0xAB, 0x69, 0xA9, 0xA8, 0x68, 
+	0x78, 0xB8, 0xB9, 0x79, 0xBB, 0x7B, 0x7A, 0xBA, 0xBE, 0x7E, 
+	0x7F, 0xBF, 0x7D, 0xBD, 0xBC, 0x7C, 0xB4, 0x74, 0x75, 0xB5, 
+	0x77, 0xB7, 0xB6, 0x76, 0x72, 0xB2, 0xB3, 0x73, 0xB1, 0x71, 
+	0x70, 0xB0, 0x50, 0x90, 0x91, 0x51, 0x93, 0x53, 0x52, 0x92, 
+	0x96, 0x56, 0x57, 0x97, 0x55, 0x95, 0x94, 0x54, 0x9C, 0x5C, 
+	0x5D, 0x9D, 0x5F, 0x9F, 0x9E, 0x5E, 0x5A, 0x9A, 0x9B, 0x5B, 
+	0x99, 0x59, 0x58, 0x98, 0x88, 0x48, 0x49, 0x89, 0x4B, 0x8B, 
+	0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C, 
+	0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 
+	0x43, 0x83, 0x41, 0x81, 0x80, 0x40 
+};
 
-//CRC16 X16+X15+X2+X1
-static const uint16_t crc161521[256] = {
+/* CRC16-MSB 查表法常量表 (X16+X15+X2+X1, Poly = 0x8005) */
+static const uint16_t S_usaCrc16MsbTable[256] =
+{
+    0x0000, 0x8005, 0x800F, 0x000A, 0x801B, 0x001E, 0x0014, 0x8011,
+    0x8033, 0x0036, 0x003C, 0x8039, 0x0028, 0x802D, 0x8027, 0x0022,
+    0x8063, 0x0066, 0x006C, 0x8069, 0x0078, 0x807D, 0x8077, 0x0072,
+    0x0050, 0x8055, 0x805F, 0x005A, 0x804B, 0x004E, 0x0044, 0x8041,
+    0x80C3, 0x00C6, 0x00CC, 0x80C9, 0x00D8, 0x80DD, 0x80D7, 0x00D2,
+    0x00F0, 0x80F5, 0x80FF, 0x00FA, 0x80EB, 0x00EE, 0x00E4, 0x80E1,
+    0x00A0, 0x80A5, 0x80AF, 0x00AA, 0x80BB, 0x00BE, 0x00B4, 0x80B1,
+    0x8093, 0x0096, 0x009C, 0x8099, 0x0088, 0x808D, 0x8087, 0x0082,
+    0x8183, 0x0186, 0x018C, 0x8189, 0x0198, 0x819D, 0x8197, 0x0192,
+    0x01B0, 0x81B5, 0x81BF, 0x01BA, 0x81AB, 0x01AE, 0x01A4, 0x81A1,
+    0x01E0, 0x81E5, 0x81EF, 0x01EA, 0x81FB, 0x01FE, 0x01F4, 0x81F1,
+    0x81D3, 0x01D6, 0x01DC, 0x81D9, 0x01C8, 0x81CD, 0x81C7, 0x01C2,
+    0x0140, 0x8145, 0x814F, 0x014A, 0x815B, 0x015E, 0x0154, 0x8151,
+    0x8173, 0x0176, 0x017C, 0x8179, 0x0168, 0x816D, 0x8167, 0x0162,
+    0x8123, 0x0126, 0x012C, 0x8129, 0x0138, 0x813D, 0x8137, 0x0132,
+    0x0110, 0x8115, 0x811F, 0x011A, 0x810B, 0x010E, 0x0104, 0x8101,
+    0x8303, 0x0306, 0x030C, 0x8309, 0x0318, 0x831D, 0x8317, 0x0312,
+    0x0330, 0x8335, 0x833F, 0x033A, 0x832B, 0x032E, 0x0324, 0x8321,
+    0x0360, 0x8365, 0x836F, 0x036A, 0x837B, 0x037E, 0x0374, 0x8371,
+    0x8353, 0x0356, 0x035C, 0x8359, 0x0348, 0x834D, 0x8347, 0x0342,
+    0x03C0, 0x83C5, 0x83CF, 0x03CA, 0x83DB, 0x03DE, 0x03D4, 0x83D1,
+    0x83F3, 0x03F6, 0x03FC, 0x83F9, 0x03E8, 0x83ED, 0x83E7, 0x03E2,
+    0x83A3, 0x03A6, 0x03AC, 0x83A9, 0x03B8, 0x83BD, 0x83B7, 0x03B2,
+    0x0390, 0x8395, 0x839F, 0x039A, 0x838B, 0x038E, 0x0384, 0x8381,
+    0x0280, 0x8285, 0x828F, 0x028A, 0x829B, 0x029E, 0x0294, 0x8291,
+    0x82B3, 0x02B6, 0x02BC, 0x82B9, 0x02A8, 0x82AD, 0x82A7, 0x02A2,
+    0x82E3, 0x02E6, 0x02EC, 0x82E9, 0x02F8, 0x82FD, 0x82F7, 0x02F2,
+    0x02D0, 0x82D5, 0x82DF, 0x02DA, 0x82CB, 0x02CE, 0x02C4, 0x82C1,
+    0x8243, 0x0246, 0x024C, 0x8249, 0x0258, 0x825D, 0x8257, 0x0252,
+    0x0270, 0x8275, 0x827F, 0x027A, 0x826B, 0x026E, 0x0264, 0x8261,
+    0x0220, 0x8225, 0x822F, 0x022A, 0x823B, 0x023E, 0x0234, 0x8231,
+    0x8213, 0x0216, 0x021C, 0x8219, 0x0208, 0x820D, 0x8207, 0x0202
+};
+
+/* CRC16-LSB 查表法常量表 (X16+X15+X2+X1, Poly = 0xA001) */
+static const uint16_t S_usaCrc16LsbTable[256] =
+{
     0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
     0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
     0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
@@ -84,534 +179,398 @@ static const uint16_t crc161521[256] = {
 };
 
 
-/* CRC 高位字节值表 */ 
-const  uint8_t auchCRCHi[] = 
-{ 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
-	0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
-	0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
-	0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
-	0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 
-	0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
-	0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 
-	0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
-	0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
-	0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
-	0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 
-	0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 
-	0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 
-	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
-	0x80, 0x41, 0x00, 0xC1, 0x81, 0x40 
-};
-
-/* CRC低位字节值表*/ 
-const  uint8_t auchCRCLo[] = 
-{ 
-	0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 
-	0x07, 0xC7, 0x05, 0xC5, 0xC4, 0x04, 0xCC, 0x0C, 0x0D, 0xCD, 
-	0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09, 
-	0x08, 0xC8, 0xD8, 0x18, 0x19, 0xD9, 0x1B, 0xDB, 0xDA, 0x1A, 
-	0x1E, 0xDE, 0xDF, 0x1F, 0xDD, 0x1D, 0x1C, 0xDC, 0x14, 0xD4, 
-	0xD5, 0x15, 0xD7, 0x17, 0x16, 0xD6, 0xD2, 0x12, 0x13, 0xD3, 
-	0x11, 0xD1, 0xD0, 0x10, 0xF0, 0x30, 0x31, 0xF1, 0x33, 0xF3, 
-	0xF2, 0x32, 0x36, 0xF6, 0xF7, 0x37, 0xF5, 0x35, 0x34, 0xF4, 
-	0x3C, 0xFC, 0xFD, 0x3D, 0xFF, 0x3F, 0x3E, 0xFE, 0xFA, 0x3A, 
-	0x3B, 0xFB, 0x39, 0xF9, 0xF8, 0x38, 0x28, 0xE8, 0xE9, 0x29, 
-	0xEB, 0x2B, 0x2A, 0xEA, 0xEE, 0x2E, 0x2F, 0xEF, 0x2D, 0xED, 
-	0xEC, 0x2C, 0xE4, 0x24, 0x25, 0xE5, 0x27, 0xE7, 0xE6, 0x26, 
-	0x22, 0xE2, 0xE3, 0x23, 0xE1, 0x21, 0x20, 0xE0, 0xA0, 0x60, 
-	0x61, 0xA1, 0x63, 0xA3, 0xA2, 0x62, 0x66, 0xA6, 0xA7, 0x67, 
-	0xA5, 0x65, 0x64, 0xA4, 0x6C, 0xAC, 0xAD, 0x6D, 0xAF, 0x6F, 
-	0x6E, 0xAE, 0xAA, 0x6A, 0x6B, 0xAB, 0x69, 0xA9, 0xA8, 0x68, 
-	0x78, 0xB8, 0xB9, 0x79, 0xBB, 0x7B, 0x7A, 0xBA, 0xBE, 0x7E, 
-	0x7F, 0xBF, 0x7D, 0xBD, 0xBC, 0x7C, 0xB4, 0x74, 0x75, 0xB5, 
-	0x77, 0xB7, 0xB6, 0x76, 0x72, 0xB2, 0xB3, 0x73, 0xB1, 0x71, 
-	0x70, 0xB0, 0x50, 0x90, 0x91, 0x51, 0x93, 0x53, 0x52, 0x92, 
-	0x96, 0x56, 0x57, 0x97, 0x55, 0x95, 0x94, 0x54, 0x9C, 0x5C, 
-	0x5D, 0x9D, 0x5F, 0x9F, 0x9E, 0x5E, 0x5A, 0x9A, 0x9B, 0x5B, 
-	0x99, 0x59, 0x58, 0x98, 0x88, 0x48, 0x49, 0x89, 0x4B, 0x8B, 
-	0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C, 
-	0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 
-	0x43, 0x83, 0x41, 0x81, 0x80, 0x40 
-};
-
-
-
-
-
-/************************************************************************
-	\brief      数据bit反转,MSB和LSB数据调换
-	\param[in]  input:需要反转的数据
-				bits:从bit0开始,需要反转多少个bit
-	\param[out] none
-	\retval     CRC8的值
-************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 数据比特翻转 (MSB 与 LSB 调换)
+ * 说明(备注)  : 内部静态工具函数
+ * 传入参数    : input: 待翻转数据; bits: 翻转比特位数
+ * 输出参数    : 无
+ * 返回值      : 翻转后的数值
+ ************************************************************************************************************************/
 static uint32_t ul_data_reflect(uint32_t input, uint8_t bits)
 {
     uint32_t result = 0;
+
     for (uint8_t i = 0; i < bits; i++)
     {
         uint32_t bit = (uint32_t)((input >> i) & 1);
         bit = (uint32_t)(bit << (bits - 1 - i));
         result |= bit;
     }
+
     return result;
 }
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*****************************************************************累加和***************************************************************************/
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/************************************************************************
-	\brief      累加和校验取反
-    \param[in]  str需要校验数据的指针, str_length需要校验的长度
-	\param[out] none
-	\retval     CRC8的值
-************************************************************************/
-uint8_t ucCheck_SumReflect(uint8_t *str, int str_length)
+/***********************************************************************************************************************
+ * 函数功能    : 累加和校验取反
+ * 说明(备注)  : 计算字节累加和并取补码 (~sum + 1)
+ * 传入参数    : p_str: 待校验数据指针; str_length: 待校验字节数
+ * 输出参数    : 无
+ * 返回值      : 8位校验和取反结果
+ ************************************************************************************************************************/
+uint8_t ucCheck_SumReflect(const uint8_t *p_str, int str_length)
 {
-    uint8_t CheckSum_Value = 0;
-    int i = 0;
-    for(i = 0; i < str_length; i++)
+    uint8_t uc_check_sum = 0;
+
+    if (p_str == NULL || str_length <= 0)
+        return 0;
+
+    for (int i = 0; i < str_length; i++)
+        uc_check_sum += p_str[i];
+
+    return (uint8_t)((~uc_check_sum) + 1);
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 累加和校验
+ * 说明(备注)  : 计算字节序列的8位累加和
+ * 传入参数    : p_str: 待校验数据指针; str_length: 待校验字节数
+ * 输出参数    : 无
+ * 返回值      : 8位累加和
+ ************************************************************************************************************************/
+uint8_t ucCheck_Sum(const uint8_t *p_str, int str_length)
+{
+    uint8_t uc_check_sum = 0;
+
+    if (p_str == NULL || str_length <= 0)
+        return 0;
+
+    for (int i = 0; i < str_length; i++)
+        uc_check_sum += p_str[i];
+
+    return uc_check_sum;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : CRC8查表法计算 (X8+X2+X1+1)
+ * 说明(备注)  : 查表法快速计算
+ * 传入参数    : p_data: 待校验数据指针; counter: 待校验长度
+ * 输出参数    : 无
+ * 返回值      : CRC8校验码
+ ************************************************************************************************************************/
+uint8_t ucCheck_CRC8cal(const uint8_t *p_data, uint8_t counter)
+{
+    uint8_t uc_crc8 = 0;
+
+    if (p_data == NULL)
+        return 0;
+
+    while (counter--)
     {
-       CheckSum_Value += str[i];
+        uc_crc8 = S_ucaCrc8Table[uc_crc8 ^ (*p_data)];
+        p_data++;
     }
-    return ((~CheckSum_Value) + 1);
+
+    return uc_crc8;
 }
 
-/************************************************************************
-	\brief      累加和校验
-    \param[in]  str需要校验数据的指针, str_length需要校验的长度
-	\param[out] none
-	\retval     CRC8的值
-************************************************************************/
-uint8_t ucCheck_Sum(uint8_t *str, int str_length)
+/***********************************************************************************************************************
+ * 函数功能    : 通用 CRC8 计算
+ * 说明(备注)  : 支持指定初始值、多项式以及反射模式
+ * 传入参数    : init: 初始值; p_data: 待校验数据指针; length: 待校验长度; poly: 生成多项式; reflection: true-LSB模式, false-MSB模式
+ * 输出参数    : 无
+ * 返回值      : CRC8 校验值
+ ************************************************************************************************************************/
+uint8_t ucCheck_GetCrc8(uint8_t init, const uint8_t *p_data, uint16_t length, uint8_t poly, bool reflection)
 {
-    uint8_t CheckSum_Value = 0;
-    int i = 0;
-    for(i = 0; i < str_length; i++)
+    uint8_t i;
+    uint8_t uc_crc = init;
+    uint8_t uc_tmp;
+
+    if (p_data == NULL)
+        return init;
+
+    while (length--)
     {
-       CheckSum_Value += str[i];
+        uc_tmp = *p_data++;
+        if (reflection)
+            uc_tmp = (uint8_t)ul_data_reflect(uc_tmp, 8);
+
+        uc_crc ^= uc_tmp;
+        for (i = 8; i > 0; --i)
+        {
+            if (uc_crc & 0x80)
+                uc_crc = (uint8_t)((uc_crc << 1) ^ poly);
+            else
+                uc_crc = (uint8_t)(uc_crc << 1);
+        }
     }
-    return CheckSum_Value;
+
+    if (reflection)
+        uc_crc = (uint8_t)ul_data_reflect(uc_crc, 8);
+
+    return uc_crc;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*****************************************************************CRC8****************************************************************************/
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/************************************************************************
-	\brief      CRC8查表法(X8+X5+X4+1)
-    \param[in]  buf需要校验数据的指针, len需要校验的长度
-	\param[out] none
-	\retval     CRC8的值
-************************************************************************/
-uint8_t ucCheck_GetCrc8Tab(uint8_t *buf, uint16_t len)
+/***********************************************************************************************************************
+ * 函数功能    : 通用 CRC16 按位计算
+ * 说明(备注)  : 内部静态通用核心函数
+ * 传入参数    : init: 初始值; p_data: 数据指针; length: 长度; poly: 多项式; reflection: 反转模式; final_xor: 结果异或值
+ * 输出参数    : 无
+ * 返回值      : CRC16 计算值
+ ************************************************************************************************************************/
+static uint16_t us_crc16(uint16_t init, const uint8_t *p_data, uint16_t length, uint16_t poly, bool reflection, uint16_t final_xor)
 {
-    uint8_t crc = 0x00;
-    while (len--)
-        crc = crc8541_table[crc ^ *buf++];
-    return crc;
-}
+    uint16_t us_crc = init;
+    uint32_t ul_start = 0;
 
-
-/*******************************************************************************
-Function: CRC8cal()
-Description:
-In: 
-Output: 
-********************************************************************************/
-uint8_t ucCheck_CRC8cal(uint8_t *p, uint8_t counter)    		   //look-up table calculte CRC 
-{    
-    uint8_t crc8 = 0;    
-    
-	for( ; counter > 0; counter--)
-	{	
-		crc8 = CRC8Table[crc8^(*p)];    
-	    p++;    
-    }    
-    return(crc8);    
-}
-
-
-
-
-/**********************************************************************************************************
-	\brief      CRC8计算法
-	\param[in]  init:CRC初始值
-				data:输入要校验的字节数组。
-				len:需要校验的长度
-				poly:Poly值，如果是CRC8，那么就是0x8005，如果是CRC-CCITT，那么就是0x1201,这些值网上可以查到。
-					 CRC-8       x8+x5+x4+1              poly = 0x31（0x131）
-					 CRC-8       x8+x2+x1+1              poly = 0x07（0x107）
-					 CRC-8       x8+x6+x4+x3+x2+x1       poly = 0x5E（0x15E）
-				reflection： true--LSB模式、 FALSE---MSB模式。
-	\param[out] none
-	\retval     CRC8的值
-***********************************************************************************************************/
-uint8_t ucCheck_GetCrc8(uint8_t init, const uint8_t *data, uint16_t length, uint8_t poly, bool reflection)
-{
-	unsigned char i;
-	unsigned char crc = init; /* 计算的初始crc值 */
-	unsigned char tmp = 0;
-
-	while (length--)
-	{
-		tmp = *data++;/* 每次先与需要计算的数据异或,计算完指向下一数据 */
-		if (reflection)				//是否LSB
-			tmp = (uint8_t)ul_data_reflect(tmp, 8);
-		crc ^= tmp;
-		for (i = 8; i > 0; --i)   /* 下面这段计算过程与计算一个字节crc一样 */
-		{
-			if (crc & 0x80)
-				crc = (crc << 1) ^ poly;
-			else
-				crc = (crc << 1);
-		}
-	}
-	if (reflection)
-		crc = (uint8_t)ul_data_reflect(crc, 8);
-	return crc;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*****************************************************************CRC16***************************************************************************/
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**********************************************************************************************************
-	\brief      CRC16计算法
-	\param[in]  init:CRC初始值
-				data:输入要校验的字节数组。
-				length:需要校验的长度
-				Poly值，如果是CRC16，那么就是0x8005，如果是CRC-CCITT，那么就是0x1201,这些值网上可以查到。
-				reflection:true--LSB模式、 FALSE---MSB模式。
-				final_xor:输出值与之异或
-	\param[out] none
-	\retval     CRC8的值
-***********************************************************************************************************/
-static uint16_t usCheck_crc16(uint16_t init, const uint8_t* data, uint16_t length, uint16_t poly, bool reflection, uint16_t final_xor)
-{
-    uint16_t crc = init;        //初始值
-    uint32_t start = 0;
+    if (p_data == NULL)
+        return (init ^ final_xor);
 
     while (length-- > 0)
     {
-        uint8_t bt = data[start++];
-        if (reflection)                         //LSB
-            bt = (uint8_t)ul_data_reflect(bt, 8);
+        uint8_t uc_bt = p_data[ul_start++];
+        if (reflection)
+            uc_bt = (uint8_t)ul_data_reflect(uc_bt, 8);
+
         for (int i = 0; i < 8; i++)
         {
-            bool msb_crc = (bool)((crc & 0x8000U) != 0);
-            bool msb_data = (bool)((bt & 0x80U) != 0);
-            if (msb_crc != msb_data) 
-                crc = (uint16_t)((crc << 1) ^ poly);
-            else 
-                crc <<= 1;
-            bt <<= 1;
+            bool b_msb_crc  = (bool)((us_crc & 0x8000U) != 0);
+            bool b_msb_data = (bool)((uc_bt & 0x80U) != 0);
+            if (b_msb_crc != b_msb_data)
+                us_crc = (uint16_t)((us_crc << 1) ^ poly);
+            else
+                us_crc <<= 1;
+
+            uc_bt <<= 1;
         }
     }
+
     if (reflection)
-        crc = (uint16_t)ul_data_reflect(crc, 16);
-    crc ^= final_xor;
-    return crc;
+        us_crc = (uint16_t)ul_data_reflect(us_crc, 16);
+
+    us_crc ^= final_xor;
+    return us_crc;
 }
 
-
-
-/********************************************************************************
-	\brief      CRC16计算法
-    \param[in]  data需要校验数据的指针
-                len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-********************************************************************************/
-uint16_t usCheck_CRC_CCITT(uint16_t init,  const uint8_t* data, uint16_t length)
+/***********************************************************************************************************************
+ * 函数功能    : CRC16-CCITT 计算 (Poly = 0x1021)
+ * 说明(备注)  : MSB 模式
+ * 传入参数    : init: 初始值; p_data: 待校验数据指针; length: 待校验长度
+ * 输出参数    : 无
+ * 返回值      : CRC16 校验值
+ ************************************************************************************************************************/
+uint16_t usCheck_CRC_CCITT(uint16_t init, const uint8_t *p_data, uint16_t length)
 {
-    return usCheck_crc16(init, data, length, 0x1021, false, 0x0);
+    return us_crc16(init, p_data, length, 0x1021, false, 0x0);
 }
 
-/********************************************************************************
-	\brief      CRC16计算法
-    \param[in]  data需要校验数据的指针
-                len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-********************************************************************************/
-uint16_t usCheck_Crc16(uint16_t init, uint8_t* data, uint16_t length)
+/***********************************************************************************************************************
+ * 函数功能    : CRC16 计算 (Poly = 0x8005)
+ * 说明(备注)  : LSB 模式
+ * 传入参数    : init: 初始值; p_data: 待校验数据指针; length: 待校验长度
+ * 输出参数    : 无
+ * 返回值      : CRC16 校验值
+ ************************************************************************************************************************/
+uint16_t usCheck_Crc16(uint16_t init, const uint8_t *p_data, uint16_t length)
 {
-    return usCheck_crc16(init, data, length, 0x8005, true, 0x0);
+    return us_crc16(init, p_data, length, 0x8005, true, 0x0);
 }
 
-
-
-/********************************************************************************
-	\brief      CRC16计算法 Modbus-CRC校验 这个应该是和usCheck_LsbDataGetCrc16一样
-    \param[in]  data需要校验数据的指针
-                len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-********************************************************************************/
-uint16_t usCheck_GetModbusCrc16(uint8_t *data, uint32_t len)
+/***********************************************************************************************************************
+ * 函数功能    : Modbus-CRC16 计算法
+ * 说明(备注)  : 初始值 0xFFFF，低位在后
+ * 传入参数    : p_data: 待校验数据指针; len: 待校验长度
+ * 输出参数    : 无
+ * 返回值      : 16位 Modbus CRC 结果
+ ************************************************************************************************************************/
+uint16_t usCheck_GetModbusCrc16(const uint8_t *p_data, uint32_t len)
 {
-	uint8_t temp;
-	uint16_t wcrc = 0XFFFF;//16位crc寄存器预置
-	uint32_t i = 0, j = 0;//计数
-	for (i = 0; i < len; i++)//循环计算每个数据
-	{
-		temp = data[i] & 0X00FF;//将八位数据与crc寄存器亦或
-		wcrc ^= temp;						//将数据存入crc寄存器
-		for (j = 0; j < 8; j++)	//循环计算数据的
-		{
-			if (wcrc & 0X0001)//判断右移出的是不是1，如果是1则与多项式进行异或。
-			{
-				wcrc >>= 1;//先将数据右移一位
-				wcrc ^= 0XA001;//与上面的多项式进行异或
-			}
-			else//如果不是1，则直接移出
-			{
-				wcrc >>= 1;//直接移出
-			}
-		}
-	}
-	return wcrc;
-//  return ((wcrc>>8)|(wcrc << 8));//高低位置换
-}
+    uint8_t  uc_temp;
+    uint16_t us_wcrc = 0xFFFF;
 
+    if (p_data == NULL)
+        return 0;
 
-/************************************************************************
-	\brief      CRC16计算法(X16+X15+X2+X1)  
-    \param[in]  buf(MSB)需要校验数据的指针,buff [high bit...low bit]; 
-                len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-************************************************************************/
-static uint16_t crc16(uint8_t data, uint16_t crc) 
-{
-	uint16_t ccitt16 = 0x8005;
-	int i;
-	crc ^= (data<<8);
-	for (i=0; i<8; i++)
-	{
-		if (crc & 0x8000)
-		{
-		   crc <<= 1;
-		   crc ^= ccitt16;
-		}
-		else
-		{
-		   crc <<= 1;
-		}
-	}
-	return crc;
-}
-uint16_t usCheck_MsbDataGetCrc16(uint8_t* buf, int len, uint16_t crc)
-{
-    uint16_t crc16_table[256];
-	for(unsigned int i=0; i<256; i++)
-	{
-		crc16_table[i] = crc16(i, 0);
-	}
-	for(unsigned int i=0; i<len; i++)
-	{
-		crc = crc16_table[((crc>>8)^buf[i])&0xff]^(crc<<8);	
-	}
-	return crc;
-}
-
-/************************************************************************
-	\brief      CRC16计算法(X16+X15+X2+X1)  
-    \param[in]  buf(LSB)需要校验数据的指针, ,buff [ low bit...high bit];
-				len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-************************************************************************/
-static uint16_t crc16_r(uint8_t data, uint16_t crc)
-{
-	uint16_t ccitt16 = 0xa001;    //(0x8005->[reverse]->0xa001)
-	int i;
-	crc ^= data;
-	for (i=0; i<8; i++)
-	{
-		if (crc & 1)
-		{
-		   crc >>= 1;
-		   crc ^= ccitt16;
-		}
-		else
-		{
-		   crc >>= 1;
-		}
-	}
-	return crc;
-}
-uint16_t usCheck_LsbDataGetCrc16(unsigned char* buf, int len, uint16_t crc)
-{
-    uint16_t crc16_table_r[256];
-	for(unsigned int i=0; i<256; i++)
-	{
-		crc16_table_r[i] = crc16_r(i, 0);
-	}
-	for(unsigned int i=0; i<len; i++)
-	{
-		crc = crc16_table_r[((crc)^buf[i])&0xff]^(crc>>8);	
-	}
-	return crc;
-}
-
-/********************************************************************************
-	\brief      
-    \param[in]  buf需要校验数据的指针
-                len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-********************************************************************************/
-uint16_t usCheck_CRC16(uint8_t *puchMsg, uint8_t usDataLen) 
-{ 
-	uint8_t uchCRCHi = 0xFF ;              // 高CRC字节初始化  
-	uint8_t uchCRCLo = 0xFF ;              // 低CRC 字节初始化 
-
-	uint8_t uIndex ;                      // CRC循环中的索引   
-	
-	while (usDataLen--)                  // 传输消息缓冲区  
-	{ 
-		uIndex = uchCRCHi ^ *puchMsg++ ; // 计算CRC         
-		uchCRCHi = uchCRCLo ^ auchCRCHi[uIndex]; 
-		uchCRCLo = auchCRCLo[uIndex]; 
-	} 
-
-	return (uchCRCLo << 8 | uchCRCHi);	// MODBUS 规定高位在前
-}
-
-
-/************************************************************************
-	\brief      CRC16查表法(X16+X15+X2+X1),用于XModem的校验方式
-    \param[in]  buf需要校验数据的指针, len需要校验的长度
-	\param[out] none
-	\retval     CRC16的值
-************************************************************************/
-uint16_t usCheck_GetCrc16Tab(uint8_t *buf, uint16_t len)
-{  
-    uint16_t result  = 0;
-    uint16_t tableNo = 0;
-    for(uint16_t i = 0; i < len; i++)
-    {
-        tableNo = ((result & 0xff) ^ (buf[i] & 0xff));
-        result  = ((result >> 8) & 0xff) ^ crc161521[tableNo];
-    }
-    return result;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*****************************************************************CRC32***************************************************************************/
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*******************************************************************************************************************
-	\brief      CRC32校验
-	\param[in]  CRCinit:CRC初始值
-				InData：  输入要校验的字节数组。
-				len:数据的长度
-				reflection： ture--LSB模式、 false---MSB模式。
-				final_xor：  输出值与之异或
-	\param[out] none
-	\retval     CRC16的值
-*******************************************************************************************************************/
-static uint32_t crc32(uint32_t CRCinit, const uint8_t* InData, uint32_t len, bool reflection, uint32_t final_xor)
-{
-    uint32_t dwPolynomial = 0x04c11db7;
-
-    uint32_t xbit;
-    uint32_t data;
-    uint32_t crc_cnt = CRCinit; 
-    
     for (uint32_t i = 0; i < len; i++)
     {
-        xbit = 0x80;
-        data = InData[i];
-        if (reflection)         //true
-            data = (uint32_t)ul_data_reflect(data, 8);
-
-        for (int bits = 0; bits < 8; bits++)
+        uc_temp = p_data[i] & 0x00FF;
+        us_wcrc ^= uc_temp;
+        for (uint32_t j = 0; j < 8; j++)
         {
-            if ((crc_cnt & 0x80000000) > 0)
+            if (us_wcrc & 0x0001)
             {
-                crc_cnt <<= 1;
-                crc_cnt ^= dwPolynomial;
+                us_wcrc >>= 1;
+                us_wcrc ^= 0xA001;
             }
             else
-                crc_cnt <<= 1;
-
-            if ((data & xbit) > 0)
-                crc_cnt ^= dwPolynomial;
-            xbit >>= 1;
+                us_wcrc >>= 1;
         }
     }
-    if (reflection)
-        crc_cnt = (uint32_t)ul_data_reflect(crc_cnt, 32);
-    crc_cnt ^= final_xor;   //final_xor = 0xFFFFFFFFF
-    return crc_cnt;
-}
-uint32_t ulCheck_GetCRC32(uint32_t init, uint8_t* data, uint32_t length)
-{
-    return crc32(init, data, length, true, 0xFFFFFFFF);
+
+    return us_wcrc;
 }
 
-/*******************************************************************************************************************
-	\brief      CRC32增量更新校验
-	\param[in]  crc:当前CRC状态值
-				data:输入要校验的字节数组
-				len:数据的长度
-	\param[out] none
-	\retval     更新后的CRC32值
-*******************************************************************************************************************/
-uint32_t ulCheck_Crc32Update(uint32_t crc, const uint8_t* data, uint32_t length)
+/***********************************************************************************************************************
+ * 函数功能    : CRC16 MSB 查表法快速计算
+ * 说明(备注)  : 使用 Flash 常量表，零栈消耗
+ * 传入参数    : p_buf: 待校验数据指针; len: 长度; crc: 初始 CRC 状态
+ * 输出参数    : 无
+ * 返回值      : 计算后的 CRC16 值
+ ************************************************************************************************************************/
+uint16_t usCheck_MsbDataGetCrc16(const uint8_t *p_buf, int len, uint16_t crc)
 {
-    uint32_t dwPolynomial = 0x04c11db7;
-    uint32_t xbit;
-    uint32_t data_byte;
-    
-    for (uint32_t i = 0; i < length; i++)
-    {
-        xbit = 0x80;
-        data_byte = data[i];
-        data_byte = (uint32_t)ul_data_reflect(data_byte, 8);
+    if (p_buf == NULL || len <= 0)
+        return crc;
 
-        for (int bits = 0; bits < 8; bits++)
-        {
-            if ((crc & 0x80000000) > 0)
-            {
-                crc <<= 1;
-                crc ^= dwPolynomial;
-            }
-            else
-                crc <<= 1;
+    for (int i = 0; i < len; i++)
+        crc = S_usaCrc16MsbTable[((crc >> 8) ^ p_buf[i]) & 0xFF] ^ (crc << 8);
 
-            if ((data_byte & xbit) > 0)
-                crc ^= dwPolynomial;
-            xbit >>= 1;
-        }
-    }
     return crc;
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : CRC16 LSB 查表法快速计算
+ * 说明(备注)  : 使用 Flash 常量表，零栈消耗
+ * 传入参数    : p_buf: 待校验数据指针; len: 长度; crc: 初始 CRC 状态
+ * 输出参数    : 无
+ * 返回值      : 计算后的 CRC16 值
+ ************************************************************************************************************************/
+uint16_t usCheck_LsbDataGetCrc16(const unsigned char *p_buf, int len, uint16_t crc)
+{
+    if (p_buf == NULL || len <= 0)
+        return crc;
 
+    for (int i = 0; i < len; i++)
+        crc = S_usaCrc16LsbTable[((crc) ^ p_buf[i]) & 0xFF] ^ (crc >> 8);
 
+    return crc;
+}
 
+/***********************************************************************************************************************
+ * 函数功能    : 查表法计算 Modbus-CRC16
+ * 说明(备注)  : Modbus 双表快速查表法，高位在前
+ * 传入参数    : p_msg: 消息缓冲区首地址; us_data_len: 消息长度
+ * 输出参数    : 无
+ * 返回值      : 16位 CRC 校验码
+ ************************************************************************************************************************/
+uint16_t usCheck_CRC16(const uint8_t *p_msg, uint16_t us_data_len)
+{
+    uint8_t uc_crc_hi = 0xFF;
+    uint8_t uc_crc_lo = 0xFF;
+    uint8_t uc_index;
 
+    if (p_msg == NULL)
+        return 0;
 
+    while (us_data_len--)
+    {
+        uc_index  = uc_crc_hi ^ *p_msg++;
+        uc_crc_hi = uc_crc_lo ^ S_ucaCrcHi[uc_index];
+        uc_crc_lo = S_ucaCrcLo[uc_index];
+    }
 
+    return (uint16_t)((uc_crc_lo << 8) | uc_crc_hi);
+}
 
+/***********************************************************************************************************************
+ * 函数功能    : CRC16查表法计算（用于XModem校验）
+ * 说明(备注)  : X16+X15+X2+X1 多项式查表计算
+ * 传入参数    : p_buf: 数据指针; len: 数据长度
+ * 输出参数    : 无
+ * 返回值      : 16位 CRC 校验码
+ ************************************************************************************************************************/
+uint16_t usCheck_GetCrc16Tab(const uint8_t *p_buf, uint16_t len)
+{
+    uint16_t us_result = 0;
+    uint16_t us_table_no = 0;
 
+    if (p_buf == NULL)
+        return 0;
+
+    for (uint16_t i = 0; i < len; i++)
+    {
+        us_table_no = ((us_result & 0xFF) ^ (p_buf[i] & 0xFF));
+        us_result   = ((us_result >> 8) & 0xFF) ^ S_usaCrc16LsbTable[us_table_no];
+    }
+
+    return us_result;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 通用 CRC32 计算核心
+ * 说明(备注)  : 内部静态函数 (Poly = 0x04C11DB7)
+ * 传入参数    : init: 初始值; p_data: 数据指针; len: 长度; reflection: 反转标志; final_xor: 异或掩码
+ * 输出参数    : 无
+ * 返回值      : CRC32 结果
+ ************************************************************************************************************************/
+static uint32_t ul_crc32(uint32_t init, const uint8_t *p_data, uint32_t len, bool reflection, uint32_t final_xor)
+{
+    const uint32_t ul_polynomial = 0x04C11DB7;
+    uint32_t ul_xbit;
+    uint32_t ul_data;
+    uint32_t ul_crc_cnt = init;
+
+    if (p_data == NULL && len > 0)
+        return (init ^ final_xor);
+
+    for (uint32_t i = 0; i < len; i++)
+    {
+        ul_xbit = 0x80;
+        ul_data = p_data[i];
+        if (reflection)
+            ul_data = (uint32_t)ul_data_reflect(ul_data, 8);
+
+        for (int bits = 0; bits < 8; bits++)
+        {
+            if ((ul_crc_cnt & 0x80000000) > 0)
+            {
+                ul_crc_cnt <<= 1;
+                ul_crc_cnt ^= ul_polynomial;
+            }
+            else
+                ul_crc_cnt <<= 1;
+
+            if ((ul_data & ul_xbit) > 0)
+                ul_crc_cnt ^= ul_polynomial;
+
+            ul_xbit >>= 1;
+        }
+    }
+
+    if (reflection)
+        ul_crc_cnt = (uint32_t)ul_data_reflect(ul_crc_cnt, 32);
+
+    ul_crc_cnt ^= final_xor;
+    return ul_crc_cnt;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 获取 CRC32 校验码 (IEEE 802.3 标准)
+ * 说明(备注)  : 反射模式，结果异或 0xFFFFFFFF
+ * 传入参数    : init: 初始值; p_data: 数据指针; length: 数据长度
+ * 输出参数    : 无
+ * 返回值      : 32位 CRC 校验结果
+ ************************************************************************************************************************/
+uint32_t ulCheck_GetCRC32(uint32_t init, const uint8_t *p_data, uint32_t length)
+{
+    return ul_crc32(init, p_data, length, true, 0xFFFFFFFF);
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : CRC32 增量更新计算 (位反转 / LSB 模式)
+ * 说明(备注)  : 按字节逐位计算 CRC32，多项式 0xEDB88320。增量式计算，最终需外部异或 0xFFFFFFFF 取反
+ * 传入参数    : crc_state: 当前 CRC 状态 (初始应为 0xFFFFFFFF); p_data: 数据指针; len: 数据长度
+ * 输出参数    : 无
+ * 返回值      : 更新后的 CRC32 状态值
+ ************************************************************************************************************************/
+u32 ulCheck_Crc32Update(u32 crc_state, const u8 *p_data, u16 len)
+{
+    if (p_data == NULL)
+        return crc_state;
+
+    for (u16 i = 0; i < len; i++)
+    {
+        crc_state ^= p_data[i];
+        for (u8 bit = 0; bit < 8; bit++)
+        {
+            if (crc_state & 0x00000001UL)
+                crc_state = (crc_state >> 1) ^ 0xEDB88320UL;
+            else
+                crc_state >>= 1;
+        }
+    }
+
+    return crc_state;
+}
+
+#endif  /* 1 */

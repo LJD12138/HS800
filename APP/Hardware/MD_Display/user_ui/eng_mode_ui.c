@@ -1,6 +1,6 @@
 /*******************************************************************************************************************************
  * Project : APP
- * Module  : G:\1-Baiku_Projects\25-HS800\1.software\HS800\APP\Hardware\MD_Display\user_ui
+ * Module  : APP\Hardware\MD_Display\user_ui
  * File    : eng_mode_ui.c
  * Date    : 2026-06-11
  * Author  : LJD(291483914@qq.com)
@@ -15,6 +15,7 @@
 
 //****************************************************Includes******************************************************************//
 #include "MD_Display/user_ui/eng_mode_ui.h"
+#include "Print/print_task.h"
 #include <stdbool.h>
 
 #if(boardENG_MODE_EN && boardDISPLAY_EN)
@@ -69,141 +70,139 @@
 #endif
 
 
-//****************************************************Macros*******************************************************************//
+//****************************************************Macros********************************************************************//
 
 /* 颜色定义 */
-#define ENG_CLR_BG              0x0F131A
-#define ENG_CLR_CARD            0x1A202C
-#define ENG_CLR_BORDER          0x2D3748
-#define ENG_CLR_BMS             0x00E676
-#define ENG_CLR_MPPT            0x00E5FF
-#define ENG_CLR_DCAC            0xFFB300
-#define ENG_CLR_SYS             0x718096
-#define ENG_CLR_USB             0x9C27B0
-#define ENG_CLR_DC              0xFF5722
-#define ENG_CLR_ADC             0xE91E63
-#define ENG_CLR_TEXT            0xFFFFFF
-#define ENG_CLR_TEXT_SEC        0x718096
-#define ENG_CLR_SELECTED        0x00E5FF
-#define ENG_CLR_MENU_BG         0x1E293B
-#define ENG_CLR_SEL_BG          0x0D2847
+#define			ENG_CLR_BG								0x0F131A
+#define			ENG_CLR_CARD							0x1A202C
+#define			ENG_CLR_BORDER							0x2D3748
+#define			ENG_CLR_BMS								0x00E676
+#define			ENG_CLR_MPPT							0x00E5FF
+#define			ENG_CLR_DCAC							0xFFB300
+#define			ENG_CLR_SYS								0x718096
+#define			ENG_CLR_USB								0x9C27B0
+#define			ENG_CLR_DC								0xFF5722
+#define			ENG_CLR_ADC								0xE91E63
+#define			ENG_CLR_TEXT							0xFFFFFF
+#define			ENG_CLR_TEXT_SEC						0x718096
+#define			ENG_CLR_SELECTED						0x00E5FF
+#define			ENG_CLR_MENU_BG							0x1E293B
+#define			ENG_CLR_SEL_BG							0x0D2847
 
 /* 布局常量 */
-#define ENG_SCREEN_W            320
-#define ENG_SCREEN_H            240
-#define ENG_TITLE_H             24
-#define ENG_TAB_BAR_H           18
-#define ENG_CONTENT_Y           28
-#define ENG_MENU_ITEM_H         48
-#define ENG_MENU_ITEM_GAP       8
-#define ENG_MAX_VIEW_ROWS       8
-#define ENG_MAX_SET_ITEMS       13
-#define ENG_NUM_VIEW_TABS       7
-#define ENG_NUM_SET_TABS        7
+#define			ENG_SCREEN_W							320
+#define			ENG_SCREEN_H							240
+#define			ENG_TITLE_H								24
+#define			ENG_TAB_BAR_H							18
+#define			ENG_CONTENT_Y							28
+#define			ENG_MENU_ITEM_H							48
+#define			ENG_MENU_ITEM_GAP						8
+#define			ENG_MAX_VIEW_ROWS						8
+#define			ENG_MAX_SET_ITEMS						13
+#define			ENG_NUM_VIEW_TABS						7
+#define			ENG_NUM_SET_TABS						7
 
 /* 刷新周期: 50 * 10ms = 500ms */
-#define ENG_DATA_REFRESH_CNT    50
+#define			ENG_DATA_REFRESH_CNT					50
 
 /* 字体选择 */
-#define ENG_FONT_TITLE          (&ui_font_barlow_condensed_regular_26)
-#define ENG_FONT_NORMAL         LV_FONT_DEFAULT
+#define			ENG_FONT_TITLE							(&ui_font_barlow_condensed_regular_26)
+#define			ENG_FONT_NORMAL							LV_FONT_DEFAULT
 #if LV_FONT_MONTSERRAT_12
-#define ENG_FONT_SMALL          (&lv_font_montserrat_12)
+#define			ENG_FONT_SMALL							(&lv_font_montserrat_12)
 #else
-#define ENG_FONT_SMALL          LV_FONT_DEFAULT
+#define			ENG_FONT_SMALL							LV_FONT_DEFAULT
 #endif
 
 /* Param Set页: 不可编辑项标记(只读/开关类型) */
-#define PS_ITEM_READONLY        0xFF
+#define			PS_ITEM_READONLY						0xFF
 
 
-//****************************************************类型定义************************************************//
+//****************************************************Parameter Initialization**************************************************//
 
 /* 工程模式UI动作枚举(按键任务设置, 显示任务执行, 避免跨任务调用LVGL) */
 typedef enum
 {
-    ENG_UI_ACTION_NONE = 0,     /* 无待执行动作 */
-    ENG_UI_ACTION_MENU_SEL,     /* 主菜单选中项变化 */
-    ENG_UI_ACTION_PV_TAB,       /* 参数查看Tab切换 */
-    ENG_UI_ACTION_PS_TAB,       /* 参数设置Tab切换 */
-    ENG_UI_ACTION_PS_ITEM,      /* 参数设置选中项变化 */
-    ENG_UI_ACTION_SS_SEL,       /* 系统设置选中项变化 */
-    ENG_UI_ACTION_CFM_SEL,      /* 确认对话框选中变化 */
-} EngUiAction_E;
+	ENG_UI_ACTION_NONE = 0,	/* 无待执行动作 */
+	ENG_UI_ACTION_MENU_SEL,	/* 主菜单选中项变化 */
+	ENG_UI_ACTION_PV_TAB,	/* 参数查看Tab切换 */
+	ENG_UI_ACTION_PS_TAB,	/* 参数设置Tab切换 */
+	ENG_UI_ACTION_PS_ITEM,	/* 参数设置选中项变化 */
+	ENG_UI_ACTION_SS_SEL,	/* 系统设置选中项变化 */
+	ENG_UI_ACTION_CFM_SEL,	/* 确认对话框选中变化 */
+}EngUiAction_E;
 
 /* 工程模式UI状态 */
 typedef struct
 {
-    EngModePage_E ePage;            /* 当前页面 */
-    EngModePage_E ePrevPage;        /* 上一页面(用于确认对话框返回) */
-    EngModePage_E ePendingPage;     /* 待切换页面(按键任务设置, 显示任务执行) */
-    EngUiAction_E eUiAction;        /* 待执行的UI动作(按键任务设置, 显示任务执行) */
-    uint8_t ucMainMenuSel;          /* 主菜单选中项 0-2 */
-    uint8_t ucPvTab;                /* 参数查看当前Tab 0-6 */
-    uint8_t ucPsTab;                /* 参数设置当前Tab 0-6 */
-    uint8_t ucPsItem;               /* 参数设置当前选中参数 */
-    uint8_t ucSsSel;                /* 系统设置选中项 0-2 */
-    uint8_t ucConfirmSel;           /* 确认对话框选中 0=取消 1=确认 */
-    uint8_t ucTickCnt;              /* 刷新计数器 */
-    bool bExitReq;                  /* 退出请求 */
-    bool bNeedRefresh;              /* 需要数据刷新 */
-    bool bPsEditing;                /* 参数设置编辑模式(true=调值, false=选项目) */
-} EngModeState_T;
+	EngModePage_E		ePage;				/* 当前页面 */
+	EngModePage_E		ePrevPage;			/* 上一页面(用于确认对话框返回) */
+	EngModePage_E		ePendingPage;		/* 待切换页面(按键任务设置, 显示任务执行) */
+	EngUiAction_E		eUiAction;			/* 待执行的UI动作(按键任务设置, 显示任务执行) */
+	uint8_t				ucMainMenuSel;		/* 主菜单选中项 0-2 */
+	uint8_t				ucPvTab;			/* 参数查看当前Tab 0-6 */
+	uint8_t				ucPsTab;			/* 参数设置当前Tab 0-6 */
+	uint8_t				ucPsItem;			/* 参数设置当前选中参数 */
+	uint8_t				ucSsSel;			/* 系统设置选中项 0-2 */
+	uint8_t				ucConfirmSel;		/* 确认对话框选中 0=取消 1=确认 */
+	uint8_t				ucTickCnt;			/* 刷新计数器 */
+	bool				bExitReq;			/* 退出请求 */
+	bool				bNeedRefresh;		/* 需要数据刷新 */
+	bool				bPsEditing;			/* 参数设置编辑模式(true=调值, false=选项目) */
+}EngModeState_T;
 
 
-//****************************************************LVGL对象存储*********************************************//
 
 typedef struct
 {
-    lv_obj_t *p_base;               /* 基础容器 */
+	lv_obj_t			*p_base;			/* 基础容器 */
 
     /* 标题栏 */
-    lv_obj_t *p_title_bar;          /* 标题栏容器 */
-    lv_obj_t *p_title_label;        /* 标题文本 */
+	lv_obj_t			*p_title_bar;		/* 标题栏容器 */
+	lv_obj_t			*p_title_label;		/* 标题文本 */
 
     /* 主菜单页面 */
-    lv_obj_t *p_menu_page;
-    lv_obj_t *p_menu_items[3];
-    lv_obj_t *p_menu_labels[3];
-    lv_obj_t *p_menu_sub_labels[3];
+	lv_obj_t			*p_menu_page;
+	lv_obj_t			*p_menu_items[3];
+	lv_obj_t			*p_menu_labels[3];
+	lv_obj_t			*p_menu_sub_labels[3];
 
     /* 参数查看页面 */
-    lv_obj_t *p_pv_page;
-    lv_obj_t *p_pv_tab_title;
-    lv_obj_t *p_pv_idx_label;
-    lv_obj_t *p_pv_rows[ENG_MAX_VIEW_ROWS];
-    lv_obj_t *p_pv_lbl_l[ENG_MAX_VIEW_ROWS];
-    lv_obj_t *p_pv_lbl_r[ENG_MAX_VIEW_ROWS];
-    lv_obj_t *p_pv_tab_bar;
-    lv_obj_t *p_pv_tab_lbl[ENG_NUM_VIEW_TABS];
+	lv_obj_t			*p_pv_page;
+	lv_obj_t			*p_pv_tab_title;
+	lv_obj_t			*p_pv_idx_label;
+	lv_obj_t			*p_pv_rows[ENG_MAX_VIEW_ROWS];
+	lv_obj_t			*p_pv_lbl_l[ENG_MAX_VIEW_ROWS];
+	lv_obj_t			*p_pv_lbl_r[ENG_MAX_VIEW_ROWS];
+	lv_obj_t			*p_pv_tab_bar;
+	lv_obj_t			*p_pv_tab_lbl[ENG_NUM_VIEW_TABS];
 
     /* 参数设置页面 */
-    lv_obj_t *p_ps_page;
-    lv_obj_t *p_ps_tab_title;
-    lv_obj_t *p_ps_idx_label;
-    lv_obj_t *p_ps_list;
-    lv_obj_t *p_ps_items[ENG_MAX_SET_ITEMS];
-    lv_obj_t *p_ps_lbl_n[ENG_MAX_SET_ITEMS];
-    lv_obj_t *p_ps_lbl_v[ENG_MAX_SET_ITEMS];
-    lv_obj_t *p_ps_tab_bar;
-    lv_obj_t *p_ps_tab_lbl[ENG_NUM_SET_TABS];
+	lv_obj_t			*p_ps_page;
+	lv_obj_t			*p_ps_tab_title;
+	lv_obj_t			*p_ps_idx_label;
+	lv_obj_t			*p_ps_list;
+	lv_obj_t			*p_ps_items[ENG_MAX_SET_ITEMS];
+	lv_obj_t			*p_ps_lbl_n[ENG_MAX_SET_ITEMS];
+	lv_obj_t			*p_ps_lbl_v[ENG_MAX_SET_ITEMS];
+	lv_obj_t			*p_ps_tab_bar;
+	lv_obj_t			*p_ps_tab_lbl[ENG_NUM_SET_TABS];
 
     /* 系统设置页面 */
-    lv_obj_t *p_ss_page;
-    lv_obj_t *p_ss_items[3];
-    lv_obj_t *p_ss_lbl_title[3];
-    lv_obj_t *p_ss_lbl_desc[3];
+	lv_obj_t			*p_ss_page;
+	lv_obj_t			*p_ss_items[3];
+	lv_obj_t			*p_ss_lbl_title[3];
+	lv_obj_t			*p_ss_lbl_desc[3];
 
     /* 确认对话框 */
-    lv_obj_t *p_cfm_page;
-    lv_obj_t *p_cfm_box;
-    lv_obj_t *p_cfm_text;
-    lv_obj_t *p_cfm_btns[2];
-    lv_obj_t *p_cfm_lbls[2];
-} EngModeObjs_T;
+	lv_obj_t			*p_cfm_page;
+	lv_obj_t			*p_cfm_box;
+	lv_obj_t			*p_cfm_text;
+	lv_obj_t			*p_cfm_btns[2];
+	lv_obj_t			*p_cfm_lbls[2];
+}EngModeObjs_T;
 
 
-//****************************************************静态变量**************************************************//
 static EngModeState_T S_tState;
 static EngModeObjs_T  S_tObjs;
 
@@ -244,7 +243,7 @@ static const char *S_apcCfmText[] = {
 };
 
 
-//****************************************************函数声明**************************************************//
+//****************************************************Function Declaration******************************************************//
 static void v_page_create_menu(void);
 static void v_page_create_pv(void);
 static void v_page_create_ps(void);
@@ -263,18 +262,15 @@ static void v_ss_update_selection(void);
 static void v_cfm_update_selection(void);
 
 
-//****************************************************辅助函数**************************************************//
 
 /***********************************************************************************************************************
- -----函数功能    创建面板容器
- -----说明(备注)  DispTask上下文: 在p_parent上创建lv_obj, 设置位置/尺寸/背景色+透明覆盖+无边框+圆角6+无内边距;
-				  用于菜单项/参数项/系统设置项等容器
- -----传入参数    p_parent: 父对象
-				  x, y: 相对父对象的坐标
-				  w, h: 面板宽高
-				  ul_bg: 背景色(24bit RGB)
- -----输出参数    none
- -----返回值      创建的lv_obj_t对象指针
+ * 函数功能    : 创建面板容器
+ * 说明(备注)  : DispTask上下文: 在p_parent上创建lv_obj, 设置位置/尺寸/背景色+透明覆盖+无边框+圆角6+无内边距;
+ *               用于菜单项/参数项/系统设置项等容器
+ * 传入参数    : p_parent: 父对象
+ *               x, y: 相对父对象的坐标; w, h: 面板宽高; ul_bg: 背景色(24bit RGB)
+ * 输出参数    : none
+ * 返回值      : 创建的lv_obj_t对象指针
  ************************************************************************************************************************/
 static lv_obj_t *p_create_panel(lv_obj_t *p_parent, lv_coord_t x, lv_coord_t y,
                                  lv_coord_t w, lv_coord_t h, uint32_t ul_bg)
@@ -292,15 +288,13 @@ static lv_obj_t *p_create_panel(lv_obj_t *p_parent, lv_coord_t x, lv_coord_t y,
 }
 
 /***********************************************************************************************************************
- -----函数功能    创建标签
- -----说明(备注)  DispTask上下文: 在p_parent上创建lv_label, 设置位置+内容自适应+字体+颜色+初始空文本;
-				  用于菜单标题/数据/参数等所有文本展示
- -----传入参数    p_parent: 父对象
-				  x, y: 相对父对象的坐标
-				  p_font: 字体指针
-				  ul_color: 文本颜色(24bit RGB)
- -----输出参数    none
- -----返回值      创建的lv_obj_t对象指针
+ * 函数功能    : 创建标签
+ * 说明(备注)  : DispTask上下文: 在p_parent上创建lv_label, 设置位置+内容自适应+字体+颜色+初始空文本;
+ *               用于菜单标题/数据/参数等所有文本展示
+ * 传入参数    : p_parent: 父对象
+ *               x, y: 相对父对象的坐标; p_font: 字体指针; ul_color: 文本颜色(24bit RGB)
+ * 输出参数    : none
+ * 返回值      : 创建的lv_obj_t对象指针
  ************************************************************************************************************************/
 static lv_obj_t *p_create_label(lv_obj_t *p_parent, lv_coord_t x, lv_coord_t y,
                                  const lv_font_t *p_font, uint32_t ul_color)
@@ -315,15 +309,14 @@ static lv_obj_t *p_create_label(lv_obj_t *p_parent, lv_coord_t x, lv_coord_t y,
 }
 
 
-//****************************************************主菜单页面************************************************//
 
 /***********************************************************************************************************************
- -----函数功能    创建主菜单页面
- -----说明(备注)  DispTask上下文: 在S_tObjs.p_base上创建3个菜单项面板及标题/副标题;
-				  S_tObjs.p_menu_page首次为NULL时调用; 创建后由v_menu_update_sel绘制选中态
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 创建主菜单页面
+ * 说明(备注)  : DispTask上下文: 在S_tObjs.p_base上创建3个菜单项面板及标题/副标题;
+ *               S_tObjs.p_menu_page首次为NULL时调用; 创建后由v_menu_update_sel绘制选中态
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_page_create_menu(void)
 {
@@ -356,12 +349,12 @@ static void v_page_create_menu(void)
 }
 
 /***********************************************************************************************************************
- -----函数功能    更新主菜单选中项样式
- -----说明(备注)  DispTask上下文: 按S_tState.ucMainMenuSel高亮对应项(蓝边+深底);
-				  由vEngMode_UiTick通过ENG_UI_ACTION_MENU_SEL动作触发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 更新主菜单选中项样式
+ * 说明(备注)  : DispTask上下文: 按S_tState.ucMainMenuSel高亮对应项(蓝边+深底);
+ *               由vEngMode_UiTick通过ENG_UI_ACTION_MENU_SEL动作触发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_menu_update_sel(void)
 {
@@ -384,15 +377,15 @@ static void v_menu_update_sel(void)
 }
 
 
-//****************************************************参数查看页面************************************************//
+//****************************************************Parameter Initialization**************************************************//
 
 /***********************************************************************************************************************
- -----函数功能    创建参数查看(PV)页面
- -----说明(备注)  DispTask上下文: 在S_tObjs.p_base上创建Tab标题+8行数据+7Tab底部栏;
-				  S_tObjs.p_pv_page首次为NULL时调用; 数据更新由v_pv_update_data负责
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 创建参数查看(PV)页面
+ * 说明(备注)  : DispTask上下文: 在S_tObjs.p_base上创建Tab标题+8行数据+7Tab底部栏;
+ *               S_tObjs.p_pv_page首次为NULL时调用; 数据更新由v_pv_update_data负责
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_page_create_pv(void)
 {
@@ -446,12 +439,12 @@ static void v_page_create_pv(void)
 }
 
 /***********************************************************************************************************************
- -----函数功能    切换参数查看Tab
- -----说明(备注)  DispTask上下文: 更新S_tState.ucPvTab+Tab标题颜色+Tab栏高亮+索引文本+刷新数据;
-				  越界uc_tab直接返回; 由vEngMode_UiTick通过ENG_UI_ACTION_PV_TAB动作触发
- -----传入参数    uc_tab: 目标Tab索引(0~ENG_NUM_VIEW_TABS-1)
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 切换参数查看Tab
+ * 说明(备注)  : DispTask上下文: 更新S_tState.ucPvTab+Tab标题颜色+Tab栏高亮+索引文本+刷新数据;
+ *               越界uc_tab直接返回; 由vEngMode_UiTick通过ENG_UI_ACTION_PV_TAB动作触发
+ * 传入参数    : uc_tab: 目标Tab索引(0~ENG_NUM_VIEW_TABS-1)
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_pv_switch_tab(uint8_t uc_tab)
 {
@@ -475,15 +468,11 @@ static void v_pv_switch_tab(uint8_t uc_tab)
     for(i = 0; i < ENG_NUM_VIEW_TABS; i++)
     {
         if(i == uc_tab)
-        {
             lv_obj_set_style_text_color(S_tObjs.p_pv_tab_lbl[i],
                 lv_color_hex(S_aulPvTabClr[i]), LV_PART_MAIN | LV_STATE_DEFAULT);
-        }
         else
-        {
             lv_obj_set_style_text_color(S_tObjs.p_pv_tab_lbl[i],
                 lv_color_hex(ENG_CLR_TEXT_SEC), LV_PART_MAIN | LV_STATE_DEFAULT);
-        }
     }
 
     /* 更新数据 */
@@ -492,15 +481,13 @@ static void v_pv_switch_tab(uint8_t uc_tab)
 }
 
 /***********************************************************************************************************************
- -----函数功能    设置参数查看页单行数据
- -----说明(备注)  DispTask上下文: 设置左右标签文本+左侧颜色+清除隐藏标志;
-				  越界uc_row直接返回
- -----传入参数    uc_row: 行号(0~ENG_MAX_VIEW_ROWS-1)
-				  pc_left: 左侧名称字符串
-				  pc_right: 右侧数值字符串
-				  ul_accent: 左侧标签颜色(24bit RGB)
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 设置参数查看页单行数据
+ * 说明(备注)  : DispTask上下文: 设置左右标签文本+左侧颜色+清除隐藏标志;
+ *               越界uc_row直接返回
+ * 传入参数    : uc_row: 行号(0~ENG_MAX_VIEW_ROWS-1)
+ *               pc_left: 左侧名称字符串; pc_right: 右侧数值字符串; ul_accent: 左侧标签颜色(24bit RGB)
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_pv_set_row(uint8_t uc_row, const char *pc_left, const char *pc_right, uint32_t ul_accent)
 {
@@ -516,12 +503,12 @@ static void v_pv_set_row(uint8_t uc_row, const char *pc_left, const char *pc_rig
 }
 
 /***********************************************************************************************************************
- -----函数功能    清空参数查看页指定行之后的内容
- -----说明(备注)  DispTask上下文: 将uc_from及之后所有行的左右标签文本置空;
-				  用于不同Tab数据行数不同时清理多余行
- -----传入参数    uc_from: 起始行(0~ENG_MAX_VIEW_ROWS-1)
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 清空参数查看页指定行之后的内容
+ * 说明(备注)  : DispTask上下文: 将uc_from及之后所有行的左右标签文本置空;
+ *               用于不同Tab数据行数不同时清理多余行
+ * 传入参数    : uc_from: 起始行(0~ENG_MAX_VIEW_ROWS-1)
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_pv_hide_rows(uint8_t uc_from)
 {
@@ -534,12 +521,12 @@ static void v_pv_hide_rows(uint8_t uc_from)
 }
 
 /***********************************************************************************************************************
- -----函数功能    刷新参数查看页当前Tab数据
- -----说明(备注)  DispTask上下文: 按S_tState.ucPvTab读取BMS/MPPT/DCAC/USB/DC/ADC/SYS遥测并填入行;
-				  由vEngMode_UiTick通过bNeedRefresh周期触发或切Tab时立即触发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 刷新参数查看页当前Tab数据
+ * 说明(备注)  : DispTask上下文: 按S_tState.ucPvTab读取BMS/MPPT/DCAC/USB/DC/ADC/SYS遥测并填入行;
+ *               由vEngMode_UiTick通过bNeedRefresh周期触发或切Tab时立即触发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_pv_update_data(void)
 {
@@ -749,31 +736,31 @@ static void v_pv_update_data(void)
         case 5: /* ADC */
         {
             snprintf(buf_l, sizeof(buf_l), "SYS_VOLT_ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcSYS_IN_VOLT]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcSYS_IN_VOLT]);
             v_pv_set_row(0, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "DC_TEMP_ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_OUT_TEMP]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcDC_OUT_TEMP]);
             v_pv_set_row(1, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "DC_CURR_ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_OUT_CURR]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcDC_OUT_CURR]);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "DC_VOLT_ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_OUT_VOLT]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcDC_OUT_VOLT]);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "KEY_POWER _ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcKEY_POWER]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcKEY_POWER]);
             v_pv_set_row(4, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "DC_VIN1_ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_IN_1]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcDC_IN_1]);
             v_pv_set_row(5, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "DC_VIN2_ADC");
-            snprintf(buf_r, sizeof(buf_r), "%d", adc_value[adcDC_IN_2]);
+            snprintf(buf_r, sizeof(buf_r), "%d", s_usa_adc_value[adcDC_IN_2]);
             v_pv_set_row(6, buf_l, buf_r, ul_accent);
 
             v_pv_hide_rows(7);
@@ -806,13 +793,15 @@ static void v_pv_update_data(void)
         }break;
 
         default:
+        {
             v_pv_hide_rows(0);
-            break;
+        }
+        break;
     }
 }
 
 
-//****************************************************参数设置页面************************************************//
+//****************************************************Parameter Initialization**************************************************//
 
 /* 各Tab参数名称 */
 static const char *S_apcPsSysNames[] = { "Version", "FanCtrl", "AutoOff", "MaxTemp", "MinTemp", "MinOpenV", "Buzzer" };
@@ -828,12 +817,12 @@ static const char *S_apcPsDcNames[] = { "AutoOff", "MaxOutV", "MinOutV", "OverLo
 static const uint8_t S_aucPsItemCount[] = { 7, 3, 6, 5, 13, 5, 6 };
 
 /***********************************************************************************************************************
- -----函数功能    创建记忆参数设置(PS)页面
- -----说明(备注)  DispTask上下文: 在S_tObjs.p_base上创建Tab标题+可滚动参数列表+7Tab底部栏;
-				  S_tObjs.p_ps_page首次为NULL时调用; 数据由v_ps_update_data填充
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 创建记忆参数设置(PS)页面
+ * 说明(备注)  : DispTask上下文: 在S_tObjs.p_base上创建Tab标题+可滚动参数列表+7Tab底部栏;
+ *               S_tObjs.p_ps_page首次为NULL时调用; 数据由v_ps_update_data填充
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_page_create_ps(void)
 {
@@ -906,16 +895,16 @@ static void v_page_create_ps(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 切换记忆参数设置Tab
+ * 说明(备注)  : DispTask上下文: 更新S_tState.ucPsTab+选中项清零+Tab标题+索引+高亮+后端tEngMode同步+刷新数据;
+ *               越界uc_tab直接返回; 由vEngMode_UiTick通过ENG_UI_ACTION_PS_TAB动作触发
+ * 传入参数    : uc_tab: 目标Tab索引(0~ENG_NUM_SET_TABS-1)
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_ps_switch_tab(uint8_t uc_tab)
 {
-/***********************************************************************************************************************
- -----函数功能    切换记忆参数设置Tab
- -----说明(备注)  DispTask上下文: 更新S_tState.ucPsTab+选中项清零+Tab标题+索引+高亮+后端tEngMode同步+刷新数据;
-				  越界uc_tab直接返回; 由vEngMode_UiTick通过ENG_UI_ACTION_PS_TAB动作触发
- -----传入参数    uc_tab: 目标Tab索引(0~ENG_NUM_SET_TABS-1)
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     if(uc_tab >= ENG_NUM_SET_TABS)
         return;
 
@@ -953,19 +942,17 @@ static void v_ps_switch_tab(uint8_t uc_tab)
     v_ps_update_data();
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 获取记忆参数项的当前显示字符串
+ * 说明(备注)  : DispTask上下文: 按uc_tab+uc_item读取对应模块(tSYS/tDISP/tBMS/tMPPT/tDCAC/tUSB/tDC)的值;
+ *               通过snprintf写入pc_buf; 无匹配项时写入"-"
+ * 传入参数    : uc_tab: 参数Tab索引(0~ENG_NUM_SET_TABS-1)
+ *               uc_item: Tab内参数索引; pc_buf: 输出字符串缓冲区; uc_size: 缓冲区大小
+ * 输出参数    : pc_buf: 填入格式化后的参数字符串
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, uint8_t uc_size)
 {
-/***********************************************************************************************************************
- -----函数功能    获取记忆参数项的当前显示字符串
- -----说明(备注)  DispTask上下文: 按uc_tab+uc_item读取对应模块(tSYS/tDISP/tBMS/tMPPT/tDCAC/tUSB/tDC)的值;
-				  通过snprintf写入pc_buf; 无匹配项时写入"-"
- -----传入参数    uc_tab: 参数Tab索引(0~ENG_NUM_SET_TABS-1)
-				  uc_item: Tab内参数索引
-				  pc_buf: 输出字符串缓冲区
-				  uc_size: 缓冲区大小
- -----输出参数    pc_buf: 填入格式化后的参数字符串
- -----返回值      none
- ************************************************************************************************************************/
     switch(uc_tab)
     {
         case 0: /* SYS */
@@ -1003,7 +990,7 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
             }
             break;
 
-#if(boardBMS_EN)
+        #if(boardBMS_EN)
         case 2: /* BAT */
             switch(uc_item)
             {
@@ -1014,11 +1001,11 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
                 case 4: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tBMS.usMaxVolt); break;
                 case 5: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tBMS.usMinVolt); break;
                 default: snprintf(pc_buf, uc_size, "-"); break;
-            }
-            break;
+                }
+                break;
 #endif
 
-#if(boardMPPT_EN)
+        #if(boardMPPT_EN)
         case 3: /* MPPT */
             switch(uc_item)
             {
@@ -1028,11 +1015,11 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
                 case 3: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tMPPT.usMinInVolt); break;
                 case 4: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tMPPT.usInPwrRating); break;
                 default: snprintf(pc_buf, uc_size, "-"); break;
-            }
-            break;
+                }
+                break;
 #endif
 
-#if(boardDCAC_EN)
+        #if(boardDCAC_EN)
         case 4: /* DCAC */
             switch(uc_item)
             {
@@ -1050,11 +1037,11 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
                 case 11: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tDCAC.usAcOutFreq); break;
                 case 12: snprintf(pc_buf, uc_size, "%d C", tAppMemParam.tDCAC.sMaxTemp); break;
                 default: snprintf(pc_buf, uc_size, "-"); break;
-            }
-            break;
+                }
+                break;
 #endif
 
-#if(boardUSB_EN)
+        #if(boardUSB_EN)
         case 5: /* USB */
             switch(uc_item)
             {
@@ -1064,11 +1051,11 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
                 case 3: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tUSB.usMinOpenVolt); break;
                 case 4: snprintf(pc_buf, uc_size, "%d C", tAppMemParam.tUSB.sMaxTemp); break;
                 default: snprintf(pc_buf, uc_size, "-"); break;
-            }
-            break;
+                }
+                break;
 #endif
 
-#if(boardDC_EN)
+        #if(boardDC_EN)
         case 6: /* DC */
             switch(uc_item)
             {
@@ -1079,26 +1066,26 @@ static void v_ps_get_value_str(uint8_t uc_tab, uint8_t uc_item, char *pc_buf, ui
                 case 4: snprintf(pc_buf, uc_size, "%u", tAppMemParam.tDC.usMinOpenVolt); break;
                 case 5: snprintf(pc_buf, uc_size, "%d C", tAppMemParam.tDC.sMaxTemp); break;
                 default: snprintf(pc_buf, uc_size, "-"); break;
-            }
-            break;
+                }
+                break;
 #endif
 
         default:
             snprintf(pc_buf, uc_size, "-");
-            break;
+        break;
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 刷新记忆参数设置页当前Tab数据
+ * 说明(备注)  : DispTask上下文: 按S_tState.ucPsTab遍历参数项, 调用v_ps_get_value_str填值, 隐藏多余项;
+ *               由vEngMode_UiTick通过bNeedRefresh周期触发或切Tab时立即触发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_ps_update_data(void)
 {
-/***********************************************************************************************************************
- -----函数功能    刷新记忆参数设置页当前Tab数据
- -----说明(备注)  DispTask上下文: 按S_tState.ucPsTab遍历参数项, 调用v_ps_get_value_str填值, 隐藏多余项;
-				  由vEngMode_UiTick通过bNeedRefresh周期触发或切Tab时立即触发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     uint8_t i;
     uint8_t uc_cnt = S_aucPsItemCount[S_tState.ucPsTab];
     const char **ppc_names = NULL;
@@ -1126,24 +1113,22 @@ static void v_ps_update_data(void)
             lv_label_set_text(S_tObjs.p_ps_lbl_v[i], buf);
         }
         else
-        {
             lv_obj_add_flag(S_tObjs.p_ps_items[i], LV_OBJ_FLAG_HIDDEN);
-        }
     }
 
     v_ps_update_selection();
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 更新记忆参数设置页选中项样式
+ * 说明(备注)  : DispTask上下文: 按S_tState.ucPsItem高亮对应行(蓝边+深底+蓝字);
+ *               并将选中项自动滚动到可视区域; 由vEngMode_UiTick通过ENG_UI_ACTION_PS_ITEM触发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_ps_update_selection(void)
 {
-/***********************************************************************************************************************
- -----函数功能    更新记忆参数设置页选中项样式
- -----说明(备注)  DispTask上下文: 按S_tState.ucPsItem高亮对应行(蓝边+深底+蓝字);
-				  并将选中项自动滚动到可视区域; 由vEngMode_UiTick通过ENG_UI_ACTION_PS_ITEM触发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     uint8_t i;
     uint8_t uc_cnt = S_aucPsItemCount[S_tState.ucPsTab];
 
@@ -1186,24 +1171,21 @@ static void v_ps_update_selection(void)
 
     /* 选中项自动滚动到可视区域, 避免长列表中选中项被遮挡 */
     if(S_tState.ucPsItem < uc_cnt && S_tObjs.p_ps_items[S_tState.ucPsItem] != NULL)
-    {
         lv_obj_scroll_to_view(S_tObjs.p_ps_items[S_tState.ucPsItem], LV_ANIM_ON);
-    }
 }
 
 
-//****************************************************系统设置页面************************************************//
 
+/***********************************************************************************************************************
+ * 函数功能    : 创建系统设置(SS)页面
+ * 说明(备注)  : DispTask上下文: 在S_tObjs.p_base上创建3个设置项面板(SAVE&EXIT/RESET/UPDATE);
+ *               S_tObjs.p_ss_page首次为NULL时调用; 选中态由v_ss_update_selection绘制
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_create_ss(void)
 {
-/***********************************************************************************************************************
- -----函数功能    创建系统设置(SS)页面
- -----说明(备注)  DispTask上下文: 在S_tObjs.p_base上创建3个设置项面板(SAVE&EXIT/RESET/UPDATE);
-				  S_tObjs.p_ss_page首次为NULL时调用; 选中态由v_ss_update_selection绘制
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     uint8_t i;
     lv_obj_t *p_page = lv_obj_create(S_tObjs.p_base);
     lv_obj_set_pos(p_page, 0, 0);
@@ -1229,16 +1211,16 @@ static void v_page_create_ss(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 更新系统设置页选中项样式
+ * 说明(备注)  : DispTask上下文: 按S_tState.ucSsSel高亮对应项(蓝边+深底);
+ *               由vEngMode_UiTick通过ENG_UI_ACTION_SS_SEL动作触发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_ss_update_selection(void)
 {
-/***********************************************************************************************************************
- -----函数功能    更新系统设置页选中项样式
- -----说明(备注)  DispTask上下文: 按S_tState.ucSsSel高亮对应项(蓝边+深底);
-				  由vEngMode_UiTick通过ENG_UI_ACTION_SS_SEL动作触发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     uint8_t i;
     for(i = 0; i < 3; i++)
     {
@@ -1261,18 +1243,17 @@ static void v_ss_update_selection(void)
 }
 
 
-//****************************************************确认对话框************************************************//
 
+/***********************************************************************************************************************
+ * 函数功能    : 创建确认对话框页面
+ * 说明(备注)  : DispTask上下文: 在S_tObjs.p_base上创建半透明遮罩+对话框面板+确认文本+Cancel/OK按钮;
+ *               S_tObjs.p_cfm_page首次为NULL时调用; 选中态由v_cfm_update_selection绘制
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_create_cfm(void)
 {
-/***********************************************************************************************************************
- -----函数功能    创建确认对话框页面
- -----说明(备注)  DispTask上下文: 在S_tObjs.p_base上创建半透明遮罩+对话框面板+确认文本+Cancel/OK按钮;
-				  S_tObjs.p_cfm_page首次为NULL时调用; 选中态由v_cfm_update_selection绘制
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     /* 半透明遮罩 */
     lv_obj_t *p_overlay = lv_obj_create(S_tObjs.p_base);
     lv_obj_set_pos(p_overlay, 0, 0);
@@ -1304,16 +1285,16 @@ static void v_page_create_cfm(void)
     lv_label_set_text(S_tObjs.p_cfm_lbls[1], "OK");
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 更新确认对话框选中按钮样式
+ * 说明(备注)  : DispTask上下文: 按S_tState.ucConfirmSel高亮对应按钮(蓝边+深底);
+ *               由vEngMode_UiTick通过ENG_UI_ACTION_CFM_SEL动作触发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_cfm_update_selection(void)
 {
-/***********************************************************************************************************************
- -----函数功能    更新确认对话框选中按钮样式
- -----说明(备注)  DispTask上下文: 按S_tState.ucConfirmSel高亮对应按钮(蓝边+深底);
-				  由vEngMode_UiTick通过ENG_UI_ACTION_CFM_SEL动作触发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     uint8_t i;
     for(i = 0; i < 2; i++)
     {
@@ -1335,17 +1316,16 @@ static void v_cfm_update_selection(void)
 }
 
 
-//****************************************************页面销毁(懒加载用)****************************************//
 
+/***********************************************************************************************************************
+ * 函数功能    : 删除主菜单页面LVGL对象
+ * 说明(备注)  : DispTask上下文: 删除p_menu_page并置NULL; 用于v_page_show切页时释放旧页
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_delete_menu(void)
 {
-/***********************************************************************************************************************
- -----函数功能    删除主菜单页面LVGL对象
- -----说明(备注)  DispTask上下文: 删除p_menu_page并置NULL; 用于v_page_show切页时释放旧页
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     if(S_tObjs.p_menu_page)
     {
         lv_obj_delete(S_tObjs.p_menu_page);
@@ -1353,15 +1333,15 @@ static void v_page_delete_menu(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 删除参数查看页LVGL对象
+ * 说明(备注)  : DispTask上下文: 删除p_pv_page并置NULL; 用于v_page_show切页时释放旧页
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_delete_pv(void)
 {
-/***********************************************************************************************************************
- -----函数功能    删除参数查看页LVGL对象
- -----说明(备注)  DispTask上下文: 删除p_pv_page并置NULL; 用于v_page_show切页时释放旧页
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     if(S_tObjs.p_pv_page)
     {
         lv_obj_delete(S_tObjs.p_pv_page);
@@ -1369,15 +1349,15 @@ static void v_page_delete_pv(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 删除记忆参数设置页LVGL对象
+ * 说明(备注)  : DispTask上下文: 删除p_ps_page并置NULL; 用于v_page_show切页时释放旧页
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_delete_ps(void)
 {
-/***********************************************************************************************************************
- -----函数功能    删除记忆参数设置页LVGL对象
- -----说明(备注)  DispTask上下文: 删除p_ps_page并置NULL; 用于v_page_show切页时释放旧页
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     if(S_tObjs.p_ps_page)
     {
         lv_obj_delete(S_tObjs.p_ps_page);
@@ -1385,15 +1365,15 @@ static void v_page_delete_ps(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 删除系统设置页LVGL对象
+ * 说明(备注)  : DispTask上下文: 删除p_ss_page并置NULL; 用于v_page_show切页时释放旧页
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_delete_ss(void)
 {
-/***********************************************************************************************************************
- -----函数功能    删除系统设置页LVGL对象
- -----说明(备注)  DispTask上下文: 删除p_ss_page并置NULL; 用于v_page_show切页时释放旧页
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     if(S_tObjs.p_ss_page)
     {
         lv_obj_delete(S_tObjs.p_ss_page);
@@ -1401,15 +1381,15 @@ static void v_page_delete_ss(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 删除确认对话框LVGL对象
+ * 说明(备注)  : DispTask上下文: 删除p_cfm_page(半透明遮罩)并置NULL; 用于v_page_show切页时释放旧页
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_delete_cfm(void)
 {
-/***********************************************************************************************************************
- -----函数功能    删除确认对话框LVGL对象
- -----说明(备注)  DispTask上下文: 删除p_cfm_page(半透明遮罩)并置NULL; 用于v_page_show切页时释放旧页
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     if(S_tObjs.p_cfm_page)
     {
         lv_obj_delete(S_tObjs.p_cfm_page);
@@ -1418,19 +1398,18 @@ static void v_page_delete_cfm(void)
 }
 
 
-//****************************************************页面导航************************************************//
 
+/***********************************************************************************************************************
+ * 函数功能    : 页面导航(销毁旧页+创建/显示新页)
+ * 说明(备注)  : DispTask上下文: 销毁上一页LVGL对象+更新S_tState.ePage+按需创建新页+绘制标题/选中态;
+ *               切到ENG_PAGE_CONFIRM时记录来源页ePrevPage; 同页调用安全;
+ *               由vEngMode_UiTick通过ePendingPage触发
+ * 传入参数    : e_page: 目标页面
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
 static void v_page_show(EngModePage_E e_page)
 {
-/***********************************************************************************************************************
- -----函数功能    页面导航(销毁旧页+创建/显示新页)
- -----说明(备注)  DispTask上下文: 销毁上一页LVGL对象+更新S_tState.ePage+按需创建新页+绘制标题/选中态;
-				  切到ENG_PAGE_CONFIRM时记录来源页ePrevPage; 同页调用安全;
-				  由vEngMode_UiTick通过ePendingPage触发
- -----传入参数    e_page: 目标页面
- -----输出参数    none
- -----返回值      none
- ************************************************************************************************************************/
     EngModePage_E e_prev = S_tState.ePage;
 
     /* 切换页面时销毁旧页面, 释放内存 */
@@ -1457,64 +1436,75 @@ static void v_page_show(EngModePage_E e_page)
     switch(e_page)
     {
         case ENG_PAGE_MAIN_MENU:
+        {
             if(S_tObjs.p_menu_page == NULL)
                 v_page_create_menu();
             v_menu_update_sel();
             lv_label_set_text(S_tObjs.p_title_label, "ENG MODE");
             lv_obj_set_style_text_color(S_tObjs.p_title_label,
                 lv_color_hex(ENG_CLR_TEXT), LV_PART_MAIN | LV_STATE_DEFAULT);
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_VIEW:
+        {
             if(S_tObjs.p_pv_page == NULL)
                 v_page_create_pv();
             lv_label_set_text(S_tObjs.p_title_label, "PARAM VIEW");
             lv_obj_set_style_text_color(S_tObjs.p_title_label,
                 lv_color_hex(ENG_CLR_TEXT), LV_PART_MAIN | LV_STATE_DEFAULT);
             v_pv_switch_tab(S_tState.ucPvTab);
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
+        {
             if(S_tObjs.p_ps_page == NULL)
                 v_page_create_ps();
             lv_label_set_text(S_tObjs.p_title_label, "PARAM SET");
             lv_obj_set_style_text_color(S_tObjs.p_title_label,
                 lv_color_hex(ENG_CLR_TEXT), LV_PART_MAIN | LV_STATE_DEFAULT);
             v_ps_switch_tab(S_tState.ucPsTab);
-            break;
+        }
+        break;
 
         case ENG_PAGE_SYS_SET:
+        {
             if(S_tObjs.p_ss_page == NULL)
                 v_page_create_ss();
             v_ss_update_selection();
             lv_label_set_text(S_tObjs.p_title_label, "SYS SET");
             lv_obj_set_style_text_color(S_tObjs.p_title_label,
                 lv_color_hex(ENG_CLR_SELECTED), LV_PART_MAIN | LV_STATE_DEFAULT);
-            break;
+        }
+        break;
 
         case ENG_PAGE_CONFIRM:
+        {
             if(S_tObjs.p_cfm_page == NULL)
                 v_page_create_cfm();
             if(S_tState.ucSsSel < 3)
                 lv_label_set_text(S_tObjs.p_cfm_text, S_apcCfmText[S_tState.ucSsSel]);
             v_cfm_update_selection();
-            break;
+        }
+        break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 
-//****************************************************按键处理**************************************************/
 
 /***********************************************************************************************************************
- -----函数功能    工程模式下按Up键处理
- -----说明(备注)  按键任务上下文: 仅更新状态+设置eUiAction标记, 不直接调LVGL API;
-				  UI刷新由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式下按Up键处理
+ * 说明(备注)  : 按键任务上下文: 仅更新状态+设置eUiAction标记, 不直接调LVGL API;
+ *               UI刷新由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_KeyUp(void)
 {
@@ -1523,10 +1513,12 @@ void vEngMode_KeyUp(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_MAIN_MENU:
+        {
             if(S_tState.ucMainMenuSel > 0)
                 S_tState.ucMainMenuSel--;
             S_tState.eUiAction = ENG_UI_ACTION_MENU_SEL;
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
         {
@@ -1547,28 +1539,34 @@ void vEngMode_KeyUp(void)
         }break;
 
         case ENG_PAGE_SYS_SET:
+        {
             if(S_tState.ucSsSel > 0)
                 S_tState.ucSsSel--;
             S_tState.eUiAction = ENG_UI_ACTION_SS_SEL;
-            break;
+        }
+        break;
 
         case ENG_PAGE_CONFIRM:
+        {
             S_tState.ucConfirmSel = 0;
             S_tState.eUiAction = ENG_UI_ACTION_CFM_SEL;
-            break;
+        }
+        break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 /***********************************************************************************************************************
- -----函数功能    工程模式下按Down键处理
- -----说明(备注)  按键任务上下文: 仅更新状态+设置eUiAction标记, 不直接调LVGL API;
-				  UI刷新由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式下按Down键处理
+ * 说明(备注)  : 按键任务上下文: 仅更新状态+设置eUiAction标记, 不直接调LVGL API;
+ *               UI刷新由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_KeyDown(void)
 {
@@ -1577,10 +1575,12 @@ void vEngMode_KeyDown(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_MAIN_MENU:
+        {
             if(S_tState.ucMainMenuSel < 2)
                 S_tState.ucMainMenuSel++;
             S_tState.eUiAction = ENG_UI_ACTION_MENU_SEL;
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
         {
@@ -1602,28 +1602,34 @@ void vEngMode_KeyDown(void)
         }break;
 
         case ENG_PAGE_SYS_SET:
+        {
             if(S_tState.ucSsSel < 2)
                 S_tState.ucSsSel++;
             S_tState.eUiAction = ENG_UI_ACTION_SS_SEL;
-            break;
+        }
+        break;
 
         case ENG_PAGE_CONFIRM:
+        {
             S_tState.ucConfirmSel = 1;
             S_tState.eUiAction = ENG_UI_ACTION_CFM_SEL;
-            break;
+        }
+        break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 /***********************************************************************************************************************
- -----函数功能    工程模式下按Left键处理
- -----说明(备注)  按键任务上下文: 仅更新Tab状态+同步后端tEngMode+设置eUiAction标记;
-				  UI渲染由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式下按Left键处理
+ * 说明(备注)  : 按键任务上下文: 仅更新Tab状态+同步后端tEngMode+设置eUiAction标记;
+ *               UI渲染由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_KeyLeft(void)
 {
@@ -1632,14 +1638,17 @@ void vEngMode_KeyLeft(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_PARAM_VIEW:
+        {
             if(S_tState.ucPvTab > 0)
                 S_tState.ucPvTab--;
             else
                 S_tState.ucPvTab = ENG_NUM_VIEW_TABS - 1;
             S_tState.eUiAction = ENG_UI_ACTION_PV_TAB;
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
+        {
             if(S_tState.ucPsTab > 0)
                 S_tState.ucPsTab--;
             else
@@ -1650,20 +1659,23 @@ void vEngMode_KeyLeft(void)
             tEngMode.ucEngModeItem = 0;
             tEngMode.cEngModeState = 0;
             S_tState.eUiAction = ENG_UI_ACTION_PS_TAB;
-            break;
+        }
+        break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 /***********************************************************************************************************************
- -----函数功能    工程模式下按Right键处理
- -----说明(备注)  按键任务上下文: 仅更新Tab状态+同步后端tEngMode+设置eUiAction标记;
-				  UI渲染由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式下按Right键处理
+ * 说明(备注)  : 按键任务上下文: 仅更新Tab状态+同步后端tEngMode+设置eUiAction标记;
+ *               UI渲染由DispTask在vEngMode_UiTick中执行, 避免跨任务并发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_KeyRight(void)
 {
@@ -1672,14 +1684,17 @@ void vEngMode_KeyRight(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_PARAM_VIEW:
+        {
             if(S_tState.ucPvTab < ENG_NUM_VIEW_TABS - 1)
                 S_tState.ucPvTab++;
             else
                 S_tState.ucPvTab = 0;
             S_tState.eUiAction = ENG_UI_ACTION_PV_TAB;
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
+        {
             if(S_tState.ucPsTab < ENG_NUM_SET_TABS - 1)
                 S_tState.ucPsTab++;
             else
@@ -1690,20 +1705,23 @@ void vEngMode_KeyRight(void)
             tEngMode.ucEngModeItem = 0;
             tEngMode.cEngModeState = 0;
             S_tState.eUiAction = ENG_UI_ACTION_PS_TAB;
-            break;
+        }
+        break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 /***********************************************************************************************************************
- -----函数功能    工程模式下按Enter键处理
- -----说明(备注)  按键任务上下文: 主菜单确认后仅设置ePendingPage(显示任务切页);
-				  PARAM_SET选中项切换+后端tEngMode同步, UI刷新由DispTask通过eUiAction执行
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式下按Enter键处理
+ * 说明(备注)  : 按键任务上下文: 主菜单确认后仅设置ePendingPage(显示任务切页);
+ *               PARAM_SET选中项切换+后端tEngMode同步, UI刷新由DispTask通过eUiAction执行
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_KeyEnter(void)
 {
@@ -1712,6 +1730,7 @@ void vEngMode_KeyEnter(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_MAIN_MENU:
+        {
             switch(S_tState.ucMainMenuSel)
             {
                 case 0: S_tState.ePendingPage = ENG_PAGE_PARAM_VIEW; break;
@@ -1719,7 +1738,8 @@ void vEngMode_KeyEnter(void)
                 case 2: S_tState.ePendingPage = ENG_PAGE_SYS_SET; break;
                 default: break;
             }
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
         {
@@ -1731,10 +1751,12 @@ void vEngMode_KeyEnter(void)
         }break;
 
         case ENG_PAGE_SYS_SET:
+        {
             /* 保存退出(SAVE&EXIT)默认选中确认, 重置/升级等危险操作默认选中取消, 防止误触发 */
             S_tState.ucConfirmSel = (S_tState.ucSsSel == 0) ? 1 : 0;
             S_tState.ePendingPage = ENG_PAGE_CONFIRM;
-            break;
+        }
+        break;
 
         case ENG_PAGE_CONFIRM:
             if(S_tState.ucConfirmSel == 1)  /* 确认 */
@@ -1743,8 +1765,11 @@ void vEngMode_KeyEnter(void)
                 {
                     case 0: /* SAVE & EXIT */
                     {
+                        #if (boardHEAT_MANAGE_EN)
+                        vFan_ForceOpenFan(false);
+                        #endif  /* boardHEAT_MANAGE_EN */
                         /* 保存所有参数到 Flash */
-                        cApp_UpdateMemParam("tAppMemParam");
+                        cApp_UpdateMemParam(tAppMemParamStr);
                         /* 退出工程模式 -> 关机 */
                         cSys_Switch(SO_KEY, ST_OFF, true);
                         S_tState.bExitReq = true;
@@ -1752,10 +1777,13 @@ void vEngMode_KeyEnter(void)
 
                     case 1: /* RESET DEFAULTS */
                     {
+                        #if (boardHEAT_MANAGE_EN)
+                        vFan_ForceOpenFan(false);
+                        #endif  /* boardHEAT_MANAGE_EN */
                         /* 重置所有参数为默认值 */
-                        cApp_MemParamInit("tAppMemParam");
+                        cApp_MemParamInit(tAppMemParamStr);
                         /* 保存到 Flash */
-                        cApp_UpdateMemParam("tAppMemParam");
+                        cApp_UpdateMemParam(tAppMemParamStr);
                         /* 退出工程模式 -> 关机) */
                         cSys_Switch(SO_KEY, ST_OFF, true);
                         S_tState.bExitReq = true;
@@ -1766,27 +1794,29 @@ void vEngMode_KeyEnter(void)
                         break;
 
                     default:
-                        break;
+                    {
+                    }
+                    break;
                 }
             }
             else  /* 取消 */
-            {
                 S_tState.ePendingPage = ENG_PAGE_SYS_SET;
-            }
             break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 /***********************************************************************************************************************
- -----函数功能    工程模式下按Back键处理
- -----说明(备注)  按键任务上下文: 仅设置ePendingPage(显示任务切页)或bExitReq;
-				  UI销毁/页面切换由DispTask执行, 避免跨任务并发
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式下按Back键处理
+ * 说明(备注)  : 按键任务上下文: 仅设置ePendingPage(显示任务切页)或bExitReq;
+ *               UI销毁/页面切换由DispTask执行, 避免跨任务并发
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_KeyBack(void)
 {
@@ -1796,10 +1826,13 @@ void vEngMode_KeyBack(void)
     {
         case ENG_PAGE_PARAM_VIEW:
         case ENG_PAGE_SYS_SET:
+        {
             S_tState.ePendingPage = ENG_PAGE_MAIN_MENU;
-            break;
+        }
+        break;
 
         case ENG_PAGE_PARAM_SET:
+        {
             if(S_tState.bPsEditing)
             {
                 /* 编辑模式: 退出编辑, 恢复浏览 */
@@ -1807,45 +1840,52 @@ void vEngMode_KeyBack(void)
                 S_tState.eUiAction = ENG_UI_ACTION_PS_ITEM;
             }
             else
-            {
                 /* 浏览模式: 返回主菜单 */
                 S_tState.ePendingPage = ENG_PAGE_MAIN_MENU;
-            }
-            break;
+        }
+        break;
 
         case ENG_PAGE_CONFIRM:
+        {
             S_tState.ePendingPage = ENG_PAGE_SYS_SET;
-            break;
+        }
+        break;
 
         case ENG_PAGE_MAIN_MENU:
             /* 退出工程模式 */
+            #if (boardHEAT_MANAGE_EN)
+            vFan_ForceOpenFan(false);
+            #endif  /* boardHEAT_MANAGE_EN */
             S_tState.bExitReq = true;
             break;
 
         default:
-            break;
+        {
+        }
+        break;
     }
 }
 
 
-//****************************************************公共API**************************************************//
+//****************************************************Function Declaration******************************************************//
 
 /***********************************************************************************************************************
- -----函数功能    创建工程模式UI(主菜单/参数查看/记忆参数设置/系统设置)
- -----说明(备注)  必须在DispTask上下文中调用: 切换EEZ屏幕+创建LVGL基础容器+显示主菜单;
-				  若旧UI仍存在则先删除; 内存充足时按需懒加载子页面
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 创建工程模式UI(主菜单/参数查看/记忆参数设置/系统设置)
+ * 说明(备注)  : 必须在DispTask上下文中调用: 切换EEZ屏幕+创建LVGL基础容器+显示主菜单;
+ *               若旧UI仍存在则先删除; 内存充足时按需懒加载子页面
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_UiCreate(void)
 {
+    if(uPrint.tFlag.bDispTask)
     {
         lv_mem_monitor_t t_mon;
         lv_mem_monitor(&t_mon);
         sMyPrint("EngUiCreate: entering, free_size = %d\r\n", (int)t_mon.free_size);
     }
-
+    
     /* 清除旧UI */
     if(S_tObjs.p_base != NULL)
         vEngMode_UiDelete();
@@ -1897,6 +1937,7 @@ void vEngMode_UiCreate(void)
     /* 显示主菜单(页面按需创建, 避免一次性创建所有页面导致内存不足) */
     v_page_show(ENG_PAGE_MAIN_MENU);
 
+    if(uPrint.tFlag.bDispTask)
     {
         lv_mem_monitor_t t_mon;
         lv_mem_monitor(&t_mon);
@@ -1905,15 +1946,19 @@ void vEngMode_UiCreate(void)
 }
 
 /***********************************************************************************************************************
- -----函数功能    删除工程模式UI(释放LVGL对象和状态)
- -----说明(备注)  必须在DispTask上下文中调用: 删除基础容器并清零S_tObjs/S_tState;
-				  在超时退出或bExitReq时由显示队列任务调用
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 删除工程模式UI(释放LVGL对象和状态)
+ * 说明(备注)  : 必须在DispTask上下文中调用: 删除基础容器并清零S_tObjs/S_tState;
+ *               在超时退出或bExitReq时由显示队列任务调用
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_UiDelete(void)
 {
+    #if (boardHEAT_MANAGE_EN)
+    vFan_ForceOpenFan(false);
+    #endif  /* boardHEAT_MANAGE_EN */
+
     if(S_tObjs.p_base != NULL)
     {
         lv_obj_delete(S_tObjs.p_base);
@@ -1924,12 +1969,12 @@ void vEngMode_UiDelete(void)
 }
 
 /***********************************************************************************************************************
- -----函数功能    查询工程模式是否请求退出
- -----说明(备注)  按键任务(Back/确认)置位bExitReq后, 显示任务通过此函数查询;
-				  查询到true后由显示任务负责UI删除+系统状态切换
- -----传入参数    none
- -----输出参数    none
- -----返回值      true:有退出请求   false:无退出请求
+ * 函数功能    : 查询工程模式是否请求退出
+ * 说明(备注)  : 按键任务(Back/确认)置位bExitReq后, 显示任务通过此函数查询;
+ *               查询到true后由显示任务负责UI删除+系统状态切换
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : true:有退出请求   false:无退出请求
  ************************************************************************************************************************/
 bool bEngMode_IsExitReq(void)
 {
@@ -1937,12 +1982,12 @@ bool bEngMode_IsExitReq(void)
 }
 
 /***********************************************************************************************************************
- -----函数功能    工程模式UI周期任务(由显示队列任务周期调用)
- -----说明(备注)  必须在DispTask上下文中执行: 1)处理按键设置的ePendingPage切页 2)处理eUiAction渲染请求
-				  3)周期性刷新参数查看/参数设置页数据; 调用前确保ui_init已执行
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 工程模式UI周期任务(由显示队列任务周期调用)
+ * 说明(备注)  : 必须在DispTask上下文中执行: 1)处理按键设置的ePendingPage切页 2)处理eUiAction渲染请求
+ *               3)周期性刷新参数查看/参数设置页数据; 调用前确保ui_init已执行
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vEngMode_UiTick(void)
 {
@@ -1967,32 +2012,46 @@ void vEngMode_UiTick(void)
         switch(e_action)
         {
             case ENG_UI_ACTION_MENU_SEL:
+            {
                 v_menu_update_sel();
-                break;
+            }
+            break;
 
             case ENG_UI_ACTION_PV_TAB:
+            {
                 v_pv_switch_tab(S_tState.ucPvTab);
-                break;
+            }
+            break;
 
             case ENG_UI_ACTION_PS_TAB:
+            {
                 v_ps_switch_tab(S_tState.ucPsTab);
-                break;
+            }
+            break;
 
             case ENG_UI_ACTION_PS_ITEM:
+            {
                 v_ps_update_selection();
                 v_ps_update_data();
-                break;
+            }
+            break;
 
             case ENG_UI_ACTION_SS_SEL:
+            {
                 v_ss_update_selection();
-                break;
+            }
+            break;
 
             case ENG_UI_ACTION_CFM_SEL:
+            {
                 v_cfm_update_selection();
-                break;
+            }
+            break;
 
             default:
-                break;
+            {
+            }
+            break;
         }
     }
 
@@ -2011,15 +2070,21 @@ void vEngMode_UiTick(void)
         switch(S_tState.ePage)
         {
             case ENG_PAGE_PARAM_VIEW:
+            {
                 v_pv_update_data();
-                break;
+            }
+            break;
 
             case ENG_PAGE_PARAM_SET:
+            {
                 v_ps_update_data();
-                break;
+            }
+            break;
 
             default:
-                break;
+            {
+            }
+            break;
         }
     }
 }

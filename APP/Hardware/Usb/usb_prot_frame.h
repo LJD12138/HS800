@@ -1,24 +1,38 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\Usb
+ * File    : usb_prot_frame.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : USB 快充芯片 (SW3516) 协议解析头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef USB_PROT_FRAME_H_
 #define USB_PROT_FRAME_H_
 
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-#if(boardUSB_EN)
+//****************************************************Includes******************************************************************//
 #include "main.h"
+
+#if (boardUSB_EN)
 #include "i2c.h"
-// #include "Modbus/modbus_proto.h"
 
-
-// extern			ModbusProtoTx_t 						*tpUsbProtoTx;
-// extern 			ModbusProtoRx_t 						*tpUsbProtoRx;
-
+//****************************************************Extern********************************************************************//
 s8 c_usb_cs_get_ic_param(const I2cObj_T *p_i2c_obj);
-s8 c_usb_set_pwr_cs(u16 pwr);
 void vUSB_ControlPorts(bool b_open);
 
-bool bUsb_SendProtInit(void);
-bool bUsb_RecProtInit(void);
+#endif  /* boardUSB_EN */
 
-#endif  //boardUSB_EN
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
 
-#endif  //USB_PROT_FRAME_H_
+#endif  /* USB_PROT_FRAME_H_ */

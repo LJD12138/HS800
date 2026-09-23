@@ -1,216 +1,174 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         指示灯处理任务                                                          *
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\Led
+ * File    : led_task.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 面板按键与状态指示灯控制任务实现文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Led/led_task.h"
 
-#if(boardLED_EN)
+#if (boardLED_EN)
 #include "Led/led_iface.h"
 #include "Sys/sys_task.h"
 #include "Update/update_main.h"
 
-#if(boardUSE_OS)
+#if (boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
-#endif  //boardUSE_OS
+#endif  /* boardUSE_OS */
 
-#define     	ledTASK_CYCLE_TIME                		10  //任务时间
+//****************************************************Macros********************************************************************//
+#define			ledTASK_CYCLE_TIME						10		/* 任务时间 */
 
-//****************************************************任务初始化**************************************************//
-#if(boardUSE_OS)
-#define        	LED_TASK_PRIO                 			1     //任务优先级 
-#define        	LED_TASK_STK_SIZE              			64   //任务堆栈  实际字节数 *4
-#define        	LED_TASK_CYCLE_TIME            			1000   //任务更新时间
-TaskHandle_t    tLedTaskHandler = NULL; 
-void           	vLed_Task(void *pvParameters);
-#endif  //boardUSE_OS
+//****************************************************Parameter Initialization**************************************************//
+#if (boardUSE_OS)
+#define			LED_TASK_PRIO							1		/* 任务优先级 */
+#define			LED_TASK_STK_SIZE						128		/* 任务堆栈 (512B，达到 configMINIMAL_STACK_SIZE 防溢出标准) */
+static TaskHandle_t s_t_led_task_handler = NULL;
+void        vLed_Task(void *p_v_parameters);
+#endif  /* boardUSE_OS */
 
-
-//****************************************************函数声明****************************************************//
+//****************************************************Function Declaration******************************************************//
 static void v_led_breathing(void);
 
-
 /***********************************************************************************************************************
------函数功能    按键任务初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vLed_TaskInit(void)
+ * 函数功能    : 指示灯任务初始化
+ * 说明(备注)  : 初始化硬件 IO 并创建指示灯控制任务
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 1: 成功; -1: 任务创建失败
+ ************************************************************************************************************************/
+s8 cLed_TaskInit(void)
 {
 	vLed_IfaceInit();
-	
-	#if(boardUSE_OS)
-	xTaskCreate((TaskFunction_t )vLed_Task,				//任务函数
-                (const char* )"LedTask",              	//任务名称
-                (uint16_t ) LED_TASK_STK_SIZE,          //任务堆栈大小
-                (void* )NULL,							//传递给任务函数的参数
-                (UBaseType_t ) LED_TASK_PRIO,           //任务优先级
-                (TaskHandle_t*)&tLedTaskHandler);      	//任务句柄
-	#endif  //boardUSE_OS
+
+	#if (boardUSE_OS)
+	if (xTaskCreate((TaskFunction_t )vLed_Task,
+	                (const char*    )"LedTask",
+	                (uint16_t       )LED_TASK_STK_SIZE,
+	                (void*          )NULL,
+	                (UBaseType_t    )LED_TASK_PRIO,
+	                (TaskHandle_t*  )&s_t_led_task_handler) != pdPASS)
+		return -1;
+	#endif  /* boardUSE_OS */
+
+	return 1;
 }
 
-
 /***********************************************************************************************************************
------函数功能    按键循环任务
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vLed_Task(void *pvParameters)
+ * 函数功能    : 指示灯循环任务
+ * 说明(备注)  : 根据系统状态驱动指示灯常开/常关/闪烁/呼吸
+ * 传入参数    : pvParameters: 任务参数
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vLed_Task(void *p_v_parameters)
 {
 	static int l_delay_cnt = 0;
 	
-	if(tpSysTask == NULL)
+	if (tpSysTask == NULL)
 		return;
 	
-//	led_1_GPIO_OFF();
 	switch (tpSysTask->ucID)
 	{
 		case STI_INIT:
 		{
 			ledPWR_SW_OFF();
-		}break;
+		}
+		break;
 		
 		case STI_ENTER_APP:
 		{
-//			led_1_GPIO_ON();
 			ledPWR_SW_OFF();
-		}break;
+		}
+		break;
 		
 		case STI_ERR:
 		case STI_RESET:
 		{
-		   l_delay_cnt++;
-			if(l_delay_cnt < (200/ledTASK_CYCLE_TIME))//闪烁
-			{
+			l_delay_cnt++;
+			if (l_delay_cnt < (200 / ledTASK_CYCLE_TIME))	/* 闪烁 */
 				ledPWR_SW_ON();
-			}
-			else if(l_delay_cnt < (400/ledTASK_CYCLE_TIME))
-			{
+			else if (l_delay_cnt < (400 / ledTASK_CYCLE_TIME))
 				ledPWR_SW_OFF();
-			}
-			else if(l_delay_cnt >= (400/ledTASK_CYCLE_TIME))
-			{
+			else if (l_delay_cnt >= (400 / ledTASK_CYCLE_TIME))
 				l_delay_cnt = 0;
-			}
-		}break;
+		}
+		break;
 		
-		#if(boardUPDATE)
+		#if (boardUPDATE)
 		case STI_UPDATE:
 		{
 			l_delay_cnt++;
-			if(l_delay_cnt > 0)//快闪
+			if (l_delay_cnt > 0)	/* 快闪 */
 			{
 				l_delay_cnt = 0;
 				v_led_breathing();
 			}
-		}break;
-		#endif
+		}
+		break;
+		#endif  /* boardUPDATE */
 		
-		#if(boardDISPLAY_EN)
+		#if (boardDISPLAY_EN)
 		case STI_DISPLAY:
 		{
 			l_delay_cnt++;
-			if(l_delay_cnt > (200/ledTASK_CYCLE_TIME))//慢闪
+			if (l_delay_cnt > (200 / ledTASK_CYCLE_TIME))	/* 慢闪 */
 			{
 				l_delay_cnt = 0;
 				v_led_breathing();
 			}
-		}break;
-		#endif
+		}
+		break;
+		#endif  /* boardDISPLAY_EN */
 		
-		#if(boardLOW_POWER)
+		#if (boardLOW_POWER)
 		case STI_LOW_POWER:
-        {  
+		{  
 			led_1_GPIO_OFF();
 			ledPWR_SW_OFF();
-        }
-        break;
-		#endif
+		}
+		break;
+		#endif  /* boardLOW_POWER */
 		
 		default:
-			break;
+		{
+		}
+		break;
 	}
 }
 
-
 /***********************************************************************************************************************
------函数功能    电源指示灯呼吸
------说明(备注)  IO模拟PWM  2mS调用
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-//static void v_led_breathing(void)
-//{
-//	static int pwmCounter = 0;
-//    static int directionChangeCounter = 0;
-//	
-//	static int brightness = 0; // 当前亮度级别
-//	static bool increase = true; // 标记是增加还是减少亮度
-
-//    // 每2ms执行一次
-//    pwmCounter++;
-//    directionChangeCounter++;
-
-//    if (pwmCounter < brightness) {
-//        // 设置IO口为高电平
-//        ledPWR_SW_ON();
-//    } else {
-//        // 设置IO口为低电平
-//        ledPWR_SW_OFF();
-//    }
-
-//    if (pwmCounter >= 10) { // 假设最大亮度级别为100
-//        pwmCounter = 0;
-//    }
-
-//    if (directionChangeCounter >= 30) { // 控制亮度变化速度
-//        directionChangeCounter = 0;
-//        if (increase) {
-//            if (brightness < 10) {
-//                brightness++; // 增加亮度
-//            } else {
-//                increase = false; // 开始减少亮度
-//            }
-//        } else {
-//            if (brightness > 0) {
-//                brightness--; // 减少亮度
-//            } else {
-//                increase = true; // 再次开始增加亮度
-//            }
-//        }
-//    }
-//}
-
-/***********************************************************************************************************************
------函数功能    电源指示灯呼吸
------说明(备注)  50mS调用
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
+ * 函数功能    : 电源指示灯呼吸效果
+ * 说明(备注)  : 50ms 周期调用，调整电源按键 PWM 占空比实现呼吸灯渐变
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 static void v_led_breathing(void)
 {
-	static u8 breath_cnt = 0;
-	static bool breath_flag = 0;
-	
-	ledPWR_SW_PWM_SET(breath_cnt * 50);
-	
-	if(breath_flag == 0) breath_cnt++;
-	else 
-	{
-		if(breath_cnt) breath_cnt--;
-	}
-	
-	if(breath_cnt >= 20)
-		breath_flag = 1;
-	else if(breath_cnt == 0)
-		breath_flag = 0;
-}
+	static uint8_t s_uc_breath_cnt = 0;
+	static bool    s_b_breath_dec  = false;
 
-#endif  //boardLED_EN
+	ledPWR_SW_PWM_SET(s_uc_breath_cnt * 50);
+
+	if (!s_b_breath_dec)
+		s_uc_breath_cnt++;
+	else if (s_uc_breath_cnt > 0)
+		s_uc_breath_cnt--;
+
+	if (s_uc_breath_cnt >= 20)
+		s_b_breath_dec = true;
+	else if (s_uc_breath_cnt == 0)
+		s_b_breath_dec = false;
+}
+#endif  /* boardLED_EN */
+

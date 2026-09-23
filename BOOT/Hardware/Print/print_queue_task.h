@@ -1,22 +1,49 @@
-#ifndef MD_PRINT_QUEUE_TASK_H_
-#define MD_PRINT_QUEUE_TASK_H_
+/***********************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\Print
+ * File    : print_queue_task.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : Print模块任务队列管理及各子任务函数声明
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+#ifndef __PRINT_QUEUE_TASK_H
+#define __PRINT_QUEUE_TASK_H
 
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-#if(boardPRINT_IFACE)
+//****************************************************Includes******************************************************************//
+#include "main.h"
+
+#if (boardPRINT_IFACE)
 #include "queue_task.h"
 
-#if(boardUSE_OS)
+#if (boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
-#endif
+#endif  /* boardUSE_OS */
 
+//****************************************************Macros********************************************************************//
+
+//****************************************************Types*********************************************************************//
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Extern********************************************************************//
 bool bPrint_QueueInit(void);
 
-//队列函数
 void v_print_queue_task_main(Task_T *tp_task);
 
-#endif  //boardPRINT_IFACE
+#endif  /* boardPRINT_IFACE */
 
-#endif  //MD_PRINT_QUEUE_FUNC_H_
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
 
+#endif  /* __PRINT_QUEUE_TASK_H */

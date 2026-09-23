@@ -1,334 +1,210 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         Disp显示任务 - TFT+LVGL版本                                          *
-*                                                                                                                *
- ******************************************************************************************************************/
-#include "MD_Display/md_display_task.h"
-#include "Buz/buz_task.h"
-#include <stdbool.h>
+/*******************************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\MD_Display
+ * File    : md_display_task.c
+ * Date    : 2026-09-21
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : UniDisplay 显示任务外壳实现 (TFT+LVGL) - 调度引擎驱动/页面注册/兼容控制
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
 
-#if(boardDISPLAY_EN)
+//****************************************************Includes******************************************************************//
+#include "MD_Display/md_display_task.h"
+
+#if (boardDISPLAY_EN)
+#include <string.h>
+#include "uni_disp_port.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
-#include "MD_Display/md_display_queue_task.h"
 #include "MD_Display/eez_ui/ui.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
-#include "lvgl.h"
-
 #include "app_info.h"
 
-//****************************************************任务参数初始化**********************************************//
-#if(boardUSE_OS)
-#define			dispTASK_PRIO                   	2       //任务优先级 
-#define			dispTASK_STK_SIZE               	2048	//任务堆栈  实际字节数 *4 (LVGL渲染链较深,1024会栈溢出)
-#define         DISP_TASK_SLEEP_WHEN_OFF_MS       	100U
-TaskHandle_t tDispTaskHandler = NULL; 
+#if (boardBUZ_EN)
+#include "Buz/buz_task.h"
+#endif  /* boardBUZ_EN */
+
+//****************************************************Parameter Initialization**************************************************//
+#if (boardUSE_OS)
+#define			dispTASK_PRIO							2U		/* 任务优先级 */
+#define			dispTASK_STK_SIZE						2048U	/* 任务堆栈(字数, LVGL深调用栈需保证) */
+TaskHandle_t tDispTaskHandler = NULL;
 void vDisp_Task(void *pvParameters);
-#endif  //boardUSE_OS
+#endif  /* boardUSE_OS */
 
-//****************************************************参数初始化**************************************************//
-Disp_T tDisp; 
-bool G_bUiInitialized = false;
-static Task_T *tp_task = NULL;
+//****************************************************Parameter Initialization**************************************************//
+static bool G_bUiInitialized = false;
 
-//****************************************************局部函数定义************************************************//
-static void v_disp_param_init(void);
-
+//****************************************************Function Declaration******************************************************//
+static bool b_task_param_init(void);
 
 /***********************************************************************************************************************
- -----函数功能    参数初始化
- -----说明(备注)  none
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : Disp 显示任务初始化
+ * 说明(备注)  : 
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 1: 成功, -1: 页面注册失败, -2: 任务创建失败
  ************************************************************************************************************************/
-static void v_disp_param_init(void)
+s8 cDisp_TaskInit(void)
 {
-	memset(&tDisp, 0, sizeof(tDisp));
-	
-	tDisp.eDevState = DS_INIT;
-	tDisp.bSleepShow = true;    //待机强制打开亮屏
-    
-	tDisp.usAutoOffTime = tAppMemParam.tDISP.usAutoOffTime;
-    tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
+    /* 1. 初始化 UniDisplay 调度核心 */
+    vDisp_CoreInit();
+
+    /* 2. 初始化显示接口引脚与时钟 */
+    vDisp_IfaceInit();
+
+    /* 3. 注册业务页面 */
+    if (!b_task_param_init())
+        return -1;
+
+    #if (boardUSE_OS)
+    if (xTaskCreate((TaskFunction_t )vDisp_Task,
+                    (const char*    )"DispTask",
+                    (uint16_t       )dispTASK_STK_SIZE,
+                    (void*          )NULL,
+                    (UBaseType_t    )dispTASK_PRIO,
+                    (TaskHandle_t*  )&tDispTaskHandler) != pdPASS)
+    {
+        tDispTaskHandler = NULL;
+        return -2;
+    }
+
+    /* 绑定唤醒钩子 (供 bDisp_PostEvent / bDisp_SwitchBacklight 即时唤醒任务) */
+    vDisp_PortSetTaskHandle(tDispTaskHandler);
+    #endif  /* boardUSE_OS */
+
+    return 1;
 }
 
 /***********************************************************************************************************************
- -----函数功能    Disp显示任务初始化
- -----说明(备注)  TFT+LVGL版本简化初始化
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 任务参数与页面注册
+ * 说明(备注)  : 静态注册显示页面
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : true: 成功
  ************************************************************************************************************************/
-bool bDisp_TaskInit(void)
+static bool b_task_param_init(void)
 {
-	/* 初始化显示接口（SPI/并行等） */
-    vDisp_IfaceInit();
+    /* 页面静态注册 (项目件) */
+    vDisp_PageRegister(&G_tPageInit);
+    vDisp_PageRegister(&G_tPageBoot);
+    vDisp_PageRegister(&G_tPageWork);
+    vDisp_PageRegister(&G_tPageClosing);
+    vDisp_PageRegister(&G_tPageShutDown);
+    vDisp_PageRegister(&G_tPageFault);
 
-	/* 初始化显示参数 */
-	v_disp_param_init();
+    #if (boardUPDATE)
+    vDisp_PageRegister(&G_tPageUpdate);
+    #endif  /* boardUPDATE */
 
-	/* 初始化显示队列对象，供显示任务装载页面状态机 */
-	if(bDisp_QueueInit() == false)
-		return false;
-
-	tp_task = tpDispTask;
-
-    #if(boardUSE_OS)
-		if(xTaskCreate((TaskFunction_t )vDisp_Task,		  // 任务函数
-									 (const char* )"DispTask",             // 任务名称
-									 (u16 ) dispTASK_STK_SIZE,              // 任务堆栈大小
-									 (void* )NULL,                          // 传递给任务函数的参数
-									 (UBaseType_t ) dispTASK_PRIO,          // 任务优先级
-									 (TaskHandle_t*)&tDispTaskHandler) != pdPASS)
-		{
-		tDispTaskHandler = NULL;
-		return false;
-	}
-    #endif  //boardUSE_OS
+    #if (boardENG_MODE_EN)
+    vDisp_PageRegister(&G_tPageEng);
+    #endif  /* boardENG_MODE_EN */
 
     return true;
 }
 
 /***********************************************************************************************************************
- -----函数功能    设置显示设备运行状态
- -----说明(备注)  none
- -----传入参数    state: 设备状态
- -----输出参数    none
- -----返回值      true:操作成功   false:操作失败
- ************************************************************************************************************************/
-bool bDisp_SetDevState(DevState_E state)
-{
-	if(tDisp.eDevState != state)
-	{
-		tDisp.eDevState = state;
-	}
-	
-	return true;
-}
-
-/***********************************************************************************************************************
- -----函数功能    tDisp显示任务
- -----说明(备注)  TFT+LVGL版本简化任务
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : Disp 显示任务主体
+ * 说明(备注)  : 统一等待原语 (通知+超时): 亮屏按当前页 33ms 帧节拍等待, 息屏 2 秒低频挂起;
+ *               事件入队/背光点亮均触发任务通知提前唤醒, 响应无需等到下一周期
+ * 传入参数    : pvParameters: 任务入参
+ * 输出参数    : 无
+ * 返回值      : 无
  ************************************************************************************************************************/
 void vDisp_Task(void *pvParameters)
 {
-	#if(boardUSE_OS)
-	for(;;)
-	#endif  //boardUSE_OS
-	{
-		if(tp_task == NULL)
-		{
-			if(tpDispTask != NULL)
-				tp_task = tpDispTask;
-			
-			#if(boardUSE_OS)
-			vTaskDelay(100);
-			continue;
-			#else
-			return;
-			#endif  //boardUSE_OS
-		}
+    (void)pvParameters;
 
-		if(tp_task->vp_func != NULL && tp_task->bNowRun == false)
-			tp_task->vp_func(tp_task);
-		else if(tp_task->vp_func == NULL || tp_task->bNowRun == true)
-		{
-			#if(boardUSE_OS)
-			if(tSysInfo.uInit.tFinish.bIF_DispTask && lwrb_get_full(&tp_task->tQueueBuff) == 0)
-				ulTaskNotifyTake(pdFALSE, 500);
-			#endif  //boardUSE_OS
-			
-			if(tp_task->bp_task_manage_func != NULL)
-				tp_task->bp_task_manage_func(tp_task);
-		}
-	}
+    #if (boardUSE_OS)
+    for (;;)
+    #endif  /* boardUSE_OS */
+    {
+        /* 执行 UniDisplay 轮询引擎 (快照抓取 -> 状态路由 -> 事件分发 -> 切页 -> 适配器渲染) */
+        vDisp_EnginePoll();
+
+        #if (boardUSE_OS)
+        if (bDisp_IsBacklightOn() == false)
+            /* 息屏: 2 秒低频心跳挂起, CPU 占用 0% */
+            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
+        else
+            /* 亮屏: 按当前页面声明的帧周期节拍等待 (33ms) */
+            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(usDisp_GetFramePeriod()));
+        #endif  /* boardUSE_OS */
+    }
 }
 
+
 /***********************************************************************************************************************
- -----函数功能    显示开关
- -----说明(备注)  TFT+LVGL版本简化显示控制
- -----传入参数    type:类型   fore_en:强制打开
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 显示开关 (向后兼容旧接口，内部对接框架 Power Manager)
+ * 说明(备注)  : none
+ * 传入参数    : type: 类型 (ST_ON / ST_OFF / ST_NULL), fore_en: 强制打开 (常亮)
+ * 输出参数    : 无
+ * 返回值      : true: 成功
  ************************************************************************************************************************/
 bool bDisp_Switch(SwitchType_E type, bool fore_en)
 {
-	bool target_on;
+    DispBacklight_E e_bkl;
 
-	switch(type)
-	{
-		case ST_ON:
-			if((tDisp.bLight == true) && (fore_en == false))
-			{
-				if(tDisp.usAutoOffTime)
-					tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
-				return true;
-			}
+    switch (type)
+    {
+        case ST_ON:
+        {
+            e_bkl = DISP_BKL_ON;
+        }
+        break;
+        case ST_OFF:
+        {
+            e_bkl = DISP_BKL_OFF;
+        }
+        break;
+        case ST_NULL:
+        default:
+        {
+            e_bkl = DISP_BKL_TOGGLE;
+        }
+        break;
+    }
 
-			target_on = true;
-			break;
-		
-		case ST_OFF:
-			if((tDisp.bLight == false) && (fore_en == false))
-				return true;
+    bool b_ret = bDisp_SwitchBacklight(e_bkl, fore_en);
 
-			target_on = false;
-			break;
+    #if (boardBUZ_EN)
+    if (fore_en && bDisp_IsBacklightOn())
+        bBuz_Tweet(LONG_1);
+    #endif  /* boardBUZ_EN */
 
-		case ST_NULL:
-		default:
-			target_on = (tDisp.bLight == false);
-			break;
-	}
-	
-	tDisp.bLight = target_on;
-	if(tDisp.bLight == true)
-	{
-		if(fore_en == true)
-		{
-			tDisp.usAutoOffTime = 0;
-			tDisp.usAutoOffCnt = tAppMemParam.tDISP.usAutoOffTime;
-
-			#if(boardBUZ_EN)
-			bBuz_Tweet(LONG_1);
-			#endif  //boardBUZ_EN
-		}
-		else
-		{
-			if(tDisp.usAutoOffTime)
-				tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
-		}
-	}
-	//息屏后重置
-	else 
-	{
-		tDisp.usAutoOffTime = tAppMemParam.tDISP.usAutoOffTime;
-		tDisp.usAutoOffCnt = tDisp.usAutoOffTime;
-	}
-	
-	vDisp_TftSetBacklight(target_on);
-
-	
-
-	return true;
+    return b_ret;
 }
 
 /***********************************************************************************************************************
- -----函数功能    背光自动关闭计时
- -----说明(备注)  本函数由系统定时器或任务定时调用，用于：
-				  1) 在系统处于工作态且屏幕处于亮屏时，递减自动息屏计数；
-				  2) 当计数归零时自动关闭背光并记录日志；
-				  3) 每次计时变更置页面脏标志以触发必要的刷新或状态更新。
- -----传入参数    none
- -----输出参数    none
- -----返回值      none
+ * 函数功能    : 初始化显示记忆参数
+ * 说明(备注)  : 写入显示模块默认亮度和自动息屏时间
+ * 传入参数    : p_disp_mem: 显示记忆参数结构体指针
+ * 输出参数    : p_disp_mem: 回填高亮亮度、低亮亮度与自动息屏时间
+ * 返回值      : true: 成功
  ************************************************************************************************************************/
-void vDisp_TickTimer(void)
-{
-	//非工作状态下退出
-	if(tSysInfo.eDevState != DS_WORK) 
-		return;
-	
-	//非亮屏幕状态
-	if(tDisp.bLight == false)   
-		return;
-	
-	//-----自动关闭背光--------------------------------------   
-	if(tDisp.usAutoOffTime)
-	{
-		if(tDisp.usAutoOffCnt)
-		{
-			tDisp.usAutoOffCnt--;
-			if(tDisp.usAutoOffCnt == 0)
-			{
-				bDisp_Switch(ST_OFF, false);
-				if(uPrint.tFlag.bDispTask|| uPrint.tFlag.bImportant)
-					sMyPrint("DispTask: auto-off after %d s\r\n", tDisp.usAutoOffTime);
-			}
-		}
-	}
-}
-
-/***********************************************************************************************************************
------函数功能    初始化显示记忆参数
------说明(备注)  写入显示模块默认亮度和自动息屏时间
------传入参数    p_disp_mem:显示记忆参数结构体指针
------输出参数    none
------返回值      true:设置成功 false:设置失败
-************************************************************************************************************************/
 bool bDisp_MemParamInit(DispMemParam_T* p_disp_mem)
 {
-	p_disp_mem->ucHighLightValue = boardDISP_HIGH_LIGHT_VALUE;
-	p_disp_mem->ucLowLightValue = boardDISP_LOW_LIGHT_VALUE;
-	p_disp_mem->usAutoOffTime = boardDISP_OFF_TIME;
-	return true;
-}
+    if (p_disp_mem == NULL)
+        return false;
 
-#if(boardLOW_POWER)
-/***********************************************************************************************************************
------函数功能    选择显示供电通路
------说明(备注)  根据外部输入电源状态控制显示屏电池供电开关
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void v_dis_power_select( void )
-{
-	if(tDisp.bLight)
-	{
-		/*************************************电源有输入*********************************************************/
-		if( tAdcSamp.usBMS_Vin >= boardBMS_MIN_VOLT )   
-		{
-			Disp_EN_OFF();          //关闭显示屏的电池供电
-		}
-		/*************************************没有电源输入*******************************************************/
-		else
-		{
-			Disp_EN_ON();          //打开显示屏的电池供电
-		}	
-	}
-	else 
-	{
-		Disp_EN_OFF();          //关闭显示屏的电池供电
-	}
+    p_disp_mem->ucHighLightValue = boardDISP_HIGH_LIGHT_VALUE;
+    p_disp_mem->ucLowLightValue  = boardDISP_LOW_LIGHT_VALUE;
+    p_disp_mem->usAutoOffTime    = boardDISP_OFF_TIME;
+    return true;
 }
 
 /***********************************************************************************************************************
------函数功能    进入显示低功耗
------说明(备注)  挂起显示任务以降低低功耗模式下的运行消耗
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vLcd_EnterLowPower(void)
-{
-	vTaskSuspend(tDispTaskHandler);
-}
-
-/***********************************************************************************************************************
------函数功能    退出显示低功耗
------说明(备注)  恢复显示任务运行
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vLcd_ExitLowPower(void)
-{
-	vTaskResume(tDispTaskHandler);
-}
-#endif //boardLOW_POWER
-
-/***********************************************************************************************************************
- * 函数功能    : 安全的UI及所有屏幕初始化
- * 说明(备注)  : 用于替代直接调用 ui_init，带有防重入保护
- * 传入参数    : void
- * 输出参数    : void
- * 返回值      : void
+ * 函数功能    : 安全的 UI 及所有屏幕初始化
+ * 说明(备注)  : 防重入保护
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
  ************************************************************************************************************************/
 void vDisp_UiInit(void)
 {
@@ -339,4 +215,56 @@ void vDisp_UiInit(void)
     }
 }
 
-#endif //boardDISPLAY_EN
+#if (boardLOW_POWER)
+/***********************************************************************************************************************
+ * 函数功能    : 选择显示供电通路
+ * 说明(备注)  : 根据外部输入电源状态控制显示屏电池供电开关
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void v_dis_power_select(void)
+{
+    if (bDisp_IsBacklightOn())
+    {
+        if (tAdcSamp.usSysInVolt >= boardBMS_MIN_VOLT)
+            Disp_EN_OFF();
+        else
+            Disp_EN_ON();
+    }
+    else
+        Disp_EN_OFF();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 进入显示低功耗
+ * 说明(备注)  : 挂起显示任务以降低低功耗模式下的运行消耗
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vLcd_EnterLowPower(void)
+{
+    #if (boardUSE_OS)
+    if (tDispTaskHandler != NULL)
+        vTaskSuspend(tDispTaskHandler);
+    #endif  /* boardUSE_OS */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 退出显示低功耗
+ * 说明(备注)  : 恢复显示任务运行
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vLcd_ExitLowPower(void)
+{
+    #if (boardUSE_OS)
+    if (tDispTaskHandler != NULL)
+        vTaskResume(tDispTaskHandler);
+    #endif  /* boardUSE_OS */
+}
+#endif  /* boardLOW_POWER */
+
+#endif  /* boardDISPLAY_EN */

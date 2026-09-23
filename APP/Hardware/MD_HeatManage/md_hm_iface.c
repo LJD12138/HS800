@@ -1,12 +1,33 @@
+/*******************************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\MD_HeatManage
+ * File    : md_hm_iface.c
+ * Date    : 2026-09-12
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 风扇与热管理硬件接口实现(GPIO与定时器PWM初始化)
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+
+//****************************************************Includes******************************************************************//
 #include "MD_HeatManage/md_hm_iface.h"
 #include "MD_HeatManage/md_hm_task.h"
 
+//****************************************************Function Declaration******************************************************//
+static void v_fan_gpio_init(void);
+static void v_fan_timer_init(uint16_t arr, uint16_t psc);
+
+
 /***********************************************************************************************************************
- *-----函数功能    风扇GPIO初始化
- *-----说明(备注)  none
- *-----传入参数    none
- *-----输出参数    none
- *-----返回值      none
+ * 函数功能    : 风扇与相关 GPIO 初始化
+ * 说明(备注)  : 重映射定时器引脚并初始化 GPIO
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
  ************************************************************************************************************************/
 static void v_fan_gpio_init(void)
 {
@@ -21,7 +42,7 @@ static void v_fan_gpio_init(void)
 	#else
 	gpio_pin_remap_config(GPIO_TIMER1_FULL_REMAP, ENABLE);   //重映射
 	gpio_init(fanPWM_GPIO_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, fanPWM_PIN);
-	#endif
+	#endif  /* boardIC_TYPE */
 
 	rcu_periph_clock_enable(fanPWM_EN_GPIO_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
@@ -29,23 +50,23 @@ static void v_fan_gpio_init(void)
 	gpio_output_options_set(fanPWM_EN_GPIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, fanPWM_EN_PIN);
 	#else
 	gpio_init(fanPWM_EN_GPIO_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, fanPWM_EN_PIN);
-	#endif
+	#endif  /* boardIC_TYPE */
 	fanPWM_EN_OFF();
 }
 
 /***********************************************************************************************************************
- *-----函数功能    风扇定时器初始化
- *-----说明(备注)  
- *				通用定时器的时钟来自APB1,当D2PPRE1≥2分频的时候
- *				通用定时器的时钟为APB1时钟的2倍, 而APB1为120M, 所以定时器时钟 = 240Mhz
- *				定时器溢出时间计算方法: Tout = ((arr + 1) * (psc + 1)) / Ft us.
- *				Ft=定时器工作频率,单位:Mhz
- *-----传入参数    arr: 自动重装载值, psc: 预分频值
- *-----输出参数    none
- *-----返回值      none
+ * 函数功能    : 风扇定时器 PWM 初始化
+ * 说明(备注)  : 配置硬件定时器通道与输出模式
+ * 传入参数    : arr: 重装载值, psc: 预分频系数
+ * 输出参数    : 无
+ * 返回值      : 无
  ************************************************************************************************************************/
 static void v_fan_timer_init(uint16_t arr, uint16_t psc)
 {
+	/* -----------------------------------------------------------------------
+	TIMER1 configuration: generate 2 PWM signals with 2 different duty cycles:
+	TIMER1CLK = SystemCoreClock / 120 / 1000 = 1KHz
+	----------------------------------------------------------------------- */
 	timer_oc_parameter_struct timer_ocintpara;
 	timer_parameter_struct timer_initpara;
 
@@ -87,24 +108,24 @@ static void v_fan_timer_init(uint16_t arr, uint16_t psc)
 }
 
 /***********************************************************************************************************************
- *-----函数功能    风扇初始化
- *-----说明(备注)  none
- *-----传入参数    none
- *-----输出参数    none
- *-----返回值      none
+ * 函数功能    : 风扇硬件接口初始化
+ * 说明(备注)  : 初始化 GPIO 和定时器 PWM
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
  ************************************************************************************************************************/
 void vFan_IfaceInit(void)
 {
 	v_fan_gpio_init();
-	v_fan_timer_init(fanPWM_MAX_VALUE - 1, fanPWM_PSC - 1);
+	v_fan_timer_init(fanPWM_MAX_VALUE - 1, fanPWM_PSC - 1);  /* SystemCoreClock / 120 / 1000 = 1KHz */
 }
 
 /***********************************************************************************************************************
- *-----函数功能    风扇DeInit
- *-----说明(备注)  none
- *-----传入参数    none
- *-----输出参数    none
- *-----返回值      none
+ * 函数功能    : 风扇DeInit
+ * 说明(备注)  : none
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 void vFan_IfaceDeInit(void)
 {
@@ -114,11 +135,11 @@ void vFan_IfaceDeInit(void)
 
 #if(boardLOW_POWER)
 /***********************************************************************************************************************
- *-----函数功能    风扇进入低功耗
- *-----说明(备注)  none
- *-----传入参数    none
- *-----输出参数    none
- *-----返回值      none
+ * 函数功能    : 风扇 IO 进入低功耗模拟输入配置
+ * 说明(备注)  : 关闭定时器并配置 GPIO 为模拟输入
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
  ************************************************************************************************************************/
 void vFan_IoEnterLowPower(void)
 {
@@ -128,16 +149,17 @@ void vFan_IoEnterLowPower(void)
 	gpio_mode_set(fanPWM_GPIO_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, fanPWM_PIN);
 	#else
 	gpio_init(fanPWM_GPIO_PORT, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, fanPWM_PIN);
-	#endif
+	#endif  /* boardIC_TYPE */
 
 	rcu_periph_clock_enable(fanPWM_EN_GPIO_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
 	gpio_mode_set(fanPWM_EN_GPIO_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, fanPWM_EN_PIN);
 	#else
 	gpio_init(fanPWM_EN_GPIO_PORT, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, fanPWM_EN_PIN);
-	#endif
+	#endif  /* boardIC_TYPE */
 
 	rcu_periph_clock_disable(fanTIMER_RCU);
 	timer_disable(fanTIMER);
 }
-#endif
+#endif  /* boardLOW_POWER */
+

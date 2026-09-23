@@ -1,11 +1,46 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\Flash
+ * File    : flash_gd32.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : GD32 片内 Flash 底层擦写驱动头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef FLASH_GD32_H_
 #define FLASH_GD32_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
+
+//****************************************************Includes******************************************************************//
 #include "main.h"
- 
-bool bFlash_Gd32EraseSector(uint32_t StarAddr,uint32_t EndAddr);
-bool bFlash_Gd32Write16Bit(uint32_t WriteAddr,uint16_t *wData,uint32_t wNum);
-bool bFlash_Gd32Write32Bit(uint32_t WriteAddr,const uint32_t *wData,uint32_t wNum);
-void vFlash_Gd32Read8Bit(uint32_t ReadAddr,uint8_t *rData,uint32_t rNum);
-void vFlash_Gd32Read32Bit(uint32_t ReadAddr,uint32_t *rData,uint32_t rNum);
-#endif
+
+#if (1)
+
+//****************************************************Macros********************************************************************//
+
+//****************************************************Types*********************************************************************//
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Extern********************************************************************//
+bool bFlash_Gd32EraseSector(uint32_t StarAddr, uint32_t EndAddr);
+bool bFlash_Gd32Write16Bit(uint32_t WriteAddr, uint16_t *wData, uint32_t wNum);
+bool bFlash_Gd32Write32Bit(uint32_t WriteAddr, const uint32_t *wData, uint32_t wNum);
+void vFlash_Gd32Read8Bit(uint32_t ReadAddr, uint8_t *rData, uint32_t rNum);
+void vFlash_Gd32Read32Bit(uint32_t ReadAddr, uint32_t *rData, uint32_t rNum);
+
+#endif  /* 1 */
+
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* FLASH_GD32_H_ */

@@ -1,76 +1,78 @@
+/***********************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\Adc
+ * File    : adc_task.h
+ * Date    : 2026-09-21
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : ADC采样任务与物理量换算接口头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef ADC_TASK_H
 #define ADC_TASK_H
 
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-#if(boardADC_EN)
+//****************************************************Includes******************************************************************//
+#include "main.h"
+
+#if (boardADC_EN)
 #include "Adc/adc_iface.h"
 
+#if (1)
+//****************************************************Macros********************************************************************//
 
-#define     	adcVBMS_R1                      		1800.0f //(Kohm)  分压的上电阻
-#define     	adcVBMS_R2                      		100.0f  //(Kohm)  分压的对地电阻
-#define     	adcVBMS_RES_RATIO               		((((3.3f / 4095.0f) * (adcVBMS_R1 + adcVBMS_R2)) / adcVBMS_R2) * 10.0f) //*10 电压单位为 0.1V 
+/* 1. 电池输入电压采样分压比 (单位: 0.1V) */
+#define			adcVBMS_R1								1800.0f	/* Kohm 分压上电阻 */
+#define			adcVBMS_R2								100.0f	/* Kohm 分压对地电阻 */
+#define			adcVBMS_RES_RATIO						((((3.3f / 4095.0f) * (adcVBMS_R1 + adcVBMS_R2)) / adcVBMS_R2) * 10.0f)
 
-#define     	adcDC_VOLT_R1                      		100.0f //(Kohm)   分压的上电阻
-#define     	adcDC_VOLT_R2                      		22.0f  //(Kohm)  分压的对地电阻
-#define     	adcDC_VOLT_RES_RATIO               		((((3.3f / 4095.0f) * (adcDC_VOLT_R1 + adcDC_VOLT_R2)) / adcDC_VOLT_R2)* 10.0f)          //电压单位为1V
 
-//#define     	adcUSB_PD_VOLT_R1                       47.0f //(Kohm)  分压的上电阻
-//#define     	adcUSB_PD_VOLT_R2                       5.1f  //(Kohm)  分压的对地电阻
-//#define     	adcUSB_PD_VOLT_RES_RATIO                ((((3.3f / 4095.0f) * (adcUSB_PD_VOLT_R1 + adcUSB_PD_VOLT_R2)) / adcUSB_PD_VOLT_R2) * 10.0f) //*10 电压单位为 0.1V
+//****************************************************Types*********************************************************************//
 
-//#define     	adcUSB_WC_VOLT_R1                       130.0f //(Kohm)  分压的上电阻
-//#define     	adcUSB_WC_VOLT_R2                       20.0f  //(Kohm)  分压的对地电阻
-//#define     	adcUSB_WC_VOLT_RES_RATIO                ((((3.3f / 4095.0f) * (adcUSB_WC_VOLT_R1 + adcUSB_WC_VOLT_R2)) / adcUSB_WC_VOLT_R2) * 10.0f) //*10 电压单位为 0.1V
-
-#define     	adcDC_IN_1_R1                      		300.0f //(Kohm)   分压的上电阻
-#define     	adcDC_IN_1_R2                      		10.0f  //(Kohm)  分压的对地电阻
-#define     	adcDC_IN_1_RES_RATIO               		((((3.3f / 4095.0f) * (adcDC_IN_1_R1 + adcDC_IN_1_R2)) / adcDC_IN_1_R2)* 10.0f)          //电压单位为1V
-
-#define     	adcDC_IN_2_R1                      		300.0f //(Kohm)   分压的上电阻
-#define     	adcDC_IN_2_R2                      		10.0f  //(Kohm)  分压的对地电阻
-#define     	adcDC_IN_2_RES_RATIO               		((((3.3f / 4095.0f) * (adcDC_IN_2_R1 + adcDC_IN_2_R2)) / adcDC_IN_2_R2)* 10.0f)          //电压单位为1V
-
-#define     	adcSYS_IN_VOLT    						0   // 电池电压
-#define     	adcDC_OUT_TEMP           				1   // DC温度
-#define     	adcDC_OUT_CURR           				2   // DC电流
-#define     	adcDC_OUT_VOLT          				3   // DC电压
-#define     	adcKEY_POWER          					4   // 按键电源
-#define     	adcDC_IN_1            					5   // DC输入电压1
-#define     	adcDC_IN_2            					6   // DC输入电压2
-
-//电压状态
+/* 电压状态枚举 */
 typedef enum
 {
-	VS_NORMAL = 0,
-	VS_LOW,
-	VS_HIGH,
+	VS_NORMAL = 0,		/* 正常 */
+	VS_LOW,				/* 欠压 */
+	VS_HIGH,			/* 过压 */
 }VoltSate_E;
 
+/* ADC 采样物理量结构体 */
 typedef struct
 {
-    vu16           		usSysInVolt;    	// 电池电压 0.1V
-	s16            		sDcOutTemp;         // DC输出温度 摄氏度
-	float				fDcOutCurr;     	// DC输出电流 A
-    vu16           		usDcOutVolt;       	// DC输出电压 0.1V
-    vu16           		usKeyPower;     	// 按键电源 AD值
-    vu16           		usDcIn1Volt;    	// DC输入电压1 0.1V
-    vu16           		usDcIn2Volt;    	// DC输入电压2 0.1V
+	vu16				usSysInVolt;		/* 电池/系统输入电压 (单位: 0.1V) */
 }AdcSamp_T;
-extern AdcSamp_T 	tAdcSamp;
 
-void vAdc_TaskInit(void);
-u16 usAdc_GetChannelValue(u8 channel);
+//****************************************************Globals*******************************************************************//
+extern AdcSamp_T tAdcSamp;
 
-#if(!boardUSE_OS)
-void vAdc_Task(void *pvParameters);
-#endif  //boardUSE_OS
 
-#if(boardLOW_POWER)
-bool bAdc_EnterLowPower(void);
-bool bAdc_ExitLowPower(void);
-#endif  //boardLOW_POWER
+//****************************************************Extern********************************************************************//
+s8      cAdc_TaskInit(void);
+int16_t sAdc_CalcTempByAd(uint16_t us_ad_val);
 
-#endif  //boardADC_EN
+#if (!boardUSE_OS)
+void    vAdc_Task(void *p_v_parameters);
+#endif  /* !boardUSE_OS */
 
-#endif  //ADC_TASK_H
+#if (boardLOW_POWER)
+bool    bAdc_EnterLowPower(void);
+bool    bAdc_ExitLowPower(void);
+#endif  /* boardLOW_POWER */
+
+#endif  /* 1 */
+
+#endif  /* boardADC_EN */
+
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* ADC_TASK_H */

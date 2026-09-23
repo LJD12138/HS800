@@ -1,5 +1,5 @@
 #include "SEGGER_RTT.h" 
-#include "board_config.h"
+#include "main.h"
 
 #if (boardIC_TYPE == boardIC_GD32F30X)
 //标准库需要的支持函数(ARMCC编译器需要,ARMClang已内置定义)
@@ -25,7 +25,9 @@ void _sys_exit(int x)
 /* retarget the C library printf function to the USART */
 int fputc(int ch, FILE *f)
 {
-	SEGGER_RTT_printf(0,"%d",ch); 
+    #if (boardSEGGER)
+	SEGGER_RTT_PutChar(0, (char)ch); 
+    #endif
     return ch;
 }
 

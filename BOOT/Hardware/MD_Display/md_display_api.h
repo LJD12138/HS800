@@ -1,3 +1,17 @@
+/***********************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\MD_Display
+ * File    : md_display_api.h
+ * Date    : 2026-09-22
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 显示对外 API 头文件：分辨率宏、初始化与 UI 刷新接口，及矩形填充/文本/进度圆环/分段圆环绘制接口
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef MD_DISPLAY_API_H
 #define MD_DISPLAY_API_H
 
@@ -5,14 +19,17 @@
 extern "C" {
 #endif
 
+//****************************************************Includes******************************************************************//
 #include "board_config.h"
 #include "MD_Display/md_display_iface.h"
 
 #if (boardDISPLAY_EN)
 
-#define DISP_HOR_RES dispTFT_WIDTH
-#define DISP_VER_RES dispTFT_HEIGHT
+//****************************************************Macros********************************************************************//
+#define			DISP_HOR_RES							dispTFT_WIDTH
+#define			DISP_VER_RES							dispTFT_HEIGHT
 
+//****************************************************Extern********************************************************************//
 void vDisp_Init(void);
 void vDisp_ReqUiRefresh(void);
 void vDisp_UiRefresh(void);
@@ -34,4 +51,4 @@ void vDisp_DrawSegmentedRing(uint16_t cx, uint16_t cy, uint16_t r, uint8_t thick
 }
 #endif
 
-#endif // MD_DISPLAY_API_H
+#endif  /* MD_DISPLAY_API_H */

@@ -1,665 +1,291 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         按键处理任务                                                          *
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\Key
+ * File    : key_task.c
+ * Date    : 2026-09-22
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 按键任务及中间件集成胶水层实现文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Key/key_task.h"
 
-#if(boardKEY_EN)
+#if (boardKEY_EN)
+#include "Key/key_iface.h"
 #include "Key/key_func.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
-#if(boardUSE_OS)
+#include "mf_key.h"
+
+#if (boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
-#endif  //boardUSE_OS
+#endif  /* boardUSE_OS */
 
-#if(boardBUZ_EN)
+#if (boardBUZ_EN)
 #include "Buz/buz_task.h"
-#endif  //boardBUZ_EN
+#endif  /* boardBUZ_EN */
 
-#if(boardDISPLAY_EN)
+#if (boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
-#endif  //boardDISPLAY_EN
+#endif  /* boardDISPLAY_EN */
 
+//****************************************************Macros********************************************************************//
+#if (boardUSE_OS)
+#define			KEY_TASK_PRIO							2		/* 任务优先级 */
+#define			KEY_TASK_STK_SIZE						256		/* 任务堆栈(字) */
+static TaskHandle_t s_t_key_task_handler = NULL;
+void        vKey_Task(void *p_v_parameters);
+#endif  /* boardUSE_OS */
 
-//****************************************************任务初始化**************************************************//
-#if(boardUSE_OS)
-#define       	KEY_TASK_PRIO                  			2     	//任务优先级 
-#define        	KEY_TASK_STK_SIZE              			192   	//任务堆栈  实际字节数 *4
-TaskHandle_t    tKeyTaskHandler = NULL; 
-void          	vKey_Task(void *pvParameters);
-#endif  //boardUSE_OS
+//****************************************************Parameter Initialization**************************************************//
+static bool s_b_key_lock = false;   /* 开机长按锁定标志 */
 
-//****************************************************参数初始化**************************************************//
-KeyHandler_t 	tKeyPower;
+//****************************************************Function Declaration******************************************************//
+static bool b_key_event_pre_proc(u8 uc_idx, bool b_long);
+static void v_key_on_super_long(u8 uc_idx);
+static void v_key_on_any_press(void);
 
-#if(boardDCAC_EN)
-KeyHandler_t 	tKeyAC;
-#endif  //boardDCAC_EN
+//****************************************************Parameter Initialization**************************************************//
+/* 中间件按键配置表: 事件码映射 + 触发方式配置(表序与 KeyId_E 严格一致) */
+static const MfKeyItemCfg_T s_t_key_mw_key_cfg[] =
+{
+	/* 短按事件           长按事件          多功能  长按累加 */
+	[keyPOWER] = {KTE_POWER_SHORT,  KTE_POWER_LONG,  false,  false},
 
-#if(boardLIGHT_EN)
-KeyHandler_t 	tKeyLight;
-#endif  //boardLIGHT_EN
+	#if (boardDCAC_EN)
+	[keyAC]    = {KTE_AC_SHORT,     KTE_AC_LONG,     true,   false},
+	#endif  /* boardDCAC_EN */
 
-#if(boardUSB_EN)
-KeyHandler_t 	tKeyUSB;
-#endif  //boardUSB_EN
+	#if (boardLIGHT_EN)
+	[keyLIGHT] = {KTE_LIGHT_SHORT,  KTE_LIGHT_LONG,  true,   false},
+	#endif  /* boardLIGHT_EN */
 
-#if(boardDC_EN)
-KeyHandler_t 	tKeyDC;
-#endif  //boardDC_EN
+	#if (boardUSB_EN)
+	[keyUSB]   = {KTE_USB_SHORT,    KTE_USB_LONG,    true,   false},
+	#endif  /* boardUSB_EN */
 
-bool b_key_lock = false;
-u8 Key_TriTypeBuff[ keyGROUP_NUM ] = {0};      	//按键功能
-vu16 Key_UnPressTim = 0 , Key_TriTypeCnt = 0;
+	#if (boardDC_EN)
+	[keyDC]    = {KTE_DC_SHORT,     KTE_DC_LONG,     true,   false},
+	#endif  /* boardDC_EN */
+};
 
+#define			KEY_MW_KEY_TBL_NUM						(sizeof(s_t_key_mw_key_cfg) / sizeof(s_t_key_mw_key_cfg[0]))
 
-//****************************************************函数声明**************************************************//
-static void v_key_gpio_init(void);
-static void v_key_shot_press(KeyHandler_t* keyHandler);
-static void v_key_long_press(KeyHandler_t* keyHandler);
-//static void v_key_super_long_press(KeyHandler_t* keyHandler);
-static bool v_key_check_other_is_tri(void);
+/* 编译期校验: KeyId_E 枚举序必须与 s_t_key_mw_key_cfg[] 表序严格一致 */
+typedef char __key_mw_tbl_order_assert[(KEY_MW_KEY_TBL_NUM == keyNUM) ? 1 : -1];
+
+/* 事件序列缓冲与中间件全局配置 */
+static u8 s_uc_key_seq_buff[keyGROUP_NUM];
+
+static const MfKeyCfg_T s_t_key_mw_cfg =
+{
+	/* 硬件接口回调 */
+	(bool (*)(u8))bKey_IsPressById,    /* 查表读取按键按下电平(极性已归一化) */
+	/* 扫描时序参数(单位: keyTASK_CYCLE_TIME 周期数) */
+	keySHORT_PRESS_TIME,               /* 短按最小时间 */
+	keyLONG_PRESS_TIME,                /* 长按最小时间 */
+	keySUPER_LONG_PRESS_TIME,          /* 超长按最小时间 */
+	keyNUPRESS_MAX_TIME,               /* 组合键最大等待时间 */
+	keyADD_SPACE_TIME,                 /* 长按累加间隔 */
+	/* 事件序列缓冲 */
+	s_uc_key_seq_buff,                 /* 缓冲地址 */
+	keyGROUP_NUM,                      /* 缓冲长度 */
+	KTE_FUN_NULL,                      /* 序列空闲填充码 */
+	/* 业务回调 */
+	vKey_ProcKeyFunc,                  /* 序列就绪 -> 业务动作分发 */
+	b_key_event_pre_proc,              /* 事件录入前预处理(息屏唤醒/调试日志) */
+	v_key_on_super_long,               /* 超长按提示(打印+蜂鸣) */
+	v_key_on_any_press                 /* 任意键按下(清休眠计数) */
+};
+
+//****************************************************Function Declaration******************************************************//
 
 /***********************************************************************************************************************
------函数功能    登记按键信息
------说明(备注)  此注册有问题,会导致Num超过最大值,数据溢出
------传入参数    按键结构体
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-static KeyHandler_t* KeyHandlerList[keyNUM];
-static vu8 KeyHandlerListNum = 0;
-static void v_key_register(KeyHandler_t* keyHandler)
+ * 函数功能    : 按键任务初始化
+ * 说明(备注)  : 底层 GPIO 初始化、中间件配置初始化并创建 OS 任务
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 1: 成功; -1: 任务创建失败
+ ************************************************************************************************************************/
+s8 cKey_TaskInit(void)
 {
-    KeyHandlerList[KeyHandlerListNum] = keyHandler;
-	
-    keyHandler->sOnPressCnt = 0;
-	
-    KeyHandlerListNum++;
+	/* 底层硬件接口初始化 (RCU + GPIO) */
+	vKey_IfaceInit();
+
+	/* 多功能按键中间件初始化 (时序 + 回调 + 按键表) */
+	vMfKey_Init(&s_t_key_mw_cfg, s_t_key_mw_key_cfg, KEY_MW_KEY_TBL_NUM);
+
+	#if (boardUSE_OS)
+	if (xTaskCreate((TaskFunction_t )vKey_Task,
+	                (const char*    )"bKeyTask",
+	                (uint16_t       )KEY_TASK_STK_SIZE,
+	                (void*          )NULL,
+	                (UBaseType_t    )KEY_TASK_PRIO,
+	                (TaskHandle_t*  )&s_t_key_task_handler) != pdPASS)
+		return -1;
+	#endif  /* boardUSE_OS */
+
+	return 1;
 }
 
 /***********************************************************************************************************************
------函数功能    按键任务初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vKey_TaskInit(void)
+ * 函数功能    : 按键循环扫描任务
+ * 说明(备注)  : 胶水层: 任务调度 + 电源键触发方式策略 + 中间件状态机推进
+ * 传入参数    : p_v_parameters: 任务创建参数指针
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vKey_Task(void *p_v_parameters)
 {
-	v_key_gpio_init();
-	
-	#if(boardUSE_OS)
-	xTaskCreate((TaskFunction_t )vKey_Task,				//任务函数
-                (const char* )"bKeyTask",				//任务名称
-                (uint16_t ) KEY_TASK_STK_SIZE,          //任务堆栈大小
-                (void* )NULL,							//传递给任务函数的参数
-                (UBaseType_t ) KEY_TASK_PRIO,           //任务优先级
-                (TaskHandle_t*)&tKeyTaskHandler);      	//任务句柄
-	#endif  //boardUSE_OS
-}
+	(void)p_v_parameters;
 
-
-/***********************************************************************************************************************
------函数功能    按键初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-static void v_key_gpio_init(void)
-{
-	#if(!boardADC_EN)
-	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_POWER_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, keyGPIO_POWER_PIN);
-	#else
-	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
-	#endif
-	#endif  //boardADC_EN
-	
-	#if(boardDCAC_EN)
-	rcu_periph_clock_enable(keyGPIO_AC_RCU);
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_AC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_AC_PIN);
-	#else
-	gpio_init(keyGPIO_AC_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_AC_PIN);
-	#endif
-	#endif  //boardDCAC_EN
-
-	#if(boardLIGHT_EN)
-	rcu_periph_clock_enable(keyGPIO_LIGHT_RCU);
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_LIGHT_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_LIGHT_PIN);
-	#else
-	gpio_init(keyGPIO_LIGHT_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_LIGHT_PIN);
-	#endif
-	#endif  //boardLIGHT_EN
-
-	#if(boardUSB_EN)
-	rcu_periph_clock_enable(keyGPIO_USB_RCU);
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_USB_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_USB_PIN);
-	#else
-	gpio_init(keyGPIO_USB_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_USB_PIN);
-	#endif
-	#endif  //boardUSB_EN
-
-	#if(boardDC_EN)
-	rcu_periph_clock_enable(keyGPIO_DC_RCU);
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_DC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_DC_PIN);
-	#else
-	gpio_init(keyGPIO_DC_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_DC_PIN);
-	#endif
-	#endif  //boardDC_EN
-
-	//true:长按累加功能                 false:关闭
-	tKeyPower.bEnLongPressAdd = false;
-	//true:多功能按键:双击等前后触发的   false:可以使用一直长按可以触发长按功能,也可以识别同时触发的
-    tKeyPower.bEnMulitFunKey = false;
-    tKeyPower.IsPress = bKey_PowerIsPress;
-    v_key_register(&tKeyPower);
-   
-	#if(boardDCAC_EN)
-    tKeyAC.bEnLongPressAdd = false;
-    tKeyAC.bEnMulitFunKey = true;
-    tKeyAC.IsPress = bKey_AcIsPress;
-    v_key_register(&tKeyAC);
-	#endif  //boardDCAC_EN
-
-	#if(boardLIGHT_EN)
-	tKeyLight.bEnLongPressAdd = false;
-    tKeyLight.bEnMulitFunKey = false;
-    tKeyLight.IsPress = bKey_LightIsPress;
-    v_key_register(&tKeyLight);
-	#endif  //boardLIGHT_EN
-
-	#if(boardUSB_EN)
-	tKeyUSB.bEnLongPressAdd = false;
-    tKeyUSB.bEnMulitFunKey = false;
-    tKeyUSB.IsPress = bKey_UsbIsPress;
-    v_key_register(&tKeyUSB);
-	#endif  //boardUSB_EN
-
-	#if(boardDC_EN)
-	tKeyDC.bEnLongPressAdd = false;
-    tKeyDC.bEnMulitFunKey = false;
-    tKeyDC.IsPress = bKey_DcIsPress;
-    v_key_register(&tKeyDC);
-	#endif  //boardDC_EN
-}
-
-
-/***********************************************************************************************************************
------函数功能    按键循环任务
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vKey_Task(void *pvParameters)
-{
-    static vu8 Currkey = 0;
-	
-	#if(boardUSE_OS)
-	for(;;)
-	#endif  //boardUSE_OS
-    {
-		//GPIO初始化未完成
-		if(tSysInfo.uInit.tFinish.bIF_Gpio == 0 || tpSysTask->ucID == STI_UPDATE)
+	#if (boardUSE_OS)
+	for (;;)
+	#endif  /* boardUSE_OS */
+	{
+		/* GPIO初始化未完成或系统升级状态 (长按开机锁定) */
+		if (tSysInfo.uInit.tFinish.bIF_Gpio == 0 || tpSysTask->ucID == STI_UPDATE)
 		{
-			b_key_lock = bKey_PowerIsPress();
+			s_b_key_lock = bKey_IsPressById(keyPOWER);
 
-			#if(boardUSE_OS)
+			#if (boardUSE_OS)
 			vTaskDelay(500);
 			continue;
 			#else
 			return;
-			#endif
+			#endif  /* boardUSE_OS */
 		}
 
-		//长按开启不松开
-		if(b_key_lock == true && bKey_PowerIsPress() == true)
+		/* 长按开启不松开 */
+		if (s_b_key_lock == true && bKey_IsPressById(keyPOWER) == true)
 		{
-			#if(boardUSE_OS)
+			#if (boardUSE_OS)
 			vTaskDelay(keyTASK_CYCLE_TIME);
 			continue;
 			#else
 			return;
-			#endif
+			#endif  /* boardUSE_OS */
 		}
 
-		b_key_lock = false;
-		
-		for(Currkey = 0; Currkey < KeyHandlerListNum; Currkey++)
-		{
-			//******************************************按键 按下状态***********************************************
-            if(KeyHandlerList[Currkey]->IsPress())        
-            {
-				//记录按下的时间--------------------------------------------------------------------------
-                if(KeyHandlerList[Currkey]->sOnPressCnt < 0xfff && 
-				    KeyHandlerList[Currkey]->sOnPressCnt >= 0 )
-					{
-						KeyHandlerList[Currkey]->sOnPressCnt++;
-					}
-				
-				//使能长按累加按键-----------------------------------------------------------------------
-                if( KeyHandlerList[Currkey]->bEnLongPressAdd == true )  
-				{
-					if( KeyHandlerList[Currkey]->sOnPressCnt >= keyLONG_PRESS_TIME) //满足长按时长
-					{
-						v_key_shot_press(KeyHandlerList[Currkey]);
-						
-						vKey_ProcKeyFunc(Key_TriTypeBuff); //立刻处理
-						
-						KeyHandlerList[Currkey]->sOnPressCnt = keyLONG_PRESS_TIME - keyADD_SPACE_TIME;
-					}
-				}
-				//不使能组合按键--------------------------------------------------------------------------
-				else if( KeyHandlerList[Currkey]->bEnMulitFunKey == false )  
-				{				
-					if( KeyHandlerList[Currkey]->sOnPressCnt >= keyLONG_PRESS_TIME)   //满足长按事件,记录 
-					{
-						v_key_long_press(KeyHandlerList[Currkey]);     //执行 长按 事件
+		s_b_key_lock = false;
 
-						if(v_key_check_other_is_tri() == true)
-						{
-							continue;  //结束本次循环
-						}
-						
-						vKey_ProcKeyFunc(Key_TriTypeBuff);  //立刻处理
-					}
-				}
-				else
-				{
-					if( KeyHandlerList[Currkey]->sOnPressCnt >= keySUPER_LONG_PRESS_TIME ) //满足超长按事件,提示
-					{
-						if(uPrint.tFlag.bKeyTask)
-							sMyPrint("Key_Task:触发长按事件\r\n");
-						
-//						v_key_super_long_press(KeyHandlerList[Currkey]);  //记录长按事件 
-//						
-//						vKey_ProcKeyFunc(Key_TriTypeBuff);  //立刻处理
-						
-						v_key_long_press(KeyHandlerList[Currkey]);  //记录长按事件 
-						
-						#if(boardBUZ_EN)
-						bBuz_Tweet(SHORT_1);
-						#endif  //boardBUZ_EN
-					}
-				}
-				Key_UnPressTim = 0;	
-				tSysInfo.usNeedSleepCnt = 0;
-            }
-			//****************************************************按键 放开状态*******************************************
-            else                                   
-            { 
-				//按键已经松开,记录当前按键事件,并等待是否还有组合按键触发------------------------------------------------
-				 if( Key_UnPressTim < keyNUPRESS_MAX_TIME && Key_UnPressTim >= 4) 
-				 {
-					 //短按  :按下时间在 keySHORT_PRESS_TIME ~ KeyLongPressTime 之间
-					 if(RANGE( KeyHandlerList[Currkey]->sOnPressCnt,  keySHORT_PRESS_TIME,
-						 ( keyLONG_PRESS_TIME - keyADD_SPACE_TIME -1 )))   
-					 {  
-						 v_key_shot_press(KeyHandlerList[Currkey]);
-						 if(KeyHandlerList[Currkey]->bEnMulitFunKey == false) //没有使能多功能按键,就不需要等待,直接触发按键
-							goto KeyTri;
-					 }
-					 else if( KeyHandlerList[Currkey]->sOnPressCnt >= keyLONG_PRESS_TIME)  //长按
-					 {
-						 v_key_long_press(KeyHandlerList[Currkey]);	
-						 if(KeyHandlerList[Currkey]->bEnMulitFunKey == false) //没有使能多功能按键,就不需要等待,直接触发按键
-							goto KeyTri;
-					 }
-				 }
-				 //已经处理完--------------------------------------------------------------------------------------------
-				 else  if( Key_UnPressTim == keyNUPRESS_MAX_TIME) 
-				 {
-					 KeyTri:
-				     vKey_ProcKeyFunc(Key_TriTypeBuff);
-				 }
-				 
-				 
-				 //每遍历一次---------------------------------------------------------------------------------------------
-				 if(Currkey == 0)  
-				 {
-					 //按键松开计时
-					 if( Key_UnPressTim < 0xffff) 
-						 Key_UnPressTim ++ ; 
-				 }
-				 
-				 if(Key_UnPressTim ==5)
-					KeyHandlerList[Currkey]->sOnPressCnt = 0;
-            }
-        }
-		#if(boardUSE_OS)
+		/* 按键扫描(中间件: 去抖/长短按/超长按/组合键时序状态机) */
+		vMfKey_Scan();
+
+		#if (boardUSE_OS)
 		vTaskDelay(keyTASK_CYCLE_TIME);
-		#endif
+		#endif  /* boardUSE_OS */
 	}
 }
 
 /***********************************************************************************************************************
------函数功能    检查其他按键是否按下
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      true:还有其他按键按下没有触发,反之false
-************************************************************************************************************************/
-static bool v_key_check_other_is_tri(void)
-{
-	vu8 Currkey = 0;	  
-    for(Currkey = 0; Currkey < KeyHandlerListNum; Currkey++)
-	{
-		if(KeyHandlerList[Currkey]->sOnPressCnt > 0)
-			return true ;
-	}
-	return false;
-}
-
-
-/***********************************************************************************************************************
------函数功能    录入短按按键事件
------说明(备注)  none
------传入参数    按键结构体
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-static void v_key_shot_press(KeyHandler_t* keyHandler)
-{
-	#if(boardDISPLAY_EN)
-	if(!tDisp.bLight)   //息屏第一个功能不执行
-	{
-		bDisp_Switch(ST_ON, false);
-		keyHandler->sOnPressCnt = -1;
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:当前息屏,按键功能退出\r\n");
-		return;
-	}
-	#endif  //boardDISPLAY_EN
-	
-	if(keyHandler == &tKeyPower)
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_POWER_SHORT ;  
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:电源短按\r\n");
-	}
-	
-	#if(boardDCAC_EN)	
-	else if(keyHandler == &tKeyAC) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_AC_SHORT ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:AC短按\r\n");
-	}
-	#endif  //boardDCAC_EN
-
-	#if(boardLIGHT_EN)
-	else if(keyHandler == &tKeyLight) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_LIGHT_SHORT ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:Light短按\r\n");
-	}
-	#endif  //boardLIGHT_EN
-
-	#if(boardUSB_EN)
-	else if(keyHandler == &tKeyUSB) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_USB_SHORT ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:USB短按\r\n");
-	}
-	#endif  //boardUSB_EN
-
-	#if(boardDC_EN)
-	else if(keyHandler == &tKeyDC) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_DC_SHORT ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:DC短按\r\n");
-	}
-	#endif  //boardDC_EN
-}
-
-
-
-/***********************************************************************************************************************
------函数功能    录入长按按键事件
------说明(备注)  none
------传入参数    按键结构体
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-static void v_key_long_press(KeyHandler_t* keyHandler)
-{
-	#if(boardDISPLAY_EN)
-	if(!tDisp.bLight)   //非关机状态下,息屏第一个功能不执行
-	{
-		bDisp_Switch(ST_ON, false);
-		keyHandler->sOnPressCnt = -1;
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:当前息屏,按键功能退出\r\n");
-		return;
-	}
-	#endif  //boardDISPLAY_EN
-	
-	if(keyHandler == &tKeyPower) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_POWER_LONG ;  
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:电源长按\r\n");
-		
-	}
-
-	#if(boardDCAC_EN)
-	else if(keyHandler == &tKeyAC) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_AC_LONG ; 
-		if((keyGROUP_NUM-1)>Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:AC长按\r\n");
-	}
-	#endif  //boardDCAC_EN
-
-	#if(boardLIGHT_EN)
-	else if(keyHandler == &tKeyLight) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_LIGHT_LONG ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:Light长按\r\n");
-	}
-	#endif  //boardLIGHT_EN
-
-	#if(boardUSB_EN)
-	else if(keyHandler == &tKeyUSB) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_USB_LONG ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:USB长按\r\n");
-	}
-	#endif  //boardUSB_EN
-
-	#if(boardDC_EN)
-	else if(keyHandler == &tKeyDC) 
-	{
-		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_DC_LONG ; 
-		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-		
-		keyHandler->sOnPressCnt = -1;
-		
-		if(uPrint.tFlag.bKeyTask)
-			sMyPrint("Key_Task:DC长按\r\n");
-	}
-	#endif  //boardDC_EN
-}
-
-/***********************************************************************************************************************
------函数功能    录入超长按按键事件
------说明(备注)  none
------传入参数    按键结构体
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-//static void v_key_super_long_press(KeyHandler_t* keyHandler)
-//{
-//	if(!tLCD.bLight && bSys_IsShutDownState() == false)   //非关机状态下,息屏第一个功能不执行
-//	{
-//		vLCD_RefreshDisplayParam();
-//		keyHandler->sOnPressCnt = -1;
-//		if(uPrint.tFlag.bKeyTask)
-//			sMyPrint("Key_Task:当前息屏,按键功能退出\r\n");
-//		return;
-//	}
-	
-//	if(keyHandler == &tKeyPower) 
-//	{
-//		Key_TriTypeBuff[Key_TriTypeCnt] = KTE_POWER_SUPER_LONG ;  
-//		if((keyGROUP_NUM - 1) > Key_TriTypeCnt) Key_TriTypeCnt ++;
-//		
-//		keyHandler->sOnPressCnt = -1;
-//		
-//		if(uPrint.tFlag.bKeyTask)
-//			sMyPrint("Key_Task:电源超长按\r\n");
-//		
-//	}
-//}
-
-
-/***********************************************************************************************************************
------函数功能    电源按键已经被触发
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
+ * 函数功能    : 电源按键已经被外部处理
+ * 说明(备注)  : 标记电源按键已处理，防止全局按键重复触发
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vKey_PowerIsTri(void)
 {
-	tKeyPower.sOnPressCnt = -1;
+	vMfKey_MarkProcessed(keyPOWER);
 }
 
-/*****************************************************************************************************************
------函数功能    参数初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
-void vKey_ParamInit(void )
-{
-	Key_TriTypeCnt = 0;
-	memset (Key_TriTypeBuff, KTE_FUN_NULL, sizeof( Key_TriTypeBuff));  //按键事件Buff清零
-}
-	
-
-#if(boardLOW_POWER)
 /***********************************************************************************************************************
------函数功能    按键进入低功耗
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vKey_EnterLowPower(void)
+ * 函数功能    : 按键参数初始化/清空事件缓冲区
+ * 说明(备注)  : 重置中间件事件序列
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vKey_ParamInit(void)
 {
-	rcu_periph_clock_enable(RCU_PMU);
-	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
-	rcu_periph_clock_enable(keyGPIO_WP_RCU);
-	rcu_periph_clock_enable(RCU_AF);
-	
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_POWER_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, keyGPIO_POWER_PIN);
-	gpio_mode_set(keyGPIO_WP_GPIO, GPIO_MODE_INPUT, GPIO_PUPD_NONE, keyGPIO_WP_PIN);
-	gpio_mode_set(keyGPIO_AC_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, keyGPIO_AC_PIN);
-	#else
-	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
-	gpio_init(keyGPIO_WP_GPIO,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_2MHZ,keyGPIO_WP_PIN);
-	gpio_init(keyGPIO_AC_PORT,GPIO_MODE_AIN,GPIO_OSPEED_2MHZ,keyGPIO_AC_PIN);
-	#endif
-	
-	/* enable and set key EXTI interrupt to the lowest priority */
-	nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
-	nvic_irq_enable(EXTI0_IRQn, 2U, 0U);
-
-	/* connect key EXTI line to key GPIO pin */
-	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOC, GPIO_PIN_SOURCE_13); //PC13
-	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0); //PA0
-
-	/* configure key EXTI line */
-	exti_init(EXTI_13, EXTI_INTERRUPT, EXTI_TRIG_FALLING); //下降沿触发
-	exti_init(EXTI_0, EXTI_INTERRUPT, EXTI_TRIG_RISING); //上升沿触发
-	exti_interrupt_flag_clear(EXTI_13);
-	exti_interrupt_flag_clear(EXTI_0);
-	
-	vTaskSuspend(tKeyTaskHandler);  //挂起任务
+	vMfKey_ClearSeq();
 }
 
 
 /***********************************************************************************************************************
------函数功能    按键退出低功耗
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
-void vKey_ExitLowPower(void)
+ * 函数功能    : 事件录入前预处理回调
+ * 说明(备注)  : 息屏状态下唤醒屏幕并吞掉首个事件；正常事件打印调试日志
+ * 传入参数    : uc_idx: 按键索引, b_long: 是否为长按
+ * 输出参数    : 无
+ * 返回值      : bool: false 吞掉该事件, true 正常录入
+ ************************************************************************************************************************/
+static bool b_key_event_pre_proc(u8 uc_idx, bool b_long)
 {
-	rcu_periph_clock_enable(keyGPIO_POWER_RCU);
-	rcu_periph_clock_enable(keyGPIO_AC_RCU);
-	
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(keyGPIO_POWER_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_POWER_PIN);
-	gpio_mode_set(keyGPIO_AC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_AC_PIN);
-	gpio_mode_set(keyGPIO_LIGHT_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_LIGHT_PIN);
-	gpio_mode_set(keyGPIO_USB_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, keyGPIO_USB_PIN);
+	#if (boardDISPLAY_EN)
+	if (!tDisp.bLight) /* 息屏第一个功能不执行 */
+	{
+		bDisp_Switch(ST_ON, false);
+		if (uPrint.tFlag.bKeyTask)
+			sMyPrint("Key_Task:当前息屏,按键功能退出\r\n");
+		return false;
+	}
 	#else
-	gpio_init(keyGPIO_POWER_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_POWER_PIN);
-	gpio_init(keyGPIO_AC_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_AC_PIN);
-	gpio_init(keyGPIO_LIGHT_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_LIGHT_PIN);
-	gpio_init(keyGPIO_USB_PORT,GPIO_MODE_IPU,GPIO_OSPEED_2MHZ,keyGPIO_USB_PIN);
-	#endif
+	(void)uc_idx;
+	(void)b_long;
+	#endif  /* boardDISPLAY_EN */
 
-	vTaskResume(tKeyTaskHandler);  //恢复任务
+	if (uPrint.tFlag.bKeyTask)
+	{
+		static const char * const s_p_key_names[] =
+		{
+			"Power",
+			#if (boardDCAC_EN)
+			"AC",
+			#endif  /* boardDCAC_EN */
+			#if (boardLIGHT_EN)
+			"Light",
+			#endif  /* boardLIGHT_EN */
+			#if (boardUSB_EN)
+			"USB",
+			#endif  /* boardUSB_EN */
+			#if (boardDC_EN)
+			"DC",
+			#endif  /* boardDC_EN */
+		};
+		const char *p_name = (uc_idx < KEY_MW_KEY_TBL_NUM) ? s_p_key_names[uc_idx] : "Unknown";
+		sMyPrint("Key_Task:%s%s\r\n", p_name, b_long ? "长按" : "短按");
+	}
+
+	return true;
 }
-#endif  //boardLOW_POWER
 
-#endif  //boardKEY_EN
+/***********************************************************************************************************************
+ * 函数功能    : 超长按提示回调
+ * 说明(备注)  : 超长按触发时的提示蜂鸣与调试打印
+ * 传入参数    : uc_idx: 按键索引
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+static void v_key_on_super_long(u8 uc_idx)
+{
+	(void)uc_idx;
 
+	if (uPrint.tFlag.bKeyTask)
+		sMyPrint("Key_Task:触发长按事件\r\n");
+
+	#if (boardBUZ_EN)
+	bBuz_Tweet(SHORT_1);
+	#endif  /* boardBUZ_EN */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 任意按键按下回调
+ * 说明(备注)  : 任意按键按下时清空系统休眠倒计时
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+static void v_key_on_any_press(void)
+{
+	tSysInfo.usNeedSleepCnt = 0;
+}
+
+#endif  /* boardKEY_EN */

@@ -1,9 +1,29 @@
+/***********************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Application
+ * File    : gpio_init.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : GPIO引脚配置与低功耗/跳转控制头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef GPIO_INIT_H_
 #define GPIO_INIT_H_
 
-#include "main.h"
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
+//****************************************************Includes******************************************************************//
+#include "main.h"
+
+#if (1)
+//****************************************************Macros********************************************************************//
 #define     	KEY_POWER_RCU       					RCU_GPIOA
 #define     	KEY_POWER_GPIO      					GPIOA
 #define     	KEY_POWER_PIN       					GPIO_PIN_0
@@ -11,87 +31,88 @@
 #define     	gpioASSIST_OPEN_RCU               		RCU_GPIOC
 #define     	gpioASSIST_OPEN_PORT              		GPIOC
 #define     	gpioASSIST_OPEN_PIN               		GPIO_PIN_0
-#define     	gpioASSIST_OPEN_ON()              		GPIO_BOP(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN  
-#define     	gpioASSIST_OPEN_OFF()             		GPIO_BC(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN
-#define     	gpioASSIST_GET_STATE()             		gpio_output_bit_get(gpioASSIST_OPEN_PORT, gpioASSIST_OPEN_PIN)
+#define     	gpioASSIST_OPEN_ON()                    GPIO_BOP(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN  
+#define     	gpioASSIST_OPEN_OFF()                   GPIO_BC(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN
 
-//************************************USART0***************************
-#define     	gpioUSART0_REMAP_EN               		0
-#if(!gpioUSART0_REMAP_EN)
-#define     	gpioUSART0_GPIO_RX_RCU                 	RCU_GPIOA
-#define     	gpioUSART0_GPIO_RX_PORT                	GPIOA
-#define     	gpioUSART0_GPIO_RX_PIN                 	GPIO_PIN_10
-#define     	gpioUSART0_GPIO_TX_RCU                 	RCU_GPIOA
-#define     	gpioUSART0_GPIO_TX_PORT                	GPIOA
-#define     	gpioUSART0_GPIO_TX_PIN                 	GPIO_PIN_9
+//风扇
+#define 		fanPWM_GPIO_RCU                         RCU_GPIOC
+#define 		fanPWM_GPIO_PORT                        GPIOC
+#define 		fanPWM_PIN                              GPIO_PIN_6
+
+#define     	gpioUSART0_REMAP_EN                     0
+#if (!gpioUSART0_REMAP_EN)
+#define     	gpioUSART0_GPIO_RX_RCU                  RCU_GPIOA
+#define     	gpioUSART0_GPIO_RX_PORT                 GPIOA
+#define     	gpioUSART0_GPIO_RX_PIN                  GPIO_PIN_10
+#define     	gpioUSART0_GPIO_TX_RCU                  RCU_GPIOA
+#define     	gpioUSART0_GPIO_TX_PORT                 GPIOA
+#define     	gpioUSART0_GPIO_TX_PIN                  GPIO_PIN_9
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	gpioUSART0_GPIO_RX_AF                   GPIO_AF_0
 #define     	gpioUSART0_GPIO_TX_AF                   GPIO_AF_0
 #endif //(boardIC_TYPE == boardIC_GD32F50X)
 #else
 //串口0重映射
-#define     	gpioUSART0_GPIO_RX_RCU                 	RCU_GPIOB
-#define     	gpioUSART0_GPIO_RX_PORT                	GPIOB
-#define     	gpioUSART0_GPIO_RX_PIN                 	GPIO_PIN_7
-#define     	gpioUSART0_GPIO_TX_RCU                 	RCU_GPIOB
-#define     	gpioUSART0_GPIO_TX_PORT                	GPIOB
-#define     	gpioUSART0_GPIO_TX_PIN                 	GPIO_PIN_6
-#endif  //gpioUSART0_REMAP_EN
-//DMA 
-#define     	gpioUSART0_DMA                    		DMA0
-#define     	gpioUSART0_DMA_RCU                		RCU_DMA0
-#define     	gpioUSART0_DMA_RX_CH              		DMA_CH4
-#define     	gpioUSART0_DMA_TX_CH              		DMA_CH3
-#define     	gpioUSART0_DMA_TX_IRQ             		DMA0_Channel3_IRQn
-#define     	gpioUSART0_DMA_TX_IRQ_HANDLER     		DMA0_Channel3_IRQHandler
+#define     	gpioUSART0_GPIO_RX_RCU                  RCU_GPIOB
+#define     	gpioUSART0_GPIO_RX_PORT                 GPIOB
+#define     	gpioUSART0_GPIO_RX_PIN                  GPIO_PIN_7
+#define     	gpioUSART0_GPIO_TX_RCU                  RCU_GPIOB
+#define     	gpioUSART0_GPIO_TX_PORT                 GPIOB
+#define     	gpioUSART0_GPIO_TX_PIN                  GPIO_PIN_6
+#endif  /* !gpioUSART0_REMAP_EN */
 
-//************************************USART1***************************
-#define     	gpioUSART1_GPIO_RX_RCU                 	RCU_GPIOA
-#define     	gpioUSART1_GPIO_RX_PORT                	GPIOA
-#define     	gpioUSART1_GPIO_RX_PIN                 	GPIO_PIN_3
-#define     	gpioUSART1_GPIO_TX_RCU                 	RCU_GPIOA
-#define     	gpioUSART1_GPIO_TX_PORT                	GPIOA
-#define     	gpioUSART1_GPIO_TX_PIN                 	GPIO_PIN_2
+//DMA 
+#define     	gpioUSART0_DMA                          DMA0
+#define     	gpioUSART0_DMA_RCU                      RCU_DMA0
+#define     	gpioUSART0_DMA_RX_CH                    DMA_CH4
+#define     	gpioUSART0_DMA_TX_CH                    DMA_CH3
+#define     	gpioUSART0_DMA_TX_IRQ                   DMA0_Channel3_IRQn
+#define     	gpioUSART0_DMA_TX_IRQ_HANDLER           DMA0_Channel3_IRQHandler
+
+#define     	gpioUSART1_GPIO_RX_RCU                  RCU_GPIOA
+#define     	gpioUSART1_GPIO_RX_PORT                 GPIOA
+#define     	gpioUSART1_GPIO_RX_PIN                  GPIO_PIN_3
+#define     	gpioUSART1_GPIO_TX_RCU                  RCU_GPIOA
+#define     	gpioUSART1_GPIO_TX_PORT                 GPIOA
+#define     	gpioUSART1_GPIO_TX_PIN                  GPIO_PIN_2
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	gpioUSART1_GPIO_RX_AF                   GPIO_AF_0
 #define     	gpioUSART1_GPIO_TX_AF                   GPIO_AF_0
 #endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 //DMA 
-#define     	gpioUSART1_DMA                    		DMA0
-#define     	gpioUSART1_DMA_RCU                		RCU_DMA0
-#define     	gpioUSART1_DMA_RX_CH              		DMA_CH5
-#define     	gpioUSART1_DMA_TX_CH              		DMA_CH6
-#define     	gpioUSART1_DMA_TX_IRQ             		DMA0_Channel6_IRQn
-#define     	gpioUSART1_DMA_TX_IRQ_HANDLER     		DMA0_Channel6_IRQHandler
+#define     	gpioUSART1_DMA                          DMA0
+#define     	gpioUSART1_DMA_RCU                      RCU_DMA0
+#define     	gpioUSART1_DMA_RX_CH                    DMA_CH5
+#define     	gpioUSART1_DMA_TX_CH                    DMA_CH6
+#define     	gpioUSART1_DMA_TX_IRQ                   DMA0_Channel6_IRQn
+#define     	gpioUSART1_DMA_TX_IRQ_HANDLER           DMA0_Channel6_IRQHandler
 
-//************************************USART2***************************
-#define     	gpioUSART2_GPIO_RX_RCU                 	RCU_GPIOB
-#define     	gpioUSART2_GPIO_RX_PORT                	GPIOB
-#define     	gpioUSART2_GPIO_RX_PIN                 	GPIO_PIN_11
-#define     	gpioUSART2_GPIO_TX_RCU                 	RCU_GPIOB
-#define     	gpioUSART2_GPIO_TX_PORT                	GPIOB
-#define     	gpioUSART2_GPIO_TX_PIN                 	GPIO_PIN_10
+#define     	gpioUSART2_GPIO_RX_RCU                  RCU_GPIOB
+#define     	gpioUSART2_GPIO_RX_PORT                 GPIOB
+#define     	gpioUSART2_GPIO_RX_PIN                  GPIO_PIN_11
+#define     	gpioUSART2_GPIO_TX_RCU                  RCU_GPIOB
+#define     	gpioUSART2_GPIO_TX_PORT                 GPIOB
+#define     	gpioUSART2_GPIO_TX_PIN                  GPIO_PIN_10
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	gpioUSART2_GPIO_RX_AF                   GPIO_AF_1
 #define     	gpioUSART2_GPIO_TX_AF                   GPIO_AF_1
 #endif //(boardIC_TYPE == boardIC_GD32F50X)
 
 //DMA 
-#define     	gpioUSART2_DMA                    		DMA0
-#define     	gpioUSART2_DMA_RCU                		RCU_DMA0
-#define     	gpioUSART2_DMA_RX_CH              		DMA_CH2
-#define     	gpioUSART2_DMA_TX_CH              		DMA_CH1
-#define     	gpioUSART2_DMA_TX_IRQ             		DMA0_Channel1_IRQn
-#define     	gpioUSART2_DMA_TX_IRQ_HANDLER     		DMA0_Channel1_IRQHandler
+#define     	gpioUSART2_DMA                          DMA0
+#define     	gpioUSART2_DMA_RCU                      RCU_DMA0
+#define     	gpioUSART2_DMA_RX_CH                    DMA_CH2
+#define     	gpioUSART2_DMA_TX_CH                    DMA_CH1
+#define     	gpioUSART2_DMA_TX_IRQ                   DMA0_Channel1_IRQn
+#define     	gpioUSART2_DMA_TX_IRQ_HANDLER           DMA0_Channel1_IRQHandler
 
-//************************************UART3***************************
-#define     	gpioUART3_GPIO_RX_RCU                  	RCU_GPIOC
-#define     	gpioUART3_GPIO_RX_PORT                 	GPIOC
-#define     	gpioUART3_GPIO_RX_PIN                  	GPIO_PIN_11
-#define     	gpioUART3_GPIO_TX_RCU                  	RCU_GPIOC
-#define     	gpioUART3_GPIO_TX_PORT                 	GPIOC
-#define     	gpioUART3_GPIO_TX_PIN                  	GPIO_PIN_10
+#define     	gpioUART3_GPIO_RX_RCU                   RCU_GPIOC
+#define     	gpioUART3_GPIO_RX_PORT                  GPIOC
+#define     	gpioUART3_GPIO_RX_PIN                   GPIO_PIN_11
+#define     	gpioUART3_GPIO_TX_RCU                   RCU_GPIOC
+#define     	gpioUART3_GPIO_TX_PORT                  GPIOC
+#define     	gpioUART3_GPIO_TX_PIN                   GPIO_PIN_10
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	gpioUART3_GPIO_RX_AF                   	GPIO_AF_1
 #define     	gpioUART3_GPIO_TX_AF                   	GPIO_AF_1
@@ -105,24 +126,30 @@
 #define     	gpioUART3_DMA_TX_IRQ              		DMA0_Channel5_IRQn
 #define     	gpioUART3_DMA_TX_IRQ_HANDLER      		DMA0_Channel5_IRQHandler
 
-//************************************UART4***************************
-#define     	gpioUART4_GPIO_RX_RCU                  	RCU_GPIOD
-#define     	gpioUART4_GPIO_RX_PORT                 	GPIOD
-#define     	gpioUART4_GPIO_RX_PIN                  	GPIO_PIN_2
-#define     	gpioUART4_GPIO_TX_RCU                  	RCU_GPIOC
-#define     	gpioUART4_GPIO_TX_PORT                 	GPIOC
-#define     	gpioUART4_GPIO_TX_PIN                  	GPIO_PIN_12
+#define     	gpioUART4_GPIO_RX_RCU                   RCU_GPIOD
+#define     	gpioUART4_GPIO_RX_PORT                  GPIOD
+#define     	gpioUART4_GPIO_RX_PIN                   GPIO_PIN_2
+#define     	gpioUART4_GPIO_TX_RCU                   RCU_GPIOC
+#define     	gpioUART4_GPIO_TX_PORT                  GPIOC
+#define     	gpioUART4_GPIO_TX_PIN                   GPIO_PIN_12
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	gpioUART4_GPIO_RX_AF                   	GPIO_AF_1
 #define     	gpioUART4_GPIO_TX_AF                   	GPIO_AF_1
 #endif //(boardIC_TYPE == boardIC_GD32F50X)
 
+//****************************************************Types*********************************************************************//
 
-
-
+//****************************************************Extern********************************************************************//
+/***********************************************************************************************************************
+ * 函数功能    : 判断电源按键是否按下
+ * 说明(备注)  : 直接读取 GPIO 电平，不含软件消抖，需由调用处自行处理抖动
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : true: 按键按下(电平为低); false: 按键未按下
+ ************************************************************************************************************************/
 __STATIC_INLINE bool KEY_POWER_IsPress(void)          
 {    
-    if((GPIO_ISTAT(KEY_POWER_GPIO)&(KEY_POWER_PIN)) == 0)//读取按键
+    if ((GPIO_ISTAT(KEY_POWER_GPIO) & (KEY_POWER_PIN)) == 0)
         return true;
     else
         return false;
@@ -134,5 +161,12 @@ bool bGPIO_BootJumpApp(void);
 void vKey_EnterLowPower(void);
 void vGPIO_EnterApp(void);
 void vGPIO_ExitLowPower(void);
-#endif  //boardLOW_POWER
-#endif
+#endif  /* boardLOW_POWER */
+
+#endif  /* 1 */
+
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* GPIO_INIT_H_ */

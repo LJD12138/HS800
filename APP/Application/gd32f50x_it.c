@@ -36,17 +36,18 @@ OF SUCH DAMAGE.
 #include "Sys/sys_task.h"
 #include "board_config.h"
 
-#define SRAM_ECC_ERROR_HANDLE(s)    do{}while(1)
+#define			SRAM_ECC_ERROR_HANDLE(s)				do{}while(1)
 
 bool bExti_KeyTriFlag = false;
 bool bExti_SensorTriFlag = false;
 
-/*!
-    \brief      this function handles NMI exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+/***********************************************************************************************************************
+ * 函数功能    : 处理 NMI 不可屏蔽中断异常
+ * 说明(备注)  : 检测到 SRAM ECC 不可纠正/可纠正错误时进入故障处理死循环; 其它 NMI 源亦进入死循环
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void NMI_Handler(void)
 {
     if(SET == syscfg_sram_ecc_flag_get(SYSCFG_SRAMECCSTAT_SRAMECCMEIF)) {
@@ -61,12 +62,13 @@ void NMI_Handler(void)
     }
 }
 
-/*!
-    \brief      this function handles HardFault exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+/***********************************************************************************************************************
+ * 函数功能    : 处理 HardFault 硬件错误异常
+ * 说明(备注)  : 未使能 CmBacktrace 时进入死循环; 使能后该函数不参与编译, 由 CmBacktrace 接管
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 #if(!boardCM_BACKTRACE)
 void HardFault_Handler(void)
 {
@@ -76,12 +78,13 @@ void HardFault_Handler(void)
 }
 #endif
 
-/*!
-    \brief      this function handles MemManage exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+/***********************************************************************************************************************
+ * 函数功能    : 处理 MemManage 存储器管理异常
+ * 说明(备注)  : 进入死循环等待调试器定位故障
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void MemManage_Handler(void)
 {
     /* if Memory Manage exception occurs, go to infinite loop */
@@ -89,12 +92,13 @@ void MemManage_Handler(void)
     }
 }
 
-/*!
-    \brief      this function handles BusFault exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+/***********************************************************************************************************************
+ * 函数功能    : 处理 BusFault 总线错误异常
+ * 说明(备注)  : 进入死循环等待调试器定位故障
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void BusFault_Handler(void)
 {
     /* if Bus Fault exception occurs, go to infinite loop */
@@ -102,12 +106,13 @@ void BusFault_Handler(void)
     }
 }
 
-/*!
-    \brief      this function handles UsageFault exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+/***********************************************************************************************************************
+ * 函数功能    : 处理 UsageFault 用法错误异常
+ * 说明(备注)  : 进入死循环等待调试器定位故障
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void UsageFault_Handler(void)
 {
     /* if Usage Fault exception occurs, go to infinite loop */
@@ -125,12 +130,13 @@ void UsageFault_Handler(void)
 // {
 // }
 
-/*!
-    \brief      this function handles DebugMon exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+/***********************************************************************************************************************
+ * 函数功能    : 处理 DebugMon 调试监控异常
+ * 说明(备注)  : 空实现, 当前未使用
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void DebugMon_Handler(void)
 {
 }
@@ -156,6 +162,13 @@ void DebugMon_Handler(void)
 //    vSys_Tick();
 // }
 
+/***********************************************************************************************************************
+ * 函数功能    : 处理外部中断线 0 中断
+ * 说明(备注)  : 清除 EXTI_0 中断标志
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void EXTI0_IRQHandler(void)
 {
     if(RESET != exti_interrupt_flag_get(EXTI_0))
@@ -164,6 +177,13 @@ void EXTI0_IRQHandler(void)
     }
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 处理外部中断线 10~15 中断
+ * 说明(备注)  : 清除 EXTI_13 中断标志
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ***********************************************************************************************************************/
 void EXTI10_15_IRQHandler(void)
 {
     if(RESET != exti_interrupt_flag_get(EXTI_13))

@@ -1,16 +1,39 @@
-#ifndef MD_DCAC_REC_DATA_PROC_H
-#define MD_DCAC_REC_DATA_PROC_H
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\MD_Dcac
+ * File    : md_dcac_rec_data_proc.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 逆变器接收数据解析与状态装载接口头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
 
-#include "board_config.h"
+#ifndef MD_DCAC_REC_DATA_PROC_H_
+#define MD_DCAC_REC_DATA_PROC_H_
 
-#if(boardDCAC_EN)
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
+
+//****************************************************Includes******************************************************************//
 #include "main.h"
+
+#if (boardDCAC_EN)
 #include "Modbus/modbus_proto.h"
 #include "Megmeet/megmeet_proto.h"
 
-s8 c_dcac_rec_proc_data(ModbusProtoRx_t* proto_rx, ModbusProtoTx_t* proto_tx);
-s8 c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t* tp_proto_rx);
+//****************************************************Extern********************************************************************//
+int8_t c_dcac_rec_proc_data(ModbusProtoRx_t *p_proto_rx, ModbusProtoTx_t *p_proto_tx);
+int8_t c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t *p_proto_rx);
 
-#endif  //boardDCAC_EN
+#endif  /* boardDCAC_EN */
 
-#endif  //MD_DCAC_REC_DATA_PROC_H
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* MD_DCAC_REC_DATA_PROC_H_ */

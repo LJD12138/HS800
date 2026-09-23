@@ -1,55 +1,76 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         系统的队列函数                                                  		*
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\MD_Bms
+ * File    : md_bms_queue_task_main.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : BMS 队列主任务函数实现
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "MD_Bms/md_bms_queue_task.h"
 
-#if(boardBMS_EN)
+#if (boardBMS_EN)
 #include "MD_Bms/md_bms_task.h"
 #include "MD_Bms/md_bms_prot_frame.h"
 #include "Print/print_task.h"
 #include "Update/update_main.h"
 
-/*****************************************************************************************************************
------函数功能    任务函数:主任务
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
+//****************************************************Function Declaration******************************************************//
+
+
+/***********************************************************************************************************************
+ * 函数功能    : BMS队列主任务
+ * 说明(备注)  : 轮询BMS运行参数
+ * 传入参数    : tp_task: 任务指针
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void v_bms_queue_task_main(Task_T *tp_task)
-{	
-	switch(tp_task->ucStep)
+{
+	/* 若队列中有其他紧急任务，则立即结束当前主任务 */
+	if (!bQueue_IsQueueEmpty(tp_task))
+	{
+		cQueue_GotoStep(tp_task, STEP_END);
+		return;
+	}
+
+	switch (tp_task->ucStep)
 	{
 		case 0:
-		{	
-			tp_task->usStepWaitCnt++;
-			if(tp_task->usStepWaitCnt >= (1000 / bmsTASK_CYCLE_TIME))
+		{
+			if (bQueue_IsStepTimeout(tp_task, 1000 / bmsTASK_CYCLE_TIME))
 				cQueue_GotoStep(tp_task, STEP_NEXT);
 		}
 		break;
-		
+
 		case 1:
-		{	
+		{
 			c_bms_cs_get_param(0);
 			cQueue_GotoStep(tp_task, STEP_END);
 		}
 		break;
-		
+
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
-			break;
+		{
+			cQueue_GotoStep(tp_task, STEP_END);
+		}
+		break;
 	}
-	
+
 	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt > (3000 / bmsTASK_CYCLE_TIME))  //等待超时
+	if (tp_task->usTaskWaitCnt > (3000 / bmsTASK_CYCLE_TIME))
 	{
-		if(uPrint.tFlag.bBmsTask)
+		if (uPrint.tFlag.bBmsTask)
 			sMyPrintWarn("bBmsTask:获取数据任务等待超时,退出");
 		
-		cQueue_GotoStep(tp_task, STEP_END);  //结束
+		cQueue_GotoStep(tp_task, STEP_END);
 	}
 }
 
-#endif  //boardBMS_EN
+#endif  /* boardBMS_EN */

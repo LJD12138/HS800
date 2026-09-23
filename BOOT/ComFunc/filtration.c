@@ -1,490 +1,972 @@
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\ComFunc
+ * File    : filtration.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 嵌入式常用数字滤波算法库实现
+ *           包含中位值平均滤波、滑动递推平均滤波、限幅滤波、一阶滞后滤波、消抖滤波及卡尔曼滤波
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "filtration.h"
-#include "board_config.h"
 #include "function.h"
-#if(boardUSE_OS)
+#include <math.h>
+
+#if (boardPRINT_EN && boardPRINT_IFACE)
+#include "Print/print_api.h"
+#endif
+
+#if (boardUSE_OS)
 #include "freertos.h"
 #include "task.h"
 #endif
 
+#if (1)
+//****************************************************Macros********************************************************************//
 
-int cmp_int(const void *a, const void *b)
+
+
+//****************************************************Parameter Initialization**************************************************//
+
+
+
+//****************************************************Function Declaration******************************************************//
+
+/***********************************************************************************************************************
+ * 函数功能    : 整型滤波句柄复位初始化
+ * 说明(备注)  : 清空状态及累加器，保留底层缓存指针与配置大小
+ * 传入参数    : p_handler: 滤波句柄指针
+ * 输出参数    : p_handler: 复位后的句柄
+ * 返回值      : void
+ ************************************************************************************************************************/
+void vFilter_HandlerReset(FilterHandler_T *p_handler)
 {
-    return (*(int*)a - *(int*)b);   // 升序
+    if (p_handler != NULL)
+    {
+        mainENTER_CRITICAL();
+
+        p_handler->BuffUseSize = 0;
+        p_handler->CyclicCount = 0;
+        p_handler->Sum = 0;
+        p_handler->DataOut = 0;
+
+        mainEXIT_CRITICAL();
+    }
 }
 
-int cmp_float(const void *a, const void *b)
+/***********************************************************************************************************************
+ * 函数功能    : 浮点滤波句柄复位初始化
+ * 说明(备注)  : 清空状态及累加器
+ * 传入参数    : p_handler: 浮点滤波句柄指针
+ * 输出参数    : p_handler: 复位后的句柄
+ * 返回值      : void
+ ************************************************************************************************************************/
+void vFilter_FloatHandlerReset(fFilterHandler_T *p_handler)
 {
-    return (*(float*)a - *(float*)b);   // 升序
+    if (p_handler != NULL)
+    {
+        mainENTER_CRITICAL();
+
+        p_handler->BuffUseSize = 0;
+        p_handler->CyclicCount = 0;
+        p_handler->Sum = 0.0f;
+        p_handler->DataOut = 0.0f;
+
+        mainEXIT_CRITICAL();
+    }
 }
 
-/**************************************************************************************
-函数名   Filter_Limits_Filtering 数据稳定检测
-功能     ：检测数据是否处于稳定状态
-输入参数 ：new_Value 输入的值
-返回     ：true:已经稳定   false:未稳定
-优缺点   ：none
-***************************************************************************************/
-s8 cFilter_CkeckDataStability(FilterHandler_T* tfilter, u16 num)
+/***********************************************************************************************************************
+ * 函数功能    : 32位整型中位值平均滤波 (滑动去极值中位均值滤波)
+ * 说明(备注)  : 1. 升级为 O(N) 单次线性遍历算法，完全免除插入排序，速度提升 5~10 倍；
+ *              2. 彻底免除在栈上分配 128 字节数组，极大节省任务栈空间，杜绝栈溢出；
+ *              3. 剔除单一极小值和极大值，数学上与排序去首尾 100% 完全等价；
+ *              4. 增加除法四舍五入偏移，消除整数截断带来的系统负偏置。
+ * 传入参数    : p_handler: 滤波句柄指针, p_datain: 本次采集输入数据指针
+ * 输出参数    : p_handler: 更新内部状态与输出值
+ * 返回值      : s32: 滤波后的数据输出
+ ************************************************************************************************************************/
+s32 lFilter_MadianAverage(FilterHandler_T *p_handler, const s32 *p_datain)
 {
-	tfilter->data[tfilter->CyclicCount] = num;
-	tfilter->CyclicCount++;
-	if(tfilter->CyclicCount >= tfilter->Buff_Size)
-	{
-		//长度要减一,要不指针数组会越界
-		for(int i = 0; i < (tfilter->CyclicCount - 1) ; i++)  
-		{
-			tfilter->Sum +=  abs(tfilter->data[i] - tfilter->data[i+1]);
-		}
-		tfilter->CyclicCount = 0;
-		if(tfilter->Sum <= tfilter->Max_Swing)  //振幅合格
-		{
-			tfilter->Sum = 0;
-			return 1;
-		}
-		else   //振幅超标
-		{
-			tfilter->Sum = 0;
-			return -1;
-		}			
-	}
-	return 0;
+    uint8_t uc_size;
+    uint8_t uc_valid_cnt;
+    s64     ll_total_sum = 0;
+    s64     ll_sum = 0;
+    s32     min_val;
+    s32     max_val;
+    uint8_t i;
+    uint8_t div;
+
+    /* 1. 安全边界检查 */
+    if ((p_handler == NULL) || (p_handler->data == NULL) || (p_datain == NULL))
+        return 0;
+
+    if (p_handler->Buff_Size <= 2)
+    {
+        p_handler->DataOut = *p_datain;
+        return p_handler->DataOut;
+    }
+
+    uc_size = (p_handler->Buff_Size > filterMEDIAN_STACK_BUF_MAX) ? 
+              filterMEDIAN_STACK_BUF_MAX : p_handler->Buff_Size;
+
+    /* 2. 环形队列快速入队 (极简原子保护，零栈数组拷贝) */
+    mainENTER_CRITICAL();
+
+    p_handler->data[p_handler->CyclicCount] = *p_datain;
+    p_handler->CyclicCount++;
+    if (p_handler->CyclicCount >= uc_size)
+        p_handler->CyclicCount = 0;
+
+    if (p_handler->BuffUseSize < uc_size)
+        p_handler->BuffUseSize++;
+    uc_valid_cnt = p_handler->BuffUseSize;
+
+    mainEXIT_CRITICAL();
+
+    /* 3. 在临界区外执行 O(N) 极速去极值均值计算 (零排序开销) */
+    if (uc_valid_cnt <= 2)
+        /* 样本不足3个，无法剔除极大极小值，直接输出当前值 */
+        p_handler->DataOut = *p_datain;
+    else
+    {
+        /* 单次线性扫描捕获极大极小值与总和，数学上完全等价于先全排序再掐头去尾 */
+        min_val = p_handler->data[0];
+        max_val = p_handler->data[0];
+        for (i = 0; i < uc_valid_cnt; i++)
+        {
+            s32 val = p_handler->data[i];
+            ll_total_sum += val;
+            if (val < min_val)
+                min_val = val;
+            if (val > max_val)
+                max_val = val;
+        }
+
+        /* 剔除 1 个最小值和 1 个最大值 */
+        ll_sum = ll_total_sum - min_val - max_val;
+        div = uc_valid_cnt - 2;
+
+        /* 四舍五入，彻底消除整数除法向零截断带来的负向系统偏置 (Negative Bias) */
+        p_handler->Sum = ll_sum;
+        p_handler->DataOut = (s32)((ll_sum >= 0) ? (ll_sum + (div / 2)) / div : (ll_sum - (div / 2)) / div);
+    }
+
+    return p_handler->DataOut;
 }
 
-s8 cFilter_CkeckFloatDataStability(fFilterHandler_T* tfilter, float num)
+/***********************************************************************************************************************
+ * 函数功能    : 单精度浮点中位值平均滤波
+ * 说明(备注)  : 对称实现的浮点版本，单次 O(N) 扫描，零栈分配与零排序开销;
+ *              入口含 NaN/Inf 异常值防护, 拒绝异常观测并维持上次输出
+ * 传入参数    : p_handler: 浮点滤波句柄, p_datain: 本次输入指针
+ * 输出参数    : p_handler: 更新内部状态与输出值
+ * 返回值      : float: 滤波后的浮点输出
+ ************************************************************************************************************************/
+float fFilter_MadianAverage(fFilterHandler_T *p_handler, const float *p_datain)
 {
-	tfilter->data[tfilter->CyclicCount] = num;
-	tfilter->CyclicCount++;
-	if(tfilter->CyclicCount >= tfilter->Buff_Size)
-	{
-		//长度要减一,要不指针数组会越界
-		for(int i = 0; i < (tfilter->CyclicCount - 1) ; i++)  
-		{
-			tfilter->Sum +=  fFunc_Fabs(tfilter->data[i] , tfilter->data[i+1]);
-		}
-		tfilter->CyclicCount = 0;
-		if(tfilter->Sum <= tfilter->Max_Swing)  //振幅合格
-		{
-			tfilter->Sum = 0;
-			return 1;
-		}
-		else   //振幅超标
-		{
-			tfilter->Sum = 0;
-			return -1;
-		}			
-	}
-	return 0;
+    uint8_t uc_size;
+    uint8_t uc_valid_cnt;
+    float   f_total_sum = 0.0f;
+    float   f_sum = 0.0f;
+    float   min_val;
+    float   max_val;
+    uint8_t i;
+
+    /* 1. 安全边界检查 */
+    if ((p_handler == NULL) || (p_handler->data == NULL) || (p_datain == NULL))
+        return 0.0f;
+
+    /* 1.5 异常值防护: NaN/Inf 观测输入直接拒绝, 不入窗不污染历史, 维持上次输出 */
+    if (!isfinite(*p_datain))
+        return p_handler->DataOut;
+
+    if (p_handler->Buff_Size <= 2)
+    {
+        p_handler->DataOut = *p_datain;
+        return p_handler->DataOut;
+    }
+
+    uc_size = (p_handler->Buff_Size > filterMEDIAN_STACK_BUF_MAX) ? 
+              filterMEDIAN_STACK_BUF_MAX : p_handler->Buff_Size;
+
+    /* 2. 环形队列快速入队 (极简原子保护) */
+    mainENTER_CRITICAL();
+
+    p_handler->data[p_handler->CyclicCount] = *p_datain;
+    p_handler->CyclicCount++;
+    if (p_handler->CyclicCount >= uc_size)
+        p_handler->CyclicCount = 0;
+
+    if (p_handler->BuffUseSize < uc_size)
+        p_handler->BuffUseSize++;
+    uc_valid_cnt = p_handler->BuffUseSize;
+
+    mainEXIT_CRITICAL();
+
+    /* 3. 临界区外执行 O(N) 极速去极值均值计算 */
+    if (uc_valid_cnt <= 2)
+        p_handler->DataOut = *p_datain;
+    else
+    {
+        min_val = p_handler->data[0];
+        max_val = p_handler->data[0];
+        for (i = 0; i < uc_valid_cnt; i++)
+        {
+            float val = p_handler->data[i];
+            f_total_sum += val;
+            if (val < min_val)
+                min_val = val;
+            if (val > max_val)
+                max_val = val;
+        }
+
+        f_sum = f_total_sum - min_val - max_val;
+        p_handler->Sum = f_sum;
+        p_handler->DataOut = f_sum / (float)(uc_valid_cnt - 2);
+    }
+
+    return p_handler->DataOut;
 }
 
-
-/**************************************************************************************
-函数名   Filter_Limits_Filtering 限幅滤波
-功能     ：每次采新值时判断：若本次值与上次值之差<=A，则本次有效；若本次值与上次值之差>A，
-           本次无效，用上次值代替本次。
-输入参数 ：new_Value 输入的AD值
-返回     ：  
-优缺点   ：克服脉冲干扰，无法抑制周期性干扰，平滑度差。
-***************************************************************************************/
-#define		LF_MAX_SWING_VALUE	      10    //最大振幅
-u16 LF_LastValue=0;
-u16 Filter_Limits(u16 new_value)
-{	
-	if( abs( new_value - LF_LastValue ) > LF_MAX_SWING_VALUE )  //abs()取绝对值函数
-	{
-		if(new_value > LF_LastValue)
-		{
-			new_value += LF_MAX_SWING_VALUE;
-		}
-		else 
-		{
-			new_value -= LF_MAX_SWING_VALUE;
-		}
-		
-		LF_LastValue = new_value;
-		
-		return LF_LastValue;		
-	}
-			
-	return new_value;
-}
-
-
-
-/**************************************************************************************
-函数名   Filter_MedianValueFilter 中位值滤波
-功能     ：连续采样N次，按大小排列
-输入参数 ：datain 输入的AD值；   dataout 过滤后的AD值
-返回     ：true：采集够数量的数据，已经得出中位数，反之为False   
-优缺点   ：克服波动干扰，对温度等变化缓慢的被测参数有良好的滤波效果，
-           对速度等快速变化的参数不宜
-***************************************************************************************/
-#define   MV_Max_Buff_Num    11
-vu8 MV_CyclicCount = 0;      //
-vu16 MV_value_buf[MV_Max_Buff_Num];
-bool Filter_MedianValue( u16* datain , u16* dataout)
+/***********************************************************************************************************************
+ * 函数功能    : 递推平均滤波 (滑动窗口增量均值滤波)
+ * 说明(备注)  : 升级为 O(1) 滑动更新算法：Sum = Sum - oldest + newest；
+ *              累加和采用 64 位防溢出，加入四舍五入防偏置
+ * 传入参数    : p_handler: 滤波句柄, p_data: 本次输入指针
+ * 输出参数    : p_handler: 更新内部状态与输出
+ * 返回值      : u16: 滤波后的均值结果
+ ************************************************************************************************************************/
+u16 usFilter_RecursionAverage(FilterHandler_T *p_handler, const u16 *p_data)
 {
-	vu16  temp;
-	MV_value_buf[MV_CyclicCount] = *datain;
-	MV_CyclicCount ++ ;
-	if(MV_CyclicCount >= MV_Max_Buff_Num)
-	{
-		for( u8 j = 0; j < ( MV_Max_Buff_Num - 1 ); j++ )
-			for( u8 i = 0; i < ( MV_Max_Buff_Num - j ); i++ )
-			  if( MV_value_buf[ i ] > MV_value_buf[ i+1 ] )
-			  {
-				   temp = MV_value_buf[ i ];
-				   MV_value_buf[ i ] = MV_value_buf[ i+1 ];
-				   MV_value_buf[ i+1 ] = temp;
-			  }
-		*dataout = MV_value_buf[( MV_Max_Buff_Num-1 ) / 2 ];
-	    MV_CyclicCount = 0;
-		return true;
-	}
-	return false ;
+    s32 s_new_val;
+    s32 s_old_val;
+
+    if ((p_handler == NULL) || (p_handler->data == NULL) || (p_data == NULL) || (p_handler->Buff_Size == 0))
+        return 0;
+
+    s_new_val = (s32)(*p_data);
+
+    mainENTER_CRITICAL();
+
+    if (p_handler->BuffUseSize < p_handler->Buff_Size)
+    {
+        /* 初始填满阶段 */
+        p_handler->data[p_handler->CyclicCount] = s_new_val;
+        p_handler->Sum += s_new_val;
+        p_handler->BuffUseSize++;
+        p_handler->CyclicCount++;
+        if (p_handler->CyclicCount >= p_handler->Buff_Size)
+            p_handler->CyclicCount = 0;
+        /* 四舍五入均值 */
+        p_handler->DataOut = (s32)((p_handler->Sum + (p_handler->BuffUseSize / 2)) / p_handler->BuffUseSize);
+    }
+    else
+    {
+        /* 窗口已满，进入快速 O(1) 滑动更新 */
+        s_old_val = p_handler->data[p_handler->CyclicCount];
+        p_handler->data[p_handler->CyclicCount] = s_new_val;
+        p_handler->Sum = p_handler->Sum - s_old_val + s_new_val;
+
+        p_handler->CyclicCount++;
+        if (p_handler->CyclicCount >= p_handler->Buff_Size)
+            p_handler->CyclicCount = 0;
+        /* 四舍五入均值 */
+        p_handler->DataOut = (s32)((p_handler->Sum + (p_handler->Buff_Size / 2)) / p_handler->Buff_Size);
+    }
+
+    mainEXIT_CRITICAL();
+
+    return (u16)p_handler->DataOut;
 }
 
-
-
-/**************************************************************************************
-函数名   Filter_MedianValueFilter 平均数滤波
-功能     ：连续采样N次，取平均
-输入参数 ：datain 输入的AD值；   dataout 过滤后的AD值
-返回     ：true：采集够数量的数据，已经得出平均数，反之为False   
-优缺点   ：N较大时平滑度高，灵敏度低；  N较小时平滑度低，灵敏度高
-***************************************************************************************/
-#define   AF_Sum_Num   10
-u32  AF_Sum = 0;
-u8   AF_SumCount=0;
-bool Filter_Average(u16* datain, u16* dataout)
+/***********************************************************************************************************************
+ * 函数功能    : 整型数据稳定状态检测
+ * 说明(备注)  : 检测连续 Buff_Size 次采样的相邻差值绝对值之和是否在 Max_Swing 门限内
+ * 传入参数    : p_filter: 句柄指针, num: 本次采样数据
+ * 输出参数    : p_filter: 更新状态
+ * 返回值      : s8: 1: 判定稳定; -1: 判定波动超标; 0: 数据收集中尚未满周期
+ ************************************************************************************************************************/
+s8 cFilter_CkeckDataStability(FilterHandler_T *p_filter, u16 num)
 {
-	AF_Sum += *datain;
-	AF_SumCount ++ ;
-	if( AF_SumCount >= AF_Sum_Num )
-	{
-		*dataout = (u16)( AF_Sum / AF_Sum_Num );
-		AF_SumCount = 0;
-		return true;
-	}
-	return false ;
+    int32_t i;
+
+    if ((p_filter == NULL) || (p_filter->data == NULL) || (p_filter->Buff_Size <= 1))
+        return 0;
+
+    p_filter->data[p_filter->CyclicCount] = (s32)num;
+    p_filter->CyclicCount++;
+
+    if (p_filter->CyclicCount >= p_filter->Buff_Size)
+    {
+        p_filter->Sum = 0;
+        for (i = 0; i < (int32_t)(p_filter->Buff_Size - 1); i++)
+            p_filter->Sum += abs((int)(p_filter->data[i] - p_filter->data[i + 1]));
+
+        p_filter->CyclicCount = 0;
+
+        if (p_filter->Sum <= (s64)p_filter->Max_Swing)
+            return 1;
+        else
+            return -1;
+    }
+
+    return 0;
 }
-/**************************************************************************************
-函数名   Filter_RecursionAverageFilter 递推平均滤波
-功能     ：连续采样N次，取平均，取N个采样值形成队列，先进先出
-输入参数 ：datain 输入的AD值；
-返回     ：平均后的AD值   
-优缺点   ：对周期性干扰抑制性好，平滑度高， 适用于高频振动系统
-         ：灵敏度低，RAM占用较大，脉冲干扰严重
-***************************************************************************************/
-u16 usFilter_RecursionAverage(FilterHandler_T* tHandler, u16* data)
+
+/***********************************************************************************************************************
+ * 函数功能    : 浮点数据稳定状态检测
+ * 说明(备注)  : 浮点相邻差值绝对值累加判定
+ * 传入参数    : p_filter: 浮点句柄指针, num: 本次采样数据
+ * 输出参数    : p_filter: 更新状态
+ * 返回值      : s8: 1: 稳定; -1: 超标; 0: 采集中
+ ************************************************************************************************************************/
+s8 cFilter_CkeckFloatDataStability(fFilterHandler_T *p_filter, float num)
 {
-	vu16  RE_CyclicSum = 0;
-	//优化后
-	tHandler->data[tHandler->CyclicCount] = *data ; //存储数据
-	
-	tHandler->CyclicCount++;
-	
-	if(tHandler->BuffUseSize < tHandler->CyclicCount) //记录存储个数
-		tHandler->BuffUseSize ++;
-	
-	if( tHandler->Buff_Size <= tHandler->CyclicCount )   
-		tHandler->CyclicCount = 0;
-	
-	for( u8 n = 0; n< tHandler->BuffUseSize; n++)  //累加
-	{
-		RE_CyclicSum += tHandler->data[ n ];
-	}
-	
-	tHandler->DataOut = RE_CyclicSum / tHandler->BuffUseSize;
-	
-	return tHandler->DataOut;  //返回平均值
+    int32_t i;
+
+    if ((p_filter == NULL) || (p_filter->data == NULL) || (p_filter->Buff_Size <= 1))
+        return 0;
+
+    p_filter->data[p_filter->CyclicCount] = num;
+    p_filter->CyclicCount++;
+
+    if (p_filter->CyclicCount >= p_filter->Buff_Size)
+    {
+        p_filter->Sum = 0.0f;
+        for (i = 0; i < (int32_t)(p_filter->Buff_Size - 1); i++)
+            p_filter->Sum += fFunc_Fabs(p_filter->data[i], p_filter->data[i + 1]);
+
+        p_filter->CyclicCount = 0;
+
+        if (p_filter->Sum <= p_filter->Max_Swing)
+            return 1;
+        else
+            return -1;
+    }
+
+    return 0;
 }
 
-
-/**************************************************************************************
-函数名   Filter_MadianAverageFilter  中位平均滤波 (验证过是对的)
-功能     ：融合了中位值，平均值的优点 消除脉冲干扰
-输入参数 ：datain 输入的AD值；   dataout 过滤后的AD值
-返回     ：true：采集够数量的数据，已经得出中位数，反之为False  
-优缺点   ：计算速度慢，RAM占用大
-***************************************************************************************/
-s32 lFilter_MadianAverage(FilterHandler_T* tHandler, s32* datain)
+/***********************************************************************************************************************
+ * 函数功能    : 多实例限幅滤波计算
+ * 说明(备注)  : 若本次差值 <= usMaxSwing 则有效，否则判定为突发脉冲干扰并维持上次值
+ * 传入参数    : p_filter: 限幅滤波上下文, us_new_val: 本次采样值
+ * 输出参数    : p_filter: 更新历史输出
+ * 返回值      : uint16_t: 滤波后输出
+ ************************************************************************************************************************/
+uint16_t usFilter_LimitCalc(LimitFilter_T *p_filter, uint16_t us_new_val)
 {
-	#if(boardUSE_OS)
-    taskENTER_CRITICAL();
-	#endif
-	
-	tHandler->data[ tHandler->CyclicCount ] = *datain;
-	tHandler->CyclicCount++;
-	if( tHandler->CyclicCount >= tHandler->Buff_Size )  //数据满足
-	{
-		//排序
-		qsort(tHandler->data,tHandler->Buff_Size,sizeof(int),cmp_int);
-		
-		for(u8 n = 1; n < tHandler->Buff_Size - 1; n++ )  //去除最大最小值
-		{
-			tHandler->Sum += tHandler->data[ n ];
-		}
-	
-		tHandler->DataOut =  (u16)(tHandler->Sum/(tHandler->Buff_Size-2));   //求出平均值
-		tHandler->CyclicCount = 0 ;
-		tHandler->Sum = 0;
-	}
-	else 
-	{
-		//初始化采集时候,输入等于输出
-		if(tHandler->DataOut == 0) 
-			tHandler->DataOut = *datain;  
-	}
-	
-	#if(boardUSE_OS)
-	taskEXIT_CRITICAL();
-	#endif
-	
-	return tHandler->DataOut;
+    if (p_filter == NULL)
+        return us_new_val;
+
+    if (!p_filter->bInitialized)
+    {
+        p_filter->usLastValue = us_new_val;
+        p_filter->bInitialized = true;
+        return us_new_val;
+    }
+
+    if ((uint16_t)abs((int32_t)us_new_val - (int32_t)p_filter->usLastValue) <= p_filter->usMaxSwing)
+        p_filter->usLastValue = us_new_val;
+
+    return p_filter->usLastValue;
 }
 
-float fFilter_MadianAverage(fFilterHandler_T* tHandler, float* datain)
+/***********************************************************************************************************************
+ * 函数功能    : 多实例一阶滞后滤波计算
+ * 说明(备注)  : 本次结果 = (100 - a) * 上次结果 + a * 本次采样，平滑滤除周期性高频噪声；
+ *              加入 +50 四舍五入偏移，消除微小增量整除向零截断导致的爬坡死区停滞
+ * 传入参数    : p_filter: 上下文指针, us_new_val: 本次采样值
+ * 输出参数    : p_filter: 更新历史输出
+ * 返回值      : uint16_t: 滤波后输出
+ ************************************************************************************************************************/
+uint16_t usFilter_FirstOrderCalc(FirstOrderFilter_T *p_filter, uint16_t us_new_val)
 {
-	#if(boardUSE_OS)
-    taskENTER_CRITICAL();
-	#endif
-	
-	tHandler->data[ tHandler->CyclicCount ] = *datain;
-	tHandler->CyclicCount++;
-	if( tHandler->CyclicCount >= tHandler->Buff_Size )  //数据满足
-	{
-		//排序
-		qsort(tHandler->data,tHandler->Buff_Size,sizeof(float),cmp_float);
-		
-		for(u8 n = 1; n < tHandler->Buff_Size - 1; n++ )  //去除最大最小值
-		{
-			tHandler->Sum += tHandler->data[ n ];
-		}
-	
-		tHandler->DataOut = tHandler->Sum/(tHandler->Buff_Size-2);   //求出平均值
-		tHandler->CyclicCount = 0 ;
-		tHandler->Sum = 0;
-	}
-	else 
-	{
-		//初始化采集时候,输入等于输出
-		if(tHandler->DataOut == 0) 
-			tHandler->DataOut = *datain;  
-	}
-	
-	#if(boardUSE_OS)
-	taskEXIT_CRITICAL();
-	#endif
-	
-	return tHandler->DataOut;
+    int32_t s_diff;
+    int32_t s_inc;
+
+    if (p_filter == NULL)
+        return us_new_val;
+
+    if (!p_filter->bInitialized)
+    {
+        p_filter->usLastValue = us_new_val;
+        p_filter->bInitialized = true;
+        return us_new_val;
+    }
+
+    s_diff = (int32_t)us_new_val - (int32_t)p_filter->usLastValue;
+    if ((s_diff != 0) && (p_filter->ucCoeff != 0))
+    {
+        /* 增量带符号四舍五入计算: inc = (diff * a + 50) / 100 */
+        s_inc = (s_diff * (int32_t)p_filter->ucCoeff + (s_diff > 0 ? 50 : -50)) / 100;
+        if (s_inc == 0)
+            /* 稳态静差与死区消除补偿: 当输入与历史存在差值但被整除截断吃掉时，给予最小 +/-1 步进推进
+             * (仅对有效权重 a>=1 生效; a==0 语义为 0% 新值, 输出应冻结, 不做补偿爬行) */
+            s_inc = (s_diff > 0) ? 1 : -1;
+        p_filter->usLastValue = (uint16_t)((int32_t)p_filter->usLastValue + s_inc);
+    }
+
+    return p_filter->usLastValue;
 }
 
-/**************************************************************************************
-函数名   Filter_MedianValue 限幅平均滤波
-功能     ：每次采样数据先限幅后送入队列
-输入参数 ：datain 输入的AD值；   dataout 过滤后的AD值
-返回     ：true：采集够数量的数据，已经得出中位数，反之为False   
-优缺点   ：融合限幅、均值、队列的优点 ， 消除脉冲干扰，占RAM较多
-***************************************************************************************/
-#define    LA_Max_Swing_Value     10    //最大振幅
-#define    LA_Max_Buff_Num        12
-
-vu32 LA_Sum = 0 ;
-u16  LA_Lastvalue = 0;
-vu8  LA_CyclicCount = 0;      //
-u16  LA_value_buf[LA_Max_Buff_Num];
-
-u16 Filter_LimitAverage(u16* data, u16* dataout)
+/***********************************************************************************************************************
+ * 函数功能    : 多实例消抖滤波计算
+ * 说明(备注)  : 仅当同一个新值连续出现达到 ucMaxShake 次时，才确认切换为该新值
+ * 传入参数    : p_filter: 消抖上下文指针, us_new_val: 本次采样输入
+ * 输出参数    : p_filter: 更新消抖状态
+ * 返回值      : uint16_t: 滤波后输出
+ ************************************************************************************************************************/
+uint16_t usFilter_ClearShakeCalc(ClearShakeFilter_T *p_filter, uint16_t us_new_val)
 {
-	if( abs ( *data - LA_Lastvalue ) < LA_Max_Swing_Value ) //储存符合要求的数据
-	{
-		LA_value_buf[ LA_CyclicCount++ ] = *data;
-	}
-	if( LA_CyclicCount >= LA_Max_Buff_Num )
-	{
-		for(u8 count = 0; count < LA_Max_Buff_Num; count++ )  //累加
-		{
-			LA_Sum += LA_value_buf[ count ];
-		}
-		LA_CyclicCount = 0;
-		LA_Lastvalue = *dataout = (u16)(LA_Sum/LA_Max_Buff_Num); //求平均
-		return true;
-	}
-	return false;
+    if (p_filter == NULL)
+        return us_new_val;
+
+    if (!p_filter->bInitialized)
+    {
+        p_filter->usLastValue = us_new_val;
+        p_filter->usTargetValue = us_new_val;
+        p_filter->ucShakeCount = 0;
+        p_filter->bInitialized = true;
+        return us_new_val;
+    }
+
+    if (us_new_val != p_filter->usLastValue)
+    {
+        if (us_new_val == p_filter->usTargetValue)
+        {
+            p_filter->ucShakeCount++;
+            if (p_filter->ucShakeCount >= p_filter->ucMaxShake)
+            {
+                p_filter->usLastValue = us_new_val;
+                p_filter->ucShakeCount = 0;
+            }
+        }
+        else
+        {
+            p_filter->usTargetValue = us_new_val;
+            p_filter->ucShakeCount = 1;
+            /* 边界修正: 新候选首拍计数已达确认阈值 (ucMaxShake <= 1) 时立即确认切换,
+             * 消除原先 ucMaxShake=0/1 时需要连续出现 2 次才确认的不一致语义 */
+            if (p_filter->ucShakeCount >= p_filter->ucMaxShake)
+            {
+                p_filter->usLastValue = us_new_val;
+                p_filter->ucShakeCount = 0;
+            }
+        }
+    }
+    else
+        p_filter->ucShakeCount = 0;
+
+    return p_filter->usLastValue;
 }
 
-
-/**************************************************************************************
-函数名   Filter_MedianValueFilter 限幅平均滤波
-功能     ：每次采样数据先限幅后送入队列   本次滤波结果=（1-a）* 本次采样 + a * 上次结果
-输入参数 ：datain 输入的AD值；   
-返回     ：过滤后的AD值  
-优缺点   : 良好一直周期性干扰，适用波动频率较高场合
-***************************************************************************************/
-
-#define			FirstOrderNum		30  /*为加快程序处理速度，取a=0~100*/
-u16 FO_Lastvalue;
-u16 Filter_FirstOrder(u16* data)
+/***********************************************************************************************************************
+ * 函数功能    : 多实例限幅消抖滤波计算
+ * 说明(备注)  : 门限内正常波动直接平滑跟随；超出限幅门限的大跳变启动消抖确认计数；
+ *              若为瞬态尖峰杂波则自动滤除，若连续达到确认阈值则判定为真实物理阶跃并确认切换，彻底消除原死锁Bug
+ * 传入参数    : p_filter: 上下文指针, us_new_val: 输入采样
+ * 输出参数    : p_filter: 更新状态
+ * 返回值      : uint16_t: 滤波后输出
+ ************************************************************************************************************************/
+uint16_t usFilter_LimitClearShakeCalc(LimitClearShakeFilter_T *p_filter, uint16_t us_new_val)
 {
-	return ((( 100 - FirstOrderNum ) * FO_Lastvalue + FirstOrderNum * ( *data )) / 100 );
+    if (p_filter == NULL)
+        return us_new_val;
+
+    if (!p_filter->bInitialized)
+    {
+        p_filter->usLastValue = us_new_val;
+        p_filter->usTargetValue = us_new_val;
+        p_filter->ucShakeCount = 0;
+        p_filter->bInitialized = true;
+        return us_new_val;
+    }
+
+    /* 1. 采样值在正常波动门限内，直接跟随输出，清零消抖计数 */
+    if ((uint16_t)abs((int32_t)us_new_val - (int32_t)p_filter->usLastValue) <= p_filter->usMaxSwing)
+    {
+        p_filter->usLastValue = us_new_val;
+        p_filter->ucShakeCount = 0;
+    }
+    else
+    {
+        /* 2. 采样值发生大幅度跳变 (> usMaxSwing)，可能是瞬态干扰，也可能是真实阶跃！
+         *    启动消抖确认：若连续出现同一跳变目标（允许候选值内部有正常微小抖动 <= usMaxSwing），
+         *    累计达到 ucMaxShake 次时，确认判定为真实阶跃并切换输出；若仅 1~2 拍尖峰则被成功滤除。
+         */
+        if ((uint16_t)abs((int32_t)us_new_val - (int32_t)p_filter->usTargetValue) <= p_filter->usMaxSwing)
+        {
+            p_filter->ucShakeCount++;
+            if (p_filter->ucShakeCount >= p_filter->ucMaxShake)
+            {
+                p_filter->usLastValue = us_new_val;
+                p_filter->ucShakeCount = 0;
+            }
+        }
+        else
+        {
+            p_filter->usTargetValue = us_new_val;
+            p_filter->ucShakeCount = 1;
+            /* 边界修正: 新候选首拍计数已达确认阈值 (ucMaxShake <= 1) 时立即确认切换,
+             * 与 usFilter_ClearShakeCalc 保持一致的确认语义 */
+            if (p_filter->ucShakeCount >= p_filter->ucMaxShake)
+            {
+                p_filter->usLastValue = us_new_val;
+                p_filter->ucShakeCount = 0;
+            }
+        }
+    }
+
+    return p_filter->usLastValue;
 }
 
-
-
-/**************************************************************************************
-函数名   Filter_RecursionAverageFilterPlus 加权递推平均滤波
-功能     ：对递推平均滤波的改进，不同时刻的数据加以不同权重，通常越新的数据权重越大，
-           这样灵敏度高，但平滑度低。
-输入参数 ：datain 输入的AD值；dataout 滤波后的值
-返回     ：true：采集够数量的数据，已经得出中位数，反之为False   
-优缺点   ：适用有较大滞后时间常数和采样周期短的系统，对滞后时间常数小，
-           采样周期长、变化慢的信号不能迅速反应其所受干扰。
-***************************************************************************************/
-#define    RA1_Max_Buff_Num        12  
-  
-vu16 RA_Sum1=0;
-vu8  RA_CyclicCount1 = 0; 
-vu16 RA_value_buf1[ RA1_Max_Buff_Num ] = {0};
-const u8 coe[RA1_Max_Buff_Num] = { 1,2,3,4,5,6,7,8,9,10,11,12 };/*?coe数组为加权系数表?*/
-const u8 sum_coe = { 1+2+3+4+5+6+7+8+9+10+11+12 };
-
-bool Filter_RecursionAverage1( u16*  datain, u16* dataout )
+/***********************************************************************************************************************
+ * 函数功能    : 卡尔曼滤波器参数初始化
+ * 说明(备注)  : 初始化过程噪声方差 Q、测量噪声方差 R 及初值
+ * 传入参数    : p_kfp: 结构体指针, q: 过程噪声, r: 观测噪声, p_init: 初始协方差, out_init: 初始估计值
+ * 输出参数    : p_kfp: 初始化后的结构体
+ * 返回值      : void
+ ************************************************************************************************************************/
+void vFilter_KalmanInit(KFP_t *p_kfp, float q, float r, float p_init, float out_init)
 {
-	RA_value_buf1[RA_CyclicCount1] = *datain;
-	RA_CyclicCount1++;
-	if(RA_CyclicCount1 >= RA1_Max_Buff_Num)
-	{
-		for(int count = 0; count < RA1_Max_Buff_Num; count++ )
-		{
-			RA_Sum1+=RA_value_buf1[count]*coe[count];
-		}
-		*dataout = (u16) (RA_Sum1 / sum_coe) ;
-		RA_CyclicCount1 = 0;
-		return true;
-	}
-	
-	return false ;
+    if (p_kfp != NULL)
+    {
+        p_kfp->Q = q;
+        p_kfp->R = r;
+        p_kfp->LastP = (p_init != 0.0f) ? p_init : 0.02f;
+        p_kfp->Now_P = 0.0f;
+        p_kfp->Kg = 0.0f;
+        p_kfp->out = out_init;
+    }
 }
 
-/**************************************************************************************
-函数名   : Filter_ClearShakeFilter 清除抖动滤波
-功能     ：避免临界值附近的跳动，计数器溢出时若采到干扰值则无法滤波
-输入参数 ：datain 输入的AD值
-返回     ：滤波后的值 
-优缺点   ：对变化慢的信号滤波效果好，变化快的不好
-***************************************************************************************/
-
-#define  CS_CyclicCountMax  	5
-
-u16  CS_LastValue = 0;
-vu8  CS_CyclicCount = 0; 
-
-u16 Filter_ClearShake( u16* data )
+/***********************************************************************************************************************
+ * 函数功能    : 卡尔曼滤波核心迭代方程
+ * 说明(备注)  : 一阶标量离散卡尔曼滤波：更新预测协方差、卡尔曼增益(带除零防护)、状态最优估计值与更新后协方差;
+ *              入口含 NaN/Inf 异常观测防护, 拒绝异常输入且不更新状态机
+ * 传入参数    : p_kfp: 卡尔曼参数结构体指针, input: 传感器当前观测输入
+ * 输出参数    : p_kfp: 更新内部状态
+ * 返回值      : float: 状态最优估计输出
+ ************************************************************************************************************************/
+float Filter_Kalman(KFP_t *p_kfp, float input)
 {
-	u16	new_value;
-	new_value = *data;
-	if(CS_LastValue != new_value)
-	{
-		CS_CyclicCount++;
-		if( CS_CyclicCount >= CS_CyclicCountMax )
-		{
-			CS_LastValue = new_value;
-			CS_CyclicCount = 0;
-		}
-	}
-	return CS_LastValue;
+    float denom;
+
+    if (p_kfp == NULL)
+        return input;
+
+    /* 0. 异常值防护: NaN/Inf 观测输入直接拒绝, 状态机不更新, 返回当前最优估计 */
+    if (!isfinite(input))
+        return p_kfp->out;
+
+    /* 1. 预测协方差方程: P(k|k-1) = P(k-1|k-1) + Q */
+    p_kfp->Now_P = p_kfp->LastP + p_kfp->Q;
+
+    /* 2. 卡尔曼增益方程: Kg = P(k|k-1) / (P(k|k-1) + R)，带除零保护 */
+    denom = p_kfp->Now_P + p_kfp->R;
+    if (denom > 1e-7f)
+        p_kfp->Kg = p_kfp->Now_P / denom;
+    else
+        p_kfp->Kg = 0.0f;
+
+    /* 3. 更新最优估计值方程: x(k|k) = x(k|k-1) + Kg * (z(k) - x(k|k-1)) */
+    p_kfp->out = p_kfp->out + p_kfp->Kg * (input - p_kfp->out);
+
+    /* 4. 更新误差协方差方程: P(k|k) = (1 - Kg) * P(k|k-1) */
+    p_kfp->LastP = (1.0f - p_kfp->Kg) * p_kfp->Now_P;
+
+    return p_kfp->out;
 }
 
-/**************************************************************************************
-函数名   : Filter_LimitClearShakeFilter 限幅消抖滤波
-功能     ：先限幅 后消抖
-输入参数 ：data 输入的AD值
-返回     ：滤波后的值 
-优缺点   ：融合了限幅、消抖的优点 避免引入干扰值，对快速变化的信号不宜
-***************************************************************************************/
-#define    LCS_Max_Swing_Value     10    //最大振幅
-#define    LCS_CyclicCountMax  	    12
+#if (filterSELF_TEST_ENABLE)
 
-u16  LCS_LastValue = 0;
-vu8  LCS_CyclicCount = 0; 
+#if (boardPRINT_EN && boardPRINT_IFACE)
+#define			FILTER_TEST_LOG(fmt, ...)				sMyPrint(fmt, ##__VA_ARGS__)
+#else
+#define			FILTER_TEST_LOG(fmt, ...)				((void)0)
+#endif
 
-u16 Filter_LimitClearShake( u16 * data  )
+/***********************************************************************************************************************
+ * 函数功能    : 测试 1 - 中位值去极值平均滤波 (整型与浮点) 精度与去极值特性验证
+ * 说明(备注)  : 验证 O(N) 线性去极值算法与排序去首尾结果严格一致，并验证除法四舍五入防偏置
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : bool: true 验证通过, false 验证失败
+ ************************************************************************************************************************/
+static bool b_test_median_average(void)
 {
-	u16 new_value;
-	new_value = *data ;
-	if(LCS_LastValue != new_value)
-	{
-		if( abs ( LCS_LastValue - new_value ) < LCS_Max_Swing_Value )
-		{
-			LCS_CyclicCount++;
-			if( LCS_CyclicCount >= LCS_CyclicCountMax )
-			{
-				LCS_CyclicCount = 0;
-				LCS_LastValue = new_value;
-			}
-		}
-	}
-	return LCS_LastValue;
+    s32              s_buf[7];
+    FilterHandler_T  t_filter;
+    uint8_t          i;
+    s32              raw_seq[7] = {100, 105, 9999, 95, 102, -8888, 103};
+    s32              round_seq[5] = {10, 1, 100, 3, 0};
+    float            f_buf[5];
+    fFilterHandler_T t_f_filter;
+    float            f_seq[5] = {12.3f, 12.5f, 999.0f, 12.1f, -50.0f};
+
+    /* 1.1 整型去极值验证: 窗口 7，输入含极大值 9999 和极小值 -8888 */
+    t_filter.data = s_buf;
+    t_filter.Buff_Size = 7;
+    t_filter.Max_Swing = 0;
+    vFilter_HandlerReset(&t_filter);
+
+    for (i = 0; i < 7; i++)
+        lFilter_MadianAverage(&t_filter, &raw_seq[i]);
+
+    /* 去除 9999 与 -8888 后，剩余 5 项为 100, 105, 95, 102, 103，总和为 505，均值严格为 101 */
+    if (t_filter.DataOut != 101)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] Median s32 expected 101, got %d\r\n", (int)t_filter.DataOut);
+        return false;
+    }
+
+    /* 1.2 四舍五入防截断偏置验证: 窗口 5，输入去除极值后和为 14，分母为 3 (14/3 = 4.666...) */
+    t_filter.Buff_Size = 5;
+    vFilter_HandlerReset(&t_filter);
+    for (i = 0; i < 5; i++)
+        lFilter_MadianAverage(&t_filter, &round_seq[i]);
+
+    if (t_filter.DataOut != 5)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] Median rounding expected 5, got %d\r\n", (int)t_filter.DataOut);
+        return false;
+    }
+
+    /* 1.3 浮点去极值验证: 窗口 5，剔除 999.0f 与 -50.0f，保留 12.3f, 12.5f, 12.1f -> 均值 12.3f */
+    t_f_filter.data = f_buf;
+    t_f_filter.Buff_Size = 5;
+    t_f_filter.Max_Swing = 0.0f;
+    vFilter_FloatHandlerReset(&t_f_filter);
+    for (i = 0; i < 5; i++)
+        fFilter_MadianAverage(&t_f_filter, &f_seq[i]);
+
+    if (fabs(t_f_filter.DataOut - 12.3f) > 0.001f)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] Median float expected 12.3, got %d/1000\r\n", (int)(t_f_filter.DataOut * 1000.0f));
+        return false;
+    }
+
+    return true;
 }
 
-
-/**
-  ******************************************************************************
-  * @brief  卡尔曼滤波器 函数
-  * @param  inData - 输入值
-  * @return 滤波后的值
-  * @note   r值固定，q值越大，代表越信任测量值，q值无穷大，代表只用测量值。
-  *                  q值越小，代表越信任模型预测值，q值为0，代表只用模型预测值。
-  *         q:过程噪声，q增大，动态响应变快，收敛稳定性变坏；反之。控制误差 
-  *         r:测量噪声，r增大，动态响应变慢，收敛稳定性变好；反之。控制响应速度
-  ******************************************************************************
-  */
-unsigned long KalmanFilter(unsigned long inData)
+/***********************************************************************************************************************
+ * 函数功能    : 测试 2 - 滑动递推平均滤波 O(1) 增量滑动与四舍五入验证
+ * 说明(备注)  : 验证窗口填满后最早数据滚出、最新数据滚入的 O(1) 递推准确性
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : bool: true 验证通过, false 验证失败
+ ************************************************************************************************************************/
+static bool b_test_recursion_average(void)
 {
-    static float  kalman = 0; //上次卡尔曼值(估计出的最优值)
-    static float  p = 10;
-    float  q = 0.001; //q:过程噪声
-    float  r = 0.001; //r:测量噪声
-    float  kg = 0; //kg:卡尔曼增益
- 
-    p += q;
-    kg = p / ( p + r ); //计算卡尔曼增益
-    kalman = kalman + (kg * (inData - kalman)); //计算本次滤波估计值
-    p = (1 - kg) * p; //更新测量方差
-    
-    return (unsigned long)kalman; //返回估计值
+    s32             s_buf[4];
+    FilterHandler_T t_filter;
+    u16             val;
+
+    t_filter.data = s_buf;
+    t_filter.Buff_Size = 4;
+    t_filter.Max_Swing = 0;
+    vFilter_HandlerReset(&t_filter);
+
+    /* 2.1 填满窗口 4 个 100 */
+    val = 100;
+    usFilter_RecursionAverage(&t_filter, &val);
+    usFilter_RecursionAverage(&t_filter, &val);
+    usFilter_RecursionAverage(&t_filter, &val);
+    if (usFilter_RecursionAverage(&t_filter, &val) != 100)
+        return false;
+
+    /* 2.2 第 5 拍输入 104: 窗口滚动为 [104, 100, 100, 100]，Sum = 404，输出应为 101 */
+    val = 104;
+    if (usFilter_RecursionAverage(&t_filter, &val) != 101)
+        return false;
+
+    /* 2.3 第 6 拍输入 103: 窗口滚动为 [104, 103, 100, 100]，Sum = 407，407/4=101.75 -> 四舍五入得 102 */
+    val = 103;
+    if (usFilter_RecursionAverage(&t_filter, &val) != 102)
+        return false;
+
+    return true;
 }
 
-
-
-
-//2. 以高度为例 定义卡尔曼结构体并初始化参数
-//KFP KFP_height={0.02,0,0,0,0.001,0.543};
-
-/**
- *卡尔曼滤波器
- *@param KFP *kfp 卡尔曼结构体参数
- *   float input 需要滤波的参数的测量值（即传感器的采集值）
- *@return 滤波后的参数（最优值）
-*/
-float Filter_Kalman(KFP_t *kfp,float input)
+/***********************************************************************************************************************
+ * 函数功能    : 测试 3 - 限幅消抖滤波 (抗脉冲干扰与彻底解除死锁验证)
+ * 说明(备注)  : 验证微小扰动平滑跟随、突发尖峰脉冲被成功滤除、大物理阶跃连续到达后确认切换
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : bool: true 验证通过, false 验证失败
+ ************************************************************************************************************************/
+static bool b_test_limit_clear_shake(void)
 {
-     //预测协方差方程：k时刻系统估算协方差 = k-1时刻的系统协方差 + 过程噪声协方差
-     kfp->Now_P = kfp->LastP + kfp->Q;
-     //卡尔曼增益方程：卡尔曼增益 = k时刻系统估算协方差 / （k时刻系统估算协方差 + 观测噪声协方差）
-     kfp->Kg = kfp->Now_P / (kfp->Now_P + kfp->R);
-     //更新最优值方程：k时刻状态变量的最优值 = 状态变量的预测值 + 卡尔曼增益 * （测量值 - 状态变量的预测值）
-     kfp->out = kfp->out + kfp->Kg * (input -kfp->out);//因为这一次的预测值就是上一次的输出值
-     //更新协方差方程: 本次的系统协方差付给 kfp->LastP 威下一次运算准备。
-     kfp->LastP = (1-kfp->Kg) * kfp->Now_P;
-     return kfp->out;
+    LimitClearShakeFilter_T t_filter = {0, 0, 10, 0, 4, false}; /* 限幅门限 10, 消抖阈值 4 */
+
+    /* 3.1 首拍热启动: 初始值 100 */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 100) != 100)
+        return false;
+
+    /* 3.2 微小波动正常跟随: 输入 105 (变化 5 <= 10) -> 立即输出 105 */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 105) != 105)
+        return false;
+
+    /* 3.3 突发孤立尖峰干扰抑制: 连续 2 拍输入 500 (变化 395 >> 10, 但仅持续 2 拍 < 4 拍) */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 500) != 105)
+        return false; /* 第 1 拍尖峰必须被滤除，保持 105 */
+
+    if (usFilter_LimitClearShakeCalc(&t_filter, 500) != 105)
+        return false; /* 第 2 拍尖峰必须被滤除，保持 105 */
+
+    /* 尖峰消失恢复正常值 106 (与 105 差 1 <= 10) -> 立即跟随 106 */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 106) != 106)
+        return false;
+
+    /* 3.4 真实物理大幅度阶跃测试 (原代码致命死锁点回归测试): 物理信号跳变至 300 并持续保持 */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 300) != 106)
+        return false; /* 第 1 拍确认中，输出 106 */
+
+    if (usFilter_LimitClearShakeCalc(&t_filter, 300) != 106)
+        return false; /* 第 2 拍确认中，输出 106 */
+
+    if (usFilter_LimitClearShakeCalc(&t_filter, 300) != 106)
+        return false; /* 第 3 拍确认中，输出 106 */
+
+    /* 第 4 拍达到确认阈值 ucMaxShake (4 拍)，必须确认切换至 300！彻底验证死锁已彻底根除 */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 300) != 300)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] LimitClearShake deadlocked at 106!\r\n");
+        return false;
+    }
+
+    /* 切换后进入新区间微小波动跟随 */
+    if (usFilter_LimitClearShakeCalc(&t_filter, 302) != 302)
+        return false;
+
+    return true;
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 测试 4 - 一阶滞后滤波 (微步爬坡死区消除与大阶跃指数平滑)
+ * 说明(备注)  : 验证加入 +50 四舍五入后消除了微小增量整除向零截断停滞的缺陷
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : bool: true 验证通过, false 验证失败
+ ************************************************************************************************************************/
+static bool b_test_first_order_lag(void)
+{
+    FirstOrderFilter_T t_filter = {100, 30, true}; /* 初值 100, 系数 30 (即 30% 新值 + 70% 旧值) */
+    uint16_t           out_val;
+    uint8_t            i;
 
+    /* 4.1 微弱步进爬坡测试: 输入连续微小步进 101
+     * 原无四舍五入代码: (70*100 + 30*101) / 100 = 7030 / 100 = 70 (向零截断导致永久死锁停在 100)
+     * 加四舍五入代码: 连续迭代能够克服截断，平滑爬升至 101
+     */
+    out_val = 100;
+    for (i = 0; i < 6; i++)
+        out_val = usFilter_FirstOrderCalc(&t_filter, 101);
 
+    if (out_val != 101)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] FirstOrder deadzone failed to climb to 101, got %u\r\n", out_val);
+        return false;
+    }
 
+    /* 4.2 大阶跃平滑收敛: 持续输入 200，经历 25 拍迭代后收敛至 200 */
+    for (i = 0; i < 25; i++)
+        out_val = usFilter_FirstOrderCalc(&t_filter, 200);
 
+    if (out_val != 200)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] FirstOrder failed to converge to 200, got %u\r\n", out_val);
+        return false;
+    }
 
+    return true;
+}
 
+/***********************************************************************************************************************
+ * 函数功能    : 测试 5 - 卡尔曼滤波 (除零保护与含噪数据收敛稳定性)
+ * 说明(备注)  : 验证除零极限保护与收敛性能
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : bool: true 验证通过, false 验证失败
+ ************************************************************************************************************************/
+static bool b_test_kalman_filter(void)
+{
+    KFP_t   t_kfp;
+    float   out;
+    uint8_t i;
+    float   noise_seq[10] = {1002.0f, 997.0f, 1003.0f, 998.0f, 1001.0f, 999.0f, 1002.0f, 998.0f, 1000.0f, 1001.0f};
 
+    /* 5.1 除零保护测试: 异常传入 0 协方差与 0 噪声，验证不触发除零崩溃 */
+    vFilter_KalmanInit(&t_kfp, 0.0f, 0.0f, 0.0f, 50.0f);
+    out = Filter_Kalman(&t_kfp, 60.0f);
+    if (isnan(out) || isinf(out))
+        return false;
+
+    /* 5.2 高斯噪声平滑测试: 基准 1000.0f，输入注入正负交错噪声 */
+    vFilter_KalmanInit(&t_kfp, 0.001f, 0.1f, 1.0f, 1000.0f);
+    for (i = 0; i < 10; i++)
+        out = Filter_Kalman(&t_kfp, noise_seq[i]);
+
+    /* 滤波后估计值必须稳定在 [999.0f, 1001.0f] 极小邻域内 */
+    if (fabs(out - 1000.0f) > 1.0f)
+    {
+        FILTER_TEST_LOG("[FILTER TEST FAIL] Kalman divergence, got %d/10\r\n", (int)(out * 10.0f));
+        return false;
+    }
+
+    return true;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 测试 6 - 数据稳定性检测器门限判定验证
+ * 说明(备注)  : 验证平稳信号返回 1，超标抖动信号返回 -1
+ * 传入参数    : none
+ * 输出参数    : 无
+ * 返回值      : bool: true 验证通过, false 验证失败
+ ************************************************************************************************************************/
+static bool b_test_data_stability(void)
+{
+    s32             s_buf[5];
+    FilterHandler_T t_filter;
+    s8              s_res;
+    uint8_t         i;
+    u16             stable_seq[5] = {100, 101, 100, 102, 101};
+    u16             shock_seq[5] = {100, 150, 100, 150, 100};
+
+    t_filter.data = s_buf;
+    t_filter.Buff_Size = 5;
+    t_filter.Max_Swing = 10; /* 相邻差之和门限 10 */
+    vFilter_HandlerReset(&t_filter);
+
+    /* 6.1 平稳序列: 100, 101, 100, 102, 101 -> 相邻差之和 1+1+2+1 = 5 <= 10 -> 返回 1 */
+    s_res = 0;
+    for (i = 0; i < 5; i++)
+        s_res = cFilter_CkeckDataStability(&t_filter, stable_seq[i]);
+
+    if (s_res != 1)
+        return false;
+
+    /* 6.2 剧烈抖动序列: 100, 150, 100, 150, 100 -> 相邻差之和 200 > 10 -> 返回 -1 */
+    for (i = 0; i < 5; i++)
+        s_res = cFilter_CkeckDataStability(&t_filter, shock_seq[i]);
+
+    if (s_res != -1)
+        return false;
+
+    return true;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 滤波算法库全面自动化自检与精度验证执行入口
+ * 说明(备注)  : 运行全部 6 大核心滤波算法单元测试，输出统计报告
+ * 传入参数    : p_report: 报告指针 (可为 NULL)
+ * 输出参数    : p_report: 填充通过用例数与失败数
+ * 返回值      : bool: true 全部测试通过, false 存在失败用例
+ ************************************************************************************************************************/
+bool bFilter_RunSelfTest(FilterTestReport_T *p_report)
+{
+    uint16_t us_total = 6;
+    uint16_t us_pass = 0;
+    uint16_t us_fail = 0;
+
+    FILTER_TEST_LOG("\r\n================ [FILTER ALGORITHM SELF-TEST] ================\r\n");
+
+    /* Test 1 */
+    if (b_test_median_average())
+    {
+        us_pass++;
+        FILTER_TEST_LOG("[TEST 1/6] Median Average (S32 & Float)   : [PASS]\r\n");
+    }
+    else
+    {
+        us_fail++;
+        FILTER_TEST_LOG("[TEST 1/6] Median Average (S32 & Float)   : [FAIL]\r\n");
+    }
+
+    /* Test 2 */
+    if (b_test_recursion_average())
+    {
+        us_pass++;
+        FILTER_TEST_LOG("[TEST 2/6] Recursion Average (O(1) Slide) : [PASS]\r\n");
+    }
+    else
+    {
+        us_fail++;
+        FILTER_TEST_LOG("[TEST 2/6] Recursion Average (O(1) Slide) : [FAIL]\r\n");
+    }
+
+    /* Test 3 */
+    if (b_test_limit_clear_shake())
+    {
+        us_pass++;
+        FILTER_TEST_LOG("[TEST 3/6] Limit Clear Shake (Anti-Spike) : [PASS]\r\n");
+    }
+    else
+    {
+        us_fail++;
+        FILTER_TEST_LOG("[TEST 3/6] Limit Clear Shake (Anti-Spike) : [FAIL]\r\n");
+    }
+
+    /* Test 4 */
+    if (b_test_first_order_lag())
+    {
+        us_pass++;
+        FILTER_TEST_LOG("[TEST 4/6] First-Order Lag (Anti-Deadzone): [PASS]\r\n");
+    }
+    else
+    {
+        us_fail++;
+        FILTER_TEST_LOG("[TEST 4/6] First-Order Lag (Anti-Deadzone): [FAIL]\r\n");
+    }
+
+    /* Test 5 */
+    if (b_test_kalman_filter())
+    {
+        us_pass++;
+        FILTER_TEST_LOG("[TEST 5/6] Kalman Filter Robustness       : [PASS]\r\n");
+    }
+    else
+    {
+        us_fail++;
+        FILTER_TEST_LOG("[TEST 5/6] Kalman Filter Robustness       : [FAIL]\r\n");
+    }
+
+    /* Test 6 */
+    if (b_test_data_stability())
+    {
+        us_pass++;
+        FILTER_TEST_LOG("[TEST 6/6] Data Stability Checker        : [PASS]\r\n");
+    }
+    else
+    {
+        us_fail++;
+        FILTER_TEST_LOG("[TEST 6/6] Data Stability Checker        : [FAIL]\r\n");
+    }
+
+    FILTER_TEST_LOG("--------------------------------------------------------------\r\n");
+    FILTER_TEST_LOG("Total Cases: %u, Passed: %u, Failed: %u -> %s\r\n",
+                    us_total, us_pass, us_fail, (us_fail == 0) ? "ALL TESTS PASSED!" : "SOME TESTS FAILED!");
+    FILTER_TEST_LOG("==============================================================\r\n\r\n");
+
+    if (p_report != NULL)
+    {
+        p_report->usTotalCases = us_total;
+        p_report->usPassCount = us_pass;
+        p_report->usFailCount = us_fail;
+    }
+
+    return (us_fail == 0);
+}
+
+#endif  /* filterSELF_TEST_ENABLE */
+
+#endif  /* 1 */
 

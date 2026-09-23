@@ -36,7 +36,7 @@ OF SUCH DAMAGE.
 #include "main.h"
 #include "systick.h"
 
-#define SRAM_ECC_ERROR_HANDLE(s)    do{}while(1)
+#define			SRAM_ECC_ERROR_HANDLE(s)				do{}while(1)
 
 bool bExti_KeyTriFlag = false;
 bool bExti_SensorTriFlag = false;

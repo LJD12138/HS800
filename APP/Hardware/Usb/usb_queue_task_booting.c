@@ -1,90 +1,93 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         系统的队列函数                                                  		*
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\Usb
+ * File    : usb_queue_task_booting.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : USB 队列任务: 启动实现文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Usb/usb_queue_task.h"
 
-#if(boardUSB_EN)
+#if (boardUSB_EN)
 #include "Usb/usb_task.h"
 #include "Usb/usb_prot_frame.h"
 #include "Usb/usb_iface.h"
 #include "Sys/sys_task.h"
-
 #include "app_info.h"
 
-#if(boardPRINT_IFACE)
+#if (boardPRINT_IFACE)
 #include "Print/print_task.h"
-#endif  //boardPRINT_IFACE
+#endif  /* boardPRINT_IFACE */
 
+#if (boardUSE_OS)
+#include "freertos.h"
+#include "task.h"
+#endif  /* boardUSE_OS */
 
-#define       	usbTASK_BOOTING_CYCLE_TIME               		500
+//****************************************************Macros********************************************************************//
+#define			usbTASK_BOOTING_CYCLE_TIME				100
 
+//****************************************************Function Declaration******************************************************//
 
-/*****************************************************************************************************************
------函数功能    任务函数:初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
-void v_usb_queue_task_booting(Task_T *tp_task)
+/***********************************************************************************************************************
+ * 函数功能    : USB 队列任务: 启动
+ * 说明(备注)  : 设置状态为启动中并校验供电电压
+ * 传入参数    : p_task: 队列任务控制块
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void v_usb_queue_task_booting(Task_T *p_task)
 {
-	switch (tp_task->ucStep)
-    {
+	switch (p_task->ucStep)
+	{
 		case 0:
 		{
 			bUsb_SetDevState(DS_BOOTING);
 
-			if(cUsb_CheckInVolt() == 0)
+			if (cUsb_CheckInVolt() == 0)
 			{
-				cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
+				cQueue_GotoStep(p_task, STEP_NEXT);
+				return;
 			}
 		}
 		break;
 
-		//USB的软启动
 		case 1:
 		{
-			// for (u16 duty = 0; duty <= 1000; duty += 15)
-			// {
-			// 	usbPD_EN_PWM_SET(duty);
-			// 	usbPD2_EN_PWM_SET(duty);
-			// 	#if(boardUSE_OS)
-			// 	vTaskDelay(20);
-			// 	#endif
-			// }
-			cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
+			bUsb_SetDevState(DS_WORK);
+			cQueue_GotoStep(p_task, STEP_END);
 		}
 		break;
 
-		case 2:
+		default:
 		{
-			bUsb_SetDevState(DS_WORK);
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);
 		}
 		break;
-			
-		default:
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
-			break;
-    }
-	
-	//等待超时
-	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt > (10000 / usbTASK_BOOTING_CYCLE_TIME)) 
+	}
+
+	/* 等待超时 */
+	p_task->usTaskWaitCnt++;
+	if (p_task->usTaskWaitCnt > (10000 / usbTASK_BOOTING_CYCLE_TIME))
 	{
 		bUsb_SetErrCode(UEC_BOOT_FAULT, true);
 
-		if(uPrint.tFlag.bUsbTask || uPrint.tFlag.bImportant)
-			log_w("bUsbTask:启动中任务等待超时,步骤%d", tp_task->ucStep);
+		if (uPrint.tFlag.bUsbTask || uPrint.tFlag.bImportant)
+			log_w("bUsbTask:启动中任务等待超时,步骤%d", p_task->ucStep);
 
-		cQueue_GotoStep(tp_task, STEP_END);  //结束
+		cQueue_GotoStep(p_task, STEP_END);
 	}
-	
-	#if(boardUSE_OS)
+
+	#if (boardUSE_OS)
 	ulTaskNotifyTake(pdTRUE, usbTASK_BOOTING_CYCLE_TIME);
-	#endif  //boardUSE_OS
+	#endif  /* boardUSE_OS */
 }
 
-#endif  //boardUSB_EN
+#endif  /* boardUSB_EN */

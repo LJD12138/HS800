@@ -1,166 +1,146 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         系统的队列函数                                                  		*
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Application\Sys
+ * File    : sys_queue_task_closing.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 系统关机过程中队列任务实现
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
-#if(boardBMS_EN)
+#if (boardBMS_EN)
 #include "MD_Bms/md_bms_task.h"
-#endif
+#endif  //boardBMS_EN
 
-#if(boardDCAC_EN)
+#if (boardDCAC_EN)
 #include "MD_Dcac/md_dcac_task.h"
-#endif
+#endif  //boardDCAC_EN
 
-#define     	sysTASK_CLOSE_CYCLE_TIME					10 //任务时间
+//****************************************************Macros********************************************************************//
+#define			sysTASK_CLOSE_CYCLE_TIME				10		//任务时间
 
 /***********************************************************************************************************************
------函数功能    系统关闭中
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/  
-void v_sys_queue_task_closing(Task_T *tp_task)
+ * 函数功能    : 系统关机队列任务执行函数
+ * 说明(备注)  : 控制系统由工作状态安全关闭各路外设、断开 BMS 并进入低功耗待机
+ * 传入参数    : p_task: 队列任务指针
+ * 输出参数    : p_task: 更新任务状态
+ * 返回值      : void
+ ************************************************************************************************************************/
+void v_sys_queue_task_closing(Task_T *p_task)
 {
-//	TaskInParam_U u_param;
-//	SwitchObject_E e_obj;
-//	SwitchType_E   e_type;
-	
-//	u_param.usTaskInParam = tp_task->usInParam;
-//	e_obj = (SwitchObject_E)u_param.tTaskParam.ucObj;
-//	e_type = (SwitchType_E)u_param.tTaskParam.ucParam;
-	
-    switch (tp_task->ucStep)
-    {
+	switch (p_task->ucStep)
+	{
 		//************************************步骤0:初始化**********************************************
 		case 0:
 		{
-			bSys_SetDevState(DS_CLOSING,true);
-			cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
-		}break ;
-		
-		
-		//************************************步骤1:初始化逆变参数**********************************************
+			bSys_SetDevState(DS_CLOSING, true);
+			cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
+		}break;
+
+		//************************************步骤1:预留清理********************************************
 		case 1:
 		{
-			// #if(boardDCAC_EN)
-			// //关闭前初始化DCAC参数
-			// tSysInfo.uInit.tFinish.bIF_DcacTask = 0;
-			// cQueue_AddQueueTask(tpDcacTask, DTI_INIT, NULL, true);   //初始化tDCAC
-			// #endif  //boardDCAC_EN
+			cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
+		}break;
 
-			cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
-			
-			//等待超时下一步
-			tp_task->usStepWaitCnt++;
-			if(tp_task->usStepWaitCnt >= 3)
-			{
-				tp_task->usStepWaitCnt = 0;
-				cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
-				
-				if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant) 
-					log_w("bSysTask:关闭系统等待超时");
-			}
-		}
-		break ;
-		
-		//************************************步骤3:等待设备关闭**********************************************
+		//************************************步骤2:等待设备关闭**********************************************
 		case 2:
 		{
-			if(bSys_CheckActState() == false )  //等待关闭 tSysInfo.uInit.tFinish.bIF_DcacTask == 1
+			if (bSys_CheckActState() == false)  //等待关闭 tSysInfo.uInit.tFinish.bIF_DcacTask == 1
 			{
-				cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
+				cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 				break;
-			}				
+			}
 
 			//等待超时下一步
-			tp_task->usStepWaitCnt++;
-			if(tp_task->usStepWaitCnt >= (5000 / sysTASK_CLOSE_CYCLE_TIME))
+			p_task->usStepWaitCnt++;
+			if (p_task->usStepWaitCnt >= (5000 / sysTASK_CLOSE_CYCLE_TIME))
 			{
-				tp_task->usStepWaitCnt = 0;
-				cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
-				
-				if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant) 
+				p_task->usStepWaitCnt = 0;
+				cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
+
+				if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
 					log_w("bSysTask:等待设备关闭超时,强制关闭");
 			}
-		}
-		break ;
-		
+		}break;
+
 		//************************************步骤3:关闭BMS**********************************************
 		case 3:
 		{
-			#if(boardBMS_EN)
-			if(cBms_Switch(SO_KEY, ST_OFF, false) < 0)  //操作失败
+			#if (boardBMS_EN)
+			if (cBms_Switch(SO_KEY, ST_OFF, false) < 0)  //操作失败
 			{
-				if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant) 
+				if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
 					sMyPrint("bSysTask:关闭BMS失败\r\n");
-				
-				#if(boardUSE_OS)
+
+				#if (boardUSE_OS)
 				vTaskDelay(500);
 				#endif  //boardUSE_OS
 				break;
 			}
-			#endif
-			
-			cQueue_GotoStep( tp_task, STEP_NEXT );  //下一步
-		}break ;
-		
+			#endif  //boardBMS_EN
+
+			cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
+		}break;
+
 		//************************************步骤4:等待BMS关闭**********************************************
 		case 4:
 		{
-			#if(boardBMS_EN)
-			if(tBms.eDevState == DS_SHUT_DOWN)
-			{
-				cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-			}	
+			#if (boardBMS_EN)
+			if (tBms.eDevState == DS_SHUT_DOWN)
+				cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 
 			//等待超时重新从第一步开始
-			tp_task->usStepWaitCnt++;
-			if(tp_task->usStepWaitCnt >= (5000 / sysTASK_CLOSE_CYCLE_TIME))
+			p_task->usStepWaitCnt++;
+			if (p_task->usStepWaitCnt >= (5000 / sysTASK_CLOSE_CYCLE_TIME))
 			{
-				tp_task->usStepWaitCnt = 0;
-				cQueue_GotoStep(tp_task, STEP_FORWARD);  //上一步
-				
-				if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant) 
+				p_task->usStepWaitCnt = 0;
+				cQueue_GotoStep(p_task, STEP_FORWARD);  //上一步
+
+				if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
 					sMyPrint("bSysTask:等待BMS关闭完成超时\r\n");
 			}
 			#else
-			cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-			#endif
-		}break ;
-		
-		//************************************步骤4:关闭完成**********************************************
+			cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
+			#endif  //boardBMS_EN
+		}break;
+
+		//************************************步骤5:关闭完成**********************************************
 		case 5:
 		{
 			bSys_SetDevState(DS_SHUT_DOWN, false);
-			
-			cQueue_GotoStep( tp_task, STEP_END );  //结束
-		}
-		break ;
-		
+			cQueue_GotoStep(p_task, STEP_END);  //结束
+		}break;
+
 		default:
-			cQueue_GotoStep(tp_task, STEP_END);
-			break;
-    }
-	
-	//初始化等待10S,超时退出
-	tp_task->usTaskWaitCnt++;
-	if(tp_task->usTaskWaitCnt > (10000 / sysTASK_CLOSE_CYCLE_TIME) && tp_task->ucStep != STEP_END)
-	{
-		
-		bSys_SetErrCode(SEC_CLOSE_FAULT, true);
-		
-		if(uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
-			log_w("bSysTask:关闭系统任务等待超时,步骤%d", tp_task->ucStep);
-		
-		cQueue_GotoStep( tp_task, STEP_END );  //结束
+		{
+			cQueue_GotoStep(p_task, STEP_END);
+		}
+		break;
 	}
-	
-	#if(boardUSE_OS)
-	vTaskDelay(sysTASK_CLOSE_CYCLE_TIME);
+
+	//初始化等待10S,超时退出
+	p_task->usTaskWaitCnt++;
+	if ((p_task->usTaskWaitCnt > (10000 / sysTASK_CLOSE_CYCLE_TIME)) && (p_task->ucStep != STEP_END))
+	{
+		bSys_SetErrCode(SEC_CLOSE_FAULT, true);
+
+		if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
+			log_w("bSysTask:关闭系统任务等待超时,步骤%d", p_task->ucStep);
+
+		cQueue_GotoStep(p_task, STEP_END);  //结束
+	}
+
+	#if (boardUSE_OS)
+	ulTaskNotifyTake(pdTRUE, sysTASK_CLOSE_CYCLE_TIME); /* 周期节拍；新任务投递立即唤醒抢占 */
 	#endif  //boardUSE_OS
 }

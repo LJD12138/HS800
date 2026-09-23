@@ -1,11 +1,31 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Hardware\Usb
+ * File    : usb_iface.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : USB 底层硬件接口驱动头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef USB_IFACE_H_
 #define USB_IFACE_H_
 
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-#if(boardUSB_EN)
+//****************************************************Includes******************************************************************//
+#include "main.h"
+
+#if (boardUSB_EN)
 #include "i2c.h"
 
+//****************************************************Macros********************************************************************//
 #define     	usbIC1_SCL_RCU          				RCU_GPIOC
 #define     	usbIC1_SCL_PORT     					GPIOC
 #define     	usbIC1_SCL_PIN          				GPIO_PIN_14
@@ -46,13 +66,17 @@
 // #define     	usbPOWER_EN_ON()      					GPIO_BOP(usbPOWER_EN_PORT) = (uint32_t)usbPOWER_EN_PIN 
 // #define     	usbPOWER_EN_OFF()     					GPIO_BC(usbPOWER_EN_PORT) = (uint32_t)usbPOWER_EN_PIN
 
-
+//****************************************************Globals*******************************************************************//
 extern I2cObj_T tUSB_IC1_I2C;
 extern I2cObj_T tUSB_IC2_I2C;
 
+//****************************************************Extern********************************************************************//
 void vUsb_IfaceInit(void);
 
-#endif  //boardUSB_EN
+#endif  /* boardUSB_EN */
 
-#endif  //USB_IFACE_H_
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
 
+#endif  /* USB_IFACE_H_ */

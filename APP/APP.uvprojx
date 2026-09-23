@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT,LV_LVGL_H_INCLUDE_SIMPLE</Define>
               <Undefine></Undefine>
-              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui</IncludePath>
+              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\TaskQueue</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -756,16 +756,6 @@
               <FilePath>.\Middlewares\Protocol\BaiKu\baiku_proto.h</FilePath>
             </File>
             <File>
-              <FileName>modbus_proto1.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Middlewares\Protocol\Modbus1\modbus_proto1.c</FilePath>
-            </File>
-            <File>
-              <FileName>modbus_proto1.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Middlewares\Protocol\Modbus1\modbus_proto1.h</FilePath>
-            </File>
-            <File>
               <FileName>proto_update.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Middlewares\Protocol\proto_update.c</FilePath>
@@ -804,6 +794,46 @@
               <FileName>lwrb.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Middlewares\LightweightRingBuffer\src\lwrb.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>MW-MultiFuncKey</GroupName>
+          <Files>
+            <File>
+              <FileName>mf_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\MultiFuncKey\mf_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>mf_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\MultiFuncKey\mf_key.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>MW-TaskQueue</GroupName>
+          <Files>
+            <File>
+              <FileName>queue_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\TaskQueue\queue_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\TaskQueue\queue_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>queue_telemetry.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\TaskQueue\queue_telemetry.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue_telemetry.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\TaskQueue\queue_telemetry.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -6075,11 +6105,6 @@
               <FileType>1</FileType>
               <FilePath>.\ComFunc\ntc.c</FilePath>
             </File>
-            <File>
-              <FileName>queue_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ComFunc\queue_task.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -6371,6 +6396,11 @@
               <FileType>1</FileType>
               <FilePath>.\Hardware\Print\print_update_dcac.c</FilePath>
             </File>
+            <File>
+              <FileName>print_queue_task_reply_run_log.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Print\print_queue_task_reply_run_log.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6401,6 +6431,16 @@
         <Group>
           <GroupName>HW-Key</GroupName>
           <Files>
+            <File>
+              <FileName>key_iface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Key\key_iface.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_iface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Key\key_iface.h</FilePath>
+            </File>
             <File>
               <FileName>key_task.c</FileName>
               <FileType>1</FileType>
@@ -6470,6 +6510,51 @@
               <FileName>dc_task.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\Dc\dc_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_booting.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_booting.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_work.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_work.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_closing.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_closing.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_err.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_err.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_prot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_prot.c</FilePath>
+            </File>
+            <File>
+              <FileName>dc_queue_task_shut_down.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Dc\dc_queue_task_shut_down.c</FilePath>
             </File>
             <File>
               <FileName>dc_iface.c</FileName>
@@ -6579,112 +6664,162 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>MW-UniDisplay</GroupName>
+          <Files>
+            <File>
+              <FileName>uni_disp_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_core.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_core.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_event.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_event.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_event.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_event.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_page.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_page.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>HW-MD_Display</GroupName>
           <Files>
             <File>
+              <FileName>disp_adapt_lvgl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\disp_adapt_lvgl.c</FilePath>
+            </File>
+            <File>
+              <FileName>disp_adapt_lvgl.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\MD_Display\disp_adapt_lvgl.h</FilePath>
+            </File>
+            <File>
               <FileName>lv_port_disp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\lv_port_disp.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\lv_port_disp.c</FilePath>
             </File>
             <File>
               <FileName>lv_port_disp.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\\lv_port_disp.h</FilePath>
+              <FilePath>.\Hardware\MD_Display\lv_port_disp.h</FilePath>
             </File>
             <File>
               <FileName>md_display_api.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_api.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_api.c</FilePath>
             </File>
             <File>
               <FileName>md_display_api.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_api.h</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_api.h</FilePath>
+            </File>
+            <File>
+              <FileName>md_display_data.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\md_display_data.c</FilePath>
+            </File>
+            <File>
+              <FileName>md_display_data.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\MD_Display\md_display_data.h</FilePath>
             </File>
             <File>
               <FileName>md_display_eng_mode.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_eng_mode.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_eng_mode.c</FilePath>
             </File>
             <File>
               <FileName>md_display_eng_mode.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_eng_mode.h</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_eng_mode.h</FilePath>
             </File>
             <File>
               <FileName>md_display_err.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_err.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_err.c</FilePath>
             </File>
             <File>
               <FileName>md_display_iface.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_iface.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_iface.c</FilePath>
             </File>
             <File>
               <FileName>md_display_iface.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_iface.h</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_iface.h</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task.c</FileName>
+              <FileName>md_display_page_boot.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_boot.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task.h</FilePath>
-            </File>
-            <File>
-              <FileName>md_display_queue_task_booting.c</FileName>
+              <FileName>md_display_page_closing.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_booting.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_closing.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task_closing.c</FileName>
+              <FileName>md_display_page_eng.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_closing.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_eng.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task_eng.c</FileName>
+              <FileName>md_display_page_fault.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_eng.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_fault.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task_err.c</FileName>
+              <FileName>md_display_page_init.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_err.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_init.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task_init.c</FileName>
+              <FileName>md_display_page_shut_down.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_init.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_shut_down.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task_shut_down.c</FileName>
+              <FileName>md_display_page_update.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_shut_down.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_update.c</FilePath>
             </File>
             <File>
-              <FileName>md_display_queue_task_updata.c</FileName>
+              <FileName>md_display_page_work.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_updata.c</FilePath>
-            </File>
-            <File>
-              <FileName>md_display_queue_task_work.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_queue_task_work.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_page_work.c</FilePath>
             </File>
             <File>
               <FileName>md_display_task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_task.c</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_task.c</FilePath>
             </File>
             <File>
               <FileName>md_display_task.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\\md_display_task.h</FilePath>
+              <FilePath>.\Hardware\MD_Display\md_display_task.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -7000,6 +7135,11 @@
               <FileName>md_bms_queue_task_update.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Bms\md_bms_queue_task_update.c</FilePath>
+            </File>
+            <File>
+              <FileName>md_bms_queue_task_run_log.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Bms\md_bms_queue_task_run_log.c</FilePath>
             </File>
           </Files>
         </Group>

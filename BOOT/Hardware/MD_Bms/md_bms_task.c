@@ -1,135 +1,130 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         电池包发送任务                                                          *
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\MD_Bms
+ * File    : md_bms_task.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : BMS发送及调度任务实现
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "MD_Bms/md_bms_task.h"
 
-#if(boardBMS_EN)
+#if (boardBMS_EN)
 #include "MD_Bms/md_bms_queue_task.h"
-#include "MD_Bms/md_bms_rec_task.h"
 #include "MD_Bms/md_bms_prot_frame.h"
-#include "Sys/sys_task.h"
-#include "Print/print_task.h"
 
-#if(boardUPDATE)
+#if (boardUPDATE)
 #include "Sys/sys_queue_task_update.h"
-#endif  //boardUPDATE
+#endif  /* boardUPDATE */
 
-//****************************************************任务参数初始化**********************************************//
-#if(boardUSE_OS)
-#define        	BMS_TASK_PRIO                         	2                       	//任务优先级 
-#define        	BMS_TASK_SIZE                         	256                      	//任务堆栈  实际字节数 *4
-TaskHandle_t    tBmsTaskHandler = NULL; 
-void            vBms_Task(void *pvParameters);
-#endif  //boardUSE_OS
+//****************************************************Macros********************************************************************//
+#if (boardUSE_OS)
+#define			BMS_TASK_PRIO							3		/* 任务优先级(通信执行层) */
+#define			BMS_TASK_SIZE							256		/* 任务堆栈大小 */
+TaskHandle_t tBmsTaskHandler = NULL;
+void         vBms_Task(void *pvParameters);
+#endif  /* boardUSE_OS */
 
-//****************************************************参数初始化**************************************************//
-//结构体
-__ALIGNED(4)	Bms_T tBms;			//任务
-static Task_T	*tp_task = NULL;
+//****************************************************Parameter Initialization**************************************************//
+__ALIGNED(4) Bms_T tBms;
+static Task_T *s_tpTask = NULL;
+
+//****************************************************Function Declaration******************************************************//
+static bool b_bms_task_param_init(void);
 
 
-//****************************************************函数声明****************************************************//
-
-
-/*****************************************************************************************************************
------函数功能    电池包任务参数初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
-bool b_bms_task_param_init(void)
+/***********************************************************************************************************************
+ * 函数功能    : 电池包任务参数初始化
+ * 说明(备注)  : 无
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : bool: true-成功, false-失败
+ ************************************************************************************************************************/
+static bool b_bms_task_param_init(void)
 {
-	if(tpBmsTask == NULL)
-		return false;
-	
-	memset(&tBms, 0, sizeof(tBms));
-	
-	lwrb_reset(&tpBmsTask->tQueueBuff);
-	
-	tp_task = tpBmsTask;
-	
-	return true;
+    if (tpBmsTask == NULL)
+        return false;
+
+    memset(&tBms, 0, sizeof(tBms));
+    lwrb_reset(&tpBmsTask->tQueueBuff);
+    s_tpTask = tpBmsTask;
+
+    return true;
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : BMS任务初始化
+ * 说明(备注)  : none
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : 1: 成功, 负数: 失败步骤码
+ ************************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 电池包任务初始化
+ * 说明(备注)  : 无
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 1: 成功, -1: 发送协议初始化失败, -2: 队列初始化失败, -3: 参数初始化失败, -4: 任务创建失败
+ ************************************************************************************************************************/
+s8 cBms_TaskInit(void)
+{
+    if (bBms_SendProtInit() == false)
+        return -1;
 
-/*****************************************************************************************************************
------函数功能    电池包任务初始化
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
-bool bBms_TaskInit(void)
-{ 
-	//发送协议初始化
-	if(bBms_SendProtInit() == false)
-		return false;
-	
-	//任务队列初始化
-	if(bBms_QueueInit() == false)
-		return false;
-	
-	//任务参数初始化
-	if(b_bms_task_param_init() == false)
-		return false;
-	
-	//任务初始化
-	#if(boardUSE_OS)
-    xTaskCreate((TaskFunction_t )vBms_Task,            	//任务函数
-                (const char* )"BmsTask",              	//任务名称
-                (uint16_t ) BMS_TASK_SIZE,              //任务堆栈大小
-                (void* )NULL,                           //传递给任务函数的参数
-                (UBaseType_t ) BMS_TASK_PRIO,           //任务优先级
-                (TaskHandle_t*)&tBmsTaskHandler);       //任务句柄
-	#endif  //boardUSE_OS
-				
-	return true;
+    if (bBms_QueueInit() == false)
+        return -2;
+
+    if (b_bms_task_param_init() == false)
+        return -3;
+
+    #if (boardUSE_OS)
+    if (xTaskCreate((TaskFunction_t )vBms_Task,
+                    (const char*    )"BmsTask",
+                    (uint16_t       )BMS_TASK_SIZE,
+                    (void*          )NULL,
+                    (UBaseType_t    )BMS_TASK_PRIO,
+                    (TaskHandle_t*  )&tBmsTaskHandler) != pdPASS)
+        return -4;
+    vQueue_BindTaskHandler(tpBmsTask, tBmsTaskHandler);
+    #endif  /* boardUSE_OS */
+
+    return 1;
 }
 
-
-
-/*****************************************************************************************************************
------函数功能    电池包任务
------说明(备注)  none
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 电池包任务主循环
+ * 说明(备注)  : 无
+ * 传入参数    : pvParameters: 任务入参
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
 void vBms_Task(void *pvParameters)
 {
-	#if(boardUSE_OS)
-    for(;;)
-	#endif  //boardUSE_OS
+    #if (boardUSE_OS)
+    for (;;)
+    #endif  /* boardUSE_OS */
     {
-		if(tp_task == NULL)
-		{
-			if(tp_task == NULL)
-				b_bms_task_param_init();
-			
-			#if(boardUSE_OS)
-			vTaskDelay(500);
-			continue;
-			#else
-			return;
-			#endif  //boardUSE_OS
-		}
-		
-		if(tp_task->vp_func != NULL && tp_task ->bNowRun == false)
-			tp_task->vp_func(tp_task);
-		else if(tp_task->vp_func == NULL || tp_task ->bNowRun == true)
-		{
-			#if(boardUSE_OS)
-			if(lwrb_get_full(&tp_task->tQueueBuff) == 0)
-				ulTaskNotifyTake(pdFALSE, bmsTASK_CYCLE_TIME);//pdFALSE:任务通知多少次就执行多少次
-			#endif  //boardUSE_OS
-			
-			if(tp_task->bp_task_manage_func != NULL)
-				tp_task->bp_task_manage_func(tp_task);
-		}
+        if (s_tpTask == NULL)
+        {
+            b_bms_task_param_init();
+
+            #if (boardUSE_OS)
+            vTaskDelay(500);
+            continue;
+            #else
+            return;
+            #endif  /* boardUSE_OS */
+        }
+
+        vQueue_TaskPoll(s_tpTask, bmsTASK_CYCLE_TIME);
     }
 }
 
-#endif  //boardBMS_EN
+#endif  /* boardBMS_EN */
+

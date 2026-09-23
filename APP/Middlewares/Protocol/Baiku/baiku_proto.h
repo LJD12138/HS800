@@ -1,9 +1,31 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Middlewares\Protocol\Baiku
+ * File    : baiku_proto.h
+ * Date    : 2026-09-22
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 百酷串口协议头文件：命令码定义与协议收发接口
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef BAIKU_PROTO_H
 #define BAIKU_PROTO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//****************************************************Includes******************************************************************//
 #include "main.h"
 #include "lwrb.h"
 
+#if (1)
+
+//****************************************************Macros********************************************************************//
 #define     	baikuCMD_SWITCH							0x01	//开关机指令
 #define     	baikuCMD_REPLY_SWITCH					0x02	//回复开关状态
 
@@ -28,6 +50,8 @@
 #define     	baikuCMD_REPLY_PRINT_STATE          	0x87	//回复Print状态
 #define     	baikuCMD_SYS_SET            			0x88	//系统设置
 #define     	baikuCMD_REPLY_SYS_SET           		0x89	//回复系统设置
+#define     	baikuCMD_LOG_UNLOCK            			0x8A	//解锁运行日志
+#define     	baikuCMD_REPLY_LOG_UNLOCK          		0x8B	//回复解锁运行日志
 
 #define     	baikuCMD_REQ_CHG            			0x90	//请求充电
 #define     	baikuCMD_REPLY_REQ_CHG           		0x91	//回复请求充电
@@ -35,6 +59,12 @@
 #define     	baikuCMD_GET_TEST_PARAM            		0xB0	//获取测试参数
 #define     	baikuCMD_REPLY_TEST_PARAM           	0xB1	//回复测试参数
 #define     	baikuCMD_GET_ERR_LOG           			0xB2	//获取错误日志
+#define     	baikuCMD_GET_RUN_LOG           			0xB4	//获取运行日志
+#define     	baikuCMD_REPLY_RUN_LOG          		0xB5	//回复运行日志
+#define     	baikuCMD_READ_RUN_LOG_SLOT      		0xB6	//读取运行日志指定槽
+#define     	baikuCMD_REPLY_RUN_LOG_SLOT     		0xB7	//回复读取运行日志指定槽
+#define     	baikuCMD_RESET_RUN_LOG          		0xB8	//重置运行日志
+#define     	baikuCMD_REPLY_RESET_RUN_LOG    		0xB9	//回复重置运行日志
 
 #define     	baikuCMD_COMSOLE_UPDATE					0xC0    //上位机主控正在升级
 #define     	baikuCMD_REPLY_COMSOLE_UPDATE			0xC1    //回复应答
@@ -49,48 +79,51 @@
 #define     	baikuCMD_REPLY_BMS_UPDATE				0xCA    //回复应答
 #define     	baikuCMD_MPPT_UPDATE					0xCB    //下位机MPPT正在升级
 #define     	baikuCMD_REPLY_MPPT_UPDATE				0xCC    //回复应答
+
+//****************************************************Types*********************************************************************//
 typedef enum
 {
 	RS_HEAD=0,
 	RS_LEN,
 	RS_END,
-}BaikuRxStep_E; 
+}BaikuRxStep_E;
 
 /* #pragma pack(1) removed to fix alignment-related UsageFault */
 typedef struct
 {
 	//数据帧开始
-	vu8             	ucHead;
-	vu8             	ucAddr;
-	vu8             	ucRemainLen;
-	u8*             	ucpRemainData;
+	vu8					ucHead;
+	vu8					ucAddr;
+	vu8					ucRemainLen;
+	u8*					ucpRemainData;
 	//数据帧结束
 						
-    vu8             	ucCmd;    
-    vu8             	ucSN;
-	vu8             	ucWaitRecLen;
-	vu8             	ucValidLen;    //有效数据的长度
-	u8*             	ucpValidData;  //指向有效数据的首地址
-	vu16            	usRecOverTimeCnt;
-	vu16            	usLostOverTimeCnt;
-	u16            		usTaskCycleTime;
-	BaikuRxStep_E    	eStep;
+	vu8					ucCmd;
+	vu8					ucSN;
+	vu8					ucWaitRecLen;
+	vu8					ucValidLen;			//有效数据的长度
+	u8*					ucpValidData;		//指向有效数据的首地址
+	vu16				usRecOverTimeCnt;
+	vu16				usLostOverTimeCnt;
+	u16					usTaskCycleTime;
+	BaikuRxStep_E		eStep;
 	lwrb_t				tRxBuff;
-	u8             		ucaData[];
+	u8					ucaData[];
 }BaikuProtoRx_t;
 /* #pragma pack() removed */
 
-#pragma pack(1)
+/* #pragma pack(1) removed to fix alignment-related UsageFault */
 typedef struct
 {
-	vu8             	ucHead;
-	vu8             	ucAddr;
-	vu8             	ucFrameLen;    //数据帧总长度
-	u16            		usBuffSize;    //ucaFrameData缓冲区大小
-	u8             		ucaFrameData[];  //数据帧
+	vu8					ucHead;
+	vu8					ucAddr;
+	vu8					ucFrameLen;			//数据帧总长度
+	u16					usBuffSize;			//ucaFrameData缓冲区大小
+	u8					ucaFrameData[];		//数据帧
 }BaikuProtoTx_t;
-#pragma pack()
+/* #pragma pack() removed */
 
+//****************************************************Extern********************************************************************//
 s8 cBaiku_ProtoRecInit(BaikuProtoRx_t** proto, u16 buff_len, u8 dev_addr, u16 cycle_time);
 s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr);
 s8 cBaiku_ProtoCreate(BaikuProtoTx_t* proto,u8 cmd, u8* data, u8 len);
@@ -99,4 +132,10 @@ s8 cBaiku_UpdateCheck(BaikuProtoRx_t* proto, u8* ucp_data, u16 len);
 s8 cBaiku_StepWaitOutTime(BaikuProtoRx_t* proto);
 s8 cBaiku_ResetRxBuff(BaikuProtoRx_t* proto);
 
-#endif  //BAIKU_PROTO_H
+#endif  /* 1 */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* BAIKU_PROTO_H */

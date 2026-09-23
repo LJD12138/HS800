@@ -1,9 +1,17 @@
 /*******************************************************************************************************************************
- * Module  : APP/MW-Protocol
+ * Project : APP
+ * Module  : APP\Middlewares\Protocol\Megmeet
  * File    : megmeet_proto.c
  * Date    : 2026-04-29
+ * Author  : LJD(291483914@qq.com)
  * Desc    : Megmeet 协议帧工具实现（当前产品路径仅保留帧构造/解析）
- ******************************************************************************************************************************/
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+//****************************************************Includes******************************************************************//
 #include "Megmeet/megmeet_proto.h"
 
 #if(boardUPDATE)
@@ -17,25 +25,25 @@
 #include "task.h"
 #endif
 
-/*======================================== 局部宏 ========================================*/
-#define FRAME_LEN_H_OFFSET              5U
-#define FRAME_DATA_OFFSET               7U
-#define FRAME_RESERVE1_OFFSET           3U
-#define FRAME_RESERVE2_OFFSET           7U
-#define FRAME_CMD_OFFSET                8U
-#define FRAME_RESERVE3_OFFSET           9U
-#define FRAME_MAX_FRAME_LEN             0xFFFFU
-#define FRAME_MAX_PAYLOAD_LEN           (FRAME_MAX_FRAME_LEN - MEGMEET_FRAME_MIN_FRAME_LEN)
+//****************************************************Macros********************************************************************//
+#define			FRAME_LEN_H_OFFSET						5U
+#define			FRAME_DATA_OFFSET						7U
+#define			FRAME_RESERVE1_OFFSET					3U
+#define			FRAME_RESERVE2_OFFSET					7U
+#define			FRAME_CMD_OFFSET						8U
+#define			FRAME_RESERVE3_OFFSET					9U
+#define			FRAME_MAX_FRAME_LEN						0xFFFFU
+#define			FRAME_MAX_PAYLOAD_LEN					(FRAME_MAX_FRAME_LEN - MEGMEET_FRAME_MIN_FRAME_LEN)
 
 /*======================================== 帧构造/解析实现（与从机端通用）=========================*/
-/*****************************************************************************************************************
- -----函数功能    接收协议初始化
- -----说明(备注)  none
- -----传入参数    proto:接收协议结构体
-                 buff_len:协议缓存器大小
- -----输出参数    none
- -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
- ******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 接收协议初始化
+ * 说明(备注)  : none
+ * 传入参数    : proto:接收协议结构体
+ *               buff_len:协议缓存器大小
+ * 输出参数    : none
+ * 返回值      : 小于0:操作失败   等于0:没操作    大于0:操作成功
+ ************************************************************************************************************************/
 s8 cMegmeet_ProtoRecInit(MegmeetProtoRx_t** proto, u16 buff_len)
 {
     s8 result = 1;
@@ -43,16 +51,15 @@ s8 cMegmeet_ProtoRecInit(MegmeetProtoRx_t** proto, u16 buff_len)
     if(buff_len < MEGMEET_FRAME_MIN_FRAME_LEN)
         return -1;
 
-    #if(boardUSE_OS)
-    taskENTER_CRITICAL();
-    #endif
+   mainENTER_CRITICAL();
+
     // 动态分配内存
     size_t total_size = sizeof(MegmeetProtoRx_t) + buff_len;
     #if(boardUSE_OS)
     *proto = (MegmeetProtoRx_t*)pvPortMalloc(total_size);
     #else
     *proto = (MegmeetProtoRx_t*)malloc(total_size);
-    #endif
+    #endif  /* boardUSE_OS */
 
     if(*proto != NULL)
     {
@@ -63,21 +70,19 @@ s8 cMegmeet_ProtoRecInit(MegmeetProtoRx_t** proto, u16 buff_len)
     else
         result = -2;
 
-    #if(boardUSE_OS)
-    taskEXIT_CRITICAL();
-    #endif
+   mainEXIT_CRITICAL();
 
     return result;
 }
 
-/*****************************************************************************************************************
- -----函数功能    发送协议初始化
- -----说明(备注)  none
- -----传入参数    proto:发送协议结构体
-                 buff_len:协议缓存器大小
- -----输出参数    none
- -----返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
- ******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 发送协议初始化
+ * 说明(备注)  : none
+ * 传入参数    : proto:发送协议结构体
+ *               buff_len:协议缓存器大小
+ * 输出参数    : none
+ * 返回值      : 小于0:操作失败   等于0:没操作    大于0:操作成功
+ ************************************************************************************************************************/
 s8 cMegmeet_ProtoSendInit(MegmeetProtoTx_t** proto, u16 buff_len)
 {
     s8 result = 1;
@@ -85,16 +90,15 @@ s8 cMegmeet_ProtoSendInit(MegmeetProtoTx_t** proto, u16 buff_len)
     if(buff_len < MEGMEET_FRAME_MIN_FRAME_LEN)
         return -1;
 
-    #if(boardUSE_OS)
-    taskENTER_CRITICAL();
-    #endif
+    mainENTER_CRITICAL();
+
     // 动态分配内存
     size_t total_size = sizeof(MegmeetProtoTx_t) + buff_len;
     #if(boardUSE_OS)
     *proto = (MegmeetProtoTx_t*)pvPortMalloc(total_size);
     #else
     *proto = (MegmeetProtoTx_t*)malloc(total_size);
-    #endif
+    #endif  /* boardUSE_OS */
 
     if(*proto != NULL)
     {
@@ -105,17 +109,19 @@ s8 cMegmeet_ProtoSendInit(MegmeetProtoTx_t** proto, u16 buff_len)
     else
         result = -2;
 
-    #if(boardUSE_OS)
-    taskEXIT_CRITICAL();
-    #endif
+   mainEXIT_CRITICAL();
 
     return result;
 }
 
-/*****************************************************************************************************************
- -----函数功能    根据升级协议文档中的指令格式构造数据帧
- -----说明(备注)  LEN字段表示RESERVE2到CRC16的总字节数，CRC16使用Modbus算法，低字节在前
- ******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 根据升级协议文档中的指令格式构造数据帧
+ * 说明(备注)  : LEN字段表示RESERVE2到CRC16的总字节数，CRC16使用Modbus算法，低字节在前
+ * 传入参数    : slave_addr: 从机地址; ic_type: 机型; cmd: 命令字; payload: 载荷数据指针; payload_len: 载荷长度
+ *               frame_buff_len: out_frame 缓冲区容量（字节）
+ * 输出参数    : out_frame: 组装完成的帧数据; out_frame_len: 帧总长度（字节）
+ * 返回值      : 1: 成功; -1: 出参指针为空; -2: 载荷指针为空但长度非 0; -3: 载荷超长; -4: 缓冲区容量不足
+ ************************************************************************************************************************/
 s8 cMegmeet_FrameCreate(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payload, u16 payload_len,
                         u8* out_frame, u16 frame_buff_len, u16* out_frame_len)
 {
@@ -163,16 +169,16 @@ s8 cMegmeet_FrameCreate(u8 slave_addr, u8 ic_type, u8 cmd, const u8* payload, u1
     return 1;
 }
 
-/*****************************************************************************************************************
------函数功能    根据升级协议文档格式解析数据帧
------说明(备注)  仅解析一帧，成功后tp_frame会指向当前帧中的各个字段
-                支持跳过帧头前面的干扰字符
------传入参数    tp_frame:协议的结构体
-                ucp_data:指向数据指针
-                len:数据的长度
------输出参数    none
------返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
- ******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 根据升级协议文档格式解析数据帧
+ * 说明(备注)  : 仅解析一帧，成功后tp_frame会指向当前帧中的各个字段
+ *               支持跳过帧头前面的干扰字符
+ * 传入参数    : tp_frame:协议的结构体
+ *               ucp_data:指向数据指针
+ *               len:数据的长度
+ * 输出参数    : none
+ * 返回值      : 小于0:操作失败   等于0:没操作    大于0:操作成功
+ ************************************************************************************************************************/
 s8 cMegmeet_FrameParse(UpdateFrame_t* tp_frame, const u8* ucp_data, u16 len)
 {
     u16 us_proto_len = 0;

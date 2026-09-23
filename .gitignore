@@ -11,4 +11,9 @@ RTE/
 *.jac
 *.PC
 
+# Python 字节码缓存（.agents/skills 下脚本运行/调试产生）
+__pycache__/
+*.pyc
+*.pyo
+
 

@@ -27,10 +27,17 @@
  * 版本：v3.2.0
  */
 #include "lwrb.h"
+#include "function.h"
+
 
 /* 内存设置和复制函数 */
+#ifndef BUF_MEMSET
 #define BUF_MEMSET      memset
-#define BUF_MEMCPY      memcpy
+#endif
+
+#ifndef BUF_MEMCPY
+#define BUF_MEMCPY(dst, src, len)   vFunc_FastMemCpy((dst), (src), (len))
+#endif
 
 #define BUF_IS_VALID(b) ((b) != NULL && (b)->buff != NULL && (b)->size > 0)
 #define BUF_MIN(x, y)   ((x) < (y) ? (x) : (y))

@@ -1,67 +1,85 @@
 /*******************************************************************************************************************************
- * Project : ProjectTeam
- * Module  : G:\1-Baiku_Projects\15-M50\1.software\M5004-3\APP\Middlewares\Protocol
+ * Project : BOOT
+ * Module  : BOOT\Middlewares\Protocol
  * File    : proto_update.c
- * Date    : 2026-03-13 15:24:10
+ * Date    : 2026-03-13
  * Author  : LJD(291483914@qq.com)
- * Desc    : description
+ * Desc    : 升级协议帧解析
  * -------------------------------------------------------
  * todo    :
- * 1.
+ * 1. 无
  * -------------------------------------------------------
  * Copyright (c) 2026 -inc
-*******************************************************************************************************************************/
+ *******************************************************************************************************************************/
 
 
 //****************************************************Includes******************************************************************//
 #include "proto_update.h"
 
+#include <string.h>
+
+#if(boardUSE_OS)
+#include "freertos.h"
+#include "task.h"
+#endif
+
 #if(boardUPDATE)
 #include "Sys/sys_queue_task_update.h"
-//****************************************************Macros*******************************************************************//
+#if(boardBMS_EN)
+#include "MD_Bms/md_bms_task.h"
+#include "MD_Bms/md_bms_prot_frame.h"
+#endif
+
+#if(defined(boardDCAC_EN) && boardDCAC_EN)
+#include "MD_Dcac/md_dcac_task.h"
+#include "MD_Dcac/md_dcac_queue_task_update.h"
+#endif
+#include "Print/print_prot_frame.h"
+
+//****************************************************Macros********************************************************************//
+#define			UPDATE_BUFF_SIZE						256		/* 需兼容Megmeet升级帧(文件头56B/数据包236B)及Baiku大数据帧 */
+
+
+//****************************************************Parameter Initialization**************************************************//
 
 
 
-//****************************************************Parameter Initialization************************************************//
-
-
-
-//****************************************************Function Declaration****************************************************//
+//****************************************************Function Declaration******************************************************//
 
 
 
 
 
-/*****************************************************************************************************************
------函数功能    解析协议
------说明(备注)  none
------传入参数    FrameInf协议的结构体
------输出参数    none
------返回值      小于0:操作失败   等于0:没操作    大于0:操作成功
-******************************************************************************************************************/
-s8 cUpdate_ProtoCheck(BaikuProtoRx_t* proto, lwrb_t* tp_reply_param)
+
+/***********************************************************************************************************************
+ * 函数功能    : 解析协议
+ * 说明(备注)  : none
+ * 传入参数    : FrameInf协议的结构体
+ * 输出参数    : none
+ * 返回值      : 小于0:操作失败   等于0:没操作    大于0:操作成功
+ ************************************************************************************************************************/
+s8 cUpdate_ProtoCheck(lwrb_t* proto_buff)
 {
-    if(tp_reply_param->buff == NULL || proto == NULL)
+	s8 c_ret = 0;
+	
+    if(proto_buff == NULL)
         return -1;
 
     //获取数据长度
-	vu16 us_char_len = lwrb_get_full(&proto->tRxBuff);
+	vu16 us_char_len = lwrb_get_full(proto_buff);
 
 	if(us_char_len == 0)
 		return 0;
 
-    __ALIGNED(4) u8 uca_buff[256] = {0};
-
-	if(us_char_len > sizeof(uca_buff))
+	if(us_char_len > UPDATE_BUFF_SIZE)
 		return -2;
 
-	lwrb_read(&proto->tRxBuff, uca_buff, us_char_len);
-    lwrb_reset(tp_reply_param);
-    lwrb_write(tp_reply_param, uca_buff, us_char_len);
+    u8 uca_buff[UPDATE_BUFF_SIZE];
 
     //Xmodem
 	if(us_char_len == 1)
 	{
+		lwrb_read(proto_buff, uca_buff, us_char_len);
 		u8 index = uca_buff[0];
 		switch(index)
 		{
@@ -85,18 +103,60 @@ s8 cUpdate_ProtoCheck(BaikuProtoRx_t* proto, lwrb_t* tp_reply_param)
 			break;
 			
 			default:
-				break;
+			{
+			}
+			break;
 		}
+		c_print_info_trans(uca_buff, us_char_len);
 		return PT_XMODEM;
 	}
-    //其他协议
-	else
+    //BMS Baiku协议
+	else if(tBms.eDevState == DS_UPDATE_MODE)
 	{
-		if(cBaiku_UpdateCheck(proto, uca_buff, us_char_len) > 0)
-            return PT_BAIKU;
+		if(tpBmsProtoRx == NULL || (us_char_len > tpBmsProtoRx->tRxBuff.size))
+			return -3;
+
+		lwrb_read(proto_buff, uca_buff, us_char_len);
+		c_ret = cBaiku_UpdateCheck(tpBmsProtoRx, uca_buff, us_char_len);
+		
+		if(c_ret > 0)
+			return PT_BAIKU;
 	}
+	#if(defined(boardDCAC_EN) && boardDCAC_EN)
+	//DCAC Megmeet协议
+	else if(tDcac.eDevState == DS_UPDATE_MODE || tpDcacTask->ucID == DTI_UPDATE)
+	{
+		if(tpDcacMegmeetProtoRx == NULL || (us_char_len > tpDcacMegmeetProtoRx->usBuffSize))
+			return -4;
+
+		/* 使用peek预读数据,解析成功才消费,避免帧不完整或混合数据时丢失有效帧 */
+		if(lwrb_peek(proto_buff, 0, uca_buff, us_char_len) != us_char_len)
+			return 0;
+
+		tpDcacMegmeetProtoRx->usFrameLen = us_char_len;
+		memcpy(tpDcacMegmeetProtoRx->ucaFrameData, uca_buff, us_char_len);
+
+		c_ret = cMegmeet_FrameParse(&tpDcacMegmeetProtoRx->tFrame,
+								tpDcacMegmeetProtoRx->ucaFrameData,
+								tpDcacMegmeetProtoRx->usFrameLen);
+		if(c_ret > 0)
+		{
+			/* 解析成功,只消费一帧的数据,剩余数据留给下次处理 */
+			lwrb_skip(proto_buff, tpDcacMegmeetProtoRx->tFrame.usFrameLen);
+			return PT_MEGMEET;
+		}
+		else if(c_ret == -2 || c_ret == -4)
+			/* 帧数据不完整,等待更多数据,不消费 */
+			return 0;
+		else
+		{
+			/* 解析错误(CRC/格式等),跳过1字节尝试重新同步 */
+			lwrb_skip(proto_buff, 1);
+			return 0;
+		}
+	}
+	#endif  /* boardDCAC_EN */
 
     return PT_NULL;
 }
-
 #endif  //boardUPDATE

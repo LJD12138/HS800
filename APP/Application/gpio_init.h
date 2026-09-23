@@ -1,16 +1,27 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Application
+ * File    : gpio_init.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 板载通用 GPIO 引脚映射及各串口外设硬件定义头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
 #ifndef GPIO_INIT_H_
 #define GPIO_INIT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif  //__cplusplus
+
+//****************************************************Includes******************************************************************//
 #include "main.h"
-#include "board_config.h"
 
-//#define       gpioVCC21_EN_RCU        				RCU_GPIOB
-//#define       gpioVCC21_EN_GPIO          				GPIOB
-//#define       gpioVCC21_EN_PIN           				GPIO_PIN_2
-//#define       gpioVCC21_EN_ON()         				GPIO_BOP(gpioVCC21_EN_GPIO) = (uint32_t)gpioVCC21_EN_PIN   
-//#define       gpioVCC21_EN_OFF()         				GPIO_BC(gpioVCC21_EN_GPIO) = (uint32_t)gpioVCC21_EN_PIN
-//#define       gpioVCC21_EN_IsON()        				(GPIO_ISTAT(gpioVCC21_EN_GPIO) & (gpioVCC21_EN_PIN))
-
+//****************************************************Macros********************************************************************//
 #define     	gpioASSIST_OPEN_RCU               		RCU_GPIOC
 #define     	gpioASSIST_OPEN_PORT              		GPIOC
 #define     	gpioASSIST_OPEN_PIN               		GPIO_PIN_0
@@ -18,7 +29,7 @@
 #define     	gpioASSIST_OPEN_OFF()             		GPIO_BC(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN
 #define     	gpioASSIST_GET_STATE()             		gpio_output_bit_get(gpioASSIST_OPEN_PORT, gpioASSIST_OPEN_PIN)
 
-//************************************USART0***************************
+/* USART0 */
 #define     	gpioUSART0_REMAP_EN               		0
 #if(!gpioUSART0_REMAP_EN)
 #define     	gpioUSART0_GPIO_RX_RCU                 	RCU_GPIOA
@@ -48,7 +59,7 @@
 #define     	gpioUSART0_DMA_TX_IRQ             		DMA0_Channel3_IRQn
 #define     	gpioUSART0_DMA_TX_IRQ_HANDLER     		DMA0_Channel3_IRQHandler
 
-//************************************USART1***************************
+/* USART1 */
 #define     	gpioUSART1_GPIO_RX_RCU                 	RCU_GPIOA
 #define     	gpioUSART1_GPIO_RX_PORT                	GPIOA
 #define     	gpioUSART1_GPIO_RX_PIN                 	GPIO_PIN_3
@@ -68,7 +79,7 @@
 #define     	gpioUSART1_DMA_TX_IRQ             		DMA0_Channel6_IRQn
 #define     	gpioUSART1_DMA_TX_IRQ_HANDLER     		DMA0_Channel6_IRQHandler
 
-//************************************USART2***************************
+/* USART2 */
 #define     	gpioUSART2_GPIO_RX_RCU                 	RCU_GPIOB
 #define     	gpioUSART2_GPIO_RX_PORT                	GPIOB
 #define     	gpioUSART2_GPIO_RX_PIN                 	GPIO_PIN_11
@@ -88,7 +99,7 @@
 #define     	gpioUSART2_DMA_TX_IRQ             		DMA0_Channel1_IRQn
 #define     	gpioUSART2_DMA_TX_IRQ_HANDLER     		DMA0_Channel1_IRQHandler
 
-//************************************UART3***************************
+/* UART3 */
 #define     	gpioUART3_GPIO_RX_RCU                  	RCU_GPIOC
 #define     	gpioUART3_GPIO_RX_PORT                 	GPIOC
 #define     	gpioUART3_GPIO_RX_PIN                  	GPIO_PIN_11
@@ -108,7 +119,7 @@
 #define     	gpioUART3_DMA_TX_IRQ              		DMA0_Channel5_IRQn
 #define     	gpioUART3_DMA_TX_IRQ_HANDLER      		DMA0_Channel5_IRQHandler
 
-//************************************UART4***************************
+/* UART4 */
 #define     	gpioUART4_GPIO_RX_RCU                  	RCU_GPIOD
 #define     	gpioUART4_GPIO_RX_PORT                 	GPIOD
 #define     	gpioUART4_GPIO_RX_PIN                  	GPIO_PIN_2
@@ -120,15 +131,18 @@
 #define     	gpioUART4_GPIO_TX_AF                   	GPIO_AF_1
 #endif //(boardIC_TYPE == boardIC_GD32F50X)
 
-
+//****************************************************Extern********************************************************************//
 void vGPIO_Init(void);
-//bool vGPIO_V21PowerSwitch(bool en);
 bool vGPIO_AssistBmsOpen(bool en);
-//bool vGPIO_CtrlV21Power(void);
 
-#if(boardLOW_POWER)
+#if (boardLOW_POWER)
 void vGPIO_EnterLowPower(void);
 void vGPIO_ExitLowPower(void);
-#endif
+#endif  //boardLOW_POWER
 
-#endif
+#ifdef __cplusplus
+}
+#endif  //__cplusplus
+
+#endif  /* GPIO_INIT_H_ */
+

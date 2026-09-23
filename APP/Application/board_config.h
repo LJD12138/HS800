@@ -1,11 +1,23 @@
+/***********************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Application
+ * File    : board_config.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 板级硬件配置、功能裁剪开关及 Keil Configuration Wizard 向导定义头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
 #ifndef BOARD_CONFIG_H
 #define BOARD_CONFIG_H
 
-#include "main.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-
-
-													
 //#define		//4Tab									//10Tab
 // <<< Use Configuration Wizard in Context Menu >>>
 //=============================================================================================================
@@ -13,21 +25,21 @@
 //=============================================================================================================
 
 //-------------------------------------------------------------------
-//<s>           软件版本(此处缩进不可以用Tab)
-#define         boardSOFTWARE_VERSION                    "HS803_Ver_2_0_1(230V)"
+//<s>       	软件版本(此处缩进不可以用Tab)
+#define         boardSOFTWARE_VERSION                    "HS803_Ver_2_2_0(230V)"
 //-------------------------------------------------------------------
 //<s>       	硬件版本(此处缩进不可以用Tab)
 #define         boardHARDWARE_VERSION                    "HS803_Ver_1_2_0"
 //-------------------------------------------------------------------
 //          	<q0> 调试使能
 //                                          			<i> 勾选为开启
-#define     	boardDEBUG                    		     0
+#define     	boardDEBUG                    		     1
 //-------------------------------------------------------------------
 //          	<c1> 看门狗使能
 //                                          			<i> 勾选为开启
-#if(!boardDEBUG)
+#if (!boardDEBUG)
 #define     	boardWDGT_EN                   			 1
-#endif  //boardDEBUG
+#endif  /* !boardDEBUG */
 //          	</c>
 //-------------------------------------------------------------------
 //          	<c1> 低功耗使能
@@ -122,6 +134,20 @@
 //                                          			<i> 勾选为开启
 #define     	boardDCAC_EN                    		 1
 //-------------------------------------------------------------------
+//          	<q0> 运行日志使能
+//                                          			<i> 勾选为开启
+#define     	boardRUN_LOG_EN                    		 0
+//-------------------------------------------------------------------
+//          	<q0> 健康监控巡检使能(可观测性体系总开关)
+//                                          			<i> 勾选为开启
+#if(boardDEBUG)
+#define     	boardHEALTH_MONITOR_EN           		 1
+#endif  //boardDEBUG
+//<i> 	1:调试/开发期开启 —— 健康巡检任务(HealthTask)+队列遥测(水位/峰值/满队/损坏计数)
+//<i> 		+Idle空闲计数器+FreeRTOS运行时统计(RUN_TIME_STATS)全部参与编译
+//<i> 	0:量产后关闭 —— 上述代码全部条件编译裁剪,零RAM/Flash/CPU开销,
+//<i> 		同时联动关闭configGENERATE_RUN_TIME_STATS(任务切换零统计负担)
+//-------------------------------------------------------------------
 //</h>       	模块选择
 
 //=============================================================================================================
@@ -180,7 +206,7 @@
 //<h>			串口配置
 //======================================================================================
 //======================================================================================
-#if(boardPRINT_EN)
+#if (boardPRINT_EN)
 //				<o0> Print串口选择
 //														<0=> OFF
 //														<1=> Print--USART0
@@ -190,7 +216,7 @@
 //														<5=> Print--UART4
 //														<6=> Print--UART5
 #define     	boardPRINT_IFACE                		 5
-#if(boardPRINT_IFACE)
+#if (boardPRINT_IFACE)
 //-------------------------------------------------------------------
 //          	<q0> Print串口DMA功能使能
 //                                         				<i> 勾选为开启
@@ -199,8 +225,8 @@
 //          	<q0> Print_458_接口使能
 //                                          			<i> 勾选为开启
 #define     	boardPRINT_485_IFACE_EN          		 0
-#endif  //boardPRINT_IFACE
-#endif  //boardPRINT_EN
+#endif  /* boardPRINT_IFACE */
+#endif  /* boardPRINT_EN */
 //-------------------------------------------------------------------
 
 //======================================================================================
@@ -223,7 +249,7 @@
 
 //======================================================================================
 //======================================================================================
-#if(boardBMS_EN)
+#if (boardBMS_EN)
 //          	<o0> BMS串口选择
 //                                          			<0=> OFF
 //                                          			<1=> BMS--USART0
@@ -232,7 +258,7 @@
 //                                          			<4=> BMS--UART3
 //                                          			<5=> BMS--UART4
 #define     	boardBMS_IFACE                 		     4
-#if(boardBMS_IFACE)
+#if (boardBMS_IFACE)
 //-------------------------------------------------------------------
 //          	<q0> BMS串口DMA功能使能
 //                                          			<i> 勾选为开启
@@ -241,13 +267,13 @@
 //          	<q0> BMS_458_接口使能
 //                                          			<i> 勾选为开启
 #define     	boardBMS_485_IFACE_EN           		 0
-#endif  //boardBMS_IFACE
-#endif  //boardBMS_EN
+#endif  /* boardBMS_IFACE */
+#endif  /* boardBMS_EN */
 //-------------------------------------------------------------------
 
 //======================================================================================
 //======================================================================================
-#if(boardMPPT_EN)
+#if (boardMPPT_EN)
 //				<o0> MPPT串口选择
 //														<0=> OFF
 //														<1=> MPPT--USART0
@@ -256,7 +282,7 @@
 //														<4=> MPPT--UART3
 //														<5=> MPPT--UART4
 #define     	boardMPPT_IFACE                		     3
-#if(boardMPPT_IFACE)
+#if (boardMPPT_IFACE)
 //------------------------------------------------------------------------
 //				<q0> MPPT串口DMA功能使能
 //														<i> 勾选为开启
@@ -265,13 +291,13 @@
 //				<q0> MPPT_458_接口使能
 //														<i> 勾选为开启
 #define			boardMPPT_485_IFACE_EN					 0
-#endif  //boardMPPT_IFACE
-#endif  //boardMPPT_EN
+#endif  /* boardMPPT_IFACE */
+#endif  /* boardMPPT_EN */
 //-------------------------------------------------------------------
 
 //======================================================================================
 //======================================================================================
-#if(boardDCAC_EN)
+#if (boardDCAC_EN)
 //          	<o0> DCAC串口选择
 //                                          			<0=> DCAC***************OFF
 //                                          			<1=> DCAC--USART0
@@ -280,7 +306,7 @@
 //                                          			<4=> DCAC--UART3
 //                                          			<5=> DCAC--UART4
 #define     	boardDCAC_IFACE                		     3
-#if(boardDCAC_IFACE)
+#if (boardDCAC_IFACE)
 //-------------------------------------------------------------------
 //          	<q0> DCAC串口DMA功能使能
 //                                          			<i> 勾选为开启
@@ -297,7 +323,7 @@
 //=============================================================================================================
 //===================================================显示参数==================================================
 //=============================================================================================================
-#if(boardDISPLAY_EN)
+#if (boardDISPLAY_EN)
 //<h>        	显示参数配置
 //-------------------------------------------------------------------
 //          	<o0> 工作显示刷新时间(毫秒)
@@ -316,7 +342,7 @@
 //                                          			<0-255><i>
 #define     	boardDISP_HIGH_LIGHT_VALUE				 0x8A
 //-------------------------------------------------------------------
-#endif  //boardDISPLAY_EN
+#endif  /* boardDISPLAY_EN */
 //</h>       	显示参数配置
 
 //=============================================================================================================
@@ -488,7 +514,7 @@
 
 #else
     #error "BMS类型定义有误"
-#endif
+#endif  //boardBMS_TYPE
 // </h>       BMS参数配置
 
 //=============================================================================================================
@@ -549,7 +575,7 @@
 //-------------------------------------------------------------------
 //          	<o0> 允许的最大温度(摄氏度)
 //                                          			<40-127><i>
-#define 		boardDCAC_MAX_TEMP 						 90
+#define     	boardDCAC_MAX_TEMP        				 90   
 //-------------------------------------------------------------------
 //          	<o0> 逆变关闭电压(0.1V)
 //                                          			<100-1000><i>
@@ -647,29 +673,32 @@
 //</h>
 #else
     #error "DCAC类型定义有误"
-#endif
+#endif  //boardDCAC_VOLT_TYPE
 //</h>       DCAC参数配置
 // <<< end of configuration section >>>
 
-#if(boardBMS_IFACE && boardPRINT_IFACE)
+#if (boardBMS_IFACE && boardPRINT_IFACE)
 #define     	boardUPDATE           		 			 1
-#endif
+#endif  /* boardBMS_IFACE && boardPRINT_IFACE */
 
-#if(boardDC_OPEN_MIN_VOLT < boardBMS_MIN_VOLT)
+#if (boardDC_OPEN_MIN_VOLT < boardBMS_MIN_VOLT)
 #error "DC开启电压不可以小于电池最小电压";
-#endif
+#endif  //boardDC_OPEN_MIN_VOLT < boardBMS_MIN_VOLT
 
 // #if(boardUSB_OPEN_MIN_VOLT < boardBMS_MIN_VOLT)
 // #error "USB开启电压不可以小于电池最小电压";
 // #endif
 
-#if(boardDCAC_OPEN_MIN_VOLT < boardBMS_MIN_VOLT)
+#if (boardDCAC_OPEN_MIN_VOLT < boardBMS_MIN_VOLT)
 #error "DCAC开启电压不可以小于电池最小电压";
-#endif
-											  
+#endif  //boardDCAC_OPEN_MIN_VOLT < boardBMS_MIN_VOLT
+
 void vBoard_SysInit(void);
-void vBoard_StartTask(void *pvParameters);
+void vBoard_StartTask(void *p_v_parameters);
 
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
 
-#endif 
+#endif  /* BOARD_CONFIG_H */
 

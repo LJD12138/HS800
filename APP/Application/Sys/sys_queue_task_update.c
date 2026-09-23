@@ -1,12 +1,22 @@
-/*****************************************************************************************************************
-*                                                                                                                *
- *                                         系统的队列函数                                                  		*
-*                                                                                                                *
-******************************************************************************************************************/
+/*******************************************************************************************************************************
+ * Project : APP
+ * Module  : APP\Application\Sys
+ * File    : sys_queue_task_update.c
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : 系统固件升级队列任务实现
+ * -------------------------------------------------------
+ * todo    :
+ * 1. none
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ *******************************************************************************************************************************/
+
+//****************************************************Includes******************************************************************//
 #include "Sys/sys_queue_task.h"
 #include <stdbool.h>
 
-#if(boardUPDATE)
+#if (boardUPDATE)
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 #include "Print/print_prot_frame.h"
@@ -15,13 +25,13 @@
 #include "Baiku/baiku_proto.h"
 #include "Modbus/modbus_proto.h"
 
-#if(boardDCAC_EN)
+#if (boardDCAC_EN)
 #include "MD_Dcac/md_dcac_iface.h"
 #include "MD_Dcac/md_dcac_prot_frame.h"
 #include "MD_Dcac/md_dcac_task.h"
 #endif  //boardDCAC_EN
 
-#if(boardBMS_EN)
+#if (boardBMS_EN)
 #include "MD_Bms/md_bms_task.h"
 #include "MD_Bms/md_bms_prot_frame.h"
 #endif  //boardBMS_EN
@@ -29,254 +39,232 @@
 #include "gpio_init.h"
 #include "app_info.h"
 
+//****************************************************Macros********************************************************************//
+#define			sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME	//任务时间
+#define			updateREC_LOST_OVERTIME					((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE)	//ms
+#define			updateLOST_OVERTIME						((60UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE)	//ms
 
-#define     	sysTASK_UPDATE_CYCLE_TIME				sysTASK_CYCLE_TIME //任务时间
-#define       	updateREC_LOST_OVERTIME        			((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
-#define       	updateLOST_OVERTIME        				((60UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE) 	//ms
-
-//****************************************************参数初始化**************************************************//
+//****************************************************Parameter Initialization**************************************************//
 Update_T tUpdate;
 
-
-//****************************************************函数声明****************************************************//
-static bool b_update_start_object(Task_T *tp_task);
-
+//****************************************************Function Declaration******************************************************//
+static bool b_update_start_object(Task_T *p_task);
 
 /***********************************************************************************************************************
------函数功能    系统升级任务处理函数
------说明(备注)  根据任务的当前步骤和设备状态，处理系统升级任务。
------传入参数    tp_task: 指向任务结构体的指针，包含任务的相关信息。
------输出参数    none
------返回值      none
-************************************************************************************************************************/ 
-void v_sys_queue_task_update(Task_T *tp_task)
+ * 函数功能    : 系统升级任务处理函数
+ * 说明(备注)  : 根据任务的当前步骤和设备状态，处理系统升级任务
+ * 传入参数    : p_task: 队列任务指针
+ * 输出参数    : p_task: 更新任务状态
+ * 返回值      : void
+ ************************************************************************************************************************/
+void v_sys_queue_task_update(Task_T *p_task)
 {
-	if(tp_task == NULL)
+	if (p_task == NULL)
 		return;
 
-	if(tUpdate.eErrCode != UEF_NONE)
+	if (tUpdate.eErrCode != UEF_NONE)
 	{
 		cQueue_AddQueueTask(tpSysTask, STI_UPDATE_ERR, tUpdate.eErrCode, true);
 		return;
 	}
 
-    switch (tp_task->ucStep)
-    {
+	switch (p_task->ucStep)
+	{
 		case US_STEP_INIT:
 		{
 			vUpdate_InitParam();
 			bSys_SetDevState(DS_UPDATE_MODE, true);
-			cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
-		}
-		break;
-		
+			cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
+		}break;
+
 		//启动升级对象
-		case US_STEP_START_OBJECT:
+		case US_START_OBJECT:
 		{
-			if(b_update_start_object(tp_task) == false)
+			if (b_update_start_object(p_task) == false)
 				break;
-			
-			cQueue_GotoStep(tp_task, STEP_NEXT);
-		}
-		
+
+			cQueue_GotoStep(p_task, STEP_NEXT);
+		}break;
+
 		//等待从机进入升级准备状态
-		case US_STEP_WAIT_SLAVE_READY:
+		case US_WAIT_SLAVE_READY:
 		{
 			//超时10S重新发送
-			tp_task->usStepWaitCnt++;
-			if(tp_task->usStepWaitCnt >= ((10 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
+			p_task->usStepWaitCnt++;
+			if (p_task->usStepWaitCnt >= ((10 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
 			{
-				cQueue_GotoStep(tp_task, STEP_FORWARD);
+				cQueue_GotoStep(p_task, STEP_FORWARD);
 				break;
 			}
 
-			#if(boardBMS_EN)
-			if(tUpdate.eObj == MO_BMS)
+			#if (boardBMS_EN)
+			if (tUpdate.eObj == MO_BMS)
 			{
-				if(tBms.eDevState == DS_UPDATE_MODE)
-					cQueue_GotoStep(tp_task, STEP_NEXT);
+				if (tBms.eDevState == DS_UPDATE_MODE)
+					cQueue_GotoStep(p_task, STEP_NEXT);
 				else
 					break;
 			}
 			else
 			#endif  //boardBMS_EN
-			
-			#if(boardDCAC_EN)
-			if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
+
+			#if (boardDCAC_EN)
+			if (IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
 			{
-				if(tDcac.eDevState == DS_UPDATE_MODE)
-					cQueue_GotoStep(tp_task, STEP_NEXT);
+				if (tDcac.eDevState == DS_UPDATE_MODE)
+					cQueue_GotoStep(p_task, STEP_NEXT);
 				else
 					break;
 			}
 			else
 			#endif  //boardDCAC_EN
 				break;
-		}
-		
+		}break;
+
 		//开启升级通道
-		case US_STEP_OPEN_CHANNEL:
+		case US_OPEN_CHANNEL:
 		{
-			if(tUpdate.eChType == CT_PRINT)
+			if (tUpdate.eChType == CT_PRINT)
 			{
-				if(cQueue_AddQueueTask(tpPrintTask, PTI_UPDATE, tUpdate.eObj, false) > 0)
-					cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
+				if (cQueue_AddQueueTask(tpPrintTask, PTI_UPDATE, tUpdate.eObj, false) > 0)
+					cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 				else
 					break;
 			}
 			else
 				break;
-		}
-		break;
-		
+		}break;
+
 		//等待进入透传模式
-		case US_STEP_WAIT_TRANSPARENT:
+		case US_WAIT_TRANSPARENT:
 		{
 			//超时重新发送
-			tp_task->usStepWaitCnt++;
-			if(tp_task->usStepWaitCnt >= ((5 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
+			p_task->usStepWaitCnt++;
+			if (p_task->usStepWaitCnt >= ((5 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
 			{
-				cQueue_GotoStep(tp_task, STEP_FORWARD);
+				cQueue_GotoStep(p_task, STEP_FORWARD);
 				break;
 			}
 
-			if(tUpdate.eChType == CT_PRINT)
+			if (tUpdate.eChType == CT_PRINT)
 			{
-				if(tPrint.eDevState == DS_UPDATE_MODE)
-					cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
+				if (tPrint.eDevState == DS_UPDATE_MODE)
+					cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 				else
 					break;
 			}
 			else
 				break;
-		}
-		
+		}break;
+
 		//等待升级完成
-		case US_STEP_WAIT_COMPLETE:
+		case US_WAIT_COMPLETE:
 		{
 			bool b_host_finish = (tUpdate.eHostResult == UTR_OK ||
-								 tUpdate.eHostResult == UTR_LATEST);
+			                      tUpdate.eHostResult == UTR_LATEST);
 			bool b_slave_finish = (tUpdate.eSlaveResult == UTR_OK ||
-								 tUpdate.eSlaveResult == UTR_LATEST);
+			                       tUpdate.eSlaveResult == UTR_LATEST);
 
 			/* 上位机和从机都结束后，进入统一收尾 */
-			if(b_host_finish && b_slave_finish)
+			if (b_host_finish && b_slave_finish)
 			{
 				/* 升级完成,延时等待模块退出,再统一收尾 */
 				tUpdate.usLostOverTimeCnt = ((5UL * 1000UL) / boardREPET_TIMER_CYCLE_TMIE);
-				cQueue_GotoStep(tp_task, STEP_NEXT);
+				cQueue_GotoStep(p_task, STEP_NEXT);
 			}
-		}
-		break;
+		}break;
 
 		//升级完成, 等待退出(延时5S,等待模块退出升级模式)
-		case US_STEP_WAIT_EXIT:
+		case US_WAIT_EXIT:
 		{
-			if(tUpdate.usLostOverTimeCnt == 0)
-				cQueue_GotoStep(tp_task, STEP_NEXT);
-		}
-		break;
+			if (tUpdate.usLostOverTimeCnt == 0)
+				cQueue_GotoStep(p_task, STEP_NEXT);
+		}break;
 
 		//等待队列任务退出
-		case US_STEP_WAIT_QUEUE_EXIT:
+		case US_WAIT_QUEUE_EXIT:
 		{
-			if(lwrb_get_full(&tp_task->tQueueBuff) != 0)
-				cQueue_GotoStep(tp_task, STEP_END);  //结束
+			if (lwrb_get_full(&p_task->tQueueBuff) != 0)
+				cQueue_GotoStep(p_task, STEP_END);  //结束
+		}break;
+
+		default:
+		{
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 		}
 		break;
-		
-        default:
-				cQueue_GotoStep(tp_task, STEP_END);  //结束
-			break;
-    }
-	
-	#if(boardUSE_OS)
-	vTaskDelay(sysTASK_UPDATE_CYCLE_TIME);
+	}
+
+	#if (boardUSE_OS)
+	ulTaskNotifyTake(pdTRUE, sysTASK_UPDATE_CYCLE_TIME);    /* 周期节拍；新任务投递立即唤醒抢占 */
 	#endif  //boardUSE_OS
 }
 
 /***********************************************************************************************************************
------函数功能    启动升级对象
------说明(备注)  根据升级对象类型启动相应的升级任务。
------传入参数    tp_task: 指向任务结构体的指针
------输出参数    none
------返回值      true: 启动成功
-                false: 启动失败
-************************************************************************************************************************/
-static bool b_update_start_object(Task_T *tp_task)
+ * 函数功能    : 启动升级对象
+ * 说明(备注)  : 根据升级对象类型启动相应的升级任务
+ * 传入参数    : p_task: 队列任务指针
+ * 输出参数    : 无
+ * 返回值      : bool: true 启动成功, false 启动失败
+ ************************************************************************************************************************/
+static bool b_update_start_object(Task_T *p_task)
 {
-	#if(boardBMS_EN)
+	#if (boardBMS_EN)
 	tSysSetParam t_sys_set_param = {0};
-	if(tUpdate.eObj == MO_BMS)
+	if (tUpdate.eObj == MO_BMS)
 	{
-		if(tpBmsTask == NULL || tpBmsTask->tReplyBuff.buff == NULL)
+		if ((tpBmsTask == NULL) || (tpBmsTask->tReplyBuff.buff == NULL))
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 			return false;
 		}
 
 		t_sys_set_param.obj = MO_BMS;
 		t_sys_set_param.cmd = mainUPDATE_FLAG;
 		lwrb_reset(&tpBmsTask->tReplyBuff);
-		if(lwrb_get_free(&tpBmsTask->tReplyBuff) >= sizeof(t_sys_set_param))
+		if (lwrb_get_free(&tpBmsTask->tReplyBuff) >= sizeof(t_sys_set_param))
 			lwrb_write(&tpBmsTask->tReplyBuff, &t_sys_set_param, sizeof(t_sys_set_param));
 		else
 			return false;
 
-		if(cQueue_AddQueueTask(tpBmsTask, BTI_REQ_SET_CMD, 0, true) < 0)
+		if (cQueue_AddQueueTask(tpBmsTask, BTI_REQ_SET_CMD, 0, true) < 0)
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 			return false;
 		}
 	}
 	else
 	#endif  //boardBMS_EN
-	
-	#if(boardDCAC_EN)
-	if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
+
+	#if (boardDCAC_EN)
+	if (IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
 	{
-		if(tpDcacTask == NULL || tpDcacTask->tReplyBuff.buff == NULL)
+		if ((tpDcacTask == NULL) || (tpDcacTask->tReplyBuff.buff == NULL))
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 			return false;
 		}
 
-		if(cQueue_AddQueueTask(tpDcacTask, DTI_UPDATE, 0, true) < 0)
+		if (cQueue_AddQueueTask(tpDcacTask, DTI_UPDATE, 0, true) < 0)
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 			return false;
 		}
 	}
 	else
 	#endif  //boardDCAC_EN
 		return false;
-	
+
 	return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*****************************************************************************************************************
------函数功能    初始化升级参数
------说明(备注)  重置升级相关的全局参数。
------传入参数    none
------输出参数    none
------返回值      true: 初始化成功
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 初始化升级参数
+ * 说明(备注)  : 重置升级相关的全局参数与状态
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : bool: true 成功
+ ************************************************************************************************************************/
 bool bUpdate_Init(void)
 {
 	memset(&tUpdate, 0, sizeof(tUpdate));
@@ -285,21 +273,21 @@ bool bUpdate_Init(void)
 	return true;
 }
 
-/*****************************************************************************************************************
------函数功能    初始化升级任务参数
------说明(备注)  
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 初始化升级任务参数与底层协议缓存
+ * 说明(备注)  : 复位各协议收发缓存并将从机恢复至关闭状态
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : void
+ ************************************************************************************************************************/
 void vUpdate_InitParam(void)
 {
 	tUpdate.usRecOverTimeCnt = 0;
 	vUpdate_ResetTimeout();
 	bUpdate_SetResult(URT_HOST_SLAVE, UTR_INVALID);
 
-	#if(boardDCAC_EN)
-	if(IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
+	#if (boardDCAC_EN)
+	if (IS_DCAC_UPDATE_OBJ(tUpdate.eObj))
 	{
 		cModbus_ResetTx(tpDcacProtoTx, tpDcacProtoTx->usFrameDataSize);
 		cModbus_ResetRxBuff(tpDcacProtoRx);
@@ -308,17 +296,16 @@ void vUpdate_InitParam(void)
 	}
 	#endif  //boardDCAC_EN
 
-	#if(boardBMS_EN)
+	#if (boardBMS_EN)
 	if (tUpdate.eObj == MO_BMS)
 	{
-		// cBaiku_ResetTx(tpBmsProtoTx, tpBmsProtoTx->usFrameDataSize);
 		cBaiku_ResetRxBuff(tpBmsProtoRx);
 		bBms_SetDevState(DS_SHUT_DOWN);
 		cQueue_GotoStep(tpBmsTask, STEP_END);
 	}
 	#endif  //boardBMS_EN
 
-	if(tUpdate.eChType == CT_PRINT)
+	if (tUpdate.eChType == CT_PRINT)
 	{
 		cBaiku_ResetRxBuff(tpPrintProtoRx);
 		tPrint.eDevState = DS_SHUT_DOWN;
@@ -326,48 +313,47 @@ void vUpdate_InitParam(void)
 	}
 }
 
-/*****************************************************************************************************************
------函数功能    重置升级超时计数器
------说明(备注)  将升级任务的超时计数器重置为默认值,默认只有接收到从机回复收到固件才重置
------传入参数    none
------输出参数    none
------返回值      none
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 重置升级超时计数器
+ * 说明(备注)  : 将升级任务丢失超时计数器恢复至默认设定值 (60S)
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : void
+ ************************************************************************************************************************/
 void vUpdate_ResetTimeout(void)
 {
 	tUpdate.usLostOverTimeCnt = updateLOST_OVERTIME;
 }
 
-/*****************************************************************************************************************
------函数功能    重置升级接收超时计数器
------说明(备注)  将升级任务的接收超时计数器重置为默认值,发送就会重置,接收就会重置
------传入参数    true:重置计数器   false:关闭计数器
------输出参数    none
------返回值      none
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 重置升级接收超时计数器
+ * 说明(备注)  : 将升级任务的接收超时计数器重置为默认值 (5S) 或清零
+ * 传入参数    : reset: true 重置计数器, false 关闭计数器
+ * 输出参数    : 无
+ * 返回值      : void
+ ************************************************************************************************************************/
 void vUpdate_ResetRecTimeout(bool reset)
 {
-	if(reset)
+	if (reset)
 		tUpdate.usRecOverTimeCnt = updateREC_LOST_OVERTIME;
 	else
 		tUpdate.usRecOverTimeCnt = 0;
 }
 
 /***********************************************************************************************************************
------函数功能    设置设备错误代码
------说明(备注)  只标记第一个错误
------传入参数    ERR_CODE
------输出参数    none
------返回值      true:标记了错误  false:没有错误
-************************************************************************************************************************/
+ * 函数功能    : 设置设备升级错误代码
+ * 说明(备注)  : 只标记第一个到达的错误，并投递升级错误任务
+ * 传入参数    : code: 错误枚举代码
+ * 输出参数    : 无
+ * 返回值      : bool: true 标记了错误, false 没有错误
+ ************************************************************************************************************************/
 bool bUpdate_SetErrCode(UpdateErrCode_E code)
 {
 	bool b_ret = false;
 
-	//有错误
-	if(code != UEF_NONE)
+	if (code != UEF_NONE)
 	{
-		if(tpSysTask != NULL && tpSysTask->ucID != STI_UPDATE_ERR)
+		if ((tpSysTask != NULL) && (tpSysTask->ucID != STI_UPDATE_ERR))
 		{
 			tUpdate.eErrCode = code;
 			cQueue_AddQueueTask(tpSysTask, STI_UPDATE_ERR, code, true);
@@ -375,26 +361,25 @@ bool bUpdate_SetErrCode(UpdateErrCode_E code)
 		b_ret = true;
 		vUpdate_ResetRecTimeout(false);
 	}
-	else 
+	else
 		b_ret = false;
 
 	return b_ret;
 }
 
 /***********************************************************************************************************************
------函数功能    设置升级结果
------说明(备注)  设置主机或从机的升级结果
------传入参数    target: 目标-URT_HOST主机  URT_SLAVE从机
-                result: 要设置的升级结果
------输出参数    none
------返回值      true:设置成功  false:参数无效
-************************************************************************************************************************/
+ * 函数功能    : 设置升级结果状态
+ * 说明(备注)  : 设置主机或从机的升级结果
+ * 传入参数    : target: 目标-URT_HOST主机 URT_SLAVE从机 URT_HOST_SLAVE主从机, result: 升级结果
+ * 输出参数    : 无
+ * 返回值      : bool: true 设置成功, false 参数无效
+ ************************************************************************************************************************/
 bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 {
-	if(result >= UTR_MAX)
+	if (result >= UTR_MAX)
 		return false;
 
-	switch(result)
+	switch (result)
 	{
 		case UTR_INVALID:
 		{
@@ -406,8 +391,7 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 			tUpdate.usPendPacketLen = 0;
 			tUpdate.usRecFrameCnt = 0;
 			vUpdate_ResetRecTimeout(false);
-		}
-		break;
+		}break;
 
 		case UTR_RUNNING:
 		{
@@ -418,57 +402,45 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 			tUpdate.ulFwPendCrc32 = 0xFFFFFFFFUL;
 			tUpdate.usPendPacketLen = 0;
 			tUpdate.usRecFrameCnt = 0;
-		}
-		break;
+		}break;
 
 		case UTR_OK:
-		{
-			vUpdate_ResetRecTimeout(false);
-		}
-		break;
-
 		case UTR_LATEST:
-		{
-			vUpdate_ResetRecTimeout(false);
-		}
-		break;
-
-		case UTR_CANCEL:
-		{
-			// vUpdate_ResetRecTimeout(false);
-		}
-		break;
-
-		case UTR_FAIL:
-		{
-			// vUpdate_ResetRecTimeout(false);
-		}
-		break;
-
 		case UTR_MAX:
 		{
 			vUpdate_ResetRecTimeout(false);
-		}
-		break;
+		}break;
+
+		case UTR_CANCEL:
+		case UTR_FAIL:
+		{
+			// vUpdate_ResetRecTimeout(false);
+		}break;
 
 		default:
 			return false;
 	}
 
-	switch(target)
+	switch (target)
 	{
 		case URT_HOST:
+		{
 			tUpdate.eHostResult = result;
-			break;
+		}
+		break;
 
 		case URT_SLAVE:
+		{
 			tUpdate.eSlaveResult = result;
-			break;
+		}
+		break;
 
 		case URT_HOST_SLAVE:
+		{
 			tUpdate.eHostResult = result;
 			tUpdate.eSlaveResult = result;
-			break;
+		}
+		break;
 
 		default:
 			return false;
@@ -477,187 +449,154 @@ bool bUpdate_SetResult(UpdateResultTarget_E target, UpdateTaskResult_E result)
 	return true;
 }
 
-/*****************************************************************************************************************
------函数功能    选择升级通道
------说明(备注)  根据传入的升级对象和通道类型，选择并初始化升级通道。
------传入参数    e_obj: 升级对象。
-                ch_type: 通道类型。
------输出参数    none
------返回值      1: 选择成功
-                0: 通道未改变
-                -1: 参数无效
-                -2: 添加任务失败
-                -3: 未知升级对象
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 选择升级通道
+ * 说明(备注)  : 根据传入的升级对象和通道类型，选择并初始化升级通道
+ * 传入参数    : e_obj: 升级对象, ch_type: 通道类型
+ * 输出参数    : 无
+ * 返回值      : s8: 1 成功, 0 通道未变, -1 参数无效, -2 添加任务失败, -3 未知升级对象
+ ************************************************************************************************************************/
 s8 cUpdate_ChSelect(ModuleObject_E e_obj, ChannelType_E ch_type)
 {
-	if(e_obj >= MO_INVAILD || ch_type >= CT_INVAILD)
+	if ((e_obj >= MO_INVAILD) || (ch_type >= CT_INVAILD))
 		return -1;
-	
-	if(ch_type == tUpdate.eChType && 
-		tpSysTask->ucID == STI_UPDATE)
+
+	if ((ch_type == tUpdate.eChType) && (tpSysTask->ucID == STI_UPDATE))
 	{
 		vUpdate_ResetTimeout();
 		return 0;
 	}
-	
-	switch(e_obj)
+
+	switch (e_obj)
 	{
 		case MO_DEFAULT:
 		case MO_CONSOLE:
-		{
-			tUpdate.ulBaud = 115200;
-		}
-		break;
-		
 		case MO_BMS:
-		{
-			tUpdate.ulBaud = 115200;
-		}
-		break;
-
 		case MO_DCAC:
-		{
-			tUpdate.ulBaud = 115200;
-		}
-		break;
-
 		case MO_MGMT_AC:
 		case MO_MGMT_DC:
 		{
 			tUpdate.ulBaud = 115200;
-		}
-		break;
-		
+		}break;
+
 		default:
 			return -3;
 	}
 
 	tUpdate.eObj = e_obj;
 	tUpdate.eChType = ch_type;
-	
-	if(tpSysTask->ucID == STI_INIT)
+
+	if (tpSysTask->ucID == STI_INIT)
 	{
-		if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, false) < 0)
+		if (cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, false) < 0)
 			return -2;
 	}
 	else
 	{
-		if(cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, true) < 0)
+		if (cQueue_AddQueueTask(tpSysTask, STI_UPDATE, 0, true) < 0)
 			return -3;
 	}
-	
 
 	return 1;
 }
 
-/*****************************************************************************************************************
------函数功能    选择升级协议
------说明(备注)  根据传入的升级对象和协议类型，选择并初始化升级协议。
------传入参数    e_obj: 升级对象。
-                proto_type: 协议类型。
------输出参数    none
------返回值      1: 选择成功
-                0: 协议未改变
-                -1: 参数无效
-******************************************************************************************************************/
+/***********************************************************************************************************************
+ * 函数功能    : 选择升级协议
+ * 说明(备注)  : 根据传入的升级对象和协议类型，选择并初始化升级协议
+ * 传入参数    : e_obj: 升级对象, proto_type: 协议类型
+ * 输出参数    : 无
+ * 返回值      : s8: 1 成功, 0 协议未改变, -1 参数无效, -3 跨对象冲突
+ ************************************************************************************************************************/
 s8 cUpdate_ProtoSelect(ModuleObject_E e_obj, ProtoType_E proto_type)
 {
-	if(e_obj >= MO_INVAILD || proto_type >= PT_INVAILD)
+	if ((e_obj >= MO_INVAILD) || (proto_type >= PT_INVAILD))
 		return -1;
 
 	/* 升级对象已确定时，协议选择必须与当前升级对象一致，防止跨对象污染 */
-	if(tUpdate.eObj != MO_DEFAULT && e_obj != tUpdate.eObj)
+	if ((tUpdate.eObj != MO_DEFAULT) && (e_obj != tUpdate.eObj))
 		return -3;
-	
-	if(proto_type == tUpdate.eProtoType &&
-		tSysInfo.eDevState == DS_UPDATE_MODE)
-	{
+
+	if ((proto_type == tUpdate.eProtoType) && (tSysInfo.eDevState == DS_UPDATE_MODE))
 		return 0;
-	}
+
 	tUpdate.eProtoType = proto_type;
 	return 1;
 }
 
 /***********************************************************************************************************************
------函数功能    检查升级结果是否正常
------说明(备注)  根据升级目标判断主机/从机的升级结果是否处于正常状态(RUNNING/OK/LATEST)。
------传入参数   target: 升级目标 URT_HOST主机  URT_SLAVE从机  URT_HOST_SLAVE主机和从机
------返回值     bool
------作者       LJD
------日期       2026-07-01
-************************************************************************************************************************/
+ * 函数功能    : 检查升级结果是否正常
+ * 说明(备注)  : 根据升级目标判断主机/从机的升级结果是否处于正常状态(RUNNING/OK/LATEST)
+ * 传入参数    : target: 升级目标 URT_HOST主机 URT_SLAVE从机 URT_HOST_SLAVE主机和从机
+ * 输出参数    : 无
+ * 返回值      : bool: true 处于正常状态, false 异常或结束
+ ************************************************************************************************************************/
 bool bUpdate_ResultIsNormal(UpdateResultTarget_E target)
 {
-	switch(target)
+	switch (target)
 	{
 		case URT_HOST:
-			return (tUpdate.eHostResult == UTR_RUNNING 
-				|| tUpdate.eHostResult == UTR_OK 
-				|| tUpdate.eHostResult == UTR_LATEST);
-		
+			return (tUpdate.eHostResult == UTR_RUNNING
+			        || tUpdate.eHostResult == UTR_OK
+			        || tUpdate.eHostResult == UTR_LATEST);
+
 		case URT_SLAVE:
-			return (tUpdate.eSlaveResult == UTR_RUNNING 
-				|| tUpdate.eSlaveResult == UTR_OK 
-				|| tUpdate.eSlaveResult == UTR_LATEST);
+			return (tUpdate.eSlaveResult == UTR_RUNNING
+			        || tUpdate.eSlaveResult == UTR_OK
+			        || tUpdate.eSlaveResult == UTR_LATEST);
 
 		case URT_HOST_SLAVE:
-			return bUpdate_ResultIsNormal(URT_HOST) 
-				&& bUpdate_ResultIsNormal(URT_SLAVE);
-		
+			return bUpdate_ResultIsNormal(URT_HOST)
+			       && bUpdate_ResultIsNormal(URT_SLAVE);
+
 		default:
 			return false;
 	}
 }
 
 /***********************************************************************************************************************
------函数功能    升级任务Tick计时
------说明(备注)  由定时器周期调用，递减接收超时和丢失超时计数器；丢失超时时触发错误码。
------传入参数    none
------输出参数    none
------返回值      none
-************************************************************************************************************************/
+ * 函数功能    : 升级任务Tick计时
+ * 说明(备注)  : 由定时器周期调用，递减接收超时和丢失超时计数器；丢失超时时触发错误码
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : void
+ ************************************************************************************************************************/
 void vUpdate_TickTimer(void)
 {
 	bool b_rec_timeout = false;
 	bool b_lost_timeout = false;
 
-	#if(boardUSE_OS)
-	taskENTER_CRITICAL();
-	#endif
+	mainENTER_CRITICAL();
 
-	if(tUpdate.usRecOverTimeCnt > 0)
+	if (tUpdate.usRecOverTimeCnt > 0)
 	{
 		tUpdate.usRecOverTimeCnt--;
-		if(tUpdate.usRecOverTimeCnt == 0)
+		if (tUpdate.usRecOverTimeCnt == 0)
 			b_rec_timeout = true;
 	}
 
 	/* 升级任务超时退出,执行关机 */
-	if(tUpdate.usLostOverTimeCnt > 0)
+	if (tUpdate.usLostOverTimeCnt > 0)
 	{
 		tUpdate.usLostOverTimeCnt--;
-		if(tUpdate.usLostOverTimeCnt == 0)
+		if (tUpdate.usLostOverTimeCnt == 0)
 			b_lost_timeout = true;
 	}
 
-	#if(boardUSE_OS)
-	taskEXIT_CRITICAL();
-	#endif
+	mainEXIT_CRITICAL();
 
 	/* 在临界区外调用,避免临界区内嵌套调度 */
-	if(b_rec_timeout)
+	if (b_rec_timeout)
 	{
 		tUpdate.usRecFrameCnt = 0;
 		bUpdate_SetErrCode(UEF_S_REC_OVERTIME);
 	}
-		
 
-	if(b_lost_timeout)
+	if (b_lost_timeout)
 	{
 		bUpdate_Init();
-        vUpdate_InitParam();
+		vUpdate_InitParam();
 		cSys_Switch(SO_KEY, ST_OFF, true);
 	}
 }
+
 #endif  //boardUPDATE

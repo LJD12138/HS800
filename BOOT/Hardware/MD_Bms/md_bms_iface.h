@@ -1,33 +1,50 @@
+/***********************************************************************************************************************
+ * Project : BOOT
+ * Module  : BOOT\Hardware\MD_Bms
+ * File    : md_bms_iface.h
+ * Date    : 2026-09-20
+ * Author  : LJD(291483914@qq.com)
+ * Desc    : BMS 硬件通信接口驱动头文件
+ * -------------------------------------------------------
+ * todo    :
+ * 1. 无
+ * -------------------------------------------------------
+ * Copyright (c) 2026 -inc
+ ************************************************************************************************************************/
+
 #ifndef MD_BMS_IFACE_H_
 #define MD_BMS_IFACE_H_
 
-#include "board_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
 
-#if(boardBMS_IFACE && boardBMS_EN)
-
+//****************************************************Includes******************************************************************//
 #include "main.h"
+
+#if (boardBMS_IFACE && boardBMS_EN)
 #include "gpio_init.h"
 
-
-#if(boardBMS_IFACE == 1)
-//RX
+//****************************************************Macros********************************************************************//
+#if (boardBMS_IFACE == 1)
+/* RX */
 #define     	bmsUSART_GPIO_RX_RCU           			gpioUSART0_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO          			gpioUSART0_GPIO_RX_PORT 
 #define     	bmsUSART_GPIO_RX_PIN           			gpioUSART0_GPIO_RX_PIN
 #define     	bmsUSART_GPIO_RX_AF           			gpioUSART0_GPIO_RX_AF
-//TX
+/* TX */
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUSART0_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART0_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART0_GPIO_TX_PIN
 #define     	bmsUSART_GPIO_TX_AF           			gpioUSART0_GPIO_TX_AF
-//串口
+/* 串口 */
 #define     	bmsUSART_RCU           					RCU_USART0
 #define     	bmsUSART               					USART0
 #define     	bmsUSART_BAUD          					115200
 #define     	bmsUSART_IRQ           					USART0_IRQn
 #define     	bmsUSART_IRQ_HANDLER   					USART0_IRQHandler
-//DMA
-#if		(boardBMS_IFACE_DMA_EN)
+/* DMA */
+#if (boardBMS_IFACE_DMA_EN)
 #define     	bmsUSART_DMA                 			gpioUSART0_DMA
 #define     	bmsUSART_DMA_RCU             			gpioUSART0_DMA_RCU
 #define     	bmsUSART_DMA_RX_CH           			gpioUSART0_DMA_RX_CH
@@ -37,27 +54,27 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART0_TX
 #define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART0_RX
-#endif
-#endif  //bmsUSART_DMA_EN
+#endif  /* boardIC_TYPE */
+#endif  /* boardBMS_IFACE_DMA_EN */
 
 
-#elif(boardBMS_IFACE == 2)
-//RX
+#elif (boardBMS_IFACE == 2)
+/* RX */
 #define     	bmsUSART_GPIO_RX_RCU           			gpioUSART1_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO          			gpioUSART1_GPIO_RX_PORT 
 #define     	bmsUSART_GPIO_RX_PIN           			gpioUSART1_GPIO_RX_PIN
-//TX
+/* TX */
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUSART1_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART1_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART1_GPIO_TX_PIN
-//串口
+/* 串口 */
 #define     	bmsUSART_RCU           					RCU_USART1
 #define     	bmsUSART               					USART1
 #define     	bmsUSART_BAUD          					115200
 #define     	bmsUSART_IRQ           					USART1_IRQn
 #define     	bmsUSART_IRQ_HANDLER   					USART1_IRQHandler
-//DMA
-#if		(boardBMS_IFACE_DMA_EN)
+/* DMA */
+#if (boardBMS_IFACE_DMA_EN)
 #define     	bmsUSART_DMA                 			gpioUSART1_DMA
 #define     	bmsUSART_DMA_RCU             			gpioUSART1_DMA_RCU
 #define     	bmsUSART_DMA_RX_CH           			gpioUSART1_DMA_RX_CH
@@ -67,27 +84,27 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART1_TX
 #define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART1_RX
-#endif
-#endif  //bmsUSART_DMA_EN
+#endif  /* boardIC_TYPE */
+#endif  /* boardBMS_IFACE_DMA_EN */
 
 
-#elif	(boardBMS_IFACE == 3)
-//RX
+#elif (boardBMS_IFACE == 3)
+/* RX */
 #define     	bmsUSART_GPIO_RX_RCU           			gpioUSART2_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO          			gpioUSART2_GPIO_RX_PORT
 #define     	bmsUSART_GPIO_RX_PIN           			gpioUSART2_GPIO_RX_PIN
-//TX
+/* TX */
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUSART2_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUSART2_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUSART2_GPIO_TX_PIN
-//串口
+/* 串口 */
 #define     	bmsUSART_RCU           					RCU_USART2
 #define     	bmsUSART               					USART2
 #define     	bmsUSART_BAUD          					115200
 #define     	bmsUSART_IRQ           					USART2_IRQn
 #define     	bmsUSART_IRQ_HANDLER   					USART2_IRQHandler
-//DMA
-#if		(boardBMS_IFACE_DMA_EN)
+/* DMA */
+#if (boardBMS_IFACE_DMA_EN)
 #define     	bmsUSART_DMA                 			gpioUSART2_DMA
 #define     	bmsUSART_DMA_RCU             			gpioUSART2_DMA_RCU
 #define     	bmsUSART_DMA_RX_CH           			gpioUSART2_DMA_RX_CH
@@ -97,29 +114,29 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_USART2_TX
 #define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_USART2_RX
-#endif
-#endif  //bmsUSART_DMA_EN
+#endif  /* boardIC_TYPE */
+#endif  /* boardBMS_IFACE_DMA_EN */
 
 
-#elif	(boardBMS_IFACE == 4)
-//RX
+#elif (boardBMS_IFACE == 4)
+/* RX */
 #define     	bmsUSART_GPIO_RX_RCU           			gpioUART3_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO          			gpioUART3_GPIO_RX_PORT
 #define     	bmsUSART_GPIO_RX_PIN           			gpioUART3_GPIO_RX_PIN
 #define     	bmsUSART_GPIO_RX_AF           			gpioUART3_GPIO_RX_AF
-//TX
+/* TX */
 #define     	bmsUSART_GPIO_TX_RCU           			gpioUART3_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO          			gpioUART3_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN           			gpioUART3_GPIO_TX_PIN
 #define     	bmsUSART_GPIO_TX_AF           			gpioUART3_GPIO_TX_AF
-//串口
+/* 串口 */
 #define     	bmsUSART_RCU           					RCU_UART3
 #define     	bmsUSART               					UART3
 #define     	bmsUSART_BAUD          					115200
 #define     	bmsUSART_IRQ           					UART3_IRQn
 #define     	bmsUSART_IRQ_HANDLER   					UART3_IRQHandler
-//DMA
-#if		(boardBMS_IFACE_DMA_EN)
+/* DMA */
+#if (boardBMS_IFACE_DMA_EN)
 #define     	bmsUSART_DMA                 			gpioUART3_DMA
 #define     	bmsUSART_DMA_RCU             			gpioUART3_DMA_RCU
 #define     	bmsUSART_DMA_RX_CH           			gpioUART3_DMA_RX_CH
@@ -129,48 +146,55 @@
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define     	bmsUSART_DMA_TX_REQUEST     			DMA_REQUEST_UART3_TX
 #define     	bmsUSART_DMA_RX_REQUEST     			DMA_REQUEST_UART3_RX
-#endif
-#endif  //bmsUSART_DMA_EN
+#endif  /* boardIC_TYPE */
+#endif  /* boardBMS_IFACE_DMA_EN */
 
 
-#elif	(boardBMS_IFACE == 5)
-//RX
+#elif (boardBMS_IFACE == 5)
+/* RX */
 #define     	bmsUSART_GPIO_RX_RCU          			gpioUART4_GPIO_RX_RCU
 #define     	bmsUSART_GPIO_RX_GPIO					gpioUART4_GPIO_RX_PORT
 #define     	bmsUSART_GPIO_RX_PIN          			gpioUART4_GPIO_RX_PIN
-//TX
+/* TX */
 #define     	bmsUSART_GPIO_TX_RCU          			gpioUART4_GPIO_TX_RCU
 #define     	bmsUSART_GPIO_TX_GPIO         			gpioUART4_GPIO_TX_PORT
 #define     	bmsUSART_GPIO_TX_PIN          			gpioUART4_GPIO_TX_PIN
-//串口
+/* 串口 */
 #define     	bmsUSART_RCU          					RCU_UART4
 #define     	bmsUSART              					UART4
 #define     	bmsUSART_BAUD         					115200
 #define     	bmsUSART_IRQ          					UART4_IRQn
 #define     	bmsUSART_IRQ_HANDLER  					UART4_IRQHandler
-#endif
+#endif  /* boardBMS_IFACE == 1 */
 
-
-#if		(boardBMS_485_IFACE_EN)
+#if (boardBMS_485_IFACE_EN)
 #define     	bmsGPIO_485_TX_EN_RCU      				RCU_GPIOB
 #define     	bmsGPIO_485_TX_EN_GPIO     				GPIOB
 #define     	bmsGPIO_485_TX_EN_PIN      				GPIO_PIN_2
-#define     	bmsGPIO_485_TX_EN_ON()     				GPIO_BOP(bmsGPIO_485_TX_EN_GPIO) = bmsGPIO_485_TX_EN_PIN   //使能发送
-#define     	bmsGPIO_485_TX_EN_OFF()    				GPIO_BC(bmsGPIO_485_TX_EN_GPIO)  = bmsGPIO_485_TX_EN_PIN   //使能接收
-#define     	bmsGPIO_485_TX_EN_SATTE()               gpio_output_bit_get(bmsGPIO_485_TX_EN_GPIO,bmsGPIO_485_TX_EN_PIN)
-#endif 	//boardBMS_485_IFACE_EN
+#define			bmsGPIO_485_TX_EN_ON()					GPIO_BOP(bmsGPIO_485_TX_EN_GPIO) = bmsGPIO_485_TX_EN_PIN	/* 使能发送 */
+#define			bmsGPIO_485_TX_EN_OFF()					GPIO_BC(bmsGPIO_485_TX_EN_GPIO)  = bmsGPIO_485_TX_EN_PIN	/* 使能接收 */
+#define     	bmsGPIO_485_TX_EN_SATTE()               gpio_output_bit_get(bmsGPIO_485_TX_EN_GPIO, bmsGPIO_485_TX_EN_PIN)
+#endif 	/* boardBMS_485_IFACE_EN */
 
+//****************************************************Types*********************************************************************//
+
+//****************************************************Globals*******************************************************************//
 extern __IO bool bBmsUseFlag;
 
+//****************************************************Extern********************************************************************//
 void vBms_IfaceInit(void);
 void vBms_IfaceDeInit(void);
-bool bBms_DataSendStart(u8* data, u16 len);
+bool bBms_DataSendStart(uint8_t *p_data, uint16_t us_len);
 
-#if(boardBMS_485_IFACE_EN)
-void vBms_485TransEnable(bool en);
-#endif
+#if (boardBMS_485_IFACE_EN)
+void vBms_485TransEnable(bool b_en);
+#endif  /* boardBMS_485_IFACE_EN */
 
-#endif  //boardBMS_IFACE && boardBMS_EN
+#endif  /* (boardBMS_IFACE && boardBMS_EN) */
 
-#endif  //MD_BMS_IFACE_H_
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* MD_BMS_IFACE_H_ */
 

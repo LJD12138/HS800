@@ -1,6 +1,6 @@
 /*******************************************************************************************************************************
  * Project : APP
- * Module  : G:\1-Baiku_Projects\25-HS800\1.software\HS803\APP\Hardware\MD_Display\user_ui
+ * Module  : APP\Hardware\MD_Display\user_ui
  * File    : img_breath.c
  * Date    : 2026-05-30
  * Author  : LJD(291483914@qq.com)
@@ -17,10 +17,10 @@
 #include <string.h>
 
 #if (boardDISPLAY_EN)
-//****************************************************Macros*******************************************************************//
+//****************************************************Macros********************************************************************//
 
 
-//****************************************************Parameter Initialization************************************************//
+//****************************************************Parameter Initialization**************************************************//
 /* 图片资源引用 */
 extern const lv_image_dsc_t img_1;
 extern const lv_image_dsc_t img_2; 
@@ -30,19 +30,19 @@ extern const lv_image_dsc_t img_1_mirror_map; /* 由 ui_image_1.c 导出的水�
 /* 内部控制管理结构体定义 */
 typedef struct
 {
-    lv_obj_t              *pContainer;                             /* 全模式共用的容器 */
-    lv_obj_t              *pImgLeft;                               /* 全模式共用的左侧图片 */
-    lv_obj_t              *pImgRight;                              /* 全模式共用的右侧图片 */
-    ImgAnimMode_E          eCurrentMode;                           /* 当前正在运行的动画模式 */
-    ImgAnimPosConfig_T     posConfigs[IMG_ANIM_MODE_MAX];          /* 各模式初始坐标 */
-    uint32_t               usCurrentPeriod;                        /* 当前动画周期 */
-    bool                   bIsPaused;                              /* 暂停状态标志 */
-} ImgAnimCtrl_T;
+	lv_obj_t			*pContainer;		/* 全模式共用的容器 */
+	lv_obj_t			*pImgLeft;			/* 全模式共用的左侧图片 */
+	lv_obj_t			*pImgRight;			/* 全模式共用的右侧图片 */
+	ImgAnimMode_E		eCurrentMode;		/* 当前正在运行的动画模式 */
+	ImgAnimPosConfig_T	posConfigs[IMG_ANIM_MODE_MAX];	/* 各模式初始坐标 */
+	uint32_t			usCurrentPeriod;	/* 当前动画周期 */
+	bool				bIsPaused;			/* 暂停状态标志 */
+}ImgAnimCtrl_T;
 
 /* 全局唯一控制管理变量，存放在 RAM 中，符合规范使用 S_t 前缀大驼峰 */
 static ImgAnimCtrl_T S_tImgAnimCtrl;
 
-//****************************************************Function Declaration****************************************************//
+//****************************************************Function Declaration******************************************************//
 static void v_exec_cb(void *p_var, const int32_t l_val);
 
 
@@ -57,9 +57,7 @@ static void v_exec_cb(void *p_var, const int32_t l_val)
 {
     ImgAnimCtrl_T *p_ctrl = (ImgAnimCtrl_T *)p_var;
     if (p_ctrl == NULL || p_ctrl->pImgLeft == NULL || p_ctrl->pImgRight == NULL)
-    {
         return;
-    }
 
     /* 1. 呼吸渐暗基础逻辑：改变图片控件的 Alpha 透明度 */
     lv_opa_t current_opa = (lv_opa_t)(255 - l_val);
@@ -116,9 +114,7 @@ static void v_exec_cb(void *p_var, const int32_t l_val)
 void vImgAnim_Init(lv_obj_t *parent)
 {
     if (parent == NULL)
-    {
         return;
-    }
 
     if (S_tImgAnimCtrl.pContainer != NULL)
     {
@@ -131,9 +127,7 @@ void vImgAnim_Init(lv_obj_t *parent)
     /* 1. 创建全模式共用容器 */
     S_tImgAnimCtrl.pContainer = lv_obj_create(parent);
     if (S_tImgAnimCtrl.pContainer == NULL)
-    {
         return;
-    }
     
     /* 去除边框背景设置为透明，设置占满整个父容器 */
     lv_obj_remove_style_all(S_tImgAnimCtrl.pContainer);
@@ -143,16 +137,12 @@ void vImgAnim_Init(lv_obj_t *parent)
     /* 2. 创建左侧图片控件并载入默认原图 img_1 */
     S_tImgAnimCtrl.pImgLeft = lv_image_create(S_tImgAnimCtrl.pContainer);
     if (S_tImgAnimCtrl.pImgLeft != NULL)
-    {
         lv_image_set_src(S_tImgAnimCtrl.pImgLeft, &img_1);
-    }
 
     /* 3. 创建右侧图片控件并载入默认原图 img_1 */
     S_tImgAnimCtrl.pImgRight = lv_image_create(S_tImgAnimCtrl.pContainer);
     if (S_tImgAnimCtrl.pImgRight != NULL)
-    {
         lv_image_set_src(S_tImgAnimCtrl.pImgRight, &img_1);
-    }
 
     /* 4. 默认初始化各模式下初始坐标配置 */
     for (int i = 0; i < IMG_ANIM_MODE_MAX; i++)
@@ -201,9 +191,7 @@ void vImgAnim_SetPosConfig(ImgAnimMode_E e_mode, const ImgAnimPosConfig_T *p_con
 void vImgAnim_SetMode(ImgAnimMode_E e_mode, uint32_t us_period_ms)
 {
     if (S_tImgAnimCtrl.pContainer == NULL || S_tImgAnimCtrl.pImgLeft == NULL || S_tImgAnimCtrl.pImgRight == NULL)
-    {
         return;
-    }
 
     S_tImgAnimCtrl.bIsPaused = false;
 
@@ -365,9 +353,7 @@ void vImgAnim_Pause(void)
 void vImgAnim_Resume(void)
 {
     if (S_tImgAnimCtrl.bIsPaused && S_tImgAnimCtrl.eCurrentMode != IMG_ANIM_MODE_NONE)
-    {
         vImgAnim_SetMode(S_tImgAnimCtrl.eCurrentMode, S_tImgAnimCtrl.usCurrentPeriod); 
-    }
 }
 
 #endif  //boardDISPLAY_EN
