@@ -33,7 +33,7 @@ extern "C" {
 //-------------------------------------------------------------------
 //          	<q0> 调试使能
 //                                          			<i> 勾选为开启
-#define     	boardDEBUG                    		     0
+#define     	boardDEBUG                    		     1
 //-------------------------------------------------------------------
 //          	<c1> 看门狗使能
 //                                          			<i> 勾选为开启
@@ -193,7 +193,8 @@ extern "C" {
 //														<4=> Print--UART3
 //														<5=> Print--UART4
 //														<6=> Print--UART5
-#define     	boardPRINT_IFACE                		 5
+//														<7=> Print--USB_CDC
+#define     	boardPRINT_IFACE                		 7
 #if (boardPRINT_IFACE)
 //-------------------------------------------------------------------
 //          	<q0> Print串口DMA功能使能

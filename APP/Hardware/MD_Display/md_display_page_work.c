@@ -25,17 +25,18 @@
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_work_enter(void);
+static void v_page_work_exit(void);
 static void v_page_work_update(const DispDataSnapshot_T *p_data, bool b_force);
 static bool b_page_work_event(DispEvent_E e_event, uint32_t ul_param);
-static void v_page_work_exit(void);
+
 
 const DispPage_T G_tPageWork =
 {
     .ePageId     = PAGE_ID_WORK,
     .vOnEnter    = v_page_work_enter,
+    .vOnExit     = v_page_work_exit,
     .vOnUpdate   = v_page_work_update,
     .bOnEvent    = b_page_work_event,
-    .vOnExit     = v_page_work_exit,
     .usRefreshMs = 33,
 };
 
@@ -59,8 +60,21 @@ static void v_page_work_enter(void)
     vDisp_UpdateDevParam();
     bDisp_Main1DataUpdate();
 
-    /* 开启背光并启动自动息屏管理 */
-    bDisp_SwitchBacklight(DISP_BKL_ON, false);
+    /* 进入工作页若背光未开启, 显式点亮背光 */
+    if (bDisp_IsBacklightOn() == false)
+        bDisp_Switch(ST_ON, false);
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 退出工作页面
+ * 说明(备注)  : 停止主工作界面自绘动画，清理资源
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+static void v_page_work_exit(void)
+{
+    vDisp_Main1Exit();
 }
 
 /***********************************************************************************************************************
@@ -82,7 +96,7 @@ static void v_page_work_update(const DispDataSnapshot_T *p_data, bool b_force)
 
 /***********************************************************************************************************************
  * 函数功能    : 工作页事件回调
- * 说明(备注)  : 断码屏工作页不消费按键, 透传框架默认处理(重置息屏倒计时)
+ * 说明(备注)  : 工作页不消费按键, 透传框架默认处理(重置息屏倒计时)
  * 传入参数    : e_event: 事件类型
  * 输出参数    : ul_param: 事件参数
  * 返回值      : false (事件透传给框架, 不触发自动跳转)
@@ -92,18 +106,6 @@ static bool b_page_work_event(DispEvent_E e_event, uint32_t ul_param)
     (void)e_event;
     (void)ul_param;
     return false;   /* 透传框架默认处理: 按键重置息屏倒计时, 故障自动弹窗等 */
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 退出工作页面
- * 说明(备注)  : 停止主工作界面自绘动画，清理资源
- * 传入参数    : 无
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-static void v_page_work_exit(void)
-{
-    vDisp_Main1Exit();
 }
 
 #endif  /* boardDISPLAY_EN */

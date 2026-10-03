@@ -74,8 +74,7 @@ void v_usb_queue_task_booting(Task_T *p_task)
 	}
 
 	/* 等待超时 */
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (10000 / usbTASK_BOOTING_CYCLE_TIME))
+	if (bQueue_IsTaskTimeoutMs(p_task, 10000))
 	{
 		bUsb_SetErrCode(UEC_BOOT_FAULT, true);
 

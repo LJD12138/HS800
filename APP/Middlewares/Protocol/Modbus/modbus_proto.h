@@ -23,6 +23,11 @@ extern "C" {
 #include "main.h"
 #include "lwrb.h"
 
+#if (boardUSE_OS)
+#include "FreeRTOS.h"
+#include "task.h"
+#endif  /* boardUSE_OS */
+
 #if (1)
 
 //****************************************************Macros********************************************************************//
@@ -70,14 +75,24 @@ typedef struct
 /* #pragma pack(1) removed to fix alignment-related UsageFault */
 typedef struct
 {
+	/* 同步信息 */
+	#if (boardUSE_OS)
+	TaskHandle_t		xTaskToNotify;		/* 当前等待回包的任务句柄 */
+	volatile bool		bWaitAck;       	/* 是否正在等待从机回包 */
+	vu8 				ucWaitCmd;      	/* 期望等待的应答命令字 */
+	vu16				usWaitRegAddr;		/* 期望等待的寄存器地址 */
+	vs8 				cAckResult;     	/* 应答结果: 1-成功, <0-失败 */
+	#endif  /* boardUSE_OS */
+
+	/* 数据帧头信息 */
 	vu8					ucAddr;
 	vu8					ucCharLen;
-	vu8					ucFrameLen;			//数据帧总长度
+	vu8					ucFrameLen;			/* 数据帧总长度 */
 	u16					usFrameDataSize;
 	vu16				usRegSize;
 	vu16				usRegAddr;
 	vu16				usRegData;
-	u8					ucaFrameData[];		//数据帧
+	u8					ucaFrameData[];		/* 数据帧 */
 }ModbusProtoTx_t;
 /* #pragma pack() removed */
 
@@ -90,6 +105,11 @@ s8 cModbus_StepWaitOutTime(ModbusProtoRx_t* proto);
 s8 cModbus_ResetRxBuff(ModbusProtoRx_t* proto);
 s8 cModbus_ResetTx(ModbusProtoTx_t* proto, u16 len);
 void vModbus_RecEnd(ModbusProtoRx_t* proto);
+s8 cModbus_CheckReply(const ModbusProtoTx_t* proto_tx, const ModbusProtoRx_t* proto_rx);
+#if (boardUSE_OS)
+s8 cModbus_WaitReply(ModbusProtoTx_t* proto, u8 uc_cmd, u16 us_reg_addr, u16 timeout_ms);
+s8 cModbus_NotifyAck(ModbusProtoTx_t* proto, s8 c_result);
+#endif  /* boardUSE_OS */
 
 #endif  /* 1 */
 

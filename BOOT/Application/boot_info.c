@@ -247,10 +247,10 @@ s16 cBoot_UpdateMemParam(const char* id_str)
 		return -99;
 	#else
 	//擦除Falsh准备写入
-	if (cFlash_EraseSector(flashAPP_INFO_SATRT, flashAPP_INFO_END) <= 0)
+	if (cFlash_EraseSector(flashAPP_INFO_START, flashAPP_INFO_END) <= 0)
 		return -2;
 	//开始写入数据
-	if (cFlash_Write8BitData(flashAPP_INFO_SATRT, (u8*)&tBootMemParam, sizeof(tBootMemParam)) <= 0)
+	if (cFlash_Write8BitData(flashAPP_INFO_START, (u8*)&tBootMemParam, sizeof(tBootMemParam)) <= 0)
 		return -3;
 	#endif  /* boardEASY_FLASH */
 	return 1;
@@ -322,7 +322,7 @@ s16 cBoot_GetMemParam(const char* id_str)
 		return -40;
 	#else
 	//读取数据
-	if (cFlash_Read8BitData(flashAPP_INFO_SATRT, (u8*)&tBootMemParam, sizeof(tBootMemParam)) <= 0)
+	if (cFlash_Read8BitData(flashAPP_INFO_START, (u8*)&tBootMemParam, sizeof(tBootMemParam)) <= 0)
 		return -41;
 	#endif  /* boardEASY_FLASH */
 	return 1;

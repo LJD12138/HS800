@@ -27,13 +27,13 @@
  * Task_T 结构布局不随健康监控开关改变,量产零侵入 */
 typedef struct
 {
-	Task_T				*tp_task;			/* 关联的任务控制块(NULL=空槽) */
+	Task_T				*p_task;			/* 关联的任务控制块(NULL=空槽) */
 	TaskTelemetry_T		t_tel;				/* 遥测数据 */
 }QueueTelSlot_T;
 static QueueTelSlot_T s_tel_tbl[QUEUE_TEL_MAX];
 
 //****************************************************Function Declaration******************************************************//
-static QueueTelSlot_T *prv_tel_slot(const Task_T *tp_task);
+static QueueTelSlot_T *prv_tel_slot(const Task_T *p_task);
 
 /***********************************************************************************************************************
  * 函数功能    : 获取任务队列的遥测块指针(对外查询接口)
@@ -51,17 +51,17 @@ TaskTelemetry_T *tpQueue_GetTelemetry(const Task_T *task)
 /***********************************************************************************************************************
  * 函数功能    : 更新队列水位遥测峰值
  * 说明(备注)  : 仅在临界区内调用；入队成功后记录当前排队任务数的历史最大值
- * 传入参数    : tp_task: 任务控制块指针
+ * 传入参数    : p_task: 任务控制块指针
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-void vQueue_UpdatePeak(Task_T *tp_task)
+void vQueue_UpdatePeak(Task_T *p_task)
 {
-    TaskTelemetry_T *tp_tel = tpQueue_GetTelemetry(tp_task);
+    TaskTelemetry_T *tp_tel = tpQueue_GetTelemetry(p_task);
     if (tp_tel == NULL)
         return;
 
-    u16 us_cnt = (u16)(lwrb_get_full(&tp_task->tQueueBuff) / sizeof(TaskItem_T));
+    u16 us_cnt = (u16)(lwrb_get_full(&p_task->tQueueBuff) / sizeof(TaskItem_T));
     if (us_cnt > tp_tel->usPeakItems)
         tp_tel->usPeakItems = us_cnt;
 }
@@ -69,15 +69,15 @@ void vQueue_UpdatePeak(Task_T *tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 查找任务对应的遥测槽
  * 说明(备注)  : 线性查表;表容量小且仅调试编译存在,开销可忽略
- * 传入参数    : tp_task: 任务控制块指针
+ * 传入参数    : p_task: 任务控制块指针
  * 输出参数    : none
  * 返回值      : 命中的槽指针; 未注册返回 NULL
  ************************************************************************************************************************/
-static QueueTelSlot_T *prv_tel_slot(const Task_T *tp_task)
+static QueueTelSlot_T *prv_tel_slot(const Task_T *p_task)
 {
     for (u8 uc_i = 0; uc_i < QUEUE_TEL_MAX; uc_i++)
     {
-        if (s_tel_tbl[uc_i].tp_task == tp_task && tp_task != NULL)
+        if (s_tel_tbl[uc_i].p_task == p_task && p_task != NULL)
             return &s_tel_tbl[uc_i];
     }
     return NULL;
@@ -86,18 +86,18 @@ static QueueTelSlot_T *prv_tel_slot(const Task_T *tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 队列初始化成功后自动挂载遥测槽
  * 说明(备注)  : 幂等操作;重复初始化复用原槽并清零遥测;表满时静默放弃(仅失去遥测,不影响功能)
- * 传入参数    : tp_task: 任务控制块指针
+ * 传入参数    : p_task: 任务控制块指针
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-void vQueue_TelAttach(Task_T *tp_task)
+void vQueue_TelAttach(Task_T *p_task)
 {
-    QueueTelSlot_T *tp_slot = prv_tel_slot(tp_task);
+    QueueTelSlot_T *tp_slot = prv_tel_slot(p_task);
     if (tp_slot == NULL)
     {
         for (u8 uc_i = 0; uc_i < QUEUE_TEL_MAX; uc_i++)
         {
-            if (s_tel_tbl[uc_i].tp_task == NULL)
+            if (s_tel_tbl[uc_i].p_task == NULL)
             {
                 tp_slot = &s_tel_tbl[uc_i];
                 break;
@@ -106,7 +106,7 @@ void vQueue_TelAttach(Task_T *tp_task)
     }
     if (tp_slot != NULL)
     {
-        tp_slot->tp_task = tp_task;
+        tp_slot->p_task = p_task;
         memset(&tp_slot->t_tel, 0, sizeof(TaskTelemetry_T));
     }
 }

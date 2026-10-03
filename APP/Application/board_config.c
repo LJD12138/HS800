@@ -22,9 +22,6 @@
 #include "Print/print_task.h"
 #include "Flash/flash_iface.h"
 
-#if(boardDISPLAY_EN)
-#include "Middlewares/LVGL/lvgl.h"
-#endif
 
 #if (boardADC_EN)
 #include "Adc/adc_task.h"
@@ -247,7 +244,7 @@ void vBoard_SysInit(void)
 	#endif  /* boardWDGT_EN */
 	
 	#if (boardPRINT_IFACE)
-	vPrint_Init();
+	vPrint_IfaceInit();
 	#endif  /* boardPRINT_IFACE */
 	
 	#if (boardSEGGER)

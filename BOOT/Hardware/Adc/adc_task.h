@@ -25,7 +25,6 @@ extern "C" {
 #if (boardADC_EN)
 #include "Adc/adc_iface.h"
 
-#if (1)
 //****************************************************Macros********************************************************************//
 
 /* 1. 电池输入电压采样分压比 (单位: 0.1V) */
@@ -56,7 +55,6 @@ extern AdcSamp_T tAdcSamp;
 
 //****************************************************Extern********************************************************************//
 s8      cAdc_TaskInit(void);
-int16_t sAdc_CalcTempByAd(uint16_t us_ad_val);
 
 #if (!boardUSE_OS)
 void    vAdc_Task(void *p_v_parameters);
@@ -67,7 +65,6 @@ bool    bAdc_EnterLowPower(void);
 bool    bAdc_ExitLowPower(void);
 #endif  /* boardLOW_POWER */
 
-#endif  /* 1 */
 
 #endif  /* boardADC_EN */
 

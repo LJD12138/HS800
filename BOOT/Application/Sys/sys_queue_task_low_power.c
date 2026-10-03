@@ -35,29 +35,29 @@ void v_enter_sleep(uint16_t time);
 /***********************************************************************************************************************
  * 函数功能    : 系统低功耗队列任务执行函数
  * 说明(备注)  : 驱动低功耗流程步骤
- * 传入参数    : tp_task: 队列任务控制块指针
+ * 传入参数    : p_task: 队列任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_sys_queue_task_low_power(Task_T *tp_task)
+void v_sys_queue_task_low_power(Task_T *p_task)
 {
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
-            cQueue_GotoStep(tp_task, STEP_NEXT);
+            cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
         case 1:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
 
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
     }
@@ -130,7 +130,7 @@ void PostSleepProcessing(uint32_t ulExpectedIdleTime)
 
     vGPIO_ExitLowPower();
     #if (boardPRINT_IFACE)
-    vPrint_Init();
+    vPrint_IfaceInit();
     #endif  /* boardPRINT_IFACE */
     vLcd_ExitLowPower();
     vBuz_ExitLowPower();

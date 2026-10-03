@@ -58,8 +58,7 @@ void v_dcac_queue_task_err_proc(Task_T *p_task)
 		break;
 	}
 
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (3000 / dcacTASK_ERR_PROC_CYCLE_TIME))  /* 等待超时 */
+	if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
 	{
 		if (uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
 			log_w("bDcacTask:错误处理任务处理超时,步骤%d", p_task->ucStep);

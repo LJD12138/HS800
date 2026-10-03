@@ -74,20 +74,17 @@ void v_sys_queue_task_booting(Task_T *p_task)
 			                    bSys_LowVoltReqChg() || //电池欠压请求充电
 			                    G_TestMode == true);     //测试模式
 
-			p_task->usStepWaitCnt++;
 			if (b_bms_ready)
 			{
 				/* BMS 就绪后, 且开机启动画面至少展示 1000ms (两帧动画) 后进入工作态 */
-				if (p_task->usStepWaitCnt >= (1000 / sysTASK_BOOTING_CYCLE_TIME))
+				if (bQueue_IsStepTimeoutMs(p_task, 1000))
 					cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 			}
 			else
 			{
 				//等待超时重新从第一步开始
-				p_task->usStepRepeatCnt++;
-				if (p_task->usStepRepeatCnt >= (1000 / sysTASK_BOOTING_CYCLE_TIME))
+				if (bQueue_IsStepTimeoutMs(p_task, 1000))
 				{
-					p_task->usStepRepeatCnt = 0;
 					cQueue_GotoStep(p_task, STEP_FORWARD);  //上一步
 
 					if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
@@ -95,8 +92,7 @@ void v_sys_queue_task_booting(Task_T *p_task)
 				}
 			}
 			#else
-			p_task->usStepWaitCnt++;
-			if (p_task->usStepWaitCnt >= (1000 / sysTASK_BOOTING_CYCLE_TIME))
+			if (bQueue_IsStepTimeoutMs(p_task, 1000))
 				cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 			#endif  //boardBMS_EN
 		}break;
@@ -116,8 +112,7 @@ void v_sys_queue_task_booting(Task_T *p_task)
 	}
 
 	//等待10S,超时退出
-	p_task->usTaskWaitCnt++;
-	if ((p_task->usTaskWaitCnt > (10000 / sysTASK_BOOTING_CYCLE_TIME)) && (p_task->ucStep != STEP_END))
+	if (bQueue_IsTaskTimeoutMs(p_task, 10 * 1000) && (p_task->ucStep != STEP_END))
 	{
 		if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
 			log_w("bSysTask:启动任务等待超时,步骤%d", p_task->ucStep);

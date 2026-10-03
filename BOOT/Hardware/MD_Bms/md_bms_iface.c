@@ -76,31 +76,31 @@ static void v_bms_io_init(void)
 	rcu_periph_clock_enable(bmsUSART_GPIO_TX_RCU);
     /* connect port to USARTx_Tx */
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_af_set(bmsUSART_GPIO_TX_GPIO, bmsUSART_GPIO_TX_AF, bmsUSART_GPIO_TX_PIN);
-    gpio_mode_set(bmsUSART_GPIO_TX_GPIO, GPIO_MODE_AF, GPIO_PUPD_NONE, bmsUSART_GPIO_TX_PIN);
-    gpio_output_options_set(bmsUSART_GPIO_TX_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_TX_PIN);
+	gpio_af_set(bmsUSART_GPIO_TX_PORT, bmsUSART_GPIO_TX_AF, bmsUSART_GPIO_TX_PIN);
+    gpio_mode_set(bmsUSART_GPIO_TX_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, bmsUSART_GPIO_TX_PIN);
+    gpio_output_options_set(bmsUSART_GPIO_TX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_TX_PIN);
 	#else
-	gpio_init(bmsUSART_GPIO_TX_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, bmsUSART_GPIO_TX_PIN);
+	gpio_init(bmsUSART_GPIO_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, bmsUSART_GPIO_TX_PIN);
 	#endif  /* boardIC_TYPE */
 	
 	/* enable COM GPIO clock */
 	rcu_periph_clock_enable(bmsUSART_GPIO_RX_RCU);
     /* connect port to USARTx_Rx */
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_af_set(bmsUSART_GPIO_RX_GPIO, bmsUSART_GPIO_RX_AF, bmsUSART_GPIO_RX_PIN);
-    gpio_mode_set(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_AF, GPIO_PUPD_PULLUP, bmsUSART_GPIO_RX_PIN);
-	gpio_output_options_set(bmsUSART_GPIO_RX_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_RX_PIN);
+	gpio_af_set(bmsUSART_GPIO_RX_PORT, bmsUSART_GPIO_RX_AF, bmsUSART_GPIO_RX_PIN);
+    gpio_mode_set(bmsUSART_GPIO_RX_PORT, GPIO_MODE_AF, GPIO_PUPD_PULLUP, bmsUSART_GPIO_RX_PIN);
+	gpio_output_options_set(bmsUSART_GPIO_RX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsUSART_GPIO_RX_PIN);
 	#else
-	gpio_init(bmsUSART_GPIO_RX_GPIO, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, bmsUSART_GPIO_RX_PIN);
+	gpio_init(bmsUSART_GPIO_RX_PORT, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, bmsUSART_GPIO_RX_PIN);
 	#endif  /* boardIC_TYPE */
 	
 	#if (boardBMS_485_IFACE_EN)
 	rcu_periph_clock_enable(bmsGPIO_485_TX_EN_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(bmsGPIO_485_TX_EN_GPIO, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, bmsGPIO_485_TX_EN_PIN);
-	gpio_output_options_set(bmsGPIO_485_TX_EN_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsGPIO_485_TX_EN_PIN);
+	gpio_mode_set(bmsGPIO_485_TX_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, bmsGPIO_485_TX_EN_PIN);
+	gpio_output_options_set(bmsGPIO_485_TX_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, bmsGPIO_485_TX_EN_PIN);
 	#else
-	gpio_init(bmsGPIO_485_TX_EN_GPIO, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, bmsGPIO_485_TX_EN_PIN);
+	gpio_init(bmsGPIO_485_TX_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, bmsGPIO_485_TX_EN_PIN);
 	#endif  /* boardIC_TYPE */
 	bmsGPIO_485_TX_EN_OFF();                                        /* 默认处于接收模式 */
 	#endif  /* boardBMS_485_IFACE_EN */

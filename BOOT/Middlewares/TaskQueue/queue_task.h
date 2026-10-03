@@ -36,13 +36,13 @@ extern "C" {
 typedef struct Task_T Task_T;
 
 /* 任务调度管理函数指针 */
-typedef bool (*bpTaskManageFunc)(Task_T *tp_task);
+typedef bool (*bpTaskManageFunc)(Task_T *p_task);
 
 /* 任务执行函数指针 */
-typedef void (*vpFunc)(Task_T *tp_task);
+typedef void (*vpFunc)(Task_T *p_task);
 
 /* 任务队列事件及添加回调函数指针 */
-typedef void (*vpAddTaskReturnFunc)(Task_T *tp_task, u8 num);
+typedef void (*vpAddTaskReturnFunc)(Task_T *p_task, u8 num);
 
 /* 任务项数据结构（紧凑存储于环形队列中） */
 #pragma pack(push, 1)

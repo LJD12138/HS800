@@ -1093,7 +1093,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 {
 	u8 uc_mode = 0;
 	u8 uc_obj = 0;
-	u8 uc_index = 0;
+	u8 s_uca_index = 0;
 	u8 len = 0;
 	s8 c_ret = 0;
 	static u8 s_uca_buff[256];
@@ -1103,7 +1103,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 	
 	uc_mode = proto->ucpValidData[0];
 	uc_obj = proto->ucpValidData[1];
-	uc_index = proto->ucpValidData[2];
+	s_uca_index = proto->ucpValidData[2];
 	
 	if(uc_mode != MO_DEFAULT && uc_mode != MO_CONSOLE)
 		return false;
@@ -1114,7 +1114,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 	{
 		case 0x00: // SYS
 		{
-			switch(uc_index)
+			switch(s_uca_index)
 			{
 				case 0x00: // tSysMemParam 记忆参数
 				{
@@ -1154,7 +1154,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 		case 0x01: // BMS
 		{
 			#if (boardBMS_EN)
-			if (uc_index == 0x00) // tBmsMemParam 记忆参数
+			if (s_uca_index == 0x00) // tBmsMemParam 记忆参数
 			{
 				len = sizeof(BmsMemParam_T);
 				memcpy(&s_uca_buff[3], (u8*)&tAppMemParam.tBMS, len);
@@ -1170,7 +1170,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 		case 0x02: // DCAC
 		{
 			#if (boardDCAC_EN)
-			if (uc_index == 0x00) // tDcacMemParam 记忆参数
+			if (s_uca_index == 0x00) // tDcacMemParam 记忆参数
 			{
 				len = sizeof(DcacMemParam_T);
 				memcpy(&s_uca_buff[3], (u8*)&tAppMemParam.tDCAC, len);
@@ -1186,7 +1186,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 		case 0x03: // MPPT
 		{
 			#if (boardMPPT_EN)
-			if (uc_index == 0x00) // tMpptMemParam 记忆参数
+			if (s_uca_index == 0x00) // tMpptMemParam 记忆参数
 			{
 				len = sizeof(MpptMemParam_T);
 				memcpy(&s_uca_buff[3], (u8*)&tAppMemParam.tMPPT, len);
@@ -1202,7 +1202,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 		case 0x04: // USB
 		{
 			#if (boardUSB_EN)
-			if (uc_index == 0x00) // tUsbMemParam 记忆参数
+			if (s_uca_index == 0x00) // tUsbMemParam 记忆参数
 			{
 				len = sizeof(UsbMemParam_T);
 				memcpy(&s_uca_buff[3], (u8*)&tAppMemParam.tUSB, len);
@@ -1218,7 +1218,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 		case 0x05: // Display
 		{
 			#if (boardDISPLAY_EN)
-			if (uc_index == 0x00) // tDispMemParam 记忆参数
+			if (s_uca_index == 0x00) // tDispMemParam 记忆参数
 			{
 				len = sizeof(DispMemParam_T);
 				memcpy(&s_uca_buff[3], (u8*)&tAppMemParam.tDISP, len);
@@ -1252,7 +1252,7 @@ static s8 c_relay_console_info(BaikuProtoRx_t* proto)
 static s8 c_set_console_info(BaikuProtoRx_t* proto)
 {
 	u8 uc_obj = 0;
-	u8 uc_index = 0;
+	u8 s_uca_index = 0;
 	u8 uc_data_len = 0;
 	u8 *p_data = NULL;
 	u8 uc_result = 0xFF;  /* 0x00: 操作成功, 0xFF: 操作失败 */
@@ -1265,12 +1265,12 @@ static s8 c_set_console_info(BaikuProtoRx_t* proto)
 	}
 
 	uc_obj = proto->ucpValidData[1];
-	uc_index = proto->ucpValidData[2];
+	s_uca_index = proto->ucpValidData[2];
 	uc_data_len = proto->ucValidLen - 3;
 	p_data = &proto->ucpValidData[3];
 
 	/* 项目代码固定为 0x00 (记忆参数) */
-	if (uc_index != 0x00)
+	if (s_uca_index != 0x00)
 	{
 		uc_result = 0xFF;
 		return c_print_data_trans(baikuCMD_REPLY_WRITE_MEM_PARAM, &uc_result, 1);

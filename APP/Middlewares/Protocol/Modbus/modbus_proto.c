@@ -146,6 +146,13 @@ s8 cModbus_TransProtoInit(ModbusProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 	if(new_proto != NULL)
 	{
 		*proto = new_proto;
+		#if (boardUSE_OS)
+		(*proto)->xTaskToNotify = NULL;
+		(*proto)->bWaitAck      = false;
+		(*proto)->ucWaitCmd     = 0;
+		(*proto)->usWaitRegAddr = 0;
+		(*proto)->cAckResult    = 0;
+		#endif  /* boardUSE_OS */
 		(*proto)->ucAddr = dev_addr;
 		(*proto)->usFrameDataSize = buff_len;
 		(*proto)->ucCharLen = 0;
@@ -760,5 +767,154 @@ static s8 c_proto_decrypt(ModbusProtoRx_t* proto)
 	
     return result;
 }
+
+/***********************************************************************************************************************
+ * 函数功能    : 校验接收到的 Modbus 回包是否与当前发送事务匹配
+ * 说明(备注)  : 用于校验迟到回复、命令字/读取字节数/写入寄存器与数据回显等协议一致性
+ * 传入参数    : proto_tx: 发送协议结构体, proto_rx: 接收协议结构体
+ * 输出参数    : 无
+ * 返回值      : 1: 匹配且校验通过; 0: 未在等待应答; 负数: 校验失败(如迟到回包/字段不匹配)
+ ************************************************************************************************************************/
+s8 cModbus_CheckReply(const ModbusProtoTx_t* proto_tx, const ModbusProtoRx_t* proto_rx)
+{
+    if (proto_tx == NULL || proto_rx == NULL)
+        return -1;
+
+	#if (boardUSE_OS)
+    /* 必须处于等待应答状态 */
+    if (!proto_tx->bWaitAck)
+        return 0;
+
+    /* 校验命令字是否一致 */
+    if (proto_tx->ucWaitCmd != 0 && proto_rx->ucCmd != proto_tx->ucWaitCmd)
+        return -2;
+	#else
+    if (proto_tx->ucCmd != 0 && proto_rx->ucCmd != proto_tx->ucCmd)
+        return -2;
+	#endif  /* boardUSE_OS */
+
+    /* 0x02/0x03 读多位/读多个寄存器：校验接收到的字节数与请求期望读取的字节数是否一致(防迟到串包) */
+    if (proto_rx->ucCmd == modbusREAD_MULTI_REG || proto_rx->ucCmd == modbusREAD_MULTI_BIT)
+    {
+        if (proto_rx->ucCharLen != proto_tx->ucCharLen)
+            return -3;
+        if (proto_rx->ucValidLen != proto_rx->ucCharLen || proto_rx->ucpValidData == NULL)
+            return -4;
+    }
+    /* 0x10 写多个寄存器：校验回显的寄存器起始地址与数量 */
+    else if (proto_rx->ucCmd == modbusWRITE_MULTI_REG)
+    {
+        if (proto_rx->usRegAddr != proto_tx->usRegAddr || proto_rx->usRegSize != proto_tx->usRegSize)
+            return -5;
+    }
+    /* 0x06 写单个寄存器 / 0x05 写单线圈：校验回显的寄存器地址与写入的数据值 */
+    else if (proto_rx->ucCmd == modbusWRITE_SINGLE_REG || proto_rx->ucCmd == modbusWRITE_SINGLE_BIT)
+    {
+        if (proto_rx->usRegAddr != proto_tx->usRegAddr)
+            return -6;
+        if (proto_rx->ucValidLen != 2 || proto_rx->ucpValidData == NULL)
+            return -7;
+
+        u16 us_reg_data = 0;
+        bFunc_SwapU16Array((u8 *)&us_reg_data, proto_rx->ucpValidData, 1);
+        if (us_reg_data != proto_tx->usRegData)
+            return -8;
+    }
+
+    return 1;
+}
+
+#if (boardUSE_OS)
+/***********************************************************************************************************************
+ * 函数功能    : 唤醒等待 Modbus 应答的发送任务
+ * 说明(备注)  : 记录应答结果并唤醒等待任务
+ * 传入参数    : proto: 发送协议结构体, c_result: 解析处理结果
+ * 输出参数    : 无
+ * 返回值      : 小于0:操作失败   等于0:未在等待应答    大于0:唤醒成功
+ ************************************************************************************************************************/
+s8 cModbus_NotifyAck(ModbusProtoTx_t* proto, s8 c_result)
+{
+    TaskHandle_t xToNotify = NULL;
+
+    if (proto == NULL)
+        return -2;
+
+    mainENTER_CRITICAL();
+    if (proto->bWaitAck)
+    {
+        proto->cAckResult    = c_result;
+        proto->bWaitAck      = false;
+        xToNotify            = proto->xTaskToNotify;
+        proto->xTaskToNotify = NULL;
+    }
+    mainEXIT_CRITICAL();
+
+    if (xToNotify != NULL)
+    {
+        xTaskNotifyGive(xToNotify);
+        return 1;
+    }
+
+    return 0;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 等待回复
+ * 说明(备注)  : 仅当收到的回复命令字与寄存器匹配时才唤醒
+ * 传入参数    : proto: 发送协议结构体, uc_cmd: 发送的请求命令字, us_reg_addr: 期望寄存器地址, timeout_ms: 超时时间(ms)
+ * 输出参数    : 无
+ * 返回值      : 小于0:校验失败/超时   等于0:未回复    大于0:回复成功
+ ************************************************************************************************************************/
+s8 cModbus_WaitReply(ModbusProtoTx_t* proto, u8 uc_cmd, u16 us_reg_addr, u16 timeout_ms)
+{
+    if (proto == NULL)
+        return -2;
+
+    s8 result = 0;
+
+    /* 仅在真正发起等待时激活事务状态机并绑定当前任务 */
+    proto->xTaskToNotify = xTaskGetCurrentTaskHandle();
+    proto->ucWaitCmd     = uc_cmd;
+    proto->usWaitRegAddr = us_reg_addr;
+    proto->cAckResult    = 0;
+    proto->bWaitAck      = true;
+
+    TickType_t xStartTick = xTaskGetTickCount();
+    const TickType_t xWaitTicks = pdMS_TO_TICKS(timeout_ms);
+
+    /* 循环等待：只有收到匹配的应答(bWaitAck清除)或真正超时才退出，免疫任务队列调度通知等外部干扰 */
+    while (proto->bWaitAck)
+    {
+        TickType_t xElapsed = xTaskGetTickCount() - xStartTick;
+        if (xElapsed >= xWaitTicks)
+            break;
+
+        ulTaskNotifyTake(pdTRUE, xWaitTicks - xElapsed);
+    }
+
+    /* 等待回复超时 */
+    if (proto->bWaitAck)
+        result = -1;
+    else 
+    {
+        /* 应答成功 */
+        if (proto->cAckResult > 0)
+            result = 1;
+        /* 应答帧校验失败 */
+        else if (proto->cAckResult < 0)
+            result = -2;
+        /* 应答失败 */
+        else
+            result = -3;
+    }
+
+    proto->bWaitAck      = false;
+    proto->xTaskToNotify = NULL;
+    proto->cAckResult    = 0;
+    proto->ucWaitCmd     = 0;
+    proto->usWaitRegAddr = 0;
+    return result;
+}
+#endif  /* boardUSE_OS */
 
 

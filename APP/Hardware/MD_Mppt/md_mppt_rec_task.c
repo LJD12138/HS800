@@ -22,13 +22,14 @@
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			mpptREC_TASK_PRIO						3		/* 任务优先级(通信接收层:保障数据新鲜度) */
-#define			mpptREC_TASK_SIZE						192		/* 任务堆栈大小 */
-TaskHandle_t tMpptRecTaskHandle;
-void         vMppt_RecTask(void *pvParameters);
+#define			mpptREC_TASK_SIZE						192		/* 任务堆栈(字) */
+TaskHandle_t tMpptRecTaskHandle = NULL;							/* 任务句柄 */
+void         vMppt_RecTask(void *pvParameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 MpptRx_T tMpptRx;
@@ -124,7 +125,7 @@ void vMppt_RecTask(void *pvParameters)
             {
                 /* 通知发送任务 */
                 #if (boardUSE_OS)
-                xTaskNotifyGive(tMpptTaskHandler);
+                cModbus_NotifyAck(tpMpptProtoTx, c_result);
                 #endif  /* boardUSE_OS */
             }
         }

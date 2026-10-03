@@ -105,10 +105,10 @@ static void v_dcac_io_init(void)
 	/* 逆变电源使能 */
 	rcu_periph_clock_enable(dcacPOWER_EN_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(dcacPOWER_EN_GPIO, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dcacPOWER_EN_PIN);
-	gpio_output_options_set(dcacPOWER_EN_GPIO, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacPOWER_EN_PIN);
+	gpio_mode_set(dcacPOWER_EN_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dcacPOWER_EN_PIN);
+	gpio_output_options_set(dcacPOWER_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dcacPOWER_EN_PIN);
 	#else
-	gpio_init(dcacPOWER_EN_GPIO, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, dcacPOWER_EN_PIN);
+	gpio_init(dcacPOWER_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, dcacPOWER_EN_PIN);
 	#endif  /* boardIC_TYPE */
 	dcacPOWER_EN_ON();
 
@@ -386,9 +386,9 @@ void vDcac_IoEnterLowPower(void)
 
 	rcu_periph_clock_enable(dcacPOWER_EN_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(dcacPOWER_EN_GPIO, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, dcacPOWER_EN_PIN);
+	gpio_mode_set(dcacPOWER_EN_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, dcacPOWER_EN_PIN);
 	#else
-	gpio_init(dcacPOWER_EN_GPIO, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, dcacPOWER_EN_PIN);
+	gpio_init(dcacPOWER_EN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, dcacPOWER_EN_PIN);
 	#endif  /* boardIC_TYPE */
 
 	rcu_periph_clock_disable(dcacUSART_GPIO_RX_RCU);

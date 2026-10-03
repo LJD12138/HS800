@@ -16,14 +16,9 @@
 #include "Sys/sys_task.h"
 #include "Sys/sys_queue_task.h"
 #include "Print/print_task.h"
-#include "..\..\BOOT\Application\flash_allot_table.h"
 
 #include "gpio_init.h"
-#include "main.h"
-#include "timer_task.h"
 #include "app_info.h"
-#include "function.h"
-#include <stdbool.h>
 
 #if (boardADC_EN)
 #include "Adc/adc_task.h"
@@ -81,17 +76,18 @@
 #endif  //boardHEAT_MANAGE_EN
 
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
-#define			SYS_TASK_PRIO							4		//任务优先级(安全决策层:保护链源头)
-#define			SYS_TASK_STK_SIZE						256		//任务堆栈 实际字节数 *4
-TaskHandle_t tSysTaskHandler = NULL;
-void        vSys_Task(void *pvParameters);
-#endif  //boardUSE_OS
+#define			SYS_TASK_PRIO							4		/* 任务优先级(安全决策层:保护链源头) */
+#define			SYS_TASK_STK_SIZE						256		/* 任务堆栈(字) */
+TaskHandle_t tSysTaskHandler = NULL;							/* 任务句柄 */
+void        vSys_Task(void *pvParameters);						/* 任务函数 */
+#endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) SysInfo_T tSysInfo;
-static Task_T *s_tp_task = NULL;
+static Task_T *s_p_task = NULL;
 bool G_TestMode = false;
 
 /* 系统记忆参数步进配置表 */
@@ -169,7 +165,7 @@ static bool b_task_param_init(void)
 	bSys_SetAutoOffTime(tAppMemParam.tSYS.usAutoOffTime);
 	bSys_SetDevState(DS_INIT, false);   //进入初始化
 
-	s_tp_task = tpSysTask;
+	s_p_task = tpSysTask;
 
 	#if (boardUPDATE)
 	bUpdate_Init();
@@ -193,7 +189,7 @@ void vSys_Task(void *pvParameters)
 	for (;;)
 	#endif  //(boardUSE_OS)
 	{
-		if (s_tp_task == NULL)
+		if (s_p_task == NULL)
 		{
 			b_task_param_init();
 
@@ -211,11 +207,11 @@ void vSys_Task(void *pvParameters)
 			v_sys_get_perm();
 		}
 
-		vQueue_TaskPoll(s_tp_task, sysTASK_CYCLE_TIME);
+		vQueue_TaskPoll(s_p_task, sysTASK_CYCLE_TIME);
 	}
 }
 
-//****************************************************Function Declaration******************************************************//
+
 
 /***********************************************************************************************************************
  * 函数功能    : 系统故障保护状态综合检查
@@ -603,7 +599,7 @@ static void v_sys_get_perm(void)
 	}
 }
 
-//****************************************************Function Declaration******************************************************//
+
 
 /***********************************************************************************************************************
  * 函数功能    : 系统时钟节拍计时器
@@ -689,7 +685,7 @@ void vSys_TickTimer(void)
 			if (tSysInfo.usAutoOffCnt == 0) //倒计时为0进入
 			{
 				#if (boardDISPLAY_EN)
-				bDisp_SwitchBacklight(DISP_BKL_ON, false);
+				bDisp_Switch(ST_ON, false);
 				#endif  //boardDISPLAY_EN
 
 				cSys_Switch(SO_KEY, ST_OFF, false);
@@ -1039,7 +1035,7 @@ s8 cSys_Switch(SwitchObject_E obj, SwitchType_E type, bool fore_en)
 	}
 
 	#if (boardDISPLAY_EN)
-	bDisp_SwitchBacklight(DISP_BKL_ON, false);
+	bDisp_Switch(ST_ON, false);
 	#endif  //(boardDISPLAY_EN)
 
 	return 1;

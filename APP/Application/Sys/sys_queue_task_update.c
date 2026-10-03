@@ -90,8 +90,7 @@ void v_sys_queue_task_update(Task_T *p_task)
 		case US_WAIT_SLAVE_READY:
 		{
 			//超时10S重新发送
-			p_task->usStepWaitCnt++;
-			if (p_task->usStepWaitCnt >= ((10 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
+			if (bQueue_IsStepTimeoutMs(p_task, (10 * 1000)))
 			{
 				cQueue_GotoStep(p_task, STEP_FORWARD);
 				break;
@@ -139,8 +138,7 @@ void v_sys_queue_task_update(Task_T *p_task)
 		case US_WAIT_TRANSPARENT:
 		{
 			//超时重新发送
-			p_task->usStepWaitCnt++;
-			if (p_task->usStepWaitCnt >= ((5 * 1000) / sysTASK_UPDATE_CYCLE_TIME))
+			if (bQueue_IsStepTimeoutMs(p_task, (5 * 1000)))
 			{
 				cQueue_GotoStep(p_task, STEP_FORWARD);
 				break;

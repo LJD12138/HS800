@@ -31,7 +31,7 @@
 //****************************************************Parameter Initialization**************************************************//
 
 //****************************************************Function Declaration******************************************************//
-static bool b_is_task_in_queue(const Task_T *tp_task, const u8 *p_target_item);
+static bool b_is_task_in_queue(const Task_T *p_task, const u8 *p_target_item);
 static bool b_lwrb_write_front(lwrb_t *buff, const void *data, lwrb_sz_t len);
 
 /***********************************************************************************************************************
@@ -166,6 +166,10 @@ s8 cQueue_GotoStep(Task_T* task, u8 toStep)
     
     task->usStepWaitCnt = 0;
     task->usStepRepeatCnt = 0;
+    
+    #if (boardUSE_OS)
+    task->ulStepStartTick = xTaskGetTickCount();    /* 步骤切换自动刷新步骤起始时间戳 */
+    #endif  /* boardUSE_OS */
     
     switch (toStep)
     {
@@ -771,19 +775,19 @@ void vQueue_TaskPoll(Task_T *task, uint32_t cycle_time_ms)
 /***********************************************************************************************************************
  * 函数功能    : 检查队列中是否存在相同任务
  * 说明(备注)  : 仅在临界区内调用；按 TaskItem_T 步长对齐比对，杜绝跨字节虚假匹配
- * 传入参数    : tp_task: 任务控制块指针
+ * 传入参数    : p_task: 任务控制块指针
  *               p_target_item: 待比对的 3 字节任务数据
  * 输出参数    : none
  * 返回值      : true: 存在重复任务; false: 不存在
  ************************************************************************************************************************/
-static bool b_is_task_in_queue(const Task_T *tp_task, const u8 *p_target_item)
+static bool b_is_task_in_queue(const Task_T *p_task, const u8 *p_target_item)
 {
-    u16 us_len = (u16)lwrb_get_full(&tp_task->tQueueBuff);
+    u16 us_len = (u16)lwrb_get_full(&p_task->tQueueBuff);
     u8 uca_item[sizeof(TaskItem_T)];
     
     for (u16 us_offset = 0; us_offset + sizeof(TaskItem_T) <= us_len; us_offset += sizeof(TaskItem_T))
     {
-        if (lwrb_peek(&tp_task->tQueueBuff, us_offset, uca_item, sizeof(TaskItem_T)) == sizeof(TaskItem_T))
+        if (lwrb_peek(&p_task->tQueueBuff, us_offset, uca_item, sizeof(TaskItem_T)) == sizeof(TaskItem_T))
         {
             if (memcmp(uca_item, p_target_item, sizeof(TaskItem_T)) == 0)
                 return true;

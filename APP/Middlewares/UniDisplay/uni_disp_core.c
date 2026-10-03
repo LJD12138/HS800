@@ -24,6 +24,12 @@
 #include "uni_disp_port.h"
 #include "MD_Display/md_display_data.h"
 #include "MD_Display/md_display_api.h"
+#include "app_info.h"
+
+#if (boardBUZ_EN)
+#include "Buz/buz_task.h"
+#endif  /* boardBUZ_EN */
+
 
 //****************************************************Parameter Initialization**************************************************//
 /*----------------页面静态注册表----------------*/
@@ -43,6 +49,7 @@ static uint16_t          S_usFramePeriodMs  = 0;     /* 当前页面帧刷新周
 
 /*----------------背光与息屏 (Power Manager)----------------*/
 static bool     S_bLight            = false;            /* 背光状态 */
+static bool     S_bLastLight        = false;            /* 上一个背光状态 */
 static uint16_t S_usAutoOffTime     = 0;                /* 息屏时间 (0=常亮) */
 static uint16_t S_usAutoOffCnt      = 0;                /* 息屏倒计时 */
 static uint8_t  S_ucCurrentDevState = 0xFFU;            /* 最近一次快照的设备状态 */
@@ -70,10 +77,10 @@ void vDisp_CoreInit(void)
     S_eTargetPageId    = PAGE_ID_MAX;
     S_ucMappedDevState = 0xFFU;
     S_bForceRefresh    = true;
-    S_usFramePeriodMs  = dispREFRESH_TIME_MS;
+    S_usFramePeriodMs  = boardDISP_REFRESH_TIME;
 
     S_bLight            = false;
-    S_usAutoOffTime     = dispAUTO_OFF_TIME_S;
+    S_usAutoOffTime     = tAppMemParam.tDISP.usAutoOffTime;
     S_usAutoOffCnt      = 0;
     S_ucCurrentDevState = 0xFFU;
 }
@@ -148,6 +155,8 @@ void vDisp_PopPage(void)
 {
     if (S_ucPopupDepth > 0U)
         v_disp_set_target(S_aePopupStack[--S_ucPopupDepth]);
+    else
+        v_disp_set_target(PAGE_ID_WORK);
 }
 
 /***********************************************************************************************************************
@@ -158,38 +167,44 @@ void vDisp_PopPage(void)
  * 输出参数    : 无
  * 返回值      : true: 已处理
  ************************************************************************************************************************/
-bool bDisp_SwitchBacklight(DispBacklight_E e_type, bool b_fore_en)
+bool bDisp_Switch(SwitchType_E e_type, bool b_fore_en)
 {
-    if (e_type == DISP_BKL_TOGGLE)
-        e_type = S_bLight ? DISP_BKL_OFF : DISP_BKL_ON;
+    if (e_type == ST_NULL)
+        e_type = S_bLight ? ST_OFF : ST_ON;
 
-    if (e_type == DISP_BKL_ON)
+    if (e_type == ST_ON)
     {
         if (!S_bLight)
         {
             S_bLight = true;
             vDisp_SetBacklight(true);
+            S_bForceRefresh = true;             /* 标记下次渲染全量重绘 */
         }
 
-        /* 更新息屏参数 */
-        S_usAutoOffTime = b_fore_en ? 0 : dispAUTO_OFF_TIME_S;
+        /* 更新息屏参数: 优先使用持久化参数, 为0则使用板级默认值 */
+        S_usAutoOffTime = b_fore_en ? 0 : tAppMemParam.tDISP.usAutoOffTime;
         S_usAutoOffCnt  = S_usAutoOffTime;
-
-        /* 唤醒可能处于低频休眠心跳的显示任务, 下一轮 EnginePoll 即时渲染 */
-        vDisp_PortWakeTask();
     }
-    else if (e_type == DISP_BKL_OFF)
+    else if (e_type == ST_OFF)
     {
-        if (S_bLight)
+        if(S_bLight)
         {
             S_bLight = false;
             vDisp_SetBacklight(false);
-
-            /* 复位息屏参数 (与旧 v_disp_param_init 一致) */
-            S_usAutoOffTime = dispAUTO_OFF_TIME_S;
-            S_usAutoOffCnt  = 0;
         }
+
+        /* 复位息屏参数 */
+        S_usAutoOffTime = tAppMemParam.tDISP.usAutoOffTime;
+        S_usAutoOffCnt  = 0;
     }
+
+    /* 唤醒可能处于低频休眠心跳的显示任务 */
+    vDisp_PortWakeTask();
+
+    #if (boardBUZ_EN)
+    if (b_fore_en && S_bLight)
+        bBuz_Tweet(LONG_1);
+    #endif  /* boardBUZ_EN */
 
     return true;
 }
@@ -234,7 +249,7 @@ void vDisp_TickTimer(void)
         {
             S_usAutoOffCnt--;
             if (S_usAutoOffCnt == 0)
-                bDisp_SwitchBacklight(DISP_BKL_OFF, false);     /* 倒计时结束息屏 */
+                bDisp_Switch(ST_OFF, false);     /* 倒计时结束息屏 */
         }
     }
 }
@@ -287,7 +302,9 @@ void vDisp_EnginePoll(void)
         S_bForceRefresh = true;
     }
 
-    /* 5. 渲染输出: 背光关闭时跳过 (息屏省电; 首帧/切页强刷由 b_force 传递给页面) */
+    //vDisp_ClearRam(); /* 渲染前清除显存 */
+
+    /* 5. 渲染输出幕 */
     if (S_bLight || S_bForceRefresh)
     {
         if (S_ptCurrentPage != NULL && S_ptCurrentPage->vOnUpdate != NULL)
@@ -296,6 +313,24 @@ void vDisp_EnginePoll(void)
         vDisp_UiRefresh();
         S_bForceRefresh = false;
     }
+    else
+    {
+        if (S_bLight != S_bLastLight)
+            vDisp_UiRefresh();
+    }
+    S_bLastLight = S_bLight;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 查询当前页面帧刷新周期
+ * 说明(备注)  : 显示任务切页时单写, 其余任务只读; 未加载时回退框架默认周期
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 当前帧刷新周期 ms (页面声明值经下限钳位后)
+ ************************************************************************************************************************/
+uint16_t usDisp_GetFramePeriod(void)
+{
+    return (S_usFramePeriodMs != 0U) ? S_usFramePeriodMs : boardDISP_REFRESH_TIME;
 }
 
 
@@ -316,18 +351,6 @@ static void v_disp_set_target(DispPageId_E e_page)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 查询当前页面帧刷新周期
- * 说明(备注)  : 显示任务切页时单写, 其余任务只读; 未加载时回退框架默认周期
- * 传入参数    : 无
- * 输出参数    : 无
- * 返回值      : 当前帧刷新周期 ms (页面声明值经下限钳位后)
- ************************************************************************************************************************/
-uint16_t usDisp_GetFramePeriod(void)
-{
-    return (S_usFramePeriodMs != 0U) ? S_usFramePeriodMs : dispREFRESH_TIME_MS;
-}
-
-/***********************************************************************************************************************
  * 函数功能    : 加载页面声明的帧周期 (框架内部)
  * 说明(备注)  : 仅显示任务上下文调用; 0/空页回退默认, 低于下限钳位 (防误配打满 CPU)
  * 传入参数    : p_page: [IN] 页面控制块指针 (可为 NULL)
@@ -337,7 +360,7 @@ uint16_t usDisp_GetFramePeriod(void)
 static uint16_t v_disp_load_page_period(const DispPage_T *p_page)
 {
     if ((p_page == NULL) || (p_page->usRefreshMs == 0U))
-        return dispREFRESH_TIME_MS;
+        return boardDISP_REFRESH_TIME;
 
     if (p_page->usRefreshMs < dispFRAME_PERIOD_MIN_MS)
         return dispFRAME_PERIOD_MIN_MS;
@@ -357,14 +380,23 @@ static void v_disp_route_by_dev_state(const DispDataSnapshot_T *p_snapshot)
 {
     DispPageId_E e_mapped;
 
+    if (tSysInfo.uInit.tFinish.bIF_DispTask == 0)
+    {
+        if (S_eCurrentPageId == PAGE_ID_INIT)
+            return;
+
+        vDisp_RequestPage(PAGE_ID_INIT);
+        return;
+    }
+
     if (p_snapshot->ucDevState == S_ucMappedDevState)
-        return;                                     /* 未变化 */
+        return; /* 未变化 */
 
     e_mapped = eDisp_MapDevStateToPage(p_snapshot->ucDevState);
     if (e_mapped < PAGE_ID_MAX)
     {
         S_ucMappedDevState = p_snapshot->ucDevState;
-        vDisp_RequestPage(e_mapped);                /* 显式导航: 清弹窗栈 */
+        vDisp_RequestPage(e_mapped);    /* 显式导航: 清弹窗栈 */
     }
 }
 

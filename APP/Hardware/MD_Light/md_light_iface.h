@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\MD_Light
  * File    : md_light_iface.h
- * Date    : 2026-09-20
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : 照明灯硬件接口与定时器PWM定义头文件
  * -------------------------------------------------------
@@ -35,11 +35,6 @@ extern "C" {
 #define			lightPWM_GPIO_PORT						GPIOA
 #define 		lightPWM_PIN                         	GPIO_PIN_8
 
-//#define 		lightPWM_EN_GPIO_RCU                 	RCU_GPIOA 
-//#define 		lightPWM_EN_GPIO_PORT                	GPIOA
-//#define 		lightPWM_EN_PIN                      	GPIO_PIN_15
-//#define 		lightPWM_EN_ON()                     	GPIO_BOP(lightPWM_EN_GPIO_PORT)=lightPWM_EN_PIN;timer_enable(lightTIMER);
-//#define 		lightPWM_EN_OFF()                    	GPIO_BC(lightPWM_EN_GPIO_PORT)=lightPWM_EN_PIN;timer_disable(lightTIMER);
 #define			lightPWM_EN_ON()						__NOP;
 #define			lightPWM_EN_OFF()						__NOP;
 
@@ -48,9 +43,13 @@ extern "C" {
 #define 		lightTIMER_CH                        	TIMER_CH_0
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define 		lightTIMER_AF                        	GPIO_AF_1
-#endif  //boardIC_TYPE
+#endif  /* boardIC_TYPE */
 
 #define 		lightPWM_SET(x)                      	TIMER_CH0CV(lightTIMER) = ((uint32_t)x)
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
 void vLight_IfaceInit(void);

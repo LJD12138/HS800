@@ -47,13 +47,13 @@ typedef enum
 
 //****************************************************Extern********************************************************************//
 #if (boardBMS_EN)
-s8 c_print_bms_prepare_update(Task_T* tp_task);
-s8 c_print_bms_update_firmware_transfer(Task_T *tp_task);
+s8 c_print_bms_prepare_update(Task_T* p_task);
+s8 c_print_bms_update_firmware_transfer(Task_T *p_task);
 #endif  /* boardBMS_EN */
 
 #if (boardDCAC_EN)
-s8 c_print_dcac_prepare_update(Task_T* tp_task);
-s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task);
+s8 c_print_dcac_prepare_update(Task_T* p_task);
+s8 c_print_dcac_update_firmware_transfer(Task_T *p_task);
 s8 cPrint_GetUpdateStage(void);
 #endif  /* boardDCAC_EN */
 

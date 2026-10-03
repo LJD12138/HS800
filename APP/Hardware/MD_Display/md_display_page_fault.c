@@ -2,9 +2,9 @@
  * Project : APP
  * Module  : APP\Hardware\MD_Display
  * File    : md_display_page_fault.c
- * Date    : 2026-09-21
+ * Date    : 2026-09-28
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 故障告警页面 (TFT+LVGL) - 故障码与告警图标轮显
+ * Desc    : UniDisplay 故障告警专用页
  * -------------------------------------------------------
  * todo    :
  * 1. 无
@@ -16,27 +16,31 @@
 #include "MD_Display/md_display_data.h"
 
 #if (boardDISPLAY_EN)
-#include "uni_disp_core.h"
 #include "MD_Display/md_display_task.h"
+#include "MD_Display/md_display_api.h"
 #include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "Middlewares/LVGL/lvgl.h"
 
+#include "uni_disp_core.h"
+
+
 //****************************************************Function Declaration******************************************************//
 static void v_page_fault_enter(void);
+static void v_page_fault_exit(void);
 static void v_page_fault_update(const DispDataSnapshot_T *p_data, bool b_force);
 static bool b_page_fault_event(DispEvent_E e_event, uint32_t ul_param);
-static void v_page_fault_exit(void);
 
 const DispPage_T G_tPageFault =
 {
     .ePageId     = PAGE_ID_FAULT,
     .vOnEnter    = v_page_fault_enter,
+    .vOnExit     = v_page_fault_exit,
     .vOnUpdate   = v_page_fault_update,
     .bOnEvent    = b_page_fault_event,
-    .vOnExit     = v_page_fault_exit,
     .usRefreshMs = 33,
 };
+
 
 /***********************************************************************************************************************
  * 函数功能    : 进入故障页面
@@ -52,7 +56,7 @@ static void v_page_fault_enter(void)
         vDisp_LoadScreen(SCREEN_ID_MAIN_WORK);
 
     /* 点亮背光 */
-    bDisp_SwitchBacklight(DISP_BKL_ON, false);
+    bDisp_Switch(ST_ON, false);
 
     /* 立即更新一次故障码与报警状态 */
     vDisp_UpdateDevParam();

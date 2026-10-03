@@ -49,16 +49,16 @@
 #include "task.h"
 #endif  /* boardUSE_OS */
 
-//****************************************************Macros********************************************************************//
-#define			ledTASK_CYCLE_TIME						1000	/* 普通状态扫描周期 (ms) */
-
-//****************************************************Parameter Initialization**************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			LED_TASK_PRIO							1		/* 任务优先级 */
 #define			LED_TASK_STK_SIZE						128		/* 任务堆栈 (512B，达到 configMINIMAL_STACK_SIZE 防溢出标准) */
-static TaskHandle_t s_t_led_task_handler = NULL;
-void        vLed_Task(void *p_v_parameters);
+static TaskHandle_t s_t_led_task_handler = NULL;				/* 任务句柄 */
+void        vLed_Task(void *p_v_parameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
+
+//****************************************************Macros********************************************************************//
+#define			ledTASK_CYCLE_TIME						1000	/* 普通状态扫描周期 (ms) */
 
 //****************************************************Function Declaration******************************************************//
 static void v_led_breathing(void);

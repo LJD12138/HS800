@@ -54,6 +54,256 @@ static void tft_hw_spi_wait_idle(void);
 static void tft_spi_send_byte(u8 data);
 #endif //boardDISP_SPI_MODE
 
+
+/***********************************************************************************************************************
+ * 函数功能    : 显示接口硬件初始化
+ * 说明(备注)  : 完成TFT相关时钟、GPIO、SPI/DMA和复位时序配置
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_IfaceInit(void)
+{
+    rcu_periph_clock_enable(dispTFT_CS_RCU);
+    rcu_periph_clock_enable(dispTFT_RES_RCU);
+    rcu_periph_clock_enable(dispTFT_A0_RCU);
+    rcu_periph_clock_enable(dispTFT_BL_RCU);
+    rcu_periph_clock_enable(dispTFT_SCK_RCU);
+    rcu_periph_clock_enable(dispTFT_SDA_RCU);
+
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispTFT_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_CS_PIN);
+    gpio_output_options_set(dispTFT_CS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_CS_PIN);
+    gpio_mode_set(dispTFT_RES_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_RES_PIN);
+    gpio_output_options_set(dispTFT_RES_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_RES_PIN);
+    gpio_mode_set(dispTFT_A0_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_A0_PIN);
+    gpio_output_options_set(dispTFT_A0_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_A0_PIN);
+    gpio_mode_set(dispTFT_BL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_BL_PIN);
+    gpio_output_options_set(dispTFT_BL_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_BL_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    gpio_init(dispTFT_CS_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_CS_PIN);
+    gpio_init(dispTFT_RES_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_RES_PIN);
+    gpio_init(dispTFT_A0_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_A0_PIN);
+    gpio_init(dispTFT_BL_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_BL_PIN);
+    #endif  //boardIC_TYPE
+
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    tft_hw_spi_dma_init();
+    #else
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    gpio_mode_set(dispTFT_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SCK_PIN);
+    gpio_output_options_set(dispTFT_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SCK_PIN);
+    gpio_mode_set(dispTFT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SDA_PIN);
+    gpio_output_options_set(dispTFT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SDA_PIN);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    gpio_init(dispTFT_SCK_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SCK_PIN);
+    gpio_init(dispTFT_SDA_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
+    #endif  //boardIC_TYPE
+    #endif  //boardDISP_SPI_MODE
+
+    dispTFT_CS_H();
+    dispTFT_A0_H();
+    dispTFT_BL_L();
+
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
+    dispTFT_SCK_H();
+    dispTFT_SDA_H();
+    #endif  //boardDISP_SPI_MODE
+
+    dispTFT_RES_L();
+    tft_delay_ms(20);
+    dispTFT_RES_H();
+    tft_delay_ms(120);
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : SPI发送数据
+ * 说明(备注)  : 根据配置选择硬件DMA SPI或软件模拟SPI发送原始字节流
+ * 传入参数    : data:数据指针  len:数据长度
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_SpiSendByte(const u8 *data, u16 len)
+{
+    if((data == NULL) || (len == 0U))
+        return;
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    v_tft_spi_dma_send_bytes(data, len);
+    #else
+    for(u16 x = 0; x < len; x++)
+    {
+        tft_spi_send_byte(*data);
+        data++;
+    }
+    #endif  //boardDISP_SPI_MODE
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 设置背光
+ * 说明(备注)  : 控制TFT背光开关
+ * 传入参数    : on: true开启背光, false关闭背光
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_SetBacklight(bool on)
+{
+    if(on)
+        dispTFT_BL_H();
+    else
+        dispTFT_BL_L();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 写命令到TFT
+ * 说明(备注)  : 向TFT写入单个命令字节
+ * 传入参数    : cmd:命令字节
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_WriteCommand(u8 cmd)
+{
+    dispTFT_A0_L();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, cmd);
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    tft_hw_spi_wait_idle();
+    #else
+    tft_spi_send_byte(cmd);
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 写8位数据到TFT
+ * 说明(备注)  : 向TFT写入单个8位数据
+ * 传入参数    : data:8位数据
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_WriteData8(u8 data)
+{
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, data);
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    tft_hw_spi_wait_idle();
+    #else
+    tft_spi_send_byte(data);
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 写16位数据到TFT
+ * 说明(备注)  : 向TFT写入单个16位数据
+ * 传入参数    : data:16位数据
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_WriteData16(u16 data)
+{
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, (u8)(data >> 8));
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, (u8)(data & 0xFF));
+    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
+    tft_hw_spi_wait_idle();
+    #else
+    tft_spi_send_byte((u8)(data >> 8));
+    tft_spi_send_byte((u8)(data & 0xFF));
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 写数据缓冲区到TFT
+ * 说明(备注)  : 发送命令参数等通用字节流
+ * 传入参数    : data:数据指针  len:数据长度
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vDisp_WriteBuffer(const u8 *data, u32 len)
+{
+    if((data == NULL) || (len == 0U))
+        return;
+
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    v_tft_spi_dma_send_bytes(data, len);
+    #else
+    {
+        const u8 *byte_data = (const u8 *)data;
+        u32 byte_len = len;
+
+        for(u32 i = 0U; i < byte_len; i++)
+            tft_spi_send_byte(byte_data[i]);
+    }
+    #endif  //boardDISP_SPI_MODE
+    
+    dispTFT_CS_H();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 异步发送颜色数据 (专供 LVGL 刷屏使用)
+ * 说明(备注)  : 开启 DMA 后立刻返回，片选拉高交由 DMA 中断处理
+ * 传入参数    : data: 待发送颜色数据指针; len: 数据字节数
+ * 输出参数    : 无
+ * 返回值      : true: 数据已交给 DMA 发送; false: 入参非法（data 为 NULL 或 len 为 0）
+ ************************************************************************************************************************/
+bool bDisp_WriteColorAsync(const u8 *data, u32 len)
+{
+    if((data == NULL) || (len == 0U))
+        return false;
+
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+    
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    s_eDmaXferType = DISP_TFT_DMA_XFER_LVGL_COLOR;
+    dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
+    dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
+	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif  (boardIC_TYPE == boardIC_GD32F30X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif //boardIC_TYPE
+
+    dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    return true;
+    #else
+    {
+        const u8 *byte_data = (const u8 *)data;
+        u32 byte_len = len;
+
+        for(u32 i = 0U; i < byte_len; i++)
+            tft_spi_send_byte(byte_data[i]);
+    }
+
+    dispTFT_CS_H();
+    return false;
+    #endif  //boardDISP_SPI_MODE
+}
+
+
+
+
 /***********************************************************************************************************************
  * 函数功能    : TFT延时函数
  * 说明(备注)  : 毫秒级延时，支持FreeRTOS和裸机两种模式
@@ -149,9 +399,9 @@ static void tft_hw_spi_dma_init(void)
 
 
 /***********************************************************************************************************************
- * 函数功能    : 通过 SPI DMA 发送字节流
- * 说明(备注)  : 阻塞等待 DMA 传输完成（带超时），并明确关闭 DMA 完成中断以保证纯阻塞死等
- * 传入参数    : data: 待发送数据缓冲区首地址; len: 待发送字节数
+ * 函数功能    : 通过 DMA 阻塞发送 TFT SPI 字节流
+ * 说明(备注)  : 关闭 DMA 完成中断后带超时死等传输完成, 确保初始化指令与短参数完整发送
+ * 传入参数    : data: 待发送数据首地址; len: 待发送字节数(data 为 NULL 或 len 为 0 时直接返回)
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
@@ -239,273 +489,13 @@ static void tft_spi_send_byte(u8 data)
 }
 #endif  //boardDISP_SPI_MODE
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/***********************************************************************************************************************
- * 函数功能    : 显示接口硬件初始化
- * 说明(备注)  : 完成TFT相关时钟、GPIO、SPI/DMA和复位时序配置
- * 传入参数    : none
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_IfaceInit(void)
-{
-    rcu_periph_clock_enable(dispTFT_CS_RCU);
-    rcu_periph_clock_enable(dispTFT_RES_RCU);
-    rcu_periph_clock_enable(dispTFT_A0_RCU);
-    rcu_periph_clock_enable(dispTFT_BL_RCU);
-    rcu_periph_clock_enable(dispTFT_SCK_RCU);
-    rcu_periph_clock_enable(dispTFT_SDA_RCU);
-
-    #if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispTFT_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_CS_PIN);
-    gpio_output_options_set(dispTFT_CS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_CS_PIN);
-    gpio_mode_set(dispTFT_RES_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_RES_PIN);
-    gpio_output_options_set(dispTFT_RES_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_RES_PIN);
-    gpio_mode_set(dispTFT_A0_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_A0_PIN);
-    gpio_output_options_set(dispTFT_A0_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_A0_PIN);
-    gpio_mode_set(dispTFT_BL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_BL_PIN);
-    gpio_output_options_set(dispTFT_BL_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_BL_PIN);
-    #elif (boardIC_TYPE == boardIC_GD32F30X)
-    gpio_init(dispTFT_CS_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_CS_PIN);
-    gpio_init(dispTFT_RES_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_RES_PIN);
-    gpio_init(dispTFT_A0_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_A0_PIN);
-    gpio_init(dispTFT_BL_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_BL_PIN);
-    #endif  //boardIC_TYPE
-
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    tft_hw_spi_dma_init();
-    #else
-    #if (boardIC_TYPE == boardIC_GD32F50X)
-    gpio_mode_set(dispTFT_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SCK_PIN);
-    gpio_output_options_set(dispTFT_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SCK_PIN);
-    gpio_mode_set(dispTFT_SDA_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, dispTFT_SDA_PIN);
-    gpio_output_options_set(dispTFT_SDA_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, dispTFT_SDA_PIN);
-    #elif (boardIC_TYPE == boardIC_GD32F30X)
-    gpio_init(dispTFT_SCK_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SCK_PIN);
-    gpio_init(dispTFT_SDA_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
-    #endif  //boardIC_TYPE
-    #endif  //boardDISP_SPI_MODE
-
-    dispTFT_CS_H();
-    dispTFT_A0_H();
-    dispTFT_BL_L();
-
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
-    dispTFT_SCK_H();
-    dispTFT_SDA_H();
-    #endif  //boardDISP_SPI_MODE
-
-    dispTFT_RES_L();
-    tft_delay_ms(20);
-    dispTFT_RES_H();
-    tft_delay_ms(120);
-}
-
-/***********************************************************************************************************************
- * 函数功能    : SPI发送数据
- * 说明(备注)  : 根据配置选择硬件DMA SPI或软件模拟SPI发送原始字节流
- * 传入参数    : data:数据指针  len:数据长度
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_SpiSendByte(const u8 *data, u16 len)
-{
-    if((data == NULL) || (len == 0U))
-        return;
-    
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    v_tft_spi_dma_send_bytes(data, len);
-    #else
-    for(u16 x = 0; x < len; x++)
-    {
-        tft_spi_send_byte(*data);
-        data++;
-    }
-    #endif  //boardDISP_SPI_MODE
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 设置背光
- * 说明(备注)  : 控制TFT背光开关
- * 传入参数    : on: true开启背光, false关闭背光
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_TftSetBacklight(bool on)
-{
-    if(on)
-        dispTFT_BL_H();
-    else
-        dispTFT_BL_L();
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 写命令到TFT
- * 说明(备注)  : 向TFT写入单个命令字节
- * 传入参数    : cmd:命令字节
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_TftWriteCommand(u8 cmd)
-{
-    dispTFT_A0_L();
-    dispTFT_CS_L();
-    
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, cmd);
-    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
-    tft_hw_spi_wait_idle();
-    #else
-    tft_spi_send_byte(cmd);
-    #endif  //boardDISP_SPI_MODE
-    
-    dispTFT_CS_H();
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 写8位数据到TFT
- * 说明(备注)  : 向TFT写入单个8位数据
- * 传入参数    : data:8位数据
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_TftWriteData8(u8 data)
-{
-    dispTFT_A0_H();
-    dispTFT_CS_L();
-    
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, data);
-    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
-    tft_hw_spi_wait_idle();
-    #else
-    tft_spi_send_byte(data);
-    #endif  //boardDISP_SPI_MODE
-    
-    dispTFT_CS_H();
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 写16位数据到TFT
- * 说明(备注)  : 向TFT写入单个16位数据
- * 传入参数    : data:16位数据
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_TftWriteData16(u16 data)
-{
-    dispTFT_A0_H();
-    dispTFT_CS_L();
-    
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, (u8)(data >> 8));
-    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
-    spi_i2s_data_transmit(dispTFT_SPI_PERIPH, (u8)(data & 0xFF));
-    while(RESET == spi_i2s_flag_get(dispTFT_SPI_PERIPH, SPI_FLAG_TBE));
-    tft_hw_spi_wait_idle();
-    #else
-    tft_spi_send_byte((u8)(data >> 8));
-    tft_spi_send_byte((u8)(data & 0xFF));
-    #endif  //boardDISP_SPI_MODE
-    
-    dispTFT_CS_H();
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 写数据缓冲区到TFT
- * 说明(备注)  : 发送命令参数等通用字节流
- * 传入参数    : data:数据指针  len:数据长度
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_TftWriteBuffer(const u8 *data, u32 len)
-{
-    if((data == NULL) || (len == 0U))
-        return;
-
-    dispTFT_A0_H();
-    dispTFT_CS_L();
-    
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    v_tft_spi_dma_send_bytes(data, len);
-    #else
-    {
-        const u8 *byte_data = (const u8 *)data;
-        u32 byte_len = len;
-
-        for(u32 i = 0U; i < byte_len; i++)
-            tft_spi_send_byte(byte_data[i]);
-    }
-    #endif  //boardDISP_SPI_MODE
-    
-    dispTFT_CS_H();
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 异步发送颜色数据 (专供 LVGL 刷屏使用)
- * 说明(备注)  : 开启 DMA 后立刻返回，片选拉高交由 DMA 中断处理
- * 传入参数    : data: 待发送颜色数据指针; len: 数据字节数
- * 输出参数    : 无
- * 返回值      : true: 数据已交给 DMA 发送; false: 入参非法（data 为 NULL 或 len 为 0）
- ************************************************************************************************************************/
-bool bDisp_TftWriteColorAsync(const u8 *data, u32 len)
-{
-    if((data == NULL) || (len == 0U))
-        return false;
-
-    dispTFT_A0_H();
-    dispTFT_CS_L();
-    
-    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
-    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
-    s_eDmaXferType = DISP_TFT_DMA_XFER_LVGL_COLOR;
-    dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
-    dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
-	
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
-	#elif  (boardIC_TYPE == boardIC_GD32F30X)
-    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
-	#endif //boardIC_TYPE
-
-    dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
-    dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
-
-    return true;
-    #else
-    {
-        const u8 *byte_data = (const u8 *)data;
-        u32 byte_len = len;
-
-        for(u32 i = 0U; i < byte_len; i++)
-            tft_spi_send_byte(byte_data[i]);
-    }
-
-    dispTFT_CS_H();
-    return false;
-    #endif  //boardDISP_SPI_MODE
-}
-
 /***********************************************************************************************************************
  * 函数功能    : SPI DMA传输完成中断服务子函数
  * 说明(备注)  : DMA传输完成后由中断处理函数调用，清除DMA中断标志，等待SPI移位结束，
  *               拉高片选信号；若当前传输为LVGL颜色数据，则释放显示信号量并通知LVGL刷新完成
- * 传入参数    : px_higher_priority_task_woken: FreeRTOS模式下用于返回是否有更高优先级任务被唤醒，裸机模式下无参数
- * 输出参数    : 无
- * 返回值      : 无
+ * 传入参数    : px_higher_priority_task_woken:FreeRTOS模式下用于返回是否有更高优先级任务被唤醒，裸机模式下无参数
+ * 输出参数    : none
+ * 返回值      : none
  ************************************************************************************************************************/
 #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
 #if(boardUSE_OS)

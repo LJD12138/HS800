@@ -187,7 +187,7 @@ extern "C" {
 #define     	printUSART_BAUD                 		115200
 #define     	printUSART_IRQ                  		UART4_IRQn
 #define     	printUSART_IRQ_HANDLER          		UART4_IRQHandler
-#endif  /* boardPRINT_IFACE == 1 */
+#endif  /* boardPRINT_IFACE */
 
 #if (boardPRINT_485_IFACE_EN)
 #define     	printGPIO_485_TX_EN_RCU         		RCU_GPIOA
@@ -209,10 +209,8 @@ extern "C" {
 //****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
-void vPrint_Init(void);
-void vPrint_DeInit(void);
-#define vPrint_IfaceInit   vPrint_Init
-#define vPrint_IfaceDeInit vPrint_DeInit
+void vPrint_IfaceInit(void);
+void vPrint_IfaceDeInit(void);
 
 bool bPrint_DataSendStart(uint16_t us_len);
 bool bPrint_CheckSendFinish(void);

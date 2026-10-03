@@ -31,6 +31,9 @@
  ************************************************************************************************************************/
 s8 c_mppt_rec_proc_data(ModbusProtoRx_t *proto_rx, ModbusProtoTx_t *proto_tx)
 {
+    if (proto_rx == NULL || proto_tx == NULL)
+        return -1;
+
     if (uPrint.tFlag.bMpptRecTask)
     {
         sMyPrint("bMpptRecTask:接收地址%d:", proto_tx->usRegAddr);
@@ -39,20 +42,13 @@ s8 c_mppt_rec_proc_data(ModbusProtoRx_t *proto_rx, ModbusProtoTx_t *proto_tx)
         sMyPrint("\r\n");
     }
 
-    if (proto_rx->ucCmd == modbusREAD_MULTI_REG || proto_rx->ucCmd == modbusREAD_MULTI_BIT)
+    /* 协议中间层统一校验回包一致性与迟到包 */
+    s8 c_check = cModbus_CheckReply(proto_tx, proto_rx);
+    if (c_check <= 0)
     {
-        if (proto_rx->ucCharLen != proto_tx->ucCharLen)
-            return -1;
-    }
-    else if (proto_rx->ucCmd == modbusWRITE_MULTI_REG)
-    {
-        if (proto_rx->usRegAddr != proto_tx->usRegAddr || proto_rx->usRegSize != proto_tx->usRegSize)
-            return -2;
-    }
-    else if (proto_rx->ucCmd == modbusWRITE_SINGLE_REG || proto_rx->ucCmd == modbusWRITE_SINGLE_BIT)
-    {
-        if (proto_rx->usRegAddr != proto_tx->usRegAddr)
-            return -3;
+        if (uPrint.tFlag.bMpptRecTask || uPrint.tFlag.bImportant)
+            log_w("bMpptRecTask:回包校验未通过(代码%d),当前等待寄存器%d", c_check, proto_tx->usRegAddr);
+        return c_check;
     }
 
     switch (proto_tx->usRegAddr)

@@ -35,10 +35,10 @@ extern "C" {
 bool bMppt_QueueInit(void);
 
 /* 队列任务函数 */
-void v_mppt_queue_task_init(Task_T *tp_task);
-void v_mppt_queue_task_main(Task_T *tp_task);
-void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task);
-void v_mppt_queue_task_err_process(Task_T *tp_task);
+void v_mppt_queue_task_init(Task_T *p_task);
+void v_mppt_queue_task_main(Task_T *p_task);
+void v_mppt_queue_task_set_chg_pwr(Task_T *p_task);
+void v_mppt_queue_task_err_process(Task_T *p_task);
 
 #ifdef __cplusplus
 }

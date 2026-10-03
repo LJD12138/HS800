@@ -26,13 +26,14 @@
 #include "task.h"
 #endif  /* boardUSE_OS */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			LIGHT_TASK_PRIO							1		/* 任务优先级 */
 #define			LIGHT_TASK_STK_SIZE						128		/* 任务堆栈 (512B，达到 configMINIMAL_STACK_SIZE 防溢出标准) */
-TaskHandle_t tLightTaskHandler = NULL;
-void vLight_Task(void *p_v_parameters);
+TaskHandle_t tLightTaskHandler = NULL;							/* 任务句柄 */
+void vLight_Task(void *p_v_parameters);							/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 Light_T tLight;
@@ -221,14 +222,18 @@ static void v_light_set_state(LightWorkMode_E mode)
 		break;
 
 		case LWM_FULL:
+		{
 			tLight.usValue = lightPWM_FULL_VALUE;
-			break;
+		}	
+		break;
 
 		#if (lightSIMPLE_MODE)
 		case LWM_SOS:
 		case LWM_TWINKLE:
+		{
 			tLight.usValue = 0;
-			break;
+		}	
+		break;
 		#endif  /* lightSIMPLE_MODE */
 
 		case LWM_OFF:

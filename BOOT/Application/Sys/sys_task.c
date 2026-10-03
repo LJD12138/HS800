@@ -23,17 +23,17 @@
 #include "eng_mode.h"
 #endif  /* boardENG_MODE_EN */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
-#define			SYS_TASK_PRIO							2		//任务优先级
-#define			SYS_TASK_STK_SIZE						256		//任务堆栈 实际字节数 *4
-TaskHandle_t  	tSysTaskHandler = NULL; 
-void         	vSys_Task(void *pvParameters);
+#define			SYS_TASK_PRIO							2		/* 任务优先级 */
+#define			SYS_TASK_STK_SIZE						256		/* 任务堆栈(字) */
+TaskHandle_t  	tSysTaskHandler = NULL;							/* 任务句柄 */
+void         	vSys_Task(void *pvParameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) SysInfo_T tSysInfo;
-static Task_T *tp_task = NULL;
+static Task_T *p_task = NULL;
 
 //****************************************************Function Declaration******************************************************//
 static void v_task_param_init(void);
@@ -77,7 +77,7 @@ s8 cSys_TaskInit(void)
  ************************************************************************************************************************/
 static void v_task_param_init(void)
 {
-	tp_task = tpSysTask;
+	p_task = tpSysTask;
 
 	//系统任务参数
 	memset(&tSysInfo, 0, sizeof(tSysInfo));
@@ -99,7 +99,7 @@ void vSys_Task(void *pvParameters)
     for (;;)
 	#endif  /* boardUSE_OS */
     {
-		if (tp_task == NULL)
+		if (p_task == NULL)
 		{
 			v_task_param_init();
 			
@@ -111,7 +111,7 @@ void vSys_Task(void *pvParameters)
 			#endif  /* boardUSE_OS */
 		}
 		
-		vQueue_TaskPoll(tp_task, sysTASK_CYCLE_TIME);
+		vQueue_TaskPoll(p_task, sysTASK_CYCLE_TIME);
     }
 }
 

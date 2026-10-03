@@ -34,10 +34,10 @@
 
 //****************************************************Macros********************************************************************//
 #define			sysTASK_UPDATE_ERR_CYCLE_TIME			sysTASK_CYCLE_TIME	//任务时间
-#define			sysTASK_UPDATE_ERR_EXIT_OVERTIME		((5UL * 1000UL) / sysTASK_UPDATE_ERR_CYCLE_TIME)	//等待模块退出升级模式超时5S
+#define			sysTASK_UPDATE_ERR_EXIT_OVERTIME		5000	//等待模块退出升级模式超时5S(ms)
 
 #if (boardKEY_EN)
-#define			sysTASK_UPDATE_ERR_KEY_LONG_TIME		(keyLONG_PRESS_TIME * keyTASK_CYCLE_TIME / sysTASK_UPDATE_ERR_CYCLE_TIME)	//长按阈值(任务周期数)
+#define			sysTASK_UPDATE_ERR_KEY_LONG_TIME		(keyLONG_PRESS_TIME * keyTASK_CYCLE_TIME)	//长按阈值(ms)
 #endif  //boardKEY_EN
 
 /* 升级错误处理步骤枚举 */
@@ -73,8 +73,7 @@ void v_sys_queue_task_update_err(Task_T *p_task)
 			else
 			{
 				//等待Host退出升级模式,超时强制退出
-				p_task->usStepWaitCnt++;
-				if (p_task->usStepWaitCnt >= sysTASK_UPDATE_ERR_EXIT_OVERTIME)
+				if (bQueue_IsStepTimeoutMs(p_task, sysTASK_UPDATE_ERR_EXIT_OVERTIME))
 				{
 					//超时强制退出
 					bQueue_Reset(tpPrintTask);
@@ -108,8 +107,7 @@ void v_sys_queue_task_update_err(Task_T *p_task)
 			else
 			{
 				//等待退出,超时强制重置
-				p_task->usStepWaitCnt++;
-				if (p_task->usStepWaitCnt >= sysTASK_UPDATE_ERR_EXIT_OVERTIME)
+				if (bQueue_IsStepTimeoutMs(p_task, sysTASK_UPDATE_ERR_EXIT_OVERTIME))
 				{
 					//超时强制退出
 					#if (boardBMS_EN)
@@ -136,28 +134,40 @@ void v_sys_queue_task_update_err(Task_T *p_task)
 		case UES_STEP_WAIT_USER:
 		{
 			#if (boardKEY_EN)
+			static bool s_b_power_pressed = false;
+
 			//短按power重新开始升级,长按power进入关机
 			if (bKey_IsPressById(keyPOWER) == true)
 			{
-				p_task->usStepWaitCnt++;
-				if (p_task->usStepWaitCnt >= sysTASK_UPDATE_ERR_KEY_LONG_TIME)
+				if (s_b_power_pressed == false)
+				{
+					s_b_power_pressed = true;
+					vQueue_RefreshStepTick(p_task);  //从按下时刻开始计长按
+				}
+
+				if (bQueue_IsStepTimeoutMs(p_task, sysTASK_UPDATE_ERR_KEY_LONG_TIME))
 				{
 					//长按power,进入关机
+					s_b_power_pressed = false;
 					vKey_PowerIsTri();  //标记已处理,防止全局按键重复触发
 					cQueue_GotoStep(p_task, STEP_NEXT);  //跳转到关机步骤
 				}
 			}
 			else
 			{
-				//按键释放,且按压时间小于长按阈值,判定为短按
-				if ((p_task->usStepWaitCnt > 0) && (p_task->usStepWaitCnt < sysTASK_UPDATE_ERR_KEY_LONG_TIME))
+				//按键释放,且按压时长小于长按阈值,判定为短按
+				if (s_b_power_pressed == true)
 				{
-					//短按power,重新开始升级
-					vKey_PowerIsTri();  //标记已处理,防止全局按键重复触发
-					bUpdate_Init();
-					cQueue_GotoStep(p_task, UES_STEP_AGAIN);
+					s_b_power_pressed = false;
+
+					if (bQueue_IsStepTimeoutMs(p_task, sysTASK_UPDATE_ERR_KEY_LONG_TIME) == false)
+					{
+						//短按power,重新开始升级
+						vKey_PowerIsTri();  //标记已处理,防止全局按键重复触发
+						bUpdate_Init();
+						cQueue_GotoStep(p_task, UES_STEP_AGAIN);
+					}
 				}
-				p_task->usStepWaitCnt = 0;
 			}
 			#endif  //boardKEY_EN
 		}break;

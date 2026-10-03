@@ -28,15 +28,15 @@
 /***********************************************************************************************************************
  * 函数功能    : 任务函数:设置充电功率
  * 说明(备注)  : 向MPPT发送功率设定指令并校验回复结果
- * 传入参数    : tp_task: 队列任务指针
+ * 传入参数    : p_task: 队列任务指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
+void v_mppt_queue_task_set_chg_pwr(Task_T *p_task)
 {
-    vu16 us_chg_pwr = tp_task->usInParam;
+    vu16 us_chg_pwr = p_task->usInParam;
 
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
@@ -46,16 +46,16 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
                 bMppt_SetDevState(DS_CLOSING);
 
             if (c_mppt_cs_set_pwr(us_chg_pwr) > 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT);  /* 下一步 */
+                cQueue_GotoStep(p_task, STEP_NEXT);  /* 下一步 */
             else
             {
-                tp_task->usStepRepeatCnt++;
-                if (tp_task->usStepRepeatCnt >= 2)
+                p_task->usStepRepeatCnt++;
+                if (p_task->usStepRepeatCnt >= 2)
                 {
                     if (uPrint.tFlag.bMpptTask)
                         log_w("bMpptTask:发送失败次数过多,退出设置充电功率任务");
                     
-                    cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+                    cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
                 }
                 break;
             }
@@ -64,12 +64,12 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
         
         case 1:
         {
-            if (bQueue_IsStepTimeout(tp_task, 1000 / mpptTASK_SET_PWR_CYCLE_TIME))
+            if (bQueue_IsStepTimeoutMs(p_task, 1000))
             {
                 if (uPrint.tFlag.bMpptTask)
                     log_w("bMpptTask:等待设置充电功率回复超时");
                 
-                cQueue_GotoStep(tp_task, STEP_FORWARD);
+                cQueue_GotoStep(p_task, STEP_FORWARD);
                 break;
             }
 
@@ -81,11 +81,11 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
             #pragma pack()
 
             /* 校验并读取数据 */
-            if (usQueue_ReadReply(tp_task, &t_mppt_chg, sizeof(t_mppt_chg)) != sizeof(t_mppt_chg))
+            if (usQueue_ReadReply(p_task, &t_mppt_chg, sizeof(t_mppt_chg)) != sizeof(t_mppt_chg))
             {
                 if (uPrint.tFlag.bMpptTask && uPrint.tFlag.bImportant)
                     log_w("bMpptTask:返回数据错误");
-                cQueue_GotoStep(tp_task, STEP_FORWARD);
+                cQueue_GotoStep(p_task, STEP_FORWARD);
                 break;
             }
 
@@ -94,7 +94,7 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
                 if (uPrint.tFlag.bMpptTask)
                     log_w("bMpptTask:回复功率%d和设置功率%d不一致", t_mppt_chg.us_in_pwr, us_chg_pwr);
                 
-                cQueue_GotoStep(tp_task, STEP_FORWARD);
+                cQueue_GotoStep(p_task, STEP_FORWARD);
                 break;
             }
 
@@ -103,7 +103,7 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
             else
                 bMppt_SetDevState(DS_SHUT_DOWN);
             
-            cQueue_GotoStep(tp_task, STEP_NEXT);  /* 下一步 */
+            cQueue_GotoStep(p_task, STEP_NEXT);  /* 下一步 */
         }
         break;
         
@@ -113,22 +113,21 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
             if (uPrint.tFlag.bMpptTask)
                 sMyPrint("bMpptTask:----设置MPPT充电功率%dW完成----\r\n", us_chg_pwr);
 
-            cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+            cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
             return;
             
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+            cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
         }
         break;
     }
     
     /* 等待超时 */
-    tp_task->usTaskWaitCnt++;
-    if (tp_task->usTaskWaitCnt > (3000 / mpptTASK_SET_PWR_CYCLE_TIME)) 
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))
     {
         if (uPrint.tFlag.bMpptTask)
-            log_w("bMpptTask:设置MPPT充电功率任务等待超时,步骤%d", tp_task->ucStep);
+            log_w("bMpptTask:设置MPPT充电功率任务等待超时,步骤%d", p_task->ucStep);
         
         if (tMppt.eDevState == DS_BOOTING)
         {
@@ -136,7 +135,7 @@ void v_mppt_queue_task_set_chg_pwr(Task_T *tp_task)
             c_mppt_cs_set_pwr(0);
         }
         
-        cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+        cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
     }
     
     #if (boardUSE_OS)

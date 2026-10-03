@@ -38,7 +38,7 @@ extern "C" {
 //****************************************************Extern********************************************************************//
 bool bPrint_QueueInit(void);
 
-void v_print_queue_task_main(Task_T *tp_task);
+void v_print_queue_task_main(Task_T *p_task);
 
 #endif  /* boardPRINT_IFACE */
 

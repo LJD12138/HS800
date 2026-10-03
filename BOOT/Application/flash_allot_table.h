@@ -34,8 +34,8 @@ extern "C" {
 //GD32F502RG    Flash:1024K                             地址0x0800_0000--0x080F_FFFF
 
 //RAM大小 128K : 0x20000
-#define			SRAM_START								(SRAM_BASE)	// 协议栈占用 10K  0x20002A98
-#define			SRAM_END								(SRAM_BASE + (128 * KByte))	// IAP SRAM结束地址 64KB
+#define     	SRAM_START                              (SRAM_BASE)                   // 协议栈占用 10K  0x20002A98
+#define     	SRAM_END                                (SRAM_BASE + (128 * KByte))   // IAP SRAM结束地址 64KB
 
 
 #if(boardEASY_FLASH)
@@ -51,12 +51,12 @@ extern "C" {
 
 /* APP信息：30K，地址范围：0x080E_1800 -- 0x080E_8FFF */
 #define     	flashAPP_INFO_SIZE      				(15 * FLASH_PAGE_SIZE)
-#define     	flashAPP_INFO_SATRT     				(flashAPP_END + 1 + FLASH_PAGE_SIZE)
-#define     	flashAPP_INFO_END		 				(flashAPP_INFO_SATRT + flashAPP_INFO_SIZE - 1)
+#define     	flashAPP_INFO_START     				(flashAPP_END + 1 + FLASH_PAGE_SIZE)
+#define     	flashAPP_INFO_END		 				(flashAPP_INFO_START + flashAPP_INFO_SIZE - 1)
 
 /* BOOT信息：30K，与APP公用，地址范围：0x080E_1800 -- 0x080E_8FFF */
 #define     	flashBOOT_INFO_SIZE     				flashAPP_INFO_SIZE
-#define     	flashBOOT_INFO_START    				flashAPP_INFO_SATRT                            
+#define     	flashBOOT_INFO_START    				flashAPP_INFO_START                            
 #define     	flashBOOT_INFO_END      				flashAPP_INFO_END 
 
 #else
@@ -70,16 +70,16 @@ extern "C" {
 #define     	flashBOOT_INFO_START    				(flashBOOT_END + 1)                            
 #define     	flashBOOT_INFO_END      				(flashBOOT_INFO_START + flashBOOT_INFO_SIZE - 1)                            
 
-/* APP数据：160K，地址范围：0x0800_D000 -- 0x0803_4FFF */
-#define     	flashAPP_SIZE           				(80 * FLASH_PAGE_SIZE)
+/* APP数据：174K，地址范围：0x0800_D000 -- 0x0803_87FF */
+#define     	flashAPP_SIZE           				(87 * FLASH_PAGE_SIZE)
 #define     	flashAPP_START          				(flashBOOT_INFO_END + 1)    
 #define     	flashAPP_END            				(flashAPP_START + flashAPP_SIZE - 1) 
 
-/* APP信息：30K，地址范围：0x0803_5000 -- 0x0803_C7FF */
+/* APP信息：30K，地址范围：0x0803_8800 -- 0x0803_FFFF */
 #define     	flashAPP_INFO_SIZE      				(15 * FLASH_PAGE_SIZE)
-#define     	flashAPP_INFO_SATRT     				(flashAPP_END + 1)
-#define     	flashAPP_INFO_END		 				(flashAPP_INFO_SATRT + flashAPP_INFO_SIZE - 1)
-#endif
+#define     	flashAPP_INFO_START     				(flashAPP_END + 1)
+#define     	flashAPP_INFO_END		 				(flashAPP_INFO_START + flashAPP_INFO_SIZE - 1)
+#endif  /* boardEASY_FLASH */
 
 
 /*------------ IAP_AP分区表结束 -------------------------------------*/

@@ -2,9 +2,9 @@
  * Project : APP
  * Module  : APP\Hardware\MD_Display
  * File    : md_display_page_boot.c
- * Date    : 2026-09-21
+ * Date    : 2026-09-16
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 启动页面 (TFT+LVGL) - 开机进度条动画与工作态平滑过渡
+ * Desc    : UniDisplay 开机页面 - 开机步进动画
  * -------------------------------------------------------
  * todo    :
  * 1. 无
@@ -16,29 +16,32 @@
 #include "MD_Display/md_display_data.h"
 
 #if (boardDISPLAY_EN)
-#include "uni_disp_core.h"
+
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "Middlewares/LVGL/lvgl.h"
 
+#include "uni_disp_core.h"
+
 //****************************************************Parameter Initialization**************************************************//
 static uint8_t s_uc_loading_step = 0;
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_boot_enter(void);
+static void v_page_boot_exit(void);
 static void v_page_boot_update(const DispDataSnapshot_T *p_data, bool b_force);
 static bool b_page_boot_event(DispEvent_E e_event, uint32_t ul_param);
-static void v_page_boot_exit(void);
+
 
 const DispPage_T G_tPageBoot =
 {
     .ePageId     = PAGE_ID_BOOT,
     .vOnEnter    = v_page_boot_enter,
+	.vOnExit     = v_page_boot_exit,
     .vOnUpdate   = v_page_boot_update,
     .bOnEvent    = b_page_boot_event,
-    .vOnExit     = v_page_boot_exit,
     .usRefreshMs = 33,
 };
 
@@ -51,9 +54,6 @@ const DispPage_T G_tPageBoot =
  ************************************************************************************************************************/
 static void v_page_boot_enter(void)
 {
-    /* 确保 LVGL UI 已完成全局初始化 */
-    vDisp_UiInit();
-
     /* 加载开机画面 */
     vDisp_LoadScreen(SCREEN_ID_MAIN_BOOTING);
 
@@ -66,18 +66,19 @@ static void v_page_boot_enter(void)
     vDisp_UpdateDevParam();
 
     /* 开启背光 */
-    bDisp_SwitchBacklight(DISP_BKL_ON, false);
+    bDisp_Switch(ST_ON, false);
 }
 
 /***********************************************************************************************************************
  * 函数功能    : 开机页面帧更新
  * 说明(备注)  : 33ms 节拍步进进度条；当进度达到 100% 且系统已进入 DS_WORK 时，显式请求切换至工作页
- * 传入参数    : p_data: 只读原子数据快照指针, b_force: 强制刷新标志
- * 输出参数    : 无
- * 返回值      : 无
+ * 传入参数    : p_data: 数据快照
+ * 输出参数    : b_force: 是否强制刷新
+ * 返回值      : none
  ************************************************************************************************************************/
 static void v_page_boot_update(const DispDataSnapshot_T *p_data, bool b_force)
 {
+    (void)p_data;
     (void)b_force;
 
     /* 步进进度条 */

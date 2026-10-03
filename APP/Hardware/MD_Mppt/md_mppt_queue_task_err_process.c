@@ -28,59 +28,58 @@
 /***********************************************************************************************************************
  * 函数功能    : 任务函数:错误处理
  * 说明(备注)  : 发生故障时关断充电功率并置为错误状态
- * 传入参数    : tp_task: 队列任务指针
+ * 传入参数    : p_task: 队列任务指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_mppt_queue_task_err_process(Task_T *tp_task)
+void v_mppt_queue_task_err_process(Task_T *p_task)
 {
     MpptErrCode_E e_err_code;
     
-    e_err_code = (MpptErrCode_E)tp_task->usInParam;  /* 要设置MPPT的状态 */
+    e_err_code = (MpptErrCode_E)p_task->usInParam;  /* 要设置MPPT的状态 */
     
     /* 丢失状态不需要去关闭 */
     if (e_err_code == MEC_SYS_DEV_LOST)
-        tp_task->ucStep = 2;
+        p_task->ucStep = 2;
     
     bMppt_SetDevState(DS_ERR);
     
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
             if (c_mppt_cs_set_pwr(0) > 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT);  /* 下一步 */
+                cQueue_GotoStep(p_task, STEP_NEXT);  /* 下一步 */
         }
         break;
         
         case 1:
         {
             if (tMpptRx.usMaxInPwr == 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT);  /* 下一步 */
+                cQueue_GotoStep(p_task, STEP_NEXT);  /* 下一步 */
         }
         break;
         
         case 2:
         {
-            cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+            cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
         }
         break;
             
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+            cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
         }
         break;
     }
     
     /* 等待超时 */
-    tp_task->usTaskWaitCnt++;
-    if (tp_task->usTaskWaitCnt > (3000 / mpptTASK_ERR_CYCLE_TIME)) 
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))
     {
         if (uPrint.tFlag.bMpptTask)
-            log_w("bMpptTask:错误处理任务等待超时,步骤%d", tp_task->ucStep);
+            log_w("bMpptTask:错误处理任务等待超时,步骤%d", p_task->ucStep);
         
-        cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+        cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
     }
     
     #if (boardUSE_OS)

@@ -2,7 +2,7 @@
  * Project : BOOT
  * Module  : BOOT\Hardware\Adc
  * File    : adc_iface.h
- * Date    : 2026-09-21
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : ADC硬件驱动底层接口定义头文件
  * -------------------------------------------------------

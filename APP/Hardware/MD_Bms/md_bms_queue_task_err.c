@@ -66,8 +66,7 @@ void v_bms_queue_task_err(Task_T *p_task)
         break;
     }
     
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > (3000 / bmsTASK_ERR_CYCLE_TIME))  /* 等待超时 */
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
     {
         cQueue_GotoStep(p_task, STEP_END);              /* 结束 */
         if (uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)

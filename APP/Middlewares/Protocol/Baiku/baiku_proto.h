@@ -23,6 +23,11 @@ extern "C" {
 #include "main.h"
 #include "lwrb.h"
 
+#if (boardUSE_OS)
+#include "FreeRTOS.h"
+#include "task.h"
+#endif  /* boardUSE_OS */
+
 #if (1)
 
 //****************************************************Macros********************************************************************//
@@ -115,11 +120,19 @@ typedef struct
 /* #pragma pack(1) removed to fix alignment-related UsageFault */
 typedef struct
 {
+	/* 同步信息 */
+	#if (boardUSE_OS)
+	TaskHandle_t		xTaskToNotify;		/* 当前等待回包的任务句柄 */
+	volatile bool		bWaitAck;       	/* 是否正在等待从机回包 */
+    vu8 				ucWaitCmd;      	/* 期望等待的应答命令字 */
+    vs8 				cAckResult;     	/* 应答结果: 1-成功, <0-失败 */
+	#endif  /* boardUSE_OS */
+	/* 数据帧头信息 */
 	vu8					ucHead;
 	vu8					ucAddr;
-	vu8					ucFrameLen;			//数据帧总长度
-	u16					usBuffSize;			//ucaFrameData缓冲区大小
-	u8					ucaFrameData[];		//数据帧
+	vu8					ucFrameLen;			/* 数据帧总长度 */
+	u16					usBuffSize;			/* ucaFrameData缓冲区大小 */
+	u8					ucaFrameData[];		/* 数据帧 */
 }BaikuProtoTx_t;
 /* #pragma pack() removed */
 
@@ -131,7 +144,10 @@ s8 cBaiku_ProtoCheck(BaikuProtoRx_t* proto);
 s8 cBaiku_UpdateCheck(BaikuProtoRx_t* proto, u8* ucp_data, u16 len);
 s8 cBaiku_StepWaitOutTime(BaikuProtoRx_t* proto);
 s8 cBaiku_ResetRxBuff(BaikuProtoRx_t* proto);
-
+#if (boardUSE_OS)
+s8 cBaiku_WaitReply(BaikuProtoTx_t* proto, u8 uc_cmd, u16 timeout_ms);
+s8 cBaiku_NotifyAck(BaikuProtoTx_t* proto, u8 uc_cmd, s8 c_result);
+#endif  /* boardUSE_OS */
 #endif  /* 1 */
 
 #ifdef __cplusplus

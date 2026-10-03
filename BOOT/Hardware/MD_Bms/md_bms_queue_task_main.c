@@ -27,49 +27,49 @@
 /***********************************************************************************************************************
  * 函数功能    : BMS队列主任务
  * 说明(备注)  : 轮询BMS运行参数
- * 传入参数    : tp_task: 任务指针
+ * 传入参数    : p_task: 任务指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_bms_queue_task_main(Task_T *tp_task)
+void v_bms_queue_task_main(Task_T *p_task)
 {
 	/* 若队列中有其他紧急任务，则立即结束当前主任务 */
-	if (!bQueue_IsQueueEmpty(tp_task))
+	if (!bQueue_IsQueueEmpty(p_task))
 	{
-		cQueue_GotoStep(tp_task, STEP_END);
+		cQueue_GotoStep(p_task, STEP_END);
 		return;
 	}
 
-	switch (tp_task->ucStep)
+	switch (p_task->ucStep)
 	{
 		case 0:
 		{
-			if (bQueue_IsStepTimeout(tp_task, 1000 / bmsTASK_CYCLE_TIME))
-				cQueue_GotoStep(tp_task, STEP_NEXT);
+			if (bQueue_IsStepTimeout(p_task, 1000 / bmsTASK_CYCLE_TIME))
+				cQueue_GotoStep(p_task, STEP_NEXT);
 		}
 		break;
 
 		case 1:
 		{
 			c_bms_cs_get_param(0);
-			cQueue_GotoStep(tp_task, STEP_END);
+			cQueue_GotoStep(p_task, STEP_END);
 		}
 		break;
 
 		default:
 		{
-			cQueue_GotoStep(tp_task, STEP_END);
+			cQueue_GotoStep(p_task, STEP_END);
 		}
 		break;
 	}
 
-	tp_task->usTaskWaitCnt++;
-	if (tp_task->usTaskWaitCnt > (3000 / bmsTASK_CYCLE_TIME))
+	p_task->usTaskWaitCnt++;
+	if (p_task->usTaskWaitCnt > (3000 / bmsTASK_CYCLE_TIME))
 	{
 		if (uPrint.tFlag.bBmsTask)
 			sMyPrintWarn("bBmsTask:获取数据任务等待超时,退出");
 		
-		cQueue_GotoStep(tp_task, STEP_END);
+		cQueue_GotoStep(p_task, STEP_END);
 	}
 }
 

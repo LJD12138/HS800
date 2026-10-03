@@ -38,16 +38,16 @@ extern "C" {
 //****************************************************Extern********************************************************************//
 bool bPrint_QueueInit(void);
 
-void v_print_queue_task_main(Task_T *tp_task);
-void v_print_queue_task_reply_app_info(Task_T *tp_task);
-void v_print_queue_task_reply_cali(Task_T *tp_task);
+void v_print_queue_task_main(Task_T *p_task);
+void v_print_queue_task_reply_app_info(Task_T *p_task);
+void v_print_queue_task_reply_cali(Task_T *p_task);
 
 #if (boardBMS_EN && boardRUN_LOG_EN)
-void v_print_queue_task_reply_run_log(Task_T *tp_task);
+void v_print_queue_task_reply_run_log(Task_T *p_task);
 #endif  /* boardBMS_EN && boardRUN_LOG_EN */
 
 #if (boardUPDATE)
-void v_print_queue_task_update(Task_T *tp_task);
+void v_print_queue_task_update(Task_T *p_task);
 #endif  /* boardUPDATE */
 
 #endif  /* boardPRINT_IFACE */

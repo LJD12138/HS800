@@ -16,6 +16,9 @@
 #include "gpio_init.h"
 
 //****************************************************Macros********************************************************************//
+/* 排除SWD/JTAG调试引脚(PA13:SWDIO, PA14:SWCLK, PA15:JTDI, PB3:JTDO, PB4:JNTRST)，防止调试接口被关闭导致无法二次连接 */
+#define GPIOA_PINS_ANALOG           (GPIO_PIN_ALL & ~(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15))
+#define GPIOB_PINS_ANALOG           (GPIO_PIN_ALL & ~(GPIO_PIN_3 | GPIO_PIN_4))
 
 //****************************************************Parameter Initialization**************************************************//
 
@@ -32,39 +35,39 @@
  ************************************************************************************************************************/
 void vGPIO_Init(void)
 {
-//	//	//初始化所有IO,已达到最低功耗.
-//	rcu_periph_clock_enable(RCU_GPIOA);
-//	rcu_periph_clock_enable(RCU_GPIOB);
-//	rcu_periph_clock_enable(RCU_GPIOC);
-//	rcu_periph_clock_enable(RCU_GPIOD);
-//	rcu_periph_clock_enable(RCU_GPIOE);
-//	#if (boardIC_TYPE != boardIC_GD32F50X)
-//	rcu_periph_clock_enable(RCU_GPIOF);
-//	rcu_periph_clock_enable(RCU_GPIOG);
-//	#endif
-//	
-//	#if (boardIC_TYPE == boardIC_GD32F50X)
-//	/* GD32F50x: gpio_mode_set + gpio_output_options_set */
-//	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-//	gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-//	gpio_mode_set(GPIOB, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-//	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-//	gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-//	gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-//	gpio_mode_set(GPIOD, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-//	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-//	gpio_mode_set(GPIOE, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
-//	gpio_output_options_set(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
-//	#else
-//	/* GD32F30x: gpio_init */
-//	gpio_init(GPIOA, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	gpio_init(GPIOB, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	gpio_init(GPIOC, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	gpio_init(GPIOD, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	gpio_init(GPIOE, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	gpio_init(GPIOF, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	gpio_init(GPIOG, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
-//	#endif
+	//初始化所有IO,以达到最低功耗
+	rcu_periph_clock_enable(RCU_GPIOA);
+	rcu_periph_clock_enable(RCU_GPIOB);
+	rcu_periph_clock_enable(RCU_GPIOC);
+	rcu_periph_clock_enable(RCU_GPIOD);
+	rcu_periph_clock_enable(RCU_GPIOE);
+	#if (boardIC_TYPE != boardIC_GD32F50X)
+	rcu_periph_clock_enable(RCU_GPIOF);
+	rcu_periph_clock_enable(RCU_GPIOG);
+	#endif
+	
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	/* GD32F50x: gpio_mode_set + gpio_output_options_set */
+	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIOA_PINS_ANALOG);
+	gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIOA_PINS_ANALOG);
+	gpio_mode_set(GPIOB, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIOB_PINS_ANALOG);
+	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIOB_PINS_ANALOG);
+	gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	gpio_mode_set(GPIOD, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	gpio_mode_set(GPIOE, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_ALL);
+	gpio_output_options_set(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, GPIO_PIN_ALL);
+	#else
+	/* GD32F30x: gpio_init */
+	gpio_init(GPIOA, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIOA_PINS_ANALOG);
+	gpio_init(GPIOB, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIOB_PINS_ANALOG);
+	gpio_init(GPIOC, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+	gpio_init(GPIOD, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+	gpio_init(GPIOE, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+	gpio_init(GPIOF, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+	gpio_init(GPIOG, GPIO_MODE_AIN, GPIO_OSPEED_2MHZ, GPIO_PIN_ALL);
+	#endif
 	
 	rcu_periph_clock_enable(KEY_POWER_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
@@ -81,6 +84,16 @@ void vGPIO_Init(void)
 	gpio_init(gpioASSIST_OPEN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, gpioASSIST_OPEN_PIN);
 	#endif  /* boardIC_TYPE */
 	gpioASSIST_OPEN_ON();
+
+	//风扇供电使能
+	rcu_periph_clock_enable(fanPWM_EN_GPIO_RCU);
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	gpio_mode_set(fanPWM_EN_GPIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, fanPWM_EN_PIN);
+	gpio_output_options_set(fanPWM_EN_GPIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL0, fanPWM_EN_PIN);
+	#else
+	gpio_init(fanPWM_EN_GPIO_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, fanPWM_EN_PIN);
+	#endif  /* boardIC_TYPE */
+	fanPWM_EN_OFF();
 }
 
 /***********************************************************************************************************************
@@ -150,28 +163,18 @@ void vKey_EnterLowPower(void)
 	
 	/* enable and set key EXTI interrupt to the lowest priority */
 	nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
-	nvic_irq_enable(EXTI5_9_IRQn, 2U, 0U);
-	nvic_irq_enable(EXTI2_IRQn, 2U, 0U);
 	nvic_irq_enable(EXTI0_IRQn, 2U, 0U);
 
 	/* connect key EXTI line to key GPIO pin */
 	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOC, GPIO_PIN_SOURCE_13); //PC13
-	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_9);  //PA9
-	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOD, GPIO_PIN_SOURCE_2);  //PD2
 	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0);  //PA0
 
 	/* configure key EXTI line */
 	exti_init(EXTI_13, EXTI_INTERRUPT, EXTI_TRIG_FALLING); //下降沿触发
-	exti_init(EXTI_9, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //上升沿触发
-	exti_init(EXTI_2, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //上升沿触发
 	exti_init(EXTI_0, EXTI_INTERRUPT, EXTI_TRIG_RISING);   //上升沿触发
 	exti_interrupt_flag_clear(EXTI_13);
-	exti_interrupt_flag_clear(EXTI_9);
-	exti_interrupt_flag_clear(EXTI_2);
 	exti_interrupt_flag_clear(EXTI_0);
 	exti_interrupt_enable(EXTI_13);
-	exti_interrupt_enable(EXTI_9);
-	exti_interrupt_enable(EXTI_2);
 	exti_interrupt_enable(EXTI_0);
 }
 

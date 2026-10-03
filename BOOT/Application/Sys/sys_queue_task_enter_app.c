@@ -30,11 +30,11 @@
 /***********************************************************************************************************************
  * 函数功能    : 进入 APP 队列任务执行函数
  * 说明(备注)  : 等待打印完成后尝试执行跳转，失败则等待重试并在超限后进入升级模式
- * 传入参数    : tp_task: 队列任务控制块指针
+ * 传入参数    : p_task: 队列任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_sys_queue_task_enter_app(Task_T *tp_task)
+void v_sys_queue_task_enter_app(Task_T *p_task)
 {
     static s8 ret = 0;
 
@@ -42,7 +42,7 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
     static uint8_t s_uc_illegal_addr_cnt = 0;
     #endif  /* boardUPDATE */
 
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
@@ -50,7 +50,7 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
             #if (boardPRINT_IFACE)
             if (bPrint_CheckSendFinish() == false)
             {
-                if (bQueue_IsStepTimeout(tp_task, (5000 / sysTASK_CYCLE_TIME)))
+                if (bQueue_IsStepTimeout(p_task, (5000 / sysTASK_CYCLE_TIME)))
                     log_e("BOOT:等待打印完成超时,强制跳转");
                 else
                     break;
@@ -64,7 +64,7 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
             #endif  /* boardIC_TYPE == boardIC_STM32H7XX */
 
             if (ret > 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT);
+                cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
@@ -72,14 +72,14 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
         {
             ret = cSys_JumpToApp();
             if (ret <= 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT);
+                cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
         case 2:
         {
             /* 延时 1S */
-            if (!bQueue_IsStepTimeout(tp_task, (1000 / sysTASK_CYCLE_TIME)))
+            if (!bQueue_IsStepTimeout(p_task, (1000 / sysTASK_CYCLE_TIME)))
                 break;
 
             #if (boardUPDATE)
@@ -96,7 +96,7 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
                 #elif (boardPRINT_IFACE)
                 cUpdate_ChSelect(CT_PRINT, PT_XMODEM);
                 #endif  /* (boardCONSOLE_EN) */
-                cQueue_GotoStep(tp_task, STEP_END);
+                cQueue_GotoStep(p_task, STEP_END);
                 break;
             }
             #endif  /* boardUPDATE */
@@ -108,13 +108,13 @@ void v_sys_queue_task_enter_app(Task_T *tp_task)
             #endif  /* boardIC_TYPE == boardIC_STM32H7XX */
 
             log_e("BOOT跳转APP失败%d,错误代码%d!!!", s_uc_illegal_addr_cnt, ret);
-            cQueue_GotoStep(tp_task, STEP_FORWARD);
+            cQueue_GotoStep(p_task, STEP_FORWARD);
         }
         break;
 
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
     }

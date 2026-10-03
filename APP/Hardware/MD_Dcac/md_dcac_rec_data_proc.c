@@ -44,8 +44,6 @@
  ************************************************************************************************************************/
 int8_t c_dcac_rec_proc_data(ModbusProtoRx_t *p_proto_rx, ModbusProtoTx_t *p_proto_tx)
 {
-    uint16_t us_reg_data = 0;
-
     if (p_proto_rx == NULL || p_proto_tx == NULL)
         return -1;
 
@@ -57,32 +55,13 @@ int8_t c_dcac_rec_proc_data(ModbusProtoRx_t *p_proto_rx, ModbusProtoTx_t *p_prot
         sMyPrint("\r\n");
     }
 
-    if (p_proto_rx->ucCmd == modbusREAD_MULTI_REG || p_proto_rx->ucCmd == modbusREAD_MULTI_BIT)
+    /* 协议中间层统一校验回包一致性与迟到包 */
+    s8 c_check = cModbus_CheckReply(p_proto_tx, p_proto_rx);
+    if (c_check <= 0)
     {
-        if (p_proto_rx->ucCharLen != p_proto_tx->ucCharLen)
-        {
-            if (uPrint.tFlag.bDcacRecTask || uPrint.tFlag.bImportant)
-                log_w("bDcacRecTask:迟到回复(期望长度%d,收到%d),当前等待寄存器%d",
-                      p_proto_tx->ucCharLen, p_proto_rx->ucCharLen, p_proto_tx->usRegAddr);
-            return -1;
-        }
-        if (p_proto_rx->ucValidLen != p_proto_rx->ucCharLen || p_proto_rx->ucpValidData == NULL)
-            return -7;
-    }
-    else if (p_proto_rx->ucCmd == modbusWRITE_MULTI_REG)
-    {
-        if (p_proto_rx->usRegAddr != p_proto_tx->usRegAddr || p_proto_rx->usRegSize != p_proto_tx->usRegSize)
-            return -2;
-    }
-    else if (p_proto_rx->ucCmd == modbusWRITE_SINGLE_REG || p_proto_rx->ucCmd == modbusWRITE_SINGLE_BIT)
-    {
-        if (p_proto_rx->usRegAddr != p_proto_tx->usRegAddr)
-            return -3;
-        if (p_proto_rx->ucValidLen != 2 || p_proto_rx->ucpValidData == NULL)
-            return -8;
-        bFunc_SwapU16Array((uint8_t *)&us_reg_data, p_proto_rx->ucpValidData, 1);
-        if (us_reg_data != p_proto_tx->usRegData)
-            return -9;
+        if (uPrint.tFlag.bDcacRecTask || uPrint.tFlag.bImportant)
+            log_w("bDcacRecTask:回包校验未通过(代码%d),当前等待寄存器%d", c_check, p_proto_tx->usRegAddr);
+        return c_check;
     }
 
     switch (p_proto_tx->usRegAddr)

@@ -210,11 +210,11 @@ static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_s
 
     /* 发送命令字节 */
     for (size_t i = 0; i < cmd_size; i++)
-        vDisp_TftWriteCommand(cmd[i]);
+        vDisp_WriteCommand(cmd[i]);
 
     /* 发送参数 */
     if ((param != NULL) && (param_size != 0U))
-        vDisp_TftWriteBuffer(param, (u32)param_size);
+        vDisp_WriteBuffer(param, (u32)param_size);
 
     #if (boardUSE_OS)
     v_disp_bus_give();
@@ -239,7 +239,7 @@ static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd
     #endif  /* boardUSE_OS */
 
     for (size_t i = 0; i < cmd_size; i++)
-        vDisp_TftWriteCommand(cmd[i]);
+        vDisp_WriteCommand(cmd[i]);
 
     if ((param != NULL) && (param_size != 0U))
     {
@@ -247,7 +247,7 @@ static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd
         v_disp_flush_done_reset();
         #endif  /* boardUSE_OS */
 
-        if (bDisp_TftWriteColorAsync(param, (u32)param_size))
+        if (bDisp_WriteColorAsync(param, (u32)param_size))
             return;
     }
 

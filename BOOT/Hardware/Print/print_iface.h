@@ -187,7 +187,10 @@ extern "C" {
 #define     	printUSART_BAUD                 		115200
 #define     	printUSART_IRQ                  		UART4_IRQn
 #define     	printUSART_IRQ_HANDLER          		UART4_IRQHandler
-#endif  /* boardPRINT_IFACE == 1 */
+#elif (boardPRINT_IFACE == 7)
+/* 7: USB_CDC (CherryUSB 虚拟串口) */
+#include "Print/print_usb_iface.h"
+#endif  /* boardPRINT_IFACE */
 
 #if (boardPRINT_485_IFACE_EN)
 #define     	printGPIO_485_TX_EN_RCU         		RCU_GPIOA
@@ -195,7 +198,6 @@ extern "C" {
 #define     	printGPIO_485_TX_EN_PIN         		GPIO_PIN_8
 #define			printGPIO_485_TX_EN_ON()        		GPIO_BOP(printGPIO_485_TX_EN_PORT) = (uint32_t)printGPIO_485_TX_EN_PIN	/* 使能发送 */
 #define			printGPIO_485_TX_EN_OFF()       		GPIO_BC(printGPIO_485_TX_EN_PORT)  = (uint32_t)printGPIO_485_TX_EN_PIN	/* 使能接收 */
-#define     	printGPIO_485_TX_EN_STATE()     		gpio_output_bit_get(printGPIO_485_TX_EN_PORT, printGPIO_485_TX_EN_PIN)
 #endif	/* boardPRINT_485_IFACE_EN */
 
 #define     	printIFACE_EN_RCU               		RCU_GPIOC
@@ -209,11 +211,8 @@ extern "C" {
 //****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
-void vPrint_Init(void);
-void vPrint_DeInit(void);
-#define vPrint_IfaceInit   vPrint_Init
-#define vPrint_IfaceDeInit vPrint_DeInit
-
+void vPrint_IfaceInit(void);
+void vPrint_IfaceDeInit(void);
 bool bPrint_DataSendStart(uint16_t us_len);
 bool bPrint_CheckSendFinish(void);
 

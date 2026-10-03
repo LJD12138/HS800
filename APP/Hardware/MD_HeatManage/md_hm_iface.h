@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\MD_HeatManage
  * File    : md_hm_iface.h
- * Date    : 2026-09-12
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : 风扇与热管理硬件接口头文件
  * -------------------------------------------------------
@@ -29,7 +29,7 @@ extern "C" {
 #define			fanPWM_SEMI_VALUE						200
 #define			fanPWM_FULL_VALUE						550
 
-//·???
+/* 风扇 PWM 引脚与使能引脚 */
 #define 		fanPWM_GPIO_RCU                    		RCU_GPIOA
 #define 		fanPWM_GPIO_PORT                   		GPIOA
 #define 		fanPWM_PIN                         		GPIO_PIN_15
@@ -37,23 +37,21 @@ extern "C" {
 #define 		fanPWM_EN_GPIO_RCU                 		RCU_GPIOA
 #define 		fanPWM_EN_GPIO_PORT                		GPIOA
 #define 		fanPWM_EN_PIN                      		GPIO_PIN_9
-#define 		fanPWM_EN_ON()                     		GPIO_BOP(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN
-#define 		fanPWM_EN_OFF()                    		GPIO_BC(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN
-//#define 		fanPWM_EN_ON()                     		GPIO_BOP(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN;timer_enable(fanTIMER)
-//#define 		fanPWM_EN_OFF()                    		GPIO_BC(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN;timer_disable(fanTIMER)
-//#define 		fanPWM_EN_ON()                     		__NOP;
-//#define 		fanPWM_EN_OFF()                    		__NOP;
+#define 		fanPWM_EN_ON()                     		GPIO_BOP(fanPWM_EN_GPIO_PORT) = (uint32_t)fanPWM_EN_PIN
+#define 		fanPWM_EN_OFF()                    		GPIO_BC(fanPWM_EN_GPIO_PORT)  = (uint32_t)fanPWM_EN_PIN
 
 #define 		fanTIMER                           		TIMER1
 #define 		fanTIMER_RCU                       		RCU_TIMER1
 #define 		fanTIMER_CH                        		TIMER_CH_0
-// #define 		fanLED_TIMER_CH                    		TIMER_CH_2
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define 		fanTIMER_AF                        		GPIO_AF_1
-#endif  //boardIC_TYPE
+#endif  /* boardIC_TYPE */
 
 #define 		fanPWM_SET(x)                      		TIMER_CH0CV(fanTIMER) = ((uint32_t)x)
-// #define 		fanLED_PWM_SET(x)                  		TIMER_CH2CV(fanTIMER) = ((uint32_t)x)
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
 void vFan_IfaceInit(void);

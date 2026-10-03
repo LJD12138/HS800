@@ -35,9 +35,12 @@ extern "C" {
 #define     	gpioASSIST_OPEN_OFF()                   GPIO_BC(gpioASSIST_OPEN_PORT) = (uint32_t)gpioASSIST_OPEN_PIN
 
 //风扇
-#define 		fanPWM_GPIO_RCU                         RCU_GPIOC
-#define 		fanPWM_GPIO_PORT                        GPIOC
-#define 		fanPWM_PIN                              GPIO_PIN_6
+#define 		fanPWM_EN_GPIO_RCU                 		RCU_GPIOA
+#define 		fanPWM_EN_GPIO_PORT                		GPIOA
+#define 		fanPWM_EN_PIN                      		GPIO_PIN_9
+#define 		fanPWM_EN_ON()                     		GPIO_BOP(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN
+#define 		fanPWM_EN_OFF()                    		GPIO_BC(fanPWM_EN_GPIO_PORT)=fanPWM_EN_PIN
+
 
 #define     	gpioUSART0_REMAP_EN                     0
 #if (!gpioUSART0_REMAP_EN)
@@ -157,6 +160,7 @@ __STATIC_INLINE bool KEY_POWER_IsPress(void)
 
 void vGPIO_Init(void);
 bool bGPIO_BootJumpApp(void);
+
 #if(boardLOW_POWER)
 void vKey_EnterLowPower(void);
 void vGPIO_EnterApp(void);

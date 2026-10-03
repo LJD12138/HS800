@@ -25,12 +25,13 @@ extern "C" {
 
 #if (boardDISPLAY_EN)
 
+//****************************************************Macros********************************************************************//
 #define			DISP_HOR_RES							dispTFT_WIDTH
 #define			DISP_VER_RES							dispTFT_HEIGHT
 
+//****************************************************Extern********************************************************************//
 void vDisp_Init(void);
 void vDisp_LoadScreen(int screen_id);
-void vDisp_SetBacklight(bool b_on);
 void vDisp_ReqUiRefresh(void);
 void vDisp_UiRefresh(void);
 bool bDisp_IsReady(void);

@@ -35,13 +35,14 @@
 #include "MD_Display/md_display_task.h"
 #endif  /* boardDISPLAY_EN */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			DCAC_TASK_PRIO							3		/* 任务优先级 */
-#define			DCAC_TASK_SIZE							256		/* 任务堆栈 */
-TaskHandle_t tDcacTaskHandler = NULL;
-void vDcac_Task(void *pvParameters);
+#define			DCAC_TASK_SIZE							256		/* 任务堆栈(字) */
+TaskHandle_t tDcacTaskHandler = NULL;							/* 任务句柄 */
+void vDcac_Task(void *pvParameters);							/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 Dcac_T tDcac;
@@ -556,7 +557,7 @@ int8_t cDCAC_Switch(DACD_SwitchObject_E obj, SwitchType_E sw, bool buz_en)
     }
 
     #if (boardDISPLAY_EN)
-    bDisp_SwitchBacklight(DISP_BKL_ON, false);
+    bDisp_Switch(ST_ON, false);
     #endif  /* boardDISPLAY_EN */
 
     #if (boardSYS_DATA_UPADATA)

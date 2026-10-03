@@ -122,11 +122,11 @@ s8 c_mppt_cs_set_pwr(u16 pwr)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : MPPT数据传输
- * 说明(备注)  : Modbus协议帧发送与接收等待，与DCAC复用串口互斥保护
- * 传入参数    : cmd: Modbus命令码, reg_addr: 寄存器地址, data: 数据指针, len: 数据长度
- * 输出参数    : 无
- * 返回值      : 1: 成功; 0: 无操作; -1: 长度越界; -2: 超时; -3: 发送错误; -99: 互斥锁超时
+ * 函数功能    : 发送通信数据
+ * 说明(备注)  : none
+ * 传入参数    : cmd: 指令, reg_addr: 寄存器地址, data: 数据, len: 长度
+ * 输出参数    : none
+ * 返回值      : 1: 发送成功, -1: 协议打包失败, -2: 回复超时, -3: 串口发送失败
  ************************************************************************************************************************/
 static s8 c_mppt_data_trans(u8 cmd, u16 reg_addr, u8 *data, u8 len)
 {
@@ -162,9 +162,9 @@ static s8 c_mppt_data_trans(u8 cmd, u16 reg_addr, u8 *data, u8 len)
         /* 通过DCAC串口发送MPPT数据 */
         if (bDcac_DataSendStart(tpMpptProtoTx->ucaFrameData, tpMpptProtoTx->ucFrameLen))
         {
-            /* 等待接收任务通知（超时1秒），表示收到MPPT设备的回复 */
+            /* 等待接收任务通知，表示收到MPPT设备的回复 */
             #if (boardUSE_OS)
-            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(mpptWAIT_NOTIFY_OUTTIME)) <= 0)
+            if (cModbus_WaitReply(tpMpptProtoTx, cmd, reg_addr, mpptWAIT_NOTIFY_OUTTIME) <= 0)
             {
                 if ((uPrint.tFlag.bMpptTask || uPrint.tFlag.bImportant) && tMppt.eDevState != DS_LOST)
                     log_w("bMpptTask:命令0x%x,寄存器%d等待回复超时", cmd, reg_addr);

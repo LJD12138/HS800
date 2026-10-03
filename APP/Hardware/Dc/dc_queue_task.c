@@ -154,14 +154,6 @@ static bool b_task_manage_func_cb(Task_T *p_task)
 		}
 		break;
 
-		case DCTI_PROT:
-		{
-			p_task->vp_func = v_dc_queue_task_prot;
-			if (uPrint.tFlag.bDcTask)
-				sMyPrint("bDcTask:----装载保护扫描任务----\r\n");
-		}
-		break;
-
 		case DCTI_NULL:
 		default:
 		{

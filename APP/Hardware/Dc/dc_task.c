@@ -35,16 +35,17 @@
 #include "Adc/adc_task.h"
 #endif  /* boardADC_EN */
 
+//****************************************************Task Declaration**********************************************************//
+#if (boardUSE_OS)
+#define			DC_TASK_PRIO							1		/* 任务优先级 */
+#define			DC_TASK_SIZE							256		/* 任务堆栈(字) */
+TaskHandle_t tDcTaskHandler = NULL;								/* 任务句柄 */
+void vDc_Task(void *p_v_parameters);							/* 任务函数 */
+#endif  /* boardUSE_OS */
+
 //****************************************************Macros********************************************************************//
 #define			dcOVER_CURR_PEAK_THRESH					130		/* 峰值过流阈值: 13.0A (单位: 0.1A) */
 #define			dcOVER_CURR_CONT_THRESH					116		/* 持续过载阈值: 11.6A (单位: 0.1A) */
-
-#if (boardUSE_OS)
-#define			DC_TASK_PRIO							1		/* 任务优先级 */
-#define			DC_TASK_SIZE							256		/* 任务堆栈大小 */
-TaskHandle_t tDcTaskHandler = NULL;
-void vDc_Task(void *p_v_parameters);
-#endif  /* boardUSE_OS */
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) Dc_T tDc;
@@ -661,8 +662,8 @@ void vDc_AdcWatchdog(void)
 		return;
 
 	/* 峰值过流阈值越限: 0.1A 定点比较 */
-	if ((uint16_t)(tAdcSamp.fDcOutCurr * 10.0f) > dcOVER_CURR_PEAK_THRESH)
-		cQueue_AddQueueTask(tpDcTask, DCTI_PROT, 0, false);
+	// if ((uint16_t)(tAdcSamp.fDcOutCurr * 10.0f) > dcOVER_CURR_PEAK_THRESH)
+		// cQueue_AddQueueTask(tpDcTask, DCTI_PROT, 0, false);
 }
 #endif  /* boardADC_EN */
 

@@ -447,16 +447,16 @@ uint16_t usCheck_CRC16(const uint8_t *p_msg, uint16_t us_data_len)
 {
     uint8_t uc_crc_hi = 0xFF;
     uint8_t uc_crc_lo = 0xFF;
-    uint8_t uc_index;
+    uint8_t s_uca_index;
 
     if (p_msg == NULL)
         return 0;
 
     while (us_data_len--)
     {
-        uc_index  = uc_crc_hi ^ *p_msg++;
-        uc_crc_hi = uc_crc_lo ^ S_ucaCrcHi[uc_index];
-        uc_crc_lo = S_ucaCrcLo[uc_index];
+        s_uca_index  = uc_crc_hi ^ *p_msg++;
+        uc_crc_hi = uc_crc_lo ^ S_ucaCrcHi[s_uca_index];
+        uc_crc_lo = S_ucaCrcLo[s_uca_index];
     }
 
     return (uint16_t)((uc_crc_lo << 8) | uc_crc_hi);

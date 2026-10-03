@@ -43,22 +43,22 @@ static void v_print_logo(void)
 /***********************************************************************************************************************
  * 函数功能    : 系统初始化队列任务函数
  * 说明(备注)  : 依次执行启动信息打印、Boot配置校验与引导后续目标任务入队
- * 传入参数    : tp_task: 队列任务控制块指针
+ * 传入参数    : p_task: 队列任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_sys_queue_task_init(Task_T *tp_task)
+void v_sys_queue_task_init(Task_T *p_task)
 {
     SysTaskId_E e_task_id;
 
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
             if (uPrint.tFlag.bSysTask)
                 v_print_logo();
             tSysInfo.uInit.tFinish.bIF_BootInfo = false;
-            cQueue_GotoStep(tp_task, STEP_NEXT);
+            cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
@@ -68,7 +68,7 @@ void v_sys_queue_task_init(Task_T *tp_task)
             if (e_task_id != STI_ERR && e_task_id >= STI_INIT)
                 tSysInfo.uInit.tFinish.bIF_BootInfo = true;
             cQueue_AddQueueTask(tpSysTask, e_task_id, 0, false);
-            cQueue_GotoStep(tp_task, STEP_NEXT);
+            cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
@@ -78,20 +78,20 @@ void v_sys_queue_task_init(Task_T *tp_task)
             tSysInfo.uInit.tFinish.bIF_SysInit = 1;
             tSysInfo.uInit.tFinish.bIF_AT24Cxx = 1;
             tSysInfo.uInit.tFinish.bIF_Gpio    = 1;
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
 
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
     }
 
     /* 初始化等待 5S 超时保护 */
-    if (bQueue_IsStepTimeout(tp_task, (5000 / sysTASK_CYCLE_TIME)))
-        cQueue_GotoStep(tp_task, STEP_END);
+    if (bQueue_IsStepTimeout(p_task, (5000 / sysTASK_CYCLE_TIME)))
+        cQueue_GotoStep(p_task, STEP_END);
 }
 
 #endif  /* 1 */

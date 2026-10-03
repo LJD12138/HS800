@@ -7,7 +7,7 @@
  * Desc    : 显示对外 API 头文件：分辨率宏、初始化与 UI 刷新接口，及矩形填充/文本/进度圆环/分段圆环绘制接口
  * -------------------------------------------------------
  * todo    :
- * 1. none
+ * 1. 无
  * -------------------------------------------------------
  * Copyright (c) 2026 -inc
  ************************************************************************************************************************/
@@ -34,10 +34,6 @@ void vDisp_Init(void);
 void vDisp_ReqUiRefresh(void);
 void vDisp_UiRefresh(void);
 bool bDisp_IsReady(void);
-
-#if (!LV_USE_ST7789)
-void vDisp_FastDrawColor(u16 x, u16 y, u16 w, u16 h, u16 *color);
-#endif // LV_USE_ST7789
 
 void vDisp_DrawFillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void vDisp_DrawText(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg_color, uint8_t scale);

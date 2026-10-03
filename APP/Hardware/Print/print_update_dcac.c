@@ -39,24 +39,24 @@ static bool b_dcac_first_frame = true;  /* 首帧标志，用于跳过usRecFrame
 //****************************************************Function Declaration******************************************************//
 static bool b_print_dcac_parse_file_head(const u8* data, u16 len);
 static bool b_print_dcac_check_data_packet(BaikuProtoRx_t* proto, u32* ulp_next_crc_state);
-static bool b_dcac_c8_proc_rec_data(Task_T *tp_task);
+static bool b_dcac_c8_proc_rec_data(Task_T *p_task);
 static s8   c_print_dcac_handle_set_proto(void);
 static s8   c_print_dcac_handle_file_head(void);
-static s8   c_print_dcac_handle_host_fw_data(Task_T* tp_task);
-static s8   c_print_dcac_handle_finish(Task_T* tp_task);
+static s8   c_print_dcac_handle_host_fw_data(Task_T* p_task);
+static s8   c_print_dcac_handle_finish(Task_T* p_task);
 
 /***********************************************************************************************************************
  * 函数功能    : DCAC进入数据透传前的准备流程
  * 说明(备注)  : 处理上位机传输协议握手(C4/C2/C3)，握手完成后再进入文件头阶段
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : 1: 准备完成, 0: 等待中, 负值: 准备失败
  ************************************************************************************************************************/
-s8 c_print_dcac_prepare_update(Task_T* tp_task)
+s8 c_print_dcac_prepare_update(Task_T* p_task)
 {
     s8 c_ret = 0;
 
-    if (tp_task == NULL)
+    if (p_task == NULL)
     {
         bUpdate_SetErrCode(UEF_PD_PREP_TASK_NULL);
         return -1;
@@ -84,7 +84,7 @@ s8 c_print_dcac_prepare_update(Task_T* tp_task)
                     if (tUpdate.eHostResult == UTR_OK || tUpdate.eHostResult == UTR_LATEST)
                         return 1;
 
-                    b_dcac_c8_proc_rec_data(tp_task);
+                    b_dcac_c8_proc_rec_data(p_task);
                     return -1;
                 }
 
@@ -102,11 +102,11 @@ s8 c_print_dcac_prepare_update(Task_T* tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 固件传输阶段控制
  * 说明(备注)  : 管理DCAC固件升级各阶段状态，处理与主机及DCAC模块的数据交互
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : 正值: 传输完成, 0: 继续, 负值: 处理失败
  ************************************************************************************************************************/
-s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
+s8 c_print_dcac_update_firmware_transfer(Task_T *p_task)
 {
     s8 c_ret = 0;
     
@@ -146,15 +146,15 @@ s8 c_print_dcac_update_firmware_transfer(Task_T *tp_task)
             {
                 /* C5 主机下发固件数据 */
                 case baikuCMD_REPLY_DATA:   
-                    return c_print_dcac_handle_host_fw_data(tp_task);
+                    return c_print_dcac_handle_host_fw_data(p_task);
 
                 /* C7 主机发送完成帧 */
                 case baikuCMD_REPLY_FINISH:   
-                    return c_print_dcac_handle_finish(tp_task);
+                    return c_print_dcac_handle_finish(p_task);
 
                 /* C8 主机取消升级 */
                 case baikuCMD_REPLY_CANEL:   
-                    b_dcac_c8_proc_rec_data(tp_task);
+                    b_dcac_c8_proc_rec_data(p_task);
                     return -1;
 
                 default:
@@ -389,11 +389,11 @@ static s8 c_print_dcac_handle_file_head(void)
 /***********************************************************************************************************************
  * 函数功能    : 处理主机下发的固件数据(C5)
  * 说明(备注)  : 将主机下发的固件数据包转发给DCAC模块，并更新相关状态
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : 0: 继续, 负值: 处理失败
  ************************************************************************************************************************/
-static s8 c_print_dcac_handle_host_fw_data(Task_T *tp_task)
+static s8 c_print_dcac_handle_host_fw_data(Task_T *p_task)
 {
     if (eDcacFwTransStage != DFTS_WAIT_HOST_REPLY)
         return 0;
@@ -448,7 +448,7 @@ static s8 c_print_dcac_handle_host_fw_data(Task_T *tp_task)
     mainEXIT_CRITICAL();
     
     vUpdate_ResetRecTimeout(true);
-    bDcac_SetFwTransStage(tp_task, DFTS_WAIT_SLAVE_REPLY);
+    bDcac_SetFwTransStage(p_task, DFTS_WAIT_SLAVE_REPLY);
 
     return 0;
 }
@@ -456,15 +456,15 @@ static s8 c_print_dcac_handle_host_fw_data(Task_T *tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 处理主机发送完成帧(C7)
  * 说明(备注)  : 根据当前状态切换阶段并唤醒DCAC任务
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : 1: 传输完成
  ************************************************************************************************************************/
-static s8 c_print_dcac_handle_finish(Task_T *tp_task)
+static s8 c_print_dcac_handle_finish(Task_T *p_task)
 {
     //从机未完成
     if (tUpdate.eSlaveResult != UTR_OK && tUpdate.eSlaveResult != UTR_LATEST)
-        bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
+        bDcac_SetFwTransStage(p_task, DFTS_QUERY_SLAVE_RESULT);
 
     #if (boardUSE_OS)
     /* 通过任务通知唤醒DCAC任务 */
@@ -477,15 +477,15 @@ static s8 c_print_dcac_handle_finish(Task_T *tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 处理C8主机取消升级
  * 说明(备注)  : 取消升级并通知DCAC模块查询结果
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : true: 成功, false: 异常
  ************************************************************************************************************************/
-static bool b_dcac_c8_proc_rec_data(Task_T *tp_task)
+static bool b_dcac_c8_proc_rec_data(Task_T *p_task)
 {
     //从机未完成
     if (tUpdate.eSlaveResult != UTR_OK && tUpdate.eSlaveResult != UTR_LATEST)
-        bDcac_SetFwTransStage(tp_task, DFTS_QUERY_SLAVE_RESULT);
+        bDcac_SetFwTransStage(p_task, DFTS_QUERY_SLAVE_RESULT);
 
     if (tUpdate.eHostResult != UTR_FAIL)
         bUpdate_SetResult(URT_HOST, UTR_CANCEL);

@@ -244,10 +244,9 @@ static bool b_dcac_check_retry_limit(Task_T *p_task, UpdateErrCode_E e_err_code)
  ************************************************************************************************************************/
 static bool b_dcac_check_wait_timeout(Task_T *p_task, uint16_t us_timeout_ms, uint16_t us_cycle_time)
 {
-	if (us_cycle_time == 0)
-		return true;
+	(void)us_cycle_time;  /* 物理时间戳方案下无需周期换算 */
 
-	return bQueue_IsStepTimeout(p_task, us_timeout_ms / us_cycle_time);
+	return bQueue_IsStepTimeoutMs(p_task, us_timeout_ms);
 }
 
 /***********************************************************************************************************************
@@ -400,7 +399,7 @@ static int8_t c_dcac_prepare_update(Task_T *p_task, uint16_t us_reply_len, uint1
 		{
 			if (b_dcac_check_wait_timeout(p_task, 1000, us_cycle_time) == true)
 			{
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 				if (b_dcac_check_retry_limit(p_task, UEF_DQ_C4_RETRY_OVER))
 					return -13;
 
@@ -415,7 +414,7 @@ static int8_t c_dcac_prepare_update(Task_T *p_task, uint16_t us_reply_len, uint1
 		{
 			if (b_dcac_check_wait_timeout(p_task, 1000, us_cycle_time) == true)
 			{
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 				if (b_dcac_check_retry_limit(p_task, UEF_DQ_A2_RETRY_OVER))
 				{
 					lwrb_reset(&p_task->tReplyBuff);
@@ -489,7 +488,7 @@ static int8_t c_dcac_update_firmware_transfer(Task_T *p_task, uint16_t us_reply_
 		case DFTS_WAIT_HOST_REPLY: /* C5 等待主机数据 */
 			if (b_dcac_check_wait_timeout(p_task, 1000, us_cycle_time) == true)
 			{
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 				if (b_dcac_check_retry_limit(p_task, UEF_DQ_C5_RETRY_OVER))
 					return -9;
 
@@ -537,7 +536,7 @@ static int8_t c_dcac_update_firmware_transfer(Task_T *p_task, uint16_t us_reply_
 		case DFTS_WAIT_SLAVE_REPLY: /* 等待A4固件包数据回复 */
 			if (b_dcac_check_wait_timeout(p_task, dcacUPDATE_HS_TIMEOUT_MS, us_cycle_time) == true)
 			{
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 				if (b_dcac_check_retry_limit(p_task, UEF_DQ_A4_RESEND_OVER))
 					return -2;
 
@@ -622,7 +621,7 @@ int8_t cDcac_GetUpdateStage(void)
  ************************************************************************************************************************/
 bool bDcac_SetPrepStage(Task_T *p_task, DcacPrepStage_E stage)
 {
-	p_task->usStepWaitCnt = 0;
+	vQueue_RefreshStepTick(p_task);
 	p_task->usStepRepeatCnt = 0;
 
 	if (stage != eDcacPrepStage)
@@ -643,7 +642,7 @@ bool bDcac_SetPrepStage(Task_T *p_task, DcacPrepStage_E stage)
  ************************************************************************************************************************/
 bool bDcac_SetFwTransStage(Task_T *p_task, DcacFwTransStage_E stage)
 {
-	p_task->usStepWaitCnt = 0;
+	vQueue_RefreshStepTick(p_task);
 	p_task->usStepRepeatCnt = 0;
 
 	if (stage != eDcacFwTransStage)

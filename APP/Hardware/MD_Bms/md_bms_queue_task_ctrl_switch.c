@@ -182,8 +182,7 @@ void v_bms_queue_task_clt_switch(Task_T *p_task)
         break;
     }
     
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > (3000 / bmsTASK_CTRL_SWITCH_CYCLE_TIME))  /* 等待超时 */
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
     {
         if (uPrint.tFlag.bBmsTask)
             sMyPrint("bBmsTask:对象%d开关任务等待超时退出,步骤%d", u_param.tTaskParam.ucObj, p_task->ucStep);

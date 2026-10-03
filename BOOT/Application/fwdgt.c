@@ -1,10 +1,10 @@
 /*******************************************************************************************************************************
- * Project : BOOT
- * Module  : BOOT\Application
+ * Project : APP
+ * Module  : APP\Application
  * File    : fwdgt.c
  * Date    : 2026-09-20
  * Author  : LJD(291483914@qq.com)
- * Desc    : 独立看门狗驱动及芯片复位原因捕获实现
+ * Desc    : 独立看门狗驱动及复位源标志捕获实现
  * -------------------------------------------------------
  * todo    :
  * 1. none
@@ -15,89 +15,87 @@
 //****************************************************Includes******************************************************************//
 #include "fwdgt.h"
 
-#if(boardWDGT_EN)
+#if (boardWDGT_EN)
+
+#if (boardIC_TYPE == boardIC_GD32F50X)
 #include "gd32f50x_rcu.h"
-
-#if (boardPRINT_IFACE)
-#include "Print/print_api.h"
-#endif  /* boardPRINT_IFACE */
-
-//****************************************************Macros********************************************************************//
+#else
+#include "gd32f30x_rcu.h"
+#endif
 
 //****************************************************Parameter Initialization**************************************************//
-reset_reason_t g_reset_reason;
-
-//****************************************************Function Declaration******************************************************//
-
+ResetReason_T g_reset_reason;
 
 /***********************************************************************************************************************
  * 函数功能    : 独立看门狗初始化
- * 说明(备注)  : 时钟源来自IRC40K内部低速时钟，超时时间约3.2秒
+ * 说明(备注)  : 使能 IRC40K 内部低速时钟，配置 128 分频，重装载周期约 3.2 秒
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : void
  ************************************************************************************************************************/
 void vFwdgt_Init(void)
 {
-	uint16_t timeout_t = 0xFFFFU;
-	
+	uint16_t us_timeout = 0xFFFFU;
+
 	/* enable IRC40K */
 	rcu_osci_on(RCU_IRC40K);
-	
+
 	/* wait till IRC40K is ready */
 	while (SUCCESS != rcu_osci_stab_wait(RCU_IRC40K))
 	{
-		if (timeout_t > 0)
-			timeout_t--;
+		if (us_timeout > 0)
+			us_timeout--;
 		else
 			break;
 	}
-	
-	/* configure FWDGT counter clock: 40KHz(IRC40K) / 128 = 0.312 KHz, t = (1/0.312) * (2 * 500) = 3.2s */
-	fwdgt_config(2 * 500, FWDGT_PSC_DIV128);
-	
+
+	/* configure FWDGT counter clock: 40KHz(IRC40K) / 128 = 0.312 KHz */
+	fwdgt_config(2 * 500, FWDGT_PSC_DIV128); //t = (1/0.312)x(2x500) = 3.2s
+
 	fwdgt_write_disable();
+	/* After 1.6 seconds to generate a reset */
 	fwdgt_enable();
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 独立看门狗重载计数器(喂狗)
- * 说明(备注)  : 任何时刻均可调用
+ * 函数功能    : 独立看门狗喂狗
+ * 说明(备注)  : 解除写保护并重装计数器
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : void
  ************************************************************************************************************************/
 void vFwdgt_Reload(void)
 {
 	/* unlock fwdgt write protect */
 	fwdgt_write_enable();
 	/* feed fwdgt */
-	fwdgt_counter_reload();	
+	fwdgt_counter_reload();
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 看门狗进入低功耗模式
- * 说明(备注)  : 将分频比调整为256分频，喂狗间隔延长至最大约26秒
+ * 函数功能    : 看门狗进入低功耗待机配置
+ * 说明(备注)  : 先行喂狗并将溢出时间延长至最大 26 秒
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : void
  ************************************************************************************************************************/
 void vFwdgt_EnterLowPower(void)
 {
 	vFwdgt_Reload();
-	/* configure FWDGT counter clock: 40KHz(IRC40K) / 256 = 0.156 KHz, t = 26s */
-	fwdgt_config(0xFFF, FWDGT_PSC_DIV256);
-	
+	/* configure FWDGT counter clock: 40KHz(IRC40K) / 256 = 0.156 KHz */
+	fwdgt_config(0xfff, FWDGT_PSC_DIV256); //t = 26S
+
 	fwdgt_write_disable();
+	/* After 1.6 seconds to generate a reset */
 	fwdgt_enable();
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 看门狗退出低功耗模式
- * 说明(备注)  : 恢复常规看门狗计数周期
+ * 函数功能    : 看门狗退出低功耗
+ * 说明(备注)  : 喂狗并恢复 3.2 秒正常工作看门狗周期
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : void
  ************************************************************************************************************************/
 void vFwdgt_ExitLowPower(void)
 {
@@ -106,11 +104,11 @@ void vFwdgt_ExitLowPower(void)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 捕获芯片复位原因
- * 说明(备注)  : 读取RCU标志寄存器并清除复位标志
+ * 函数功能    : 获取并暂存复位源信息
+ * 说明(备注)  : 读取 RCU 复位标志后立即清除，防止后续复位识别误判
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : void
  ************************************************************************************************************************/
 void vResetReason_Capture(void)
 {
@@ -126,31 +124,28 @@ void vResetReason_Capture(void)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 串口打印复位原因
- * 说明(备注)  : 依据捕获的复位状态输出调试信息
+ * 函数功能    : 打印看门狗及系统复位原因
+ * 说明(备注)  : 解析捕获的复位原因并输出调试日志
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : void
  ************************************************************************************************************************/
 void vFwdgt_PrintResetReason(void)
 {
 	vResetReason_Capture();
 
-	#if (boardPRINT_IFACE)
 	if (g_reset_reason.fwdgt)
-		sMyPrint("[Reset] reason: FWDGT reset\r\n");
+		printf("[Reset] reason: FWDGT reset\r\n");
 	else if (g_reset_reason.wwdgt)
-		sMyPrint("[Reset] reason: WWDGT reset\r\n");
+		printf("[Reset] reason: WWDGT reset\r\n");
 	else if (g_reset_reason.sw)
-		sMyPrint("[Reset] reason: software reset\r\n");
+		printf("[Reset] reason: software reset\r\n");
 	else if (g_reset_reason.ext_pin)
-		sMyPrint("[Reset] reason: external pin reset\r\n");
+		printf("[Reset] reason: external pin reset\r\n");
 	else if (g_reset_reason.por)
-		sMyPrint("[Reset] reason: power on reset\r\n");
+		printf("[Reset] reason: power on reset\r\n");
 	else if (g_reset_reason.low_power)
-		sMyPrint("[Reset] reason: low power reset\r\n");
-	#endif  /* boardPRINT_IFACE */
+		printf("[Reset] reason: low power reset\r\n");
 }
 
-#endif  /* boardWDGT_EN */
-
+#endif  //boardWDGT_EN

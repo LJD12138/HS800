@@ -36,13 +36,14 @@
 #include "MD_Display/md_display_task.h"
 #endif  /* boardDISPLAY_EN */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			KEY_TASK_PRIO							2		/* 任务优先级 */
 #define			KEY_TASK_STK_SIZE						256		/* 任务堆栈(字) */
-static TaskHandle_t s_t_key_task_handler = NULL;
-void        vKey_Task(void *p_v_parameters);
+static TaskHandle_t s_t_key_task_handler = NULL;				/* 任务句柄 */
+void        	vKey_Task(void *p_v_parameters);				/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 static bool s_b_key_lock = false;   /* 开机长按锁定标志 */
@@ -105,7 +106,6 @@ static const MfKeyCfg_T s_t_key_mw_cfg =
 	v_key_on_any_press                 /* 任意键按下(清休眠计数) */
 };
 
-//****************************************************Function Declaration******************************************************//
 
 /***********************************************************************************************************************
  * 函数功能    : 按键任务初始化

@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Firmware\CMSIS;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Application;.\ComFunc;.\Middlewares\SeggerRtt;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\MultiFuncKey;.\Hardware</IncludePath>
+              <IncludePath>.\Firmware\CMSIS;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Application;.\ComFunc;.\Middlewares\SeggerRtt;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\MultiFuncKey;.\Middlewares\TaskQueue;.\Middlewares\CherryUSB;.\Middlewares\CherryUSB\common;.\Middlewares\CherryUSB\core;.\Middlewares\CherryUSB\class\cdc;.\Middlewares\CherryUSB\port\dwc2;.\Hardware;.\Hardware\Usb</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -703,6 +703,46 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>MW-TaskQueue</GroupName>
+          <Files>
+            <File>
+              <FileName>queue_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\TaskQueue\queue_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\TaskQueue\queue_task.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>MW-CherryUSB</GroupName>
+          <Files>
+            <File>
+              <FileName>usbd_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\core\usbd_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_cdc_acm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\class\cdc\usbd_cdc_acm.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dc_dwc2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\port\dwc2\usb_dc_dwc2.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_glue_gd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\port\dwc2\usb_glue_gd.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>ComFunc</GroupName>
           <Files>
             <File>
@@ -729,11 +769,6 @@
               <FileName>ntc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ComFunc\ntc.c</FilePath>
-            </File>
-            <File>
-              <FileName>queue_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ComFunc\queue_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -995,6 +1030,16 @@
               <FileName>print_queue_task_main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\Print\print_queue_task_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>print_usb_iface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Print\print_usb_iface.c</FilePath>
+            </File>
+            <File>
+              <FileName>print_usb_iface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Print\print_usb_iface.h</FilePath>
             </File>
           </Files>
         </Group>

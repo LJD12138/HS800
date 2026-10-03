@@ -43,7 +43,6 @@ void v_dc_queue_task_shut_down(Task_T *p_task);
 void v_dc_queue_task_err(Task_T *p_task);
 void v_dc_queue_task_booting(Task_T *p_task);
 void v_dc_queue_task_work(Task_T *p_task);
-void v_dc_queue_task_prot(Task_T *p_task);
 
 #endif  /* boardDC_EN */
 

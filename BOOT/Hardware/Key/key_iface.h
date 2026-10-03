@@ -2,7 +2,7 @@
  * Project : BOOT
  * Module  : BOOT\Hardware\Key
  * File    : key_iface.h
- * Date    : 2026-09-22
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : 按键硬件驱动底层接口定义头文件
  * -------------------------------------------------------

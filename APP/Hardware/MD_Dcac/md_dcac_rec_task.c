@@ -30,13 +30,14 @@
 #include "MD_Dcac/md_dcac_queue_task_update.h"
 #endif  /* boardUPDATE */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			dcacREC_TASK_PRIO						3		/* 任务优先级(通信接收层:保障数据新鲜度) */
-#define			dcacREC_TASK_SIZE						256		/* 任务堆栈 */
-TaskHandle_t tDcacRecTaskHandle;
-void         vDcac_RecTask(void *pvParameters);
+#define			dcacREC_TASK_SIZE						256		/* 任务堆栈(字) */
+TaskHandle_t tDcacRecTaskHandle = NULL;							/* 任务句柄 */
+void         vDcac_RecTask(void *pvParameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 DcacRx_T tDcacRx; 
@@ -165,10 +166,18 @@ void vDcac_RecTask(void *pvParameters)
                 if (uPrint.tFlag.bDcacRecTask || uPrint.tFlag.bImportant)
                     log_w("bDcacRecTask:装载的数据错误,代码%d", c_result);
             }
+            #if (boardUPDATE)
+            else if (tDcac.eDevState == DS_UPDATE_MODE || tpDcacTask->ucID == DTI_UPDATE)
+            {
+                #if (boardUSE_OS)
+                xTaskNotifyGive(tDcacTaskHandler); /* 升级模式通知发送任务 */
+                #endif  /* boardUSE_OS */
+            }
+            #endif  /* boardUPDATE */
             else
             {
                 #if (boardUSE_OS)
-                xTaskNotifyGive(tDcacTaskHandler);
+                cModbus_NotifyAck(tpDcacProtoTx, c_result); /* 唤醒等待应答的发送任务 */
                 #endif  /* boardUSE_OS */
             }
         }

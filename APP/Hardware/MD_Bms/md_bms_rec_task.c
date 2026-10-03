@@ -33,18 +33,16 @@
 #include "Sys/sys_queue_task_update.h"
 #endif  /* boardUPDATE */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			bmsREC_TASK_PRIO						3		/* 任务优先级(通信接收层:保障数据新鲜度) */
-#define			bmsREC_TASK_SIZE						256		/* 任务堆栈大小 (字) */
+#define			bmsREC_TASK_SIZE						256		/* 任务堆栈(字) */
+TaskHandle_t tBmsRecTaskHandle = NULL;							/* 任务句柄 */
+void vBms_RecTask(void *pvParameters);							/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
-#if (boardUSE_OS)
-TaskHandle_t tBmsRecTaskHandle;
-void vBms_RecTask(void *pvParameters);
-#endif  /* boardUSE_OS */
-
 /* BMS 接收全局运行对象 (4 字节自然对齐) */
 __ALIGNED(4) BmsRx_T tBmsRx;
 vu32 ulBmsRxErrCode = 0;
@@ -135,7 +133,7 @@ void vBms_RecTask(void *pvParameters)
             #endif  /* boardUSE_OS */
         }
 
-        /*==========================================协议处理====================================*/
+        /* 协议处理 */
         #if (boardUPDATE)
         if (tBms.eDevState == DS_UPDATE_MODE)
         {
@@ -150,9 +148,9 @@ void vBms_RecTask(void *pvParameters)
             c_result = cBaiku_ProtoCheck(tpBmsProtoRx);
         }
 
-        /* 数据处理 */
         if (c_result > 0)
         {
+            /* 数据处理 */
             #if (boardUPDATE)
             if (tBms.eDevState == DS_UPDATE_MODE)
                 c_result = c_bms_rec_proc_data_for_update(tpBmsProtoRx);
@@ -163,25 +161,29 @@ void vBms_RecTask(void *pvParameters)
                 c_result = c_bms_rec_proc_data(tpBmsProtoRx);
             }
 
+            /* 数据处理结果 */
             if (c_result <= 0)
             {
                 if (uPrint.tFlag.bBmsRecTask || uPrint.tFlag.bImportant)
                     log_w("bBmsRecTask:装载的数据错误,代码%d", c_result);
             }
-            else
+            #if (boardUPDATE)
+            else if (tBms.eDevState == DS_UPDATE_MODE)
             {
                 #if (boardUSE_OS)
-                xTaskNotifyGive(tBmsTaskHandler); /* 通知发送任务 */
+                xTaskNotifyGive(tBmsTaskHandler); /* 升级模式通知发送任务 */
                 #endif  /* boardUSE_OS */
-            }
 
-            #if (boardUPDATE)
-            if (tBms.eDevState == DS_UPDATE_MODE)
-            {
                 if (tUpdate.eChType == CT_PRINT)
                     xTaskNotifyGive(tPrintTaskHandler);
             }
             #endif  /* boardUPDATE */
+            else
+            {
+                #if (boardUSE_OS)
+                cBaiku_NotifyAck(tpBmsProtoTx, tpBmsProtoRx->ucCmd, c_result); /* 仅在收到对应期望应答时唤醒发送任务 */
+                #endif  /* boardUSE_OS */
+            }
         }
         else 
         {

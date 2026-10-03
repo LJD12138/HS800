@@ -68,8 +68,7 @@ void v_usb_queue_task_closing(Task_T *p_task)
 	}
 
 	/* 等待超时 */
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (5000 / usbTASK_CLOSING_CYCLE_TIME))
+	if (bQueue_IsTaskTimeoutMs(p_task, 5000))
 	{
 		bUsb_SetErrCode(UEC_COLSE_FAULT, true);
 

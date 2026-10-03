@@ -269,7 +269,6 @@ bool b_dcac_cs_init(void)
 	// tDcacInit.usChgPwr = tAppMemParam.tDCAC.usInPwrRating;	//充电功率W
 	s_tDcacInit.usChgPwr = 0;	//充电功率W
 	s_tDcacInit.usDisChgPwr = tAppMemParam.tDCAC.usOutPwrRating;
-	
 	s_tDcacInit.usPvOV = tAppMemParam.tMPPT.usMaxInVolt; //0.1V
 
 
@@ -364,7 +363,7 @@ static int8_t c_dcac_data_trans(uint8_t uc_cmd, uint16_t us_reg_addr, uint8_t *p
         if (bDcac_DataSendStart(tpDcacProtoTx->ucaFrameData, tpDcacProtoTx->ucFrameLen) == true)
         {
             #if (boardUSE_OS)
-            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(dcacWAIT_NOTIFY_OUTTIME)) <= 0)
+            if (cModbus_WaitReply(tpDcacProtoTx, uc_cmd, us_reg_addr, dcacWAIT_NOTIFY_OUTTIME) <= 0)
             {
                 if ((uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant) && tDcac.eDevState != DS_LOST)
                     log_w("bDcacTask:命令0x%x,寄存器%d等待回复超时", uc_cmd, us_reg_addr);

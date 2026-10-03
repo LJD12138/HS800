@@ -30,17 +30,17 @@
 #include "MD_Display/md_display_task.h"
 #endif  /* boardDISPLAY_EN */
 
-#if (1)
-//****************************************************Macros********************************************************************//
-#define			BUZ_ON()								buzTIMER_PWM_SET(300)
-#define			BUZ_OFF()								buzTIMER_PWM_SET(0)
-
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			BUZ_TASK_PRIO							2		/* 任务优先级 */
 #define			BUZ_TASK_STK_SIZE						128		/* 任务堆栈 (512B，达到 configMINIMAL_STACK_SIZE 防溢出标准) */
 static TaskHandle_t s_t_buz_task_handler = NULL;
-void vBuz_Task(void *p_v_parameters);
+void 			vBuz_Task(void *p_v_parameters);
 #endif  /* boardUSE_OS */
+
+//****************************************************Macros********************************************************************//
+#define			BUZ_ON()								buzTIMER_PWM_SET(300)
+#define			BUZ_OFF()								buzTIMER_PWM_SET(0)
 
 //****************************************************Parameter Initialization**************************************************//
 typedef struct
@@ -187,7 +187,7 @@ static void v_buz_trigger(Buzz_E e_type, uint16_t us_num, uint16_t us_on_time, u
 
 	#if (boardDISPLAY_EN)
 	if (s_s_buz_num >= 3 && tSysInfo.eDevState != DS_INIT)
-		bDisp_SwitchBacklight(DISP_BKL_ON, false);
+		bDisp_Switch(ST_ON, false);
 	#endif  /* boardDISPLAY_EN */
 }
 
@@ -239,5 +239,5 @@ void vBuz_ExitLowPower(void)
 }
 #endif  /* boardLOW_POWER */
 
-#endif  /* 1 */
 #endif  /* boardBUZ_EN */
+

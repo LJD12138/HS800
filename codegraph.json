@@ -1,0 +1,14 @@
+{
+  "exclude": [
+    "**/*.o",
+    "**/*.d",
+    "**/*.lst",
+    "**/*.crf",
+    "**/*.idx",
+    "**/*.sct",
+    "**/*.uvgui.*",
+    "**/.cmsis/device/",
+    "**/Objects/",
+    "**/Listings/"
+  ]
+}

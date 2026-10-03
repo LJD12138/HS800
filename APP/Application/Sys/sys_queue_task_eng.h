@@ -57,7 +57,6 @@ typedef struct
 extern EngMode_T tEngMode;
 
 //****************************************************Extern********************************************************************//
-void vEng_TaskFunc(Task_T *p_task);
 void vEng_RefreshEngModeTime(void);
 void vEng_AdjustParam(uint8_t uc_tab, uint8_t uc_item, bool b_add);
 

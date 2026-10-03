@@ -32,15 +32,16 @@ DebugPrint_U uPrint;
 #include "fwdgt.h"
 #endif  /* boardWDGT_EN */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			printTASK_PRIO							1		/* 任务优先级(通信接收层) */
-#define			printTASK_SIZE							384		/* 任务堆栈 */
-TaskHandle_t tPrintTaskHandler = NULL;
-void         vPrint_Task(void *pvParameters);
+#define			printTASK_SIZE							384		/* 任务堆栈(字) */
+TaskHandle_t tPrintTaskHandler = NULL;							/* 任务句柄 */
+void         vPrint_Task(void *pvParameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
 
-#define			printTX_BUFF_SIZE						384
+//****************************************************Macros********************************************************************//
+#define			printTX_BUFF_SIZE						384		/* 打印发送缓冲区大小 */
 
 //****************************************************Parameter Initialization**************************************************//
 Print_T tPrint;
@@ -48,7 +49,7 @@ Print_T tPrint;
 lwrb_t tPrintTxBuff;
 __ALIGNED(4) static u8 uca_print_tx_buff[printTX_BUFF_SIZE];
 
-static Task_T *tp_task = NULL;
+static Task_T *p_task = NULL;
 
 #if (boardUSE_OS)
 SemaphoreHandle_t PrintSemaphoreBinary = NULL;
@@ -76,7 +77,7 @@ static bool b_print_task_param_init(void)
     
     lwrb_reset(&tPrintTxBuff);
     
-    tp_task = tpPrintTask;
+    p_task = tpPrintTask;
     
     vPrint_MyPrintParamInit();
     
@@ -145,9 +146,9 @@ void vPrint_Task(void *pvParameters)
         vFwdgt_Reload();
         #endif  /* boardWDGT_EN && boardPRINT_IFACE */
         
-        if (tp_task == NULL)
+        if (p_task == NULL)
         {
-            if (tp_task == NULL)
+            if (p_task == NULL)
                 b_print_task_param_init();
             
             #if (boardUSE_OS)
@@ -165,7 +166,7 @@ void vPrint_Task(void *pvParameters)
             printIFACE_EN_OFF();
         #endif  /* boardUSB_EN */
         
-        vQueue_TaskPoll(tp_task, printTASK_CYCLE_TIME);
+        vQueue_TaskPoll(p_task, printTASK_CYCLE_TIME);
     }
 }
 

@@ -41,7 +41,6 @@ typedef enum
 	DCTI_ERR,			/* 错误任务 */
 	DCTI_BOOTING,		/* 载入中任务 */
 	DCTI_WORK,			/* 工作中任务 */
-	DCTI_PROT,			/* 保护扫描任务(越限提前唤醒) */
 }DcTaskId_E;
 
 /* DC 错误代码枚举 */

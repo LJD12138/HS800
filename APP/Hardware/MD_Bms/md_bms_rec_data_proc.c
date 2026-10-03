@@ -270,6 +270,7 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t *p_proto)
     switch (p_proto->ucCmd)
     {
         case baikuCMD_REPLY_SET_PROTO: /* C3 */
+        {
             if (p_proto->ucValidLen != 3 || p_proto->ucpValidData == NULL)
                 return -80;
 
@@ -284,10 +285,12 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t *p_proto)
             memcpy((uint8_t *)&tUpdate.usTotalFrmValue, &p_proto->ucpValidData[1], 2);
 
             c_print_cs_C3_reply_set_proto(p_proto->ucpValidData, p_proto->ucValidLen);
-            break;
+        }
+        break;
 
         /* 请求开始发送 */
-        case baikuCMD_RRQ_START_SEND: /* C4 */               
+        case baikuCMD_RRQ_START_SEND: /* C4 */   
+        {
             c_print_cs_C4_req_start_send();
 
             if (tBms.eDevState == DS_UPDATE_MODE
@@ -313,7 +316,8 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t *p_proto)
 
             if (tBms.eDevState != DS_UPDATE_MODE)
                 cQueue_AddQueueTask(tpBmsTask, BTI_UPDATE, 0, false);
-            break;
+        }
+        break;
 
         /* 继续发送 */
         case baikuCMD_RRQ_CONT_SEND: /* C6 */
@@ -335,16 +339,20 @@ s8 c_bms_rec_proc_data_for_update(BaikuProtoRx_t *p_proto)
 
         /* 取消发送 */
         case baikuCMD_REPLY_CANEL: /* C8 */
+        {
             c_print_cs_C8_trans_cancel();
             bUpdate_SetResult(URT_SLAVE, UTR_CANCEL);
-            break;
+        }
+        break;
 
         /* BMS正在升级 */
         case baikuCMD_BMS_UPDATE: /* C9 */
+        {
             c_ret = c_bms_handle_update_c9(p_proto);
             if (c_ret <= 0)
                 return c_ret;
-            break;
+        }
+        break;
 
         default:
             return -99;

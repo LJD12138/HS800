@@ -64,10 +64,8 @@ void v_dc_queue_task_booting(Task_T *p_task)
 				return;
 			}
 
-			p_task->usTaskWaitCnt++;
-			if (p_task->usTaskWaitCnt >= (3000 / dcTASK_CYCLE_TIME))
+			if (bQueue_IsTaskTimeoutMs(p_task, 3000))
 			{
-				p_task->usTaskWaitCnt = 0;
 				vDc_SetErrCode(DC_EC_OUT_LOW, true);
 				cQueue_GotoStep(p_task, STEP_END);
 				return;

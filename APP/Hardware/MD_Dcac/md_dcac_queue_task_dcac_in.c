@@ -81,8 +81,7 @@ void v_dcac_queue_task_dcac_in(Task_T *p_task)
 		break;
 	}
 
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (3000 / dcacTASK_IN_CYCLE_TIME))  /* 等待超时 */
+	if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
 	{
 		if (uPrint.tFlag.bDcacTask)
 			log_w("bDcacTask:控制逆变充电超时,步骤%d", p_task->ucStep);

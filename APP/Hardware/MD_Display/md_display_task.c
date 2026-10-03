@@ -2,9 +2,9 @@
  * Project : APP
  * Module  : APP\Hardware\MD_Display
  * File    : md_display_task.c
- * Date    : 2026-09-21
+ * Date    : 2026-09-28
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 显示任务外壳实现 (TFT+LVGL) - 调度引擎驱动/页面注册/兼容控制
+ * Desc    : UniDisplay 显示任务外壳实现 - 调度引擎驱动/页面注册/兼容控制
  * -------------------------------------------------------
  * todo    :
  * 1. 无
@@ -16,29 +16,43 @@
 #include "MD_Display/md_display_task.h"
 
 #if (boardDISPLAY_EN)
-#include <string.h>
-#include "uni_disp_port.h"
-#include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
-#include "MD_Display/eez_ui/ui.h"
-#include "Sys/sys_task.h"
-#include "Print/print_task.h"
+
+#include "uni_disp_port.h"
 #include "app_info.h"
 
 #if (boardBUZ_EN)
 #include "Buz/buz_task.h"
 #endif  /* boardBUZ_EN */
 
-//****************************************************Parameter Initialization**************************************************//
+
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			dispTASK_PRIO							2U		/* 任务优先级 */
-#define			dispTASK_STK_SIZE						2048U	/* 任务堆栈(字数, LVGL深调用栈需保证) */
-TaskHandle_t tDispTaskHandler = NULL;
-void vDisp_Task(void *pvParameters);
+#define			dispTASK_STK_SIZE						256U	/* 任务堆栈 */
+TaskHandle_t    tDispTaskHandler = NULL;
+void            vDisp_Task(void *pvParameters);
 #endif  /* boardUSE_OS */
 
 //****************************************************Parameter Initialization**************************************************//
-static bool G_bUiInitialized = false;
+#if (boardENG_MODE_EN)
+/* 显示记忆参数步进配置表 */
+typedef struct
+{
+	void				*pParam;
+	int32_t				lMin;
+	int32_t				lMax;
+	uint8_t				ucType;				/* 0: uint16_t, 1: int8_t, 2: uint8_t */
+}DispParamStep_T;
+
+static const DispParamStep_T s_tDispParamTable[] =
+{
+	{(void *)&tAppMemParam.tDISP.ucHighLightValue, 0x88, 0x8F, 2}, /* item 0: 高亮值 */
+	{(void *)&tAppMemParam.tDISP.ucLowLightValue,  0x88, 0x8F, 2}, /* item 1: 低亮值 */
+	{(void *)&tAppMemParam.tDISP.usAutoOffTime,       0, 3600, 0}, /* item 2: 息屏时间 */
+};
+#endif  /* boardENG_MODE_EN */
+
 
 //****************************************************Function Declaration******************************************************//
 static bool b_task_param_init(void);
@@ -74,7 +88,7 @@ s8 cDisp_TaskInit(void)
         return -2;
     }
 
-    /* 绑定唤醒钩子 (供 bDisp_PostEvent / bDisp_SwitchBacklight 即时唤醒任务) */
+    /* 绑定唤醒钩子 (供 bDisp_PostEvent / bDisp_Switch 即时唤醒任务) */
     vDisp_PortSetTaskHandle(tDispTaskHandler);
     #endif  /* boardUSE_OS */
 
@@ -133,52 +147,10 @@ void vDisp_Task(void *pvParameters)
             /* 息屏: 2 秒低频心跳挂起, CPU 占用 0% */
             ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
         else
-            /* 亮屏: 按当前页面声明的帧周期节拍等待 (33ms) */
+            /* 亮屏: 按当前页面声明的帧周期节拍等待 */
             ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(usDisp_GetFramePeriod()));
         #endif  /* boardUSE_OS */
     }
-}
-
-
-/***********************************************************************************************************************
- * 函数功能    : 显示开关 (向后兼容旧接口，内部对接框架 Power Manager)
- * 说明(备注)  : none
- * 传入参数    : type: 类型 (ST_ON / ST_OFF / ST_NULL), fore_en: 强制打开 (常亮)
- * 输出参数    : 无
- * 返回值      : true: 成功
- ************************************************************************************************************************/
-bool bDisp_Switch(SwitchType_E type, bool fore_en)
-{
-    DispBacklight_E e_bkl;
-
-    switch (type)
-    {
-        case ST_ON:
-        {
-            e_bkl = DISP_BKL_ON;
-        }
-        break;
-        case ST_OFF:
-        {
-            e_bkl = DISP_BKL_OFF;
-        }
-        break;
-        case ST_NULL:
-        default:
-        {
-            e_bkl = DISP_BKL_TOGGLE;
-        }
-        break;
-    }
-
-    bool b_ret = bDisp_SwitchBacklight(e_bkl, fore_en);
-
-    #if (boardBUZ_EN)
-    if (fore_en && bDisp_IsBacklightOn())
-        bBuz_Tweet(LONG_1);
-    #endif  /* boardBUZ_EN */
-
-    return b_ret;
 }
 
 /***********************************************************************************************************************
@@ -200,20 +172,45 @@ bool bDisp_MemParamInit(DispMemParam_T* p_disp_mem)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 安全的 UI 及所有屏幕初始化
- * 说明(备注)  : 防重入保护
- * 传入参数    : 无
+ * 函数功能    : 设置显示记忆参数 (表驱动版)
+ * 说明(备注)  : 支持 uint8 与 uint16 类型，自动进行安全上下限防越界检查 (参考 sys_task.c:1070)
+ * 传入参数    : item: 参数索引, add: true-增加, false-减少
  * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-void vDisp_UiInit(void)
+ * 返回值      : void
+ ***********************************************************************************************************************/
+#if (boardENG_MODE_EN)
+void vDisp_MemParamSet(u8 item, bool add)
 {
-    if (G_bUiInitialized == false)
-    {
-        G_bUiInitialized = true;
-        ui_init();
-    }
+	if ((item >= mainARRAY_SIZE(s_tDispParamTable)) || (s_tDispParamTable[item].pParam == NULL))
+		return;
+
+	const DispParamStep_T *p = &s_tDispParamTable[item];
+	if (p->ucType == 2)
+	{
+		uint8_t *p_val = (uint8_t *)p->pParam;
+		if (add && (*p_val < (uint8_t)p->lMax))
+			(*p_val)++;
+		else if (!add && (*p_val > (uint8_t)p->lMin))
+			(*p_val)--;
+	}
+	else if (p->ucType == 1)
+	{
+		int8_t *p_val = (int8_t *)p->pParam;
+		if (add && (*p_val < (int8_t)p->lMax))
+			(*p_val)++;
+		else if (!add && (*p_val > (int8_t)p->lMin))
+			(*p_val)--;
+	}
+	else
+	{
+		uint16_t *p_val = (uint16_t *)p->pParam;
+		if (add && (*p_val < (uint16_t)p->lMax))
+			(*p_val)++;
+		else if (!add && (*p_val > (uint16_t)p->lMin))
+			(*p_val)--;
+	}
 }
+#endif  /* boardENG_MODE_EN */
 
 #if (boardLOW_POWER)
 /***********************************************************************************************************************
@@ -223,7 +220,7 @@ void vDisp_UiInit(void)
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_dis_power_select(void)
+static void v_dis_power_select(void)
 {
     if (bDisp_IsBacklightOn())
     {

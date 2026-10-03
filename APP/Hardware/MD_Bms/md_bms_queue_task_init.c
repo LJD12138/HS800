@@ -97,8 +97,7 @@ void v_bms_queue_task_init(Task_T *p_task)
         break;
     }
     
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > (3000 / bmsTASK_INIT_CYCLE_TIME))  /* 等待超时 */
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
     {
         if (uPrint.tFlag.bBmsTask)
             log_w("bBmsTask:BMS初始化任务等待超时,步骤%d", p_task->ucStep);

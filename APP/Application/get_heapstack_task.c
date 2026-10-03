@@ -36,9 +36,15 @@
 #include "MD_Dcac/md_dcac_task.h"
 #endif  //boardDCAC_EN
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
+#if (boardUSE_OS)
 #define			HEALTH_TASK_PRIO						1		/* 任务优先级(后台级) */
 #define			HEALTH_TASK_STK_SIZE					320		/* 任务堆栈(字) 1280B: 容纳 uxTaskGetSystemState 与格式化 */
+TaskHandle_t	tHealthTaskHandler = NULL;							/* 任务句柄 */
+static void v_health_task(void *pvParameters);					/* 任务函数 */
+#endif  /* boardUSE_OS */
+
+//****************************************************Macros********************************************************************//
 #define			HEALTH_POLL_CYCLE_MS					2000	/* 后台静默采样巡检周期(ms) */
 #define			HEALTH_HEARTBEAT_CYCLES					30		/* 心跳输出周期(30 * 2s = 60s) */
 #define			HEALTH_ALARM_COOLDOWN_CYCLES			5		/* 报警冷却限频周期(5 * 2s = 10s) */
@@ -56,7 +62,6 @@
 #define			HEALTH_CPU_WARN_PCT						85		/* CPU 高负载警告阈值(%) */
 
 //****************************************************Parameter Initialization**************************************************//
-TaskHandle_t	tHealthTaskHandler = NULL;
 volatile uint32_t ulHealthIdleLoopCnt = 0;
 
 /* 任务状态静态数组: 共享单一缓冲区，避免多处分配吃任务栈与 BSS (节省 1KB SRAM) */
@@ -67,7 +72,6 @@ static char s_ca_rt_stats[1024]; /* vTaskGetRunTimeStats 输出缓冲: 仅用于
 #endif  //boardUSE_OS && boardPRINT_IFACE && configGENERATE_RUN_TIME_STATS && configUSE_STATS_FORMATTING_FUNCTIONS
 
 //****************************************************Function Declaration******************************************************//
-static void                   v_health_task(void *pvParameters);
 static void                   v_health_report_summary(uint32_t ul_window_cpu, uint32_t ul_cum_cpu, bool b_alarm_active);
 static void                   v_health_check_single_queue(const Task_T *p_task, const char *pc_name, uint16_t *pus_last_full, uint16_t *pus_last_corrupt);
 static void                   v_health_check_queue_alarms(void);

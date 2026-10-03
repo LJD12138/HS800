@@ -114,10 +114,9 @@ void v_dcac_queue_task_init(Task_T *p_task)
         break;
     }
     
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > (3000 / dcacTASK_INIT_CYCLE_TIME))  /* 等待超时 */
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
     {
-        if (uPrint.tFlag.bDcacTask || uPrint.tFlag.bImportant)
+        if (uPrint.tFlag.bDcacTask)
             log_w("bDcacTask:初始化任务等待超时,步骤%d", p_task->ucStep);
         
         cQueue_GotoStep(p_task, STEP_END);          /* 结束 */

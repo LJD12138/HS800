@@ -143,33 +143,29 @@ void v_sys_queue_task_init(Task_T *p_task)
 				bSys_ChgWakeUp(SO_MPPT);
 				cQueue_GotoStep(p_task, STEP_NEXT);
 			}
+
 			#if (boardKEY_EN)
 			else if (bKey_IsPressById(keyPOWER) == true)
 				cQueue_GotoStep(p_task, STEP_NEXT);
 			#endif  //boardKEY_EN
+
 			#if (boardADC_EN)
 			else if ((tAdcSamp.usSysInVolt > (tAppMemParam.tSYS.usMinOpenVolt / 2))
 				#if (boardBMS_EN)
-			         && (tBms.eDevState == DS_LOST)
+			    && (tBms.eDevState == DS_LOST)
 				#endif  //boardBMS_EN
 			)
 			{
 				//充电激活
-				p_task->usStepWaitCnt++;
-				if (p_task->usStepWaitCnt > (5000 / sysTASK_INIT_CYCLE_TIME))
+				if (bQueue_IsStepTimeoutMs(p_task, 5000))
 				{
 					bSys_ChgWakeUp(SO_MPPT);
 					cQueue_GotoStep(p_task, STEP_NEXT);
 				}
-				else
-					break;
 			}
 			#endif  //boardADC_EN
 			else
-			{
-				p_task->usStepWaitCnt = 0;
-				break;
-			}
+				vQueue_RefreshStepTick(p_task);
 		}break;
 
 		case 4:
@@ -185,10 +181,8 @@ void v_sys_queue_task_init(Task_T *p_task)
 				if (s_uc_tri_type != 2)
 				{
 					s_uc_tri_type = 2;
-					p_task->usStepWaitCnt = 0;
+					vQueue_RefreshStepTick(p_task);
 				}
-
-				p_task->usStepWaitCnt++;
 			}
 			#if (boardKEY_EN)  //工程模式
 			else if (bKey_IsEngModePress() == true)
@@ -196,10 +190,8 @@ void v_sys_queue_task_init(Task_T *p_task)
 				if (s_uc_tri_type != 1)
 				{
 					s_uc_tri_type = 1;
-					p_task->usStepWaitCnt = 0;
+					vQueue_RefreshStepTick(p_task);
 				}
-
-				p_task->usStepWaitCnt++;
 			}
 			#endif  //boardKEY_EN
 			else if (
@@ -214,16 +206,15 @@ void v_sys_queue_task_init(Task_T *p_task)
 					cSys_Switch(SO_KEY, ST_ON, false);
 
 				s_uc_tri_type = 0;
-				p_task->usStepWaitCnt = 0;
 				cQueue_GotoStep(p_task, STEP_NEXT);
 			}
 			else
 			{
 				s_uc_tri_type = 0;
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 			}
 
-			if (p_task->usStepWaitCnt > (3000 / sysTASK_INIT_CYCLE_TIME))
+			if (bQueue_IsStepTimeoutMs(p_task, 3000))
 			{
 				if (s_uc_tri_type == 2)  //工厂模式
 				{
@@ -269,9 +260,12 @@ void v_sys_queue_task_init(Task_T *p_task)
 		break;
 	}
 
+	//步骤已全部完成,无需继续超时检查与节拍等待
+	if (p_task->ucStep >= STEP_END)
+		return;
+
 	//初始化等待10S,超时强制关机退出
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (10000 / sysTASK_INIT_CYCLE_TIME))
+	if (bQueue_IsTaskTimeoutMs(p_task, 10 * 1000))
 	{
 		gpioASSIST_OPEN_OFF();
 

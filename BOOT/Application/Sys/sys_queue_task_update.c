@@ -44,13 +44,13 @@ Update_T tUpdate;
 /***********************************************************************************************************************
  * 函数功能    : 系统升级队列任务步骤执行
  * 说明(备注)  : 步骤0选择升级通道并初始化, 步骤1轮询对应协议解析
- * 传入参数    : tp_task: 任务控制块指针
+ * 传入参数    : p_task: 任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_sys_queue_task_update(Task_T *tp_task)
+void v_sys_queue_task_update(Task_T *p_task)
 {
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
 		case 0:
 		{
@@ -73,8 +73,8 @@ void v_sys_queue_task_update(Task_T *tp_task)
 				uPrint.tFlag.bUpdate = 0;
 				uPrint.tFlag.bBootInfo = 1;
 			}
-			bQueue_Reset(tp_task); //清空队列
-			cQueue_GotoStep(tp_task, STEP_NEXT);  //下一步
+			bQueue_Reset(p_task); //清空队列
+			cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 		}
 		break;
 		
@@ -101,14 +101,14 @@ void v_sys_queue_task_update(Task_T *tp_task)
 			}
 
 			//队列里面有任务
-			if (!bQueue_IsQueueEmpty(tp_task))                 
-				cQueue_GotoStep(tp_task, STEP_END);  //结束
+			if (!bQueue_IsQueueEmpty(p_task))                 
+				cQueue_GotoStep(p_task, STEP_END);  //结束
 		}
 		break;
 		
         default:
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 		}
 		break;
     }
@@ -258,14 +258,20 @@ void vUpdate_TickTimer(void)
 		case PT_XMODEM:
 		{
 			vXmodem_TickTime(&tXmodem);
-			tUpdate.tpProtoRx->usLostOverTimeCnt = tXmodem.usWaitStartOutTimeCnt;
+			if (tUpdate.tpProtoRx != NULL)
+			{
+				tUpdate.tpProtoRx->usLostOverTimeCnt = tXmodem.usWaitStartOutTimeCnt;
+			}
 		}
 		break;
 		
 		case PT_BAIKU:
 		{
 			vBaiKuProto_TickTime(&tBaiKuProto);
-			tUpdate.tpProtoRx->usLostOverTimeCnt = tBaiKuProto.usWaitStartOutTimeCnt;
+			if (tUpdate.tpProtoRx != NULL)
+			{
+				tUpdate.tpProtoRx->usLostOverTimeCnt = tBaiKuProto.usWaitStartOutTimeCnt;
+			}
 		}
 		break;
 		

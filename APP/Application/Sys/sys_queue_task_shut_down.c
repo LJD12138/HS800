@@ -59,7 +59,7 @@ void v_sys_queue_task_shut_down(Task_T *p_task)
 		{
 			#if (boardKEY_EN)
 			if (bKey_IsPressById(keyPOWER) == true)
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 			#endif  //boardKEY_EN
 
 			//有任务退出
@@ -67,10 +67,8 @@ void v_sys_queue_task_shut_down(Task_T *p_task)
 				cQueue_GotoStep(p_task, STEP_END);  //结束
 
 			//等待主机请求关闭
-			p_task->usStepWaitCnt++;
-			if (p_task->usStepWaitCnt >= (6000 / sysTASK_SHUT_DOWN_CYCLE_TIME))
+			if (bQueue_IsStepTimeoutMs(p_task, 6000))
 			{
-				p_task->usStepWaitCnt = 0;
 				cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 
 				if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)

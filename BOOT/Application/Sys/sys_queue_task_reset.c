@@ -28,17 +28,17 @@
 /***********************************************************************************************************************
  * 函数功能    : 系统复位任务执行函数
  * 说明(备注)  : 触发内核复位 NVIC_SystemReset
- * 传入参数    : tp_task: 队列任务控制块指针
+ * 传入参数    : p_task: 队列任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_sys_queue_task_reset(Task_T *tp_task)
+void v_sys_queue_task_reset(Task_T *p_task)
 {
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
-            cQueue_GotoStep(tp_task, STEP_NEXT);
+            cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
@@ -50,17 +50,17 @@ void v_sys_queue_task_reset(Task_T *tp_task)
 
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
     }
 
     /* 等待 5S 超时保护 */
-    if (bQueue_IsStepTimeout(tp_task, (5000 / sysTASK_CYCLE_TIME)) && tp_task->ucStep != STEP_END)
+    if (bQueue_IsStepTimeout(p_task, (5000 / sysTASK_CYCLE_TIME)) && p_task->ucStep != STEP_END)
     {
         if (uPrint.tFlag.bSysTask)
             log_w("bSysTask:设置重置任务等待超时,退出");
-        cQueue_GotoStep(tp_task, STEP_END);
+        cQueue_GotoStep(p_task, STEP_END);
     }
 }
 

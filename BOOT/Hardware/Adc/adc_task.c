@@ -31,23 +31,20 @@
 #include "Dc/dc_task.h"
 #endif  /* boardDC_EN */
 
-#if (1)
-//****************************************************Macros********************************************************************//
-
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			adcTASK_PRIO							4		/* 任务优先级(安全采集层:保护链源头) */
 #define			adcTASK_STK_SIZE						256		/* 任务堆栈(字) */
+static TaskHandle_t s_t_adc_task_handler = NULL;				/* 任务句柄 */
+static void 	vAdc_Task(void *p_v_parameters);				/* 任务函数 */
 #endif  /* boardUSE_OS */
+
+//****************************************************Macros********************************************************************//
 
 /* 滤波器缓冲区长度配置 */
 #define			adcSYS_IN_VOLT_FILTER_BUFF_SIZE			6		/* 电池/系统输入电压滤波深度 */
 
 //****************************************************Parameter Initialization**************************************************//
-
-#if (boardUSE_OS)
-static TaskHandle_t s_t_adc_task_handler = NULL;
-#endif  /* boardUSE_OS */
-
 /* 全局物理量采样结构体 */
 AdcSamp_T tAdcSamp;
 
@@ -55,73 +52,9 @@ AdcSamp_T tAdcSamp;
 static s32 s_sa_sys_in_volt_buff[adcSYS_IN_VOLT_FILTER_BUFF_SIZE];
 static FilterHandler_T s_t_adc_sys_in_volt_filter_mad_avg = {s_sa_sys_in_volt_buff, adcSYS_IN_VOLT_FILTER_BUFF_SIZE, 0, 0, 0, 0, 0};
 
-/* ---------------------------------------------------------------------------------------------------------------------
- * NTC 温度拟合定点查找表 (Q8 格式: 真实值 * 256)
- * 对应原式 T = 307 - 37 * ln(AD)，步长为 64 (覆盖 AD 0 ~ 4096，共 65 个节点)
- * 在 Cortex-M4 下通过单周期纯整数乘法插值即可完成高精计算，完全消除 log 浮点库
- * --------------------------------------------------------------------------------------------------------------------- */
-static const int16_t s_sa_adc_temp_lut_q8[65] =
-{
-	32634,  32634,  32634,  28793,  26068,  23954,  22228,  20767,
-	19503,  18387,  17389,  16486,  15662,  14904,  14202,  13548,
-	12937,  12363,  11821,  11309,  10823,  10361,   9921,   9500,
-	 9097,   8710,   8338,   7981,   7636,   7304,   6983,   6672,
-	 6372,   6080,   5797,   5523,   5256,   4996,   4744,   4498,
-	 4258,   4024,   3796,   3573,   3355,   3142,   2934,   2730,
-	 2531,   2336,   2144,   1957,   1773,   1592,   1415,   1242,
-	 1071,    903,    739,    577,    417,    261,    107,    -45,
-	 -194
-};
-
 //****************************************************Function Declaration******************************************************//
 static void v_adc_param_init(void);
 
-#if (boardUSE_OS)
-static void v_adc_task_loop(void *p_v_parameters);
-#endif  /* boardUSE_OS */
-
-
-/***********************************************************************************************************************
- * 函数功能    : 通过采样 AD 值计算温度 (定点查表线性插值法)
- * 说明(备注)  : 原理对应 T = 307 - 37 * ln(AD)，消除 math.h 对数库调用与除零硬件异常
- * 传入参数    : us_ad_val: 12 位采样 AD 转换值 (0~4095)
- * 输出参数    : 无
- * 返回值      : int16_t: 计算得出的温度值 (单位: 摄氏度, 范围 -128 ~ 127)
- ************************************************************************************************************************/
-int16_t sAdc_CalcTempByAd(uint16_t us_ad_val)
-{
-	int32_t s_idx;
-	int32_t s_rem;
-	int32_t s_t0;
-	int32_t s_t1;
-	int32_t s_t_q8;
-	int32_t s_temp;
-
-	/* 1. 安全边界检查与极限情况处理 */
-	if (us_ad_val <= 129)
-		return 127;     /* AD过小或短路，判定为最高保护温标 127 度 */
-	if (us_ad_val >= 4080)
-		return 0;       /* AD满量程或开路(NTC断线/丢失)，判定为 0 度，触发 NTC 掉线保护 */
-
-	/* 2. 定点查表与线性插值 (步长 64，右移 6 位) */
-	s_idx = (int32_t)(us_ad_val >> 6);
-	s_rem = (int32_t)(us_ad_val & 63);
-
-	s_t0 = (int32_t)s_sa_adc_temp_lut_q8[s_idx];
-	s_t1 = (int32_t)s_sa_adc_temp_lut_q8[s_idx + 1];
-
-	/* 线性插值并四舍五入: T = T0 + (T1 - T0) * rem / 64 */
-	s_t_q8 = s_t0 + (((s_t1 - s_t0) * s_rem) >> 6);
-	s_temp = (s_t_q8 + 128) >> 8;
-
-	/* 3. 输出门限钳位 */
-	if (s_temp > 127)
-		s_temp = 127;
-	else if (s_temp < -128)
-		s_temp = -128;
-
-	return (int16_t)s_temp;
-}
 
 /***********************************************************************************************************************
  * 函数功能    : ADC任务与外设初始化
@@ -140,7 +73,7 @@ s8 cAdc_TaskInit(void)
 	v_adc_param_init();     /* 滤波参数与采样状态清零 */
 
 	#if (boardUSE_OS)
-	if (xTaskCreate((TaskFunction_t )v_adc_task_loop,
+	if (xTaskCreate((TaskFunction_t )vAdc_Task,
 	                (const char*    )"AdcTask",
 	                (uint16_t       )adcTASK_STK_SIZE,
 	                (void*          )NULL,
@@ -171,11 +104,7 @@ static void v_adc_param_init(void)
  * 输出参数    : 无
  * 返回值      : 无
  ***********************************************************************************************************************/
-#if (boardUSE_OS)
-static void v_adc_task_loop(void *p_v_parameters)
-#else
 void vAdc_Task(void *p_v_parameters)
-#endif  /* boardUSE_OS */
 {
 	(void)p_v_parameters;
 
@@ -254,6 +183,5 @@ bool bAdc_ExitLowPower(void)
 }
 #endif  /* boardLOW_POWER */
 
-#endif  /* 1 */
-
 #endif  /* boardADC_EN */
+

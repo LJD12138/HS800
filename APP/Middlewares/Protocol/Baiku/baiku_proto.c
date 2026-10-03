@@ -126,6 +126,13 @@ s8 cBaiku_ProtoSendInit(BaikuProtoTx_t** proto, u16 buff_len, u8 dev_addr)
 		result =  -2;
 	else
 	{
+		#if (boardUSE_OS)
+		(*proto)->xTaskToNotify = NULL;
+		(*proto)->bWaitAck = false;
+		(*proto)->ucWaitCmd = 0;
+		(*proto)->cAckResult = 0;
+		#endif  /* boardUSE_OS */
+
 		(*proto)->ucHead = protoHEAD_CODE;
 		(*proto)->ucAddr = dev_addr;
 		(*proto)->usBuffSize = buff_len;
@@ -150,6 +157,7 @@ s8 cBaiku_ProtoCreate(BaikuProtoTx_t* proto,u8 cmd, u8* data, u8 len)
 	//帧总长度(len+6)不可超过缓冲区大小
 	if(proto == NULL)
 		return -2;
+
 	if((u16)len + 6U > proto->usBuffSize)
 		return -1;
 	
@@ -390,6 +398,104 @@ s8 cProto_ResetTxBuff(BaikuProtoTx_t* proto)
 	return 1;
 }
 
+/***********************************************************************************************************************
+ * 函数功能    : 唤醒等待 BMS 应答的发送任务
+ * 说明(备注)  : 仅当收到的回复命令字与期望匹配时才唤醒
+ * 传入参数    : uc_cmd: 接收到的应答命令字, c_result: 解析处理结果
+ * 输出参数    : 无
+ * 返回值      : 小于0:校验失败   等于0:未回复    大于0:回复成功
+ ************************************************************************************************************************/
+#if (boardUSE_OS)
+s8 cBaiku_NotifyAck(BaikuProtoTx_t* proto, u8 uc_cmd, s8 c_result)
+{
+    TaskHandle_t xToNotify = NULL;
+
+    if (proto == NULL)
+        return -2;
+
+    /* 状态转换原子化: 与 WaitReply 超时清理互斥, 挡住抢占交错 */
+    mainENTER_CRITICAL();
+    if (proto->bWaitAck)
+    {
+        if (uc_cmd != proto->ucWaitCmd)     /* 去掉 cmd == 0 通配 */
+        {
+            mainEXIT_CRITICAL();
+            return -1;
+        }
+        proto->cAckResult     = c_result;
+        proto->bWaitAck       = false;
+        xToNotify             = proto->xTaskToNotify;
+        proto->xTaskToNotify  = NULL;
+    }
+    mainEXIT_CRITICAL();
+
+    if (xToNotify != NULL)
+    {
+        xTaskNotifyGive(xToNotify);          /* 临界区外 give, 迟到的通知会被下次 drain 吃掉 */
+        return 1;
+    }
+    return 0;
+}
+
+
+/***********************************************************************************************************************
+ * 函数功能    : 等待回复
+ * 说明(备注)  : 仅当收到的回复命令字与期望匹配时才唤醒
+ * 传入参数    : proto: 协议发送结构体, uc_cmd: 发送的请求命令字, timeout_ms: 超时时间(ms)
+ * 输出参数    : 无
+ * 返回值      : 小于0:校验失败/超时   等于0:未回复    大于0:回复成功
+ ************************************************************************************************************************/
+s8 cBaiku_WaitReply(BaikuProtoTx_t* proto, u8 uc_cmd, u16 timeout_ms)
+{
+    if (proto == NULL)
+        return -2;
+
+    s8 result = 0;
+
+    /* 仅在真正发起等待时激活事务状态机并绑定当前任务 */
+    proto->xTaskToNotify = xTaskGetCurrentTaskHandle();
+    proto->ucWaitCmd     = (uc_cmd == baikuCMD_GET_PARAM) ? baikuCMD_REPLY_PARAM : (uc_cmd + 1);
+    proto->cAckResult    = 0;
+    proto->bWaitAck      = true;
+    
+    TickType_t xStartTick = xTaskGetTickCount();
+	const TickType_t xWaitTicks = pdMS_TO_TICKS(timeout_ms);
+
+	/* 循环等待：只有收到匹配的应答(bWaitAck清除)或真正超时才退出，免疫任务队列调度通知等外部干扰 */
+	while (proto->bWaitAck)
+	{
+		TickType_t xElapsed = xTaskGetTickCount() - xStartTick;
+		if (xElapsed >= xWaitTicks)
+			break;
+
+		ulTaskNotifyTake(pdTRUE, xWaitTicks - xElapsed);
+	}
+
+	/* 等待回复超时 */
+	if (proto->bWaitAck)
+		result = -1;
+	else 
+	{
+		/* 应答成功*/
+		if (proto->cAckResult > 0)
+			result = 1;
+		
+		/* 应答帧校验失败*/
+		else if (proto->cAckResult < 0)
+			result = -2;
+		
+		/* 应答失败*/
+		else
+			result = -3;
+	}
+
+	proto->bWaitAck      = false;
+	proto->xTaskToNotify = NULL;
+	proto->cAckResult    = 0;
+	proto->ucWaitCmd     = 0;
+    return result;
+}
+#endif  /* boardUSE_OS */
 
 
 /***********************************************************************************************************************

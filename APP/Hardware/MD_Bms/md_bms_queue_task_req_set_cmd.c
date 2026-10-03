@@ -57,8 +57,7 @@ void v_bms_queue_task_req_set_cmd(Task_T *p_task)
         case 1:
         {
             /* 等待1S */
-            p_task->usStepWaitCnt++;
-            if (p_task->usStepWaitCnt < (1000 / bmsTASK_SET_CMD_CYCLE_TIME))
+            if (bQueue_IsStepTimeoutMs(p_task, 1000) == false)
                 break;
             
             if (c_bms_cs_sys_set(&s_t_sys_set_param) > 0)
@@ -82,8 +81,7 @@ void v_bms_queue_task_req_set_cmd(Task_T *p_task)
         break;
     }
     
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > (5000 / bmsTASK_SET_CMD_CYCLE_TIME))  /* 等待超时 */
+    if (bQueue_IsTaskTimeoutMs(p_task, 5000))  /* 等待超时 */
     {
         cQueue_GotoStep(p_task, STEP_END);              /* 结束 */
         if (uPrint.tFlag.bBmsTask || uPrint.tFlag.bImportant)

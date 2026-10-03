@@ -65,14 +65,14 @@ bool bBms_IsRunLogBusy(void)
 void v_bms_queue_task_run_log(Task_T *p_task)
 {
     uint16_t us_param = p_task->usInParam;
-    uint16_t us_timeout_limit = (5000 / bmsTASK_RUN_LOG_CYCLE_TIME); /* 默认 5S 超时 */
+    uint16_t us_timeout_ms = 5000; /* 默认 5S 超时 */
 
     /* 0xB8 重置需要擦除 EEPROM (3~4S), 超时放宽至 10S */
     if (p_task->ucID == BTI_RESET_RUN_LOG)
-        us_timeout_limit = (10000 / bmsTASK_RUN_LOG_CYCLE_TIME);
+        us_timeout_ms = 10000;
     /* 0xB4 获取多条日志传输耗时较长 (最多1113条*15ms≈17S), 单帧超时保护放宽至 30S */
     else if (p_task->ucID == BTI_GET_RUN_LOG)
-        us_timeout_limit = (30000 / bmsTASK_RUN_LOG_CYCLE_TIME);
+        us_timeout_ms = 30000;
 
     switch (p_task->ucStep)
     {
@@ -119,8 +119,7 @@ void v_bms_queue_task_run_log(Task_T *p_task)
         break;
     }
 
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > us_timeout_limit)
+    if (bQueue_IsTaskTimeoutMs(p_task, us_timeout_ms))
     {
         if (uPrint.tFlag.bBmsTask)
             log_w("bBmsTask: 日志任务等待超时, ID=%d, 步骤=%d", p_task->ucID, p_task->ucStep);

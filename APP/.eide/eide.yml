@@ -242,7 +242,6 @@ virtualFolder:
         - path: Hardware/Dc/dc_queue_task_work.c
         - path: Hardware/Dc/dc_queue_task_closing.c
         - path: Hardware/Dc/dc_queue_task_err.c
-        - path: Hardware/Dc/dc_queue_task_prot.c
         - path: Hardware/Dc/dc_queue_task_shut_down.c
         - path: Hardware/Dc/dc_iface.c
         - path: Hardware/Dc/dc_iface.h
@@ -278,8 +277,6 @@ virtualFolder:
         - path: Hardware/MD_Display/md_display_api.h
         - path: Hardware/MD_Display/md_display_data.c
         - path: Hardware/MD_Display/md_display_data.h
-        - path: Hardware/MD_Display/md_display_eng_mode.c
-        - path: Hardware/MD_Display/md_display_eng_mode.h
         - path: Hardware/MD_Display/md_display_err.c
         - path: Hardware/MD_Display/md_display_iface.c
         - path: Hardware/MD_Display/md_display_iface.h

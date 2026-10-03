@@ -328,7 +328,7 @@ static s8 c_bms_data_trans(uint8_t uc_cmd, uint8_t *p_data, uint8_t uc_len)
         {
             /* 等待任务通知,等待时间为 400ms */
             #if (boardUSE_OS)
-            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(bmsWAIT_NOTIFY_OUTTIME)) <= 0)
+            if (cBaiku_WaitReply(tpBmsProtoTx, uc_cmd, bmsWAIT_NOTIFY_OUTTIME) <= 0)
             {
                 if (uPrint.tFlag.bBmsTask)
                     log_w("bBmsTask:等待指令0x%x回复超时", uc_cmd);

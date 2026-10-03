@@ -59,7 +59,7 @@ void v_sys_queue_task_err(Task_T *p_task)
 			#if (boardKEY_EN)
 			//按键按下即可重置
 			if (bKey_IsAnyPress() == true)
-				p_task->usStepWaitCnt = 0;
+				vQueue_RefreshStepTick(p_task);
 			#endif  //boardKEY_EN
 
 			//存在充电或者错误清除
@@ -72,19 +72,14 @@ void v_sys_queue_task_err(Task_T *p_task)
 			//倒计时退出
 			if ((tSysInfo.uErrCode.tCode.bUV == 1) || (tSysInfo.uErrCode.tCode.b0SOC == 1))
 			{
-				p_task->usStepWaitCnt++;
-				if (p_task->usStepWaitCnt >= (10000 / sysTASK_ERR_CYCLE_TIME))
+				if (bQueue_IsStepTimeoutMs(p_task, 10000))
 				{
-					p_task->usStepWaitCnt = 0;
 					bSys_SetDevState(DS_SHUT_DOWN, true);
 					cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
 				}
 			}
 			else
-			{
-				p_task->usStepWaitCnt = 0;
 				cQueue_GotoStep(p_task, STEP_NEXT);  //下一步
-			}
 		}break;
 
 		//************************************步骤2:进入关机**************************************************
@@ -128,8 +123,7 @@ void v_sys_queue_task_err(Task_T *p_task)
 	}
 
 	//等待60S,超时退出
-	p_task->usTaskWaitCnt++;
-	if ((p_task->usTaskWaitCnt > (60000 / sysTASK_ERR_CYCLE_TIME)) && (p_task->ucStep != STEP_END))
+	if (bQueue_IsTaskTimeoutMs(p_task, 60 * 1000) && (p_task->ucStep != STEP_END))
 	{
 		bSys_SetDevState(DS_SHUT_DOWN, false);
 

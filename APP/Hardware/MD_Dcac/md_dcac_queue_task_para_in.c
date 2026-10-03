@@ -86,8 +86,7 @@ void v_dcac_queue_task_para_in(Task_T *p_task)
 		break;
 	}
 
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (3000 / dcacTASK_PARA_IN_CYCLE_TIME))  /* 等待超时 */
+	if (bQueue_IsTaskTimeoutMs(p_task, 3000))  /* 等待超时 */
 	{
 loop_para_in_end:
 		b_dcac_cs_set_para_in_pwr(0);

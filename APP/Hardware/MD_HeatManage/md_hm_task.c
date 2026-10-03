@@ -24,13 +24,14 @@
 #include "task.h"
 #endif  /* boardUSE_OS */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			HM_TASK_PRIO							1		/* 任务优先级 */
 #define			HM_TASK_STK_SIZE						128		/* 任务堆栈 (512B，达到 configMINIMAL_STACK_SIZE 防溢出标准) */
-static TaskHandle_t tHeatManageHandler = NULL;
-void vHM_Task(void *pvParameters);
+static TaskHandle_t s_t_hm_task_handler = NULL;					/* 任务句柄 */
+void vHM_Task(void *pvParameters);								/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 HM_T tHM;
@@ -60,7 +61,7 @@ s8 cHM_TaskInit(void)
 	                (uint16_t       )HM_TASK_STK_SIZE,
 	                (void*          )NULL,
 	                (UBaseType_t    )HM_TASK_PRIO,
-	                (TaskHandle_t*  )&tHeatManageHandler) != pdPASS)
+	                (TaskHandle_t*  )&s_t_hm_task_handler) != pdPASS)
 		return -1;
 	#endif  /* boardUSE_OS */
 
@@ -280,8 +281,8 @@ void vFan_ForceOpenFan(bool en)
 void vFan_EnterLowPower(void)
 {
 	vFan_IoEnterLowPower();
-	if (tHeatManageHandler != NULL)
-		vTaskSuspend(tHeatManageHandler);
+	if (s_t_hm_task_handler != NULL)
+		vTaskSuspend(s_t_hm_task_handler);
 }
 
 /***********************************************************************************************************************
@@ -294,7 +295,7 @@ void vFan_EnterLowPower(void)
 void vFan_ExitLowPower(void)
 {
 	vFan_IfaceInit();
-	if (tHeatManageHandler != NULL)
-		vTaskResume(tHeatManageHandler);
+	if (s_t_hm_task_handler != NULL)
+		vTaskResume(s_t_hm_task_handler);
 }
 #endif  /* boardLOW_POWER */

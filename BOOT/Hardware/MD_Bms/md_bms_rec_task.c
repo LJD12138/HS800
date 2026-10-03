@@ -28,18 +28,16 @@
 #include "Buz/buz_task.h"
 #endif  /* boardBUZ_EN */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			bmsREC_TASK_PRIO						3		/* 任务优先级(通信接收层:保障数据新鲜度) */
-#define			bmsREC_TASK_SIZE						256		/* 任务堆栈大小 (字) */
+#define			bmsREC_TASK_SIZE						256		/* 任务堆栈(字) */
+TaskHandle_t 	tBmsRecTaskHandle = NULL;						/* 任务句柄 */
+void 			vBms_RecTask(void *pvParameters);				/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
-#if (boardUSE_OS)
-TaskHandle_t tBmsRecTaskHandle;
-void vBms_RecTask(void *pvParameters);
-#endif  /* boardUSE_OS */
-
 /* BMS 接收全局运行对象 (4 字节自然对齐) */
 __ALIGNED(4) BmsRx_T tBmsRx;
 vu32 ulBmsRxErrCode = 0;

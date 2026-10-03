@@ -86,8 +86,6 @@ typedef struct
 	vu16				usInVolt;			/* 0.1V */
 	vu16				usInCurr;			/* 0.1A */
 	vu16				usOutPwr;			/* W */
-	vu16				usWcPwr;			/* 无线充功率 (W) */
-	vu16				usPdPwr;			/* PD快充功率 (W) */
 	vs16				sMaxTemp;			/* 摄氏度 */
 }Usb_T;
 

@@ -508,7 +508,7 @@ static bool energy_ring_get_seg_area(const EnergyRing_T *tp_ring, u16 us_seg_ind
     u16 us_angle_index;
     u16 us_angles[7];
     u8 uc_angle_count;
-    u8 uc_index;
+    u8 s_uca_index;
 
     if((tp_ring == NULL) || (tp_ring->pObj == NULL) || (tp_area == NULL))
         return false;
@@ -559,10 +559,10 @@ static bool energy_ring_get_seg_area(const EnergyRing_T *tp_ring, u16 us_seg_ind
     t_y = (lv_coord_t)(t_center.y + energy_ring_q15_mul_round(t_outer_radius, sl_sin, 0U));
     lv_area_set(tp_area, t_x, t_y, t_x, t_y);
 
-    for(uc_index = 0U; uc_index < uc_angle_count; uc_index++)
+    for(s_uca_index = 0U; s_uca_index < uc_angle_count; s_uca_index++)
     {
-        sl_cos = lv_trigo_cos((int16_t)us_angles[uc_index]);
-        sl_sin = lv_trigo_sin((int16_t)us_angles[uc_index]);
+        sl_cos = lv_trigo_cos((int16_t)us_angles[s_uca_index]);
+        sl_sin = lv_trigo_sin((int16_t)us_angles[s_uca_index]);
 
         t_x = (lv_coord_t)(t_center.x + energy_ring_q15_mul_round(t_outer_radius, sl_cos, 0U));
         t_y = (lv_coord_t)(t_center.y + energy_ring_q15_mul_round(t_outer_radius, sl_sin, 0U));

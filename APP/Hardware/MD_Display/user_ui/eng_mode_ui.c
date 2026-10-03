@@ -29,7 +29,6 @@
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
-#include "MD_Display/md_display_eng_mode.h"
 #include "MD_Display/eez_ui/fonts.h"
 #include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/eez_ui/ui.h"
@@ -673,8 +672,8 @@ static void v_pv_update_data(void)
             snprintf(buf_r, sizeof(buf_r), "%uW", tUsb.usOutPwr);
             v_pv_set_row(2, buf_l, buf_r, ul_accent);
 
-            snprintf(buf_l, sizeof(buf_l), "WcPwr/PdPwr");
-            snprintf(buf_r, sizeof(buf_r), "%uW/%uW", tUsb.usWcPwr, tUsb.usPdPwr);
+            snprintf(buf_l, sizeof(buf_l), "WcPwr/QcPwr");
+            snprintf(buf_r, sizeof(buf_r), "%uW/%uW", usWcPwr, usQcPwr);
             v_pv_set_row(3, buf_l, buf_r, ul_accent);
 
             snprintf(buf_l, sizeof(buf_l), "MaxTemp");

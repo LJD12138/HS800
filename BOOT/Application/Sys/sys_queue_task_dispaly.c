@@ -29,39 +29,39 @@
 /***********************************************************************************************************************
  * 函数功能    : 系统显示队列任务函数
  * 说明(备注)  : 驱动显示模式步骤
- * 传入参数    : tp_task: 队列任务控制块指针
+ * 传入参数    : p_task: 队列任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_sys_queue_task_disp(Task_T *tp_task)
+void v_sys_queue_task_disp(Task_T *p_task)
 {
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
-            cQueue_GotoStep(tp_task, STEP_NEXT);
+            cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
         case 1:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
 
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
     }
 
     /* 步骤超时保护 */
-    if (bQueue_IsStepTimeout(tp_task, (10000 / sysTASK_CYCLE_TIME)) && tp_task->ucStep != STEP_END)
+    if (bQueue_IsStepTimeout(p_task, (10000 / sysTASK_CYCLE_TIME)) && p_task->ucStep != STEP_END)
     {
         if (uPrint.tFlag.bSysTask)
             log_w("bSysTask:显示任务等待超时,退出");
-        cQueue_GotoStep(tp_task, STEP_END);
+        cQueue_GotoStep(p_task, STEP_END);
     }
 }
 

@@ -34,11 +34,11 @@ static void v_set_total_chg_pwr(void);
 /***********************************************************************************************************************
  * 函数功能    : MPPT 主轮询队列任务函数
  * 说明(备注)  : 周期查询 MPPT 参数并下发功率
- * 传入参数    : tp_task: 队列任务指针
+ * 传入参数    : p_task: 队列任务指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_mppt_queue_task_main(Task_T *tp_task)
+void v_mppt_queue_task_main(Task_T *p_task)
 {
     s8 result = 0;
 
@@ -47,19 +47,19 @@ void v_mppt_queue_task_main(Task_T *tp_task)
         cMppt_SetChgPwr(0);
 
     /* 队列中有高优先级任务则退出主轮询 */
-    if (lwrb_get_full(&tp_task->tQueueBuff))
+    if (lwrb_get_full(&p_task->tQueueBuff))
     {
-        cQueue_GotoStep(tp_task, STEP_END);
+        cQueue_GotoStep(p_task, STEP_END);
         return;
     }
 
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
             result = c_mppt_cs_get_param();
             if (result > 0)
-                cQueue_GotoStep(tp_task, STEP_NEXT);
+                cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
 
@@ -68,13 +68,13 @@ void v_mppt_queue_task_main(Task_T *tp_task)
             v_proc_rec_param();
             v_check_chg_perm();
             v_set_total_chg_pwr();
-            cQueue_GotoStep(tp_task, 0);
+            cQueue_GotoStep(p_task, 0);
         }
         break;
 
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);
+            cQueue_GotoStep(p_task, STEP_END);
         }
         break;
     }

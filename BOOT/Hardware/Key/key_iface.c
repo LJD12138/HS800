@@ -21,12 +21,22 @@
 #include "Adc/adc_task.h"
 #endif  /* boardADC_EN */
 
+//****************************************************Macros********************************************************************//
+#if (boardIC_TYPE == boardIC_GD32F50X)
+#define			KEY_MODE_FLOATING						GPIO_PUPD_NONE
+#define			KEY_MODE_PULLUP							GPIO_PUPD_PULLUP
+#else
+#define			KEY_MODE_FLOATING						GPIO_MODE_IN_FLOATING
+#define			KEY_MODE_PULLUP							GPIO_MODE_IPU
+#endif  /* boardIC_TYPE == boardIC_GD32F50X */
+
 //****************************************************Parameter Initialization**************************************************//
 typedef struct
 {
 	rcu_periph_enum		rcu;				/* 外设时钟 */
 	uint32_t			gpio;				/* GPIO 端口 */
 	uint32_t			pin;				/* GPIO 引脚 */
+	uint32_t			mode;				/* GPIO 模式 */
 	bool				bPressHigh;			/* 按下有效电平: true=高电平按下(浮空Power), false=低电平按下(上拉) */
 	const char			*pName;				/* 按键调试名称 */
 }KeyCfgGpio_T;
@@ -38,6 +48,7 @@ static const KeyCfgGpio_T s_t_key_hw_config[keyNUM] =
 		.rcu        = RCU_GPIOC,
 		.gpio       = GPIOC,
 		.pin        = GPIO_PIN_9,
+		.mode       = KEY_MODE_FLOATING,
 		.bPressHigh = true,
 		.pName      = "Power",
 	},
@@ -47,6 +58,7 @@ static const KeyCfgGpio_T s_t_key_hw_config[keyNUM] =
 		.rcu        = RCU_GPIOC,
 		.gpio       = GPIOC,
 		.pin        = GPIO_PIN_2,
+		.mode       = KEY_MODE_PULLUP,
 		.bPressHigh = false,
 		.pName      = "AC",
 	},
@@ -57,6 +69,7 @@ static const KeyCfgGpio_T s_t_key_hw_config[keyNUM] =
 		.rcu        = RCU_GPIOA,
 		.gpio       = GPIOA,
 		.pin        = GPIO_PIN_11,
+		.mode       = KEY_MODE_PULLUP,
 		.bPressHigh = false,
 		.pName      = "Light",
 	},
@@ -67,6 +80,7 @@ static const KeyCfgGpio_T s_t_key_hw_config[keyNUM] =
 		.rcu        = RCU_GPIOB,
 		.gpio       = GPIOB,
 		.pin        = GPIO_PIN_4,
+		.mode       = KEY_MODE_PULLUP,
 		.bPressHigh = false,
 		.pName      = "USB",
 	},
@@ -77,6 +91,7 @@ static const KeyCfgGpio_T s_t_key_hw_config[keyNUM] =
 		.rcu        = RCU_GPIOB,
 		.gpio       = GPIOB,
 		.pin        = GPIO_PIN_12,
+		.mode       = KEY_MODE_PULLUP,
 		.bPressHigh = false,
 		.pName      = "DC",
 	},
@@ -107,15 +122,9 @@ void vKey_IfaceInit(void)
 		rcu_periph_clock_enable(s_t_key_hw_config[i].rcu);
 
 		#if (boardIC_TYPE == boardIC_GD32F50X)
-		if (i == keyPOWER)
-			gpio_mode_set(s_t_key_hw_config[i].gpio, GPIO_MODE_INPUT, GPIO_PUPD_NONE, s_t_key_hw_config[i].pin);
-		else
-			gpio_mode_set(s_t_key_hw_config[i].gpio, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, s_t_key_hw_config[i].pin);
+		gpio_mode_set(s_t_key_hw_config[i].gpio, GPIO_MODE_INPUT, s_t_key_hw_config[i].mode, s_t_key_hw_config[i].pin);
 		#else
-		if (i == keyPOWER)
-			gpio_init(s_t_key_hw_config[i].gpio, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_2MHZ, s_t_key_hw_config[i].pin);
-		else
-			gpio_init(s_t_key_hw_config[i].gpio, GPIO_MODE_IPU, GPIO_OSPEED_2MHZ, s_t_key_hw_config[i].pin);
+		gpio_init(s_t_key_hw_config[i].gpio, s_t_key_hw_config[i].mode, GPIO_OSPEED_2MHZ, s_t_key_hw_config[i].pin);
 		#endif  /* boardIC_TYPE == boardIC_GD32F50X */
 	}
 }
@@ -136,7 +145,7 @@ bool bKey_IsPressById(KeyId_E e_id)
 	#if (boardADC_EN)
 	/* Power 按键由 ADC 模块负责 */
 	if (uc_idx == keyPOWER)
-		return (usAdc_GetChannelValue(adcKEY_POWER) > 1000);
+		return (usAdc_GetChannelValue(adcKEY_POWER) > 200);
 	#endif  /* boardADC_EN */
 
 	bool b_pin_level = (gpio_input_bit_get(s_t_key_hw_config[uc_idx].gpio, s_t_key_hw_config[uc_idx].pin) != RESET);

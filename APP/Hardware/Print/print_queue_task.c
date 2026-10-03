@@ -24,8 +24,8 @@
 __ALIGNED(4) Task_T *tpPrintTask = NULL;  	//队列任务
 
 //****************************************************Function Declaration******************************************************//
-static bool b_task_manage_func_cb(Task_T *tp_task);
-static void v_add_task_return_func_cb(Task_T *tp_task, u8 num);
+static bool b_task_manage_func_cb(Task_T *p_task);
+static void v_add_task_return_func_cb(Task_T *p_task, u8 num);
 
 
 /***********************************************************************************************************************
@@ -51,47 +51,47 @@ bool bPrint_QueueInit(void)
 /***********************************************************************************************************************
  * 函数功能    : 装载任务回调函数
  * 说明(备注)  : 任务队列出队并匹配执行对应的子任务函数
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : true: 成功, false: 失败
  ************************************************************************************************************************/
-static bool b_task_manage_func_cb(Task_T *tp_task)
+static bool b_task_manage_func_cb(Task_T *p_task)
 {
 	TaskItem_T t_item;
 	
-	if (tp_task == NULL)
+	if (p_task == NULL)
 		return false;
 	
-	vQueue_ResetTaskState(tp_task);
+	vQueue_ResetTaskState(p_task);
 	
-	if (bQueue_PopTask(tp_task, &t_item))    
+	if (bQueue_PopTask(p_task, &t_item))    
     {
-        tp_task->ucID = t_item.ucId;
-		tp_task->usInParam = t_item.usParam;
+        p_task->ucID = t_item.ucId;
+		p_task->usInParam = t_item.usParam;
     }
     else
     {
-		tp_task->ucID = PTI_MAIN;
-		tp_task->usInParam = 0;
+		p_task->ucID = PTI_MAIN;
+		p_task->usInParam = 0;
     }
     
-    switch (tp_task->ucID)
+    switch (p_task->ucID)
     {
         case PTI_MAIN:
 		{
-			v_print_queue_task_main(tp_task);
+			v_print_queue_task_main(p_task);
 		}
         break; 
 
 		case PTI_REPLY_APP_INFO:
 		{
-            tp_task->vp_func = v_print_queue_task_reply_app_info;
+            p_task->vp_func = v_print_queue_task_reply_app_info;
 		}
 		break;
 		
 		case PTI_REPLY_CALI:
 		{
-            tp_task->vp_func = v_print_queue_task_reply_cali;
+            p_task->vp_func = v_print_queue_task_reply_cali;
 		}
 		break;
 
@@ -100,7 +100,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 		case PTI_REPLY_RUN_LOG_SLOT:
 		case PTI_REPLY_RESET_RUN_LOG:
 		{
-			tp_task->vp_func = v_print_queue_task_reply_run_log;
+			p_task->vp_func = v_print_queue_task_reply_run_log;
 		}
 		break;
 		#endif  /* boardBMS_EN && boardRUN_LOG_EN */
@@ -108,15 +108,15 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 		#if (boardUPDATE)
 		case PTI_UPDATE:
 		{
-            tp_task->vp_func = v_print_queue_task_update;
+            p_task->vp_func = v_print_queue_task_update;
 		}
 		break;
 		#endif  /* boardUPDATE */
         
 		case PTI_NULL:
         default:
-            tp_task->vp_func = NULL;
-			tp_task->usInParam = 0;
+            p_task->vp_func = NULL;
+			p_task->usInParam = 0;
 			break;
     }
     
@@ -126,11 +126,11 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 添加任务返回函数回调
  * 说明(备注)  : none
- * 传入参数    : tp_task: 任务结构体指针, num: 事件类型编号
+ * 传入参数    : p_task: 任务结构体指针, num: 事件类型编号
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-static void v_add_task_return_func_cb(Task_T *tp_task, u8 num)
+static void v_add_task_return_func_cb(Task_T *p_task, u8 num)
 {
 	switch (num)
 	{

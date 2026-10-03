@@ -30,21 +30,20 @@ static s8 c_mppt_info_init(void);
 /***********************************************************************************************************************
  * 函数功能    : 任务函数:初始化
  * 说明(备注)  : 等待系统初始化完成并载入MPPT记忆参数
- * 传入参数    : tp_task: 队列任务指针
+ * 传入参数    : p_task: 队列任务指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_mppt_queue_task_init(Task_T *tp_task)
+void v_mppt_queue_task_init(Task_T *p_task)
 {
     s8 c_ret = 0;
 
-    switch (tp_task->ucStep)
+    switch (p_task->ucStep)
     {
         case 0:
         {
-            tp_task->usTaskWaitCnt = 0;
             if (tSysInfo.uInit.tFinish.bIF_DcacTask)
-                cQueue_GotoStep(tp_task, STEP_NEXT);  /* 下一步 */
+                cQueue_GotoStep(p_task, STEP_NEXT);  /* 下一步 */
             else
                 break;
         }
@@ -74,31 +73,30 @@ void v_mppt_queue_task_init(Task_T *tp_task)
                 }
                 break;
             }
-            cQueue_GotoStep(tp_task, STEP_NEXT);
+            cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;
     
         case 2:
             tSysInfo.uInit.tFinish.bIF_MpptTask = true;
             bMppt_SetDevState(DS_SHUT_DOWN);
-            cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+            cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
             return;
             
         default:
         {
-            cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+            cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
         }
         break;
     }
     
     /* 等待超时 */
-    tp_task->usTaskWaitCnt++;
-    if (tp_task->usTaskWaitCnt > (3000 / mpptTASK_INIT_CYCLE_TIME)) 
+    if (bQueue_IsTaskTimeoutMs(p_task, 3000))
     {
-        if (uPrint.tFlag.bMpptTask || uPrint.tFlag.bImportant)
-            log_w("bMpptTask:初始化任务等待超时,步骤%d", tp_task->ucStep);
+        if (uPrint.tFlag.bMpptTask)
+            log_w("bMpptTask:初始化任务等待超时,步骤%d", p_task->ucStep);
         
-        cQueue_GotoStep(tp_task, STEP_END);  /* 结束 */
+        cQueue_GotoStep(p_task, STEP_END);  /* 结束 */
     }
     
     #if (boardUSE_OS)

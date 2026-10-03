@@ -24,8 +24,8 @@ extern "C" {
 
 #if (boardHEALTH_MONITOR_EN)
 //****************************************************Extern********************************************************************//
-void vQueue_UpdatePeak(Task_T *tp_task);
-void vQueue_TelAttach(Task_T *tp_task);
+void vQueue_UpdatePeak(Task_T *p_task);
+void vQueue_TelAttach(Task_T *p_task);
 #endif  /* boardHEALTH_MONITOR_EN */
 
 #ifdef __cplusplus

@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\Adc
  * File    : adc_iface.h
- * Date    : 2026-09-21
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : ADC硬件驱动底层接口定义头文件
  * -------------------------------------------------------
@@ -12,8 +12,8 @@
  * Copyright (c) 2026 -inc
  ************************************************************************************************************************/
 
-#ifndef ADC_IFACE_H
-#define ADC_IFACE_H
+#ifndef ADC_IFACE_H_
+#define ADC_IFACE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,4 +79,4 @@ void vAdc_IoEnterLowPower(void);
 }
 #endif  /* __cplusplus */
 
-#endif  /* ADC_IFACE_H */
+#endif  /* ADC_IFACE_H_ */

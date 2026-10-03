@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif  //__cplusplus
+#endif  /* __cplusplus */
 
 //****************************************************Includes******************************************************************//
 #include "main.h"
@@ -33,11 +33,6 @@ typedef struct
 	uint8_t				wwdgt;				//窗口看门狗复位
 	uint8_t				low_power;			//低功耗复位
 }ResetReason_T;
-typedef ResetReason_T reset_reason_t;
-
-//****************************************************Globals*******************************************************************//
-extern ResetReason_T G_tResetReason;
-#define			g_reset_reason							G_tResetReason
 
 //****************************************************Extern********************************************************************//
 void vFwdgt_Init(void);
@@ -47,10 +42,10 @@ void vFwdgt_ExitLowPower(void);
 void vResetReason_Capture(void);
 void vFwdgt_PrintResetReason(void);
 
-#endif  //boardWDGT_EN
+#endif  /* boardWDGT_EN */
 
 #ifdef __cplusplus
 }
-#endif  //__cplusplus
+#endif  /* __cplusplus */
 
 #endif  /* FWDGT_H_ */

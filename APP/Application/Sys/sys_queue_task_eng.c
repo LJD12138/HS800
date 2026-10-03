@@ -29,11 +29,6 @@
 
 #include "app_info.h"
 
-#if (boardDISPLAY_EN)
-#include "MD_Display/md_display_task.h"
-#include "MD_Display/md_display_eng_mode.h"
-#endif  /* boardDISPLAY_EN */
-
 #if (boardBMS_EN)
 #include "MD_Bms/md_bms_task.h"
 #endif  /* boardBMS_EN */
@@ -74,13 +69,13 @@ static void v_sys_eng_shutdown(Task_T *p_task)
 /***********************************************************************************************************************
  * 函数功能    : 工程模式系统队列任务执行函数
  * 说明(备注)  : 周期维护超时退出与工程步骤状态机推进
- * 传入参数    : tp_task: 队列任务指针
+ * 传入参数    : p_task: 队列任务指针
  * 输出参数    : 无
  * 返回值      : void
  ************************************************************************************************************************/
-void v_sys_queue_task_eng(Task_T *tp_task)
+void v_sys_queue_task_eng(Task_T *p_task)
 {
-	switch (tp_task->ucStep)
+	switch (p_task->ucStep)
 	{
 		case EMS_INIT:
 		{
@@ -109,7 +104,7 @@ void v_sys_queue_task_eng(Task_T *tp_task)
 		{
 			if (tEngMode.cEngModeState == 1)
 			{
-				v_sys_eng_shutdown(tp_task);
+				v_sys_eng_shutdown(p_task);
 				return;
 			}
 		}
@@ -121,11 +116,10 @@ void v_sys_queue_task_eng(Task_T *tp_task)
 		break;
 	}
 
-	/* 超时检测: 60秒无操作自动关机(显示任务另有独立超时, 此为双重防护) */
-	tp_task->usTaskWaitCnt++;
-	if (tp_task->usTaskWaitCnt > (60000 / sysTASK_ENG_CYCLE_TIME))
+	/* 超时检测: 60秒无操作自动关机(超时保护统一由系统任务管理) */
+	if (bQueue_IsTaskTimeoutMs(p_task, 60 * 1000))
 	{
-		v_sys_eng_shutdown(tp_task);
+		v_sys_eng_shutdown(p_task);
 		return;
 	}
 
@@ -134,17 +128,14 @@ void v_sys_queue_task_eng(Task_T *tp_task)
 
 /***********************************************************************************************************************
  * 函数功能    : 刷新工程模式等待超时时间
- * 说明(备注)  : 重置系统主任务与显示任务的无操作超时计数器
+ * 说明(备注)  : 重置系统主任务的无操作超时时间戳(超时保护统一由系统任务管理)
  * 传入参数    : 无
  * 输出参数    : 无
  * 返回值      : void
  ************************************************************************************************************************/
 void vEng_RefreshEngModeTime(void)
 {
-	tpSysTask->usTaskWaitCnt = 0;
-	#if (boardDISPLAY_EN)
-	vDisp_EngModeResetTimeout();
-	#endif  /* boardDISPLAY_EN */
+	vQueue_RefreshTaskTick(tpSysTask);
 }
 
 
@@ -195,7 +186,7 @@ void vEng_AdjustParam(uint8_t uc_tab, uint8_t uc_item, bool b_add)
 		#if (boardDISPLAY_EN)
 		case 1: /* LCD */
 		{
-			vDisp_MemParamSet(b_add);
+			vDisp_MemParamSet(uc_item, b_add);
 			tEngMode.cEngModeState = b_add ? 1 : -1;
 		}break;
 		#endif  /* boardDISPLAY_EN */

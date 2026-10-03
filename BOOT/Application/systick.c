@@ -41,6 +41,10 @@ __IO bool bSysTick_BmsSendFinish = false;
 __IO bool bSysTick_PrintSendFinish = false;
 #endif  /* boardPRINT_485_IFACE_EN */
 
+#if (boardPRINT_IFACE == 7)
+#include "Print/print_usb_iface.h"
+#endif  /* boardPRINT_IFACE == 7 */
+
 //****************************************************Macros********************************************************************//
 
 //****************************************************Parameter Initialization**************************************************//
@@ -101,6 +105,10 @@ void vSys_Tick(void)
 {
     if (0U != delay)
         delay--;
+	
+#if (boardPRINT_IFACE == 7)
+    vUsbCdc_Tick();
+#endif  /* boardPRINT_IFACE == 7 */
 	
 	#if (boardBMS_485_IFACE_EN)
 	static vu16 cnt = 0;

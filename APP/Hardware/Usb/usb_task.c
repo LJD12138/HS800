@@ -33,20 +33,20 @@
 #include "Adc/adc_task.h"
 #endif  /* boardADC_EN */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			USB_TASK_PRIO							1		/* 任务优先级 */
-#define			USB_TASK_SIZE							256		/* 任务堆栈大小 */
-TaskHandle_t tUsbTaskHandler = NULL;
-void vUsb_Task(void *p_v_parameters);
+#define			USB_TASK_SIZE							256		/* 任务堆栈(字) */
+TaskHandle_t tUsbTaskHandler = NULL;							/* 任务句柄 */
+void vUsb_Task(void *p_v_parameters);							/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) Usb_T tUsb;
 vu16 usQcPwr = 0;
 vu16 usWcPwr = 0;
 
-//****************************************************Parameter Initialization**************************************************//
 /* USB 记忆参数步进配置表 */
 typedef struct
 {
@@ -66,7 +66,7 @@ static const UsbParamStep_T s_t_usb_param_table[] =
 };
 
 //****************************************************Parameter Initialization**************************************************//
-static Task_T *s_tp_task = NULL;
+static Task_T *s_p_task = NULL;
 
 //****************************************************Function Declaration******************************************************//
 static bool b_task_param_init(void);
@@ -88,7 +88,7 @@ static bool b_task_param_init(void)
 
 	memset((u8*)&tUsb, 0, sizeof(tUsb));
 	tUsb.usAutoOffTime = tAppMemParam.tUSB.usAutoOffTime;
-	s_tp_task          = tpUsbTask;
+	s_p_task          = tpUsbTask;
 
 	return true;
 }
@@ -138,7 +138,7 @@ void vUsb_Task(void *p_v_parameters)
 	for (;;)
 	#endif  /* boardUSE_OS */
 	{
-		if (s_tp_task == NULL)
+		if (s_p_task == NULL)
 		{
 			b_task_param_init();
 
@@ -153,11 +153,11 @@ void vUsb_Task(void *p_v_parameters)
 		v_usb_param_update();
 		v_usb_check_prote();
 
-		vQueue_TaskPoll(s_tp_task, usbTASK_CYCLE_TIME);
+		vQueue_TaskPoll(s_p_task, usbTASK_CYCLE_TIME);
 
 		#if (boardUSE_OS)
 		/* 队列空才按周期休眠；有排队任务时跳过休眠立即调度，投递→执行延迟 <1ms */
-		if (bQueue_IsQueueEmpty(s_tp_task))
+		if (bQueue_IsQueueEmpty(s_p_task))
 			ulTaskNotifyTake(pdTRUE, usbTASK_CYCLE_TIME);
 		#endif  /* boardUSE_OS */
 	}
@@ -170,7 +170,7 @@ void vUsb_Task(void *p_v_parameters)
  * 传入参数    : 无
  * 输出参数    : 无
  * 返回值      : 无
- ************************************************************************************************************************/
+ ***********************************************************************************************************************/
 static void v_usb_check_prote(void)
 {
 	static u8   s_uc_pwr_err_cnt       = 0;
@@ -186,7 +186,7 @@ static void v_usb_check_prote(void)
 			cUsb_Switch(ST_OFF, true);
 	}
 
-	if(tUsb.eDevState != DS_WORK && tUsb.eDevState != DS_ERR)
+	if (tUsb.eDevState != DS_WORK && tUsb.eDevState != DS_ERR)
 		return;
 
 	/* 输入电源电压检查 */
@@ -295,15 +295,15 @@ static void v_usb_param_update(void)
 	tUsb.usInVolt = tAdcSamp.usSysInVolt;//0.1V
 	
 	if(tUsb.eDevState == DS_WORK)
+	{
 		tUsb.usInCurr = 0;//0.1A
-		// tUsb.usPdPwr = tAdcSamp.fUsbPdCurr * tAdcSamp.usUsbPdVolt / 10;//W
-		// tUsb.usWcPwr = tAdcSamp.fUsbWcCurr * tAdcSamp.usUsbWcVolt / 10;//W
+	}
 	else
 	{
 		tUsb.usInCurr = 0;//0.1A
-		tUsb.usPdPwr = 0;//W
-		tUsb.usWcPwr = 0;//W
 		tUsb.usOutPwr = 0;//W
+		usQcPwr = 0;//W
+		usWcPwr = 0;//W
 	}
 }
 
@@ -400,17 +400,13 @@ s8 cUsb_Switch(SwitchType_E e_tri_type, bool b_fore_en)
 void bUsb_SetDevState(DevState_E e_stat)
 {
     tUsb.eDevState = e_stat;
-	
-	//启动和关闭都清除一次错误
-	if(e_stat == DS_BOOTING)
+
+	if (e_stat == DS_BOOTING)
 	{
 		// usbPOWER_EN_ON();
-		// usbPD_EN_ON();
-		// usbPD2_EN_ON();
-		// usbA_EN_ON();
-
 		usbPD_EN_ON();
 		usbPD2_EN_ON();
+		// usbA_EN_ON();
 		vUSB_ControlPorts(true);
 	}
 	else if(e_stat == DS_CLOSING)

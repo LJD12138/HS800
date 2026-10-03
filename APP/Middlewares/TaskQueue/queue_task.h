@@ -36,13 +36,13 @@ extern "C" {
 typedef struct Task_T Task_T;
 
 /* 任务调度管理函数指针 */
-typedef bool (*bpTaskManageFunc)(Task_T *tp_task);
+typedef bool (*bpTaskManageFunc)(Task_T *p_task);
 
 /* 任务执行函数指针 */
-typedef void (*vpFunc)(Task_T *tp_task);
+typedef void (*vpFunc)(Task_T *p_task);
 
 /* 任务队列事件及添加回调函数指针 */
-typedef void (*vpAddTaskReturnFunc)(Task_T *tp_task, u8 num);
+typedef void (*vpAddTaskReturnFunc)(Task_T *p_task, u8 num);
 
 /* 任务项数据结构（紧凑存储于环形队列中） */
 #pragma pack(push, 1)
@@ -81,6 +81,8 @@ struct Task_T
 	vpAddTaskReturnFunc	vp_return_func;			/* 事件回调函数 */
 	#if (boardUSE_OS)
 	TaskHandle_t		tTaskHandler;			/* 绑定的 FreeRTOS 任务句柄（用于中断或异步唤醒） */
+	uint32_t			ulTaskStartTick;		/* 任务装载起始时间戳（xTaskGetTickCount） */
+	uint32_t			ulStepStartTick;		/* 步骤进入起始时间戳（xTaskGetTickCount） */
 	#endif  /* boardUSE_OS */
 	lwrb_t				tQueueBuff;				/* 任务队列缓存器 */
 	lwrb_t				tReplyBuff;				/* 回复缓存器 */
@@ -102,24 +104,75 @@ TaskTelemetry_T *tpQueue_GetTelemetry(const Task_T *task);
 #endif  //boardHEALTH_MONITOR_EN
 
 /***********************************************************************************************************************
- * 函数功能    : 步骤等待超时判定
- * 说明(备注)  : 每次调用自动累加等待计数器，达到门限后清零计数器并返回超时
- * 传入参数    : task: 任务控制块指针; timeout_ticks: 超时门限（周期次数）
+ * 函数功能    : 步骤级物理时间超时判定
+ * 说明(备注)  : 基于真实 Tick 差值判断当前步骤耗时是否超过指定毫秒数；免疫任务通知异步唤醒与内部延时导致的计数失真
+ * 传入参数    : task: 任务控制块指针; timeout_ms: 超时门限（毫秒）
  * 输出参数    : 无
- * 返回值      : true: 已超时; false: 正在等待
+ * 返回值      : true: 已超时; false: 未超时（非 OS 构建恒为 false）
  ************************************************************************************************************************/
-__STATIC_INLINE bool bQueue_IsStepTimeout(Task_T *task, uint16_t timeout_ticks)
+__STATIC_INLINE bool bQueue_IsStepTimeoutMs(const Task_T *task, uint32_t timeout_ms)
 {
     if (task == NULL)
         return false;
-		
-    task->usStepWaitCnt++;
-    if (task->usStepWaitCnt >= timeout_ticks)
-    {
-        task->usStepWaitCnt = 0;
-        return true;
-    }
-    return false;
+
+    #if (boardUSE_OS)
+    return ((xTaskGetTickCount() - task->ulStepStartTick) >= pdMS_TO_TICKS(timeout_ms));
+    #else
+    return false;  /* 非 OS 构建无物理时基,不产生超时 */
+    #endif  /* boardUSE_OS */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 任务级物理时间超时判定
+ * 说明(备注)  : 基于真实 Tick 差值判断从任务装载至今总耗时是否超过指定毫秒数；免疫任务通知异步唤醒与内部延时导致的计数失真
+ * 传入参数    : task: 任务控制块指针; timeout_ms: 超时门限（毫秒）
+ * 输出参数    : 无
+ * 返回值      : true: 已超时; false: 未超时（非 OS 构建恒为 false）
+ ************************************************************************************************************************/
+__STATIC_INLINE bool bQueue_IsTaskTimeoutMs(const Task_T *task, uint32_t timeout_ms)
+{
+    if (task == NULL)
+        return false;
+
+    #if (boardUSE_OS)
+    return ((xTaskGetTickCount() - task->ulTaskStartTick) >= pdMS_TO_TICKS(timeout_ms));
+    #else
+    return false;  /* 非 OS 构建无物理时基,不产生超时 */
+    #endif  /* boardUSE_OS */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 手动刷新步骤起始时间戳
+ * 说明(备注)  : 用于步骤内事件（条件短暂不满足、按键重新按下等）需要从此刻重新计时的场景
+ * 传入参数    : task: 任务控制块指针
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+__STATIC_INLINE void vQueue_RefreshStepTick(Task_T *task)
+{
+    #if (boardUSE_OS)
+    if (task != NULL)
+        task->ulStepStartTick = xTaskGetTickCount();
+    #else
+    (void)task;
+    #endif  /* boardUSE_OS */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 手动刷新任务起始时间戳
+ * 说明(备注)  : 用于任务执行期间事件（用户操作、通信交互等）需要重置任务级总超时的场景（如无操作自动关机续命）
+ * 传入参数    : task: 任务控制块指针
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+__STATIC_INLINE void vQueue_RefreshTaskTick(Task_T *task)
+{
+    #if (boardUSE_OS)
+    if (task != NULL)
+        task->ulTaskStartTick = xTaskGetTickCount();
+    #else
+    (void)task;
+    #endif  /* boardUSE_OS */
 }
 
 /***********************************************************************************************************************
@@ -139,24 +192,8 @@ __STATIC_INLINE bool bQueue_IsStepRetryOver(Task_T *task, uint16_t max_retry)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 重置步骤等待与重试计数器
- * 说明(备注)  : 重置单步骤内的等待周期计数与重试次数计数
- * 传入参数    : task: 任务控制块指针
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-__STATIC_INLINE void vQueue_ResetStepCounters(Task_T *task)
-{
-    if (task != NULL)
-    {
-        task->usStepWaitCnt   = 0;
-        task->usStepRepeatCnt = 0;
-    }
-}
-
-/***********************************************************************************************************************
  * 函数功能    : 重置任务装载状态与步骤计数器
- * 说明(备注)  : 供各任务管理回调装载新任务前统一复位运行标志、步骤索引、任务等待计数及步骤等待/重试计数器
+ * 说明(备注)  : 供各任务管理回调装载新任务前统一复位运行标志、步骤索引、任务等待计数、步骤等待/重试计数器及双物理时间戳
  * 传入参数    : task: 任务控制块指针
  * 输出参数    : 无
  * 返回值      : 无
@@ -170,6 +207,12 @@ __STATIC_INLINE void vQueue_ResetTaskState(Task_T *task)
         task->usTaskWaitCnt   = 0;
         task->usStepWaitCnt   = 0;
         task->usStepRepeatCnt = 0;
+
+        #if (boardUSE_OS)
+        uint32_t ul_now = xTaskGetTickCount();
+        task->ulTaskStartTick = ul_now;
+        task->ulStepStartTick = ul_now;
+        #endif  /* boardUSE_OS */
     }
 }
 

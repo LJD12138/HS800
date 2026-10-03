@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\Dc
  * File    : dc_iface.h
- * Date    : 2026-09-20
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : DC 底层硬件接口驱动头文件
  * -------------------------------------------------------
@@ -30,6 +30,10 @@ extern "C" {
 #define			dcPOWER_EN_PIN							GPIO_PIN_4
 #define			dcPOWER_EN_ON()							GPIO_BOP(dcPOWER_EN_PORT) = (uint32_t)dcPOWER_EN_PIN
 #define			dcPOWER_EN_OFF()						GPIO_BC(dcPOWER_EN_PORT)  = (uint32_t)dcPOWER_EN_PIN
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
 void vDc_IfaceInit(void);

@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\Buz
  * File    : buz_iface.h
- * Date    : 2026-09-20
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : 蜂鸣器底层硬件驱动接口头文件
  * -------------------------------------------------------
@@ -34,9 +34,13 @@ extern "C" {
 #define    		buzTIMER_CH     						TIMER_CH_3
 #if (boardIC_TYPE == boardIC_GD32F50X)
 #define 		buzTIMER_AF                        		GPIO_AF_2
-#endif  //boardIC_TYPE
+#endif  /* boardIC_TYPE */
 
 #define    		buzTIMER_PWM_SET(x)    					TIMER_CH3CV(buzTIMER) = ((uint32_t)x)
+
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
 void vBuz_Init(void);

@@ -150,6 +150,8 @@ virtualFolder:
         - path: Hardware/Print/print_queue_task.c
         - path: Hardware/Print/print_queue_task.h
         - path: Hardware/Print/print_queue_task_main.c
+        - path: Hardware/Print/print_usb_iface.c
+        - path: Hardware/Print/print_usb_iface.h
       folders: []
     - name: HW-Flash
       files:
@@ -209,6 +211,13 @@ virtualFolder:
         - path: Hardware/MD_Display/user_ui/update_mode_ui.c
         - path: Hardware/MD_Display/user_ui/update_mode_ui.h
       folders: []
+    - name: MW-CherryUSB
+      files:
+        - path: Middlewares/CherryUSB/core/usbd_core.c
+        - path: Middlewares/CherryUSB/class/cdc/usbd_cdc_acm.c
+        - path: Middlewares/CherryUSB/port/dwc2/usb_dc_dwc2.c
+        - path: Middlewares/CherryUSB/port/dwc2/usb_glue_gd.c
+      folders: []
 dependenceList: []
 outDir: build
 miscInfo:
@@ -234,6 +243,11 @@ targets:
         - Middlewares/Protocol
         - Middlewares/TaskQueue
         - Middlewares/MultiFuncKey
+        - Middlewares/CherryUSB
+        - Middlewares/CherryUSB/common
+        - Middlewares/CherryUSB/core
+        - Middlewares/CherryUSB/class/cdc
+        - Middlewares/CherryUSB/port/dwc2
         - Hardware
         - .cmsis/include
         - RTE/_BOOT

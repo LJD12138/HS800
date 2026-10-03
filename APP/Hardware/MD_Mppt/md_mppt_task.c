@@ -34,17 +34,18 @@
 #include "Sys/sys_queue_task_update.h"
 #endif  /* boardUPDATE */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			MPPT_TASK_PRIO							3		/* 任务优先级(通信执行层) */
-#define			MPPT_TASK_SIZE							192		/* 任务堆栈大小 */
-TaskHandle_t tMpptTaskHandler = NULL;
-void         vMppt_Task(void *pvParameters);
+#define			MPPT_TASK_SIZE							192		/* 任务堆栈(字) */
+TaskHandle_t tMpptTaskHandler = NULL;							/* 任务句柄 */
+void         vMppt_Task(void *pvParameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) Mppt_T tMppt;
-static Task_T      *tp_task = NULL;
+static Task_T      *p_task = NULL;
 
 vu16 usDcInVolt = 0;//0.1V
 vu16 usXT60InVolt = 0;//0.1V
@@ -87,7 +88,7 @@ static bool b_mppt_task_param_init(void)
 
     memset(&tMppt, 0, sizeof(tMppt));
     lwrb_reset(&tpMpptTask->tQueueBuff);
-    tp_task = tpMpptTask;
+    p_task = tpMpptTask;
 
     return true;
 }
@@ -140,13 +141,13 @@ void vMppt_Task(void *pvParameters)
     for (;;)
     #endif  /* boardUSE_OS */
     {
-        if (tp_task == NULL
+        if (p_task == NULL
             #if (boardUPDATE)
             || (tSysInfo.eDevState == DS_UPDATE_MODE && tUpdate.eObj != MO_MPPT)
             #endif  /* boardUPDATE */
         )
         {
-            if (tp_task == NULL)
+            if (p_task == NULL)
                 b_mppt_task_param_init();
 
             #if (boardUSE_OS)
@@ -157,7 +158,7 @@ void vMppt_Task(void *pvParameters)
             #endif  /* boardUSE_OS */
         }
 
-        vQueue_TaskPoll(tp_task, mpptTASK_CYCLE_TIME);
+        vQueue_TaskPoll(p_task, mpptTASK_CYCLE_TIME);
     }
 }
 

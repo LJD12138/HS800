@@ -104,8 +104,7 @@ void v_usb_queue_task_init(Task_T *p_task)
 	}
 
 	/* 等待超时 */
-	p_task->usTaskWaitCnt++;
-	if (p_task->usTaskWaitCnt > (3000 / usbTASK_INIT_CYCLE_TIME))
+	if (bQueue_IsTaskTimeoutMs(p_task, 3000))
 	{
 		if (uPrint.tFlag.bUsbTask)
 			log_w("bUsbTask:初始化任务等待超时");

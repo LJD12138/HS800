@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\MD_Display
  * File    : md_display_iface.h
- * Date    : 2026-09-22
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : TFT 显示底层接口头文件：SPI 模式选择、引脚定义与屏幕尺寸等硬件抽象宏
  * -------------------------------------------------------
@@ -17,14 +17,14 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  /* __cplusplus */
 
 //****************************************************Includes******************************************************************//
 #include "main.h"
-#include "board_config.h"
 
-#if(boardDISPLAY_EN)
+#if (boardDISPLAY_EN)
 
+//****************************************************Macros********************************************************************//
 #define         dispTFT_SPI_MODE_SW                     0U
 #define         dispTFT_SPI_MODE_HW                     1U
 #ifndef         boardDISP_SPI_MODE
@@ -81,27 +81,32 @@ extern "C" {
 #define         dispTFT_SPI_SCK_AF                      GPIO_AF_1
 #define         dispTFT_SPI_SDA_AF                      GPIO_AF_0
 #define         dispTFT_SPI_DMA_REQUEST                 DMA_REQUEST_SPI1_TX
-#endif  //boardIC_TYPE
+#endif  /* boardIC_TYPE */
 
 #define         dispTFT_DMA_PERIPH                      DMA1
 #define         dispTFT_DMA_CH                          DMA_CH0
 #define         dispTFT_DMA_RCU                         RCU_DMA1
 #define     	dispTFT_DMA_TX_IRQ          			DMA1_Channel0_IRQn
 #define     	dispTFT_DMA_TX_IRQ_HANDLER  			DMA1_Channel0_IRQHandler
-#endif
+#endif  /* boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW */
 
+//****************************************************Globals*******************************************************************//
+
+//****************************************************Types*********************************************************************//
+
+//****************************************************Extern********************************************************************//
 void vDisp_IfaceInit(void);
 void vDisp_SpiSendByte(const u8 *data, u16 len);
-void vDisp_TftSetBacklight(bool on);
-void vDisp_TftWriteCommand(u8 cmd);
-void vDisp_TftWriteData8(u8 data);
-void vDisp_TftWriteData16(u16 data);
-void vDisp_TftWriteBuffer(const u8 *data, u32 len);
-bool bDisp_TftWriteColorAsync(const u8 *data, u32 len);
+void vDisp_SetBacklight(bool on);
+void vDisp_WriteCommand(u8 cmd);
+void vDisp_WriteData8(u8 data);
+void vDisp_WriteData16(u16 data);
+void vDisp_WriteBuffer(const u8 *data, u32 len);
+bool bDisp_WriteColorAsync(const u8 *data, u32 len);
 
-#endif  /*boardDISPLAY_EN*/
+#endif  /* boardDISPLAY_EN */
 #ifdef __cplusplus
 }
-#endif
+#endif  /* __cplusplus */
 
 #endif  /* MD_DISPLAY_IFACE_H_ */

@@ -60,16 +60,16 @@ struct DispPage_T
     /* 1. 进入页面回调: 初始化显存/加载 LVGL Screen/重置本地页面变量 */
 	void				(*vOnEnter)(void);
 
-    /* 2. 帧刷新回调: 周期调用(断码屏 500ms, TFT 33ms), 根据 Snapshot 渲染 */
-	void				(*vOnUpdate)(const DispDataSnapshot_T *p_data, bool b_force);
-
-    /* 3. 异步事件回调: 处理按键、告警; 返回 true 表示消费, false 表示透传框架默认处理 */
-	bool				(*bOnEvent)(DispEvent_E e_event, uint32_t ul_param);
-
-    /* 4. 退出页面回调: 清除特定标志/保存页面临时参数 */
+	/* 2. 退出页面回调: 清除特定标志/保存页面临时参数 */
 	void				(*vOnExit)(void);
 
-    /* 页面帧刷新周期 ms: 0=使用框架默认 dispREFRESH_TIME_MS; 低于下限时钳位到 dispFRAME_PERIOD_MIN_MS */
+    /* 3. 帧刷新回调: 周期调用(断码屏 500ms, TFT 33ms), 根据 Snapshot 渲染 */
+	void				(*vOnUpdate)(const DispDataSnapshot_T *p_data, bool b_force);
+
+    /* 4. 异步事件回调: 处理按键、告警; 返回 true 表示消费, false 表示透传框架默认处理 */
+	bool				(*bOnEvent)(DispEvent_E e_event, uint32_t ul_param);
+
+    /* 页面帧刷新周期 ms: 0=使用框架默认 boardDISP_REFRESH_TIME; 低于下限时钳位到 dispFRAME_PERIOD_MIN_MS */
 	uint16_t			usRefreshMs;
 };
 

@@ -2,7 +2,7 @@
  * Project : APP
  * Module  : APP\Hardware\MD_Dcac
  * File    : md_dcac_iface.h
- * Date    : 2026-09-23
+ * Date    : 2026-09-24
  * Author  : LJD(291483914@qq.com)
  * Desc    : 逆变器通信硬件接口与驱动配置头文件
  * -------------------------------------------------------
@@ -187,21 +187,20 @@ extern "C" {
 #define     	dcacUSART_BAUD                  		9600
 #define     	dcacUSART_IRQ                   		UART4_IRQn
 #define     	dcacUSART_IRQ_HANDLER           		UART4_IRQHandler
-#endif  /* boardDCAC_IFACE == 1 */
+#endif  /* boardDCAC_IFACE */
 
 #define     	dcacPOWER_EN_RCU                		RCU_GPIOB
-#define     	dcacPOWER_EN_GPIO               		GPIOB
+#define     	dcacPOWER_EN_PORT               		GPIOB
 #define     	dcacPOWER_EN_PIN                		GPIO_PIN_1
-#define     	dcacPOWER_EN_ON()               		GPIO_BOP(dcacPOWER_EN_GPIO) = dcacPOWER_EN_PIN
-#define     	dcacPOWER_EN_OFF()              		GPIO_BC(dcacPOWER_EN_GPIO)  = dcacPOWER_EN_PIN
-#define     	dcacPOWER_EN_STATE()            		gpio_output_bit_get(dcacPOWER_EN_GPIO, dcacPOWER_EN_PIN)
+#define     	dcacPOWER_EN_ON()               		GPIO_BOP(dcacPOWER_EN_PORT) = (uint32_t)dcacPOWER_EN_PIN
+#define     	dcacPOWER_EN_OFF()              		GPIO_BC(dcacPOWER_EN_PORT)  = (uint32_t)dcacPOWER_EN_PIN
 
 #if (boardDCAC_485_IFACE_EN)
 #define     	dcacGPIO_485_TX_EN_RCU          		RCU_GPIOB
 #define     	dcacGPIO_485_TX_EN_PORT         		GPIOB
 #define     	dcacGPIO_485_TX_EN_PIN          		GPIO_PIN_2
-#define			dcacGPIO_485_TX_EN_ON()         		GPIO_BOP(dcacGPIO_485_TX_EN_PORT) = dcacGPIO_485_TX_EN_PIN	/* 使能发送 */
-#define			dcacGPIO_485_TX_EN_OFF()        		GPIO_BC(dcacGPIO_485_TX_EN_PORT)  = dcacGPIO_485_TX_EN_PIN	/* 使能接收 */
+#define			dcacGPIO_485_TX_EN_ON()         		GPIO_BOP(dcacGPIO_485_TX_EN_PORT) = (uint32_t)dcacGPIO_485_TX_EN_PIN	/* 使能发送 */
+#define			dcacGPIO_485_TX_EN_OFF()        		GPIO_BC(dcacGPIO_485_TX_EN_PORT)  = (uint32_t)dcacGPIO_485_TX_EN_PIN	/* 使能接收 */
 #define     	dcacGPIO_485_TX_EN_STATE()      		gpio_output_bit_get(dcacGPIO_485_TX_EN_PORT, dcacGPIO_485_TX_EN_PIN)
 #endif  /* boardDCAC_485_IFACE_EN */
 

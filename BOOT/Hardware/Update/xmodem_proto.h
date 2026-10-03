@@ -64,7 +64,7 @@ XMODEM数据包格式
 #define			XMODEM_BUF_LEN_MAX						XMODEM_BUF_LEN_1K_CRC
 
 /* 超时时间 10MS计时 */
-#define			XMODEM_RX_TIMEOUT_MS					(100/updateTASK_CYCLE_TIME)	/* 帧超时Ms */
+#define			XMODEM_RX_TIMEOUT_MS					(1000/updateTASK_CYCLE_TIME)	/* 帧超时Ms */
 #define			XMODEM_START_TIMEOUT_MS					(60000/updateTASK_CYCLE_TIME)	/* 开始超时Ms */
 #define			XMODEM_END_TIMEOUT_MS					(10000/updateTASK_CYCLE_TIME)	/* 结束超时Ms */
 

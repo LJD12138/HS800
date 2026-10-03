@@ -25,7 +25,6 @@ extern "C" {
 #if (boardADC_EN)
 #include "Adc/adc_iface.h"
 
-#if (1)
 //****************************************************Macros********************************************************************//
 
 /* 1. 电池输入电压采样分压比 (单位: 0.1V) */
@@ -34,9 +33,9 @@ extern "C" {
 #define			adcVBMS_RES_RATIO						((((3.3f / 4095.0f) * (adcVBMS_R1 + adcVBMS_R2)) / adcVBMS_R2) * 10.0f)
 
 /* 2. DC输出电压采样分压比 (单位: 0.1V) */
-#define			adcDC_OUT_VOLT_R1							100.0f	/* Kohm 分压上电阻 */
-#define			adcDC_OUT_VOLT_R2							22.0f	/* Kohm 分压对地电阻 */
-#define			adcDC_OUT_VOLT_RES_RATIO					((((3.3f / 4095.0f) * (adcDC_OUT_VOLT_R1 + adcDC_OUT_VOLT_R2)) / adcDC_OUT_VOLT_R2) * 10.0f)
+#define			adcDC_OUT_VOLT_R1						100.0f	/* Kohm 分压上电阻 */
+#define			adcDC_OUT_VOLT_R2						22.0f	/* Kohm 分压对地电阻 */
+#define			adcDC_OUT_VOLT_RES_RATIO				((((3.3f / 4095.0f) * (adcDC_OUT_VOLT_R1 + adcDC_OUT_VOLT_R2)) / adcDC_OUT_VOLT_R2) * 10.0f)
 
 /* 3. DC输入电压1采样分压比 (单位: 0.1V) */
 #define			adcDC_IN_1_R1							300.0f	/* Kohm 分压上电阻 */
@@ -80,7 +79,6 @@ extern AdcSamp_T tAdcSamp;
 
 //****************************************************Extern********************************************************************//
 s8      cAdc_TaskInit(void);
-int16_t sAdc_CalcTempByAd(uint16_t us_ad_val);
 
 #if (!boardUSE_OS)
 void    vAdc_Task(void *p_v_parameters);
@@ -91,7 +89,6 @@ bool    bAdc_EnterLowPower(void);
 bool    bAdc_ExitLowPower(void);
 #endif  /* boardLOW_POWER */
 
-#endif  /* 1 */
 
 #endif  /* boardADC_EN */
 

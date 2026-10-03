@@ -74,8 +74,7 @@ void v_sys_queue_task_reset(Task_T *p_task)
 	}
 
 	//等待5S,超时退出
-	p_task->usTaskWaitCnt++;
-	if ((p_task->usTaskWaitCnt > (5000 / sysTASK_RESET_CYCLE_TIME)) && (p_task->ucStep != STEP_END))
+	if (bQueue_IsTaskTimeoutMs(p_task, 5000) && (p_task->ucStep != STEP_END))
 	{
 		if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
 			log_w("bSysTask:设置重置任务等待超时,步骤%d", p_task->ucStep);

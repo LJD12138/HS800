@@ -17,9 +17,7 @@
 
 #if (boardLIGHT_EN)
 #include "MD_Light/md_light_task.h"
-#if (boardUSB_EN)
-#include "Usb/usb_iface.h"
-#endif  /* boardUSB_EN */
+
 
 //****************************************************Function Declaration******************************************************//
 static void v_light_gpio_init(void);
@@ -42,17 +40,6 @@ static void v_light_gpio_init(void)
 	#else
 	gpio_init(lightPWM_GPIO_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, lightPWM_PIN);
 	#endif  /* boardIC_TYPE */
-
-	#if (boardUSB_EN)
-	rcu_periph_clock_enable(usbPD2_EN_RCU);
-	#if (boardIC_TYPE == boardIC_GD32F50X)
-	gpio_mode_set(usbPD2_EN_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, usbPD2_EN_PIN);
-	gpio_output_options_set(usbPD2_EN_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, usbPD2_EN_PIN);
-	gpio_af_set(usbPD2_EN_PORT, lightTIMER_AF, usbPD2_EN_PIN);
-	#else
-	gpio_init(usbPD2_EN_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, usbPD2_EN_PIN);
-	#endif  /* boardIC_TYPE */
-	#endif  /* boardUSB_EN */
 }
 
 /***********************************************************************************************************************
@@ -95,14 +82,6 @@ static void v_light_timer_init(uint16_t arr, uint16_t psc)
 	timer_channel_output_mode_config(lightTIMER, lightTIMER_CH, TIMER_OC_MODE_PWM0);
 	timer_channel_output_shadow_config(lightTIMER, lightTIMER_CH, TIMER_OC_SHADOW_DISABLE);
  
-	#if (boardUSB_EN)
-	/* CH2 configuration in PWM mode0 for usbPD2_EN */
-	timer_channel_output_config(lightTIMER, TIMER_CH_2, &timer_ocintpara);
-	timer_channel_output_pulse_value_config(lightTIMER, TIMER_CH_2, 0);
-	timer_channel_output_mode_config(lightTIMER, TIMER_CH_2, TIMER_OC_MODE_PWM0);
-	timer_channel_output_shadow_config(lightTIMER, TIMER_CH_2, TIMER_OC_SHADOW_DISABLE);
-	#endif  /* boardUSB_EN */
-
 	/* Enable TIMER0 output */
 	timer_primary_output_config(lightTIMER, ENABLE);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
@@ -111,7 +90,7 @@ static void v_light_timer_init(uint16_t arr, uint16_t psc)
 	timer_channel_primary_output_config(lightTIMER, TIMER_CH_2, ENABLE);
 	#endif  /* boardUSB_EN */
 	#endif  /* boardIC_TYPE */
-;
+
 	/* Enable timer auto reload shadow */
 	timer_auto_reload_shadow_enable(lightTIMER);
  
@@ -119,9 +98,6 @@ static void v_light_timer_init(uint16_t arr, uint16_t psc)
 	timer_enable(lightTIMER);
  
 	lightPWM_SET(0);
-	#if (boardUSB_EN)
-	usbPD2_EN_OFF();
-	#endif  /* boardUSB_EN */
 }
 
 /***********************************************************************************************************************

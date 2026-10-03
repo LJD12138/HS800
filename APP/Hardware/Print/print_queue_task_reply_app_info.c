@@ -27,59 +27,58 @@
 /***********************************************************************************************************************
  * 函数功能    : 回复BMS固件版本信息队列任务
  * 说明(备注)  : 从回复缓存区读取BMS版本数据并打包发送给上位机
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_print_queue_task_reply_app_info(Task_T *tp_task)
+void v_print_queue_task_reply_app_info(Task_T *p_task)
 {
-	u8 us_char_len = tp_task->usInParam;
+	u8 us_char_len = p_task->usInParam;
 
 	__ALIGNED(4) u8 uca_buff[256] = {0};
 	
-	switch (tp_task->ucStep)
+	switch (p_task->ucStep)
 	{
 		case 0:
 		{
-			if (tp_task->tReplyBuff.buff == NULL)
+			if (p_task->tReplyBuff.buff == NULL)
 			{
-				cQueue_GotoStep(tp_task, STEP_END);  //结束
+				cQueue_GotoStep(p_task, STEP_END);  //结束
 				break;
 			}
 
 			//校验数据
-			u8 len = lwrb_get_full(&tp_task->tReplyBuff);
-			if (len != us_char_len || tp_task->tReplyBuff.buff == NULL)
+			u8 len = lwrb_get_full(&p_task->tReplyBuff);
+			if (len != us_char_len || p_task->tReplyBuff.buff == NULL)
 			{
-				cQueue_GotoStep(tp_task, STEP_END);  //结束
+				cQueue_GotoStep(p_task, STEP_END);  //结束
 				break;
 			}
 			
 			//读取数据
-			lwrb_read(&tp_task->tReplyBuff, (u8*)&uca_buff, len);
+			lwrb_read(&p_task->tReplyBuff, (u8*)&uca_buff, len);
 
 			if (c_relay_bms_app_info(uca_buff, us_char_len) > 0)
-				cQueue_GotoStep(tp_task, STEP_NEXT);  	//下一步
+				cQueue_GotoStep(p_task, STEP_NEXT);  	//下一步
 			else
 				break;
 		}
 
 		case 2:
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 		}
 		break;
 
 		default:
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 		}
 		break;
 	}
 	
-	tp_task->usTaskWaitCnt++;
-	if (tp_task->usTaskWaitCnt > (5000 / printTASK_APP_INFO_CYCLE_TIME))  //等待超时
-		cQueue_GotoStep(tp_task, STEP_END);  //结束
+	if (bQueue_IsTaskTimeoutMs(p_task, 5000))  //等待超时
+		cQueue_GotoStep(p_task, STEP_END);  //结束
 	
 	#if (boardUSE_OS)
 	ulTaskNotifyTake(pdTRUE, printTASK_APP_INFO_CYCLE_TIME);

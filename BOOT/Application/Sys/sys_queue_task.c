@@ -65,12 +65,14 @@ bool bSys_QueueInit(void)
     {
         if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
             log_e("bSysTask:tpSysTask任务对象初始化失败");
+
         return false;
     }
     else if (tpSysTask == NULL)
     {
         if (uPrint.tFlag.bSysTask || uPrint.tFlag.bImportant)
             log_e("bSysTask:tpSysTask任务对象创建失败");
+
         return false;
     }
 
@@ -84,61 +86,61 @@ bool bSys_QueueInit(void)
  * 输出参数    : p_task: 装载目标任务函数与参数
  * 返回值      : bool: true 成功, false 失败
  ************************************************************************************************************************/
-static bool b_task_manage_func_cb(Task_T *tp_task)
+static bool b_task_manage_func_cb(Task_T *p_task)
 {
     TaskItem_T t_item;
 
-    if (tp_task == NULL)
+    if (p_task == NULL)
         return false;
 
-    vQueue_ResetTaskState(tp_task);
+    vQueue_ResetTaskState(p_task);
 
     if (tSysInfo.uInit.tFinish.bIF_SysTask == 0)
     {
-        tp_task->ucID = STI_INIT;
-        tp_task->usInParam = 0;
+        p_task->ucID = STI_INIT;
+        p_task->usInParam = 0;
     }
-    else if (bQueue_PopTask(tp_task, &t_item))
+    else if (bQueue_PopTask(p_task, &t_item))
     {
-        tp_task->ucID = t_item.ucId;
-        tp_task->usInParam = t_item.usParam;
+        p_task->ucID = t_item.ucId;
+        p_task->usInParam = t_item.usParam;
     }
     else
     {
-        tp_task->ucID = STI_NULL;
-        tp_task->usInParam = 0;
+        p_task->ucID = STI_NULL;
+        p_task->usInParam = 0;
     }
 
-    switch (tp_task->ucID)
+    switch (p_task->ucID)
     {
         case STI_INIT:
         {
-            tp_task->vp_func = v_sys_queue_task_init;
+            p_task->vp_func = v_sys_queue_task_init;
         }
         break;
 
         case STI_ENTER_APP:
         {
-            tp_task->vp_func = v_sys_queue_task_enter_app;
+            p_task->vp_func = v_sys_queue_task_enter_app;
         }
         break;
 
         case STI_ERR:
         {
-            tp_task->vp_func = v_sys_queue_task_err;
+            p_task->vp_func = v_sys_queue_task_err;
         }
         break;
 
         case STI_RESET:
         {
-            tp_task->vp_func = v_sys_queue_task_reset;
+            p_task->vp_func = v_sys_queue_task_reset;
         }
         break;
 
         #if (boardUPDATE)
         case STI_UPDATE:
         {
-            tp_task->vp_func = v_sys_queue_task_update;
+            p_task->vp_func = v_sys_queue_task_update;
         }
         break;
         #endif  /* boardUPDATE */
@@ -146,7 +148,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         #if (boardDISPLAY_EN)
         case STI_DISPLAY:
         {
-            tp_task->vp_func = v_sys_queue_task_disp;
+            p_task->vp_func = v_sys_queue_task_disp;
         }
         break;
         #endif  /* boardDISPLAY_EN */
@@ -154,7 +156,7 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         #if (boardLOW_POWER)
         case STI_LOW_POWER:
         {
-            tp_task->vp_func = v_sys_queue_task_low_power;
+            p_task->vp_func = v_sys_queue_task_low_power;
         }
         break;
         #endif  /* boardLOW_POWER */
@@ -162,8 +164,8 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
         case STI_NULL:
         default:
         {
-            tp_task->vp_func = NULL;
-            tp_task->usInParam = 0;
+            p_task->vp_func = NULL;
+            p_task->usInParam = 0;
         }
         break;
     }
@@ -174,13 +176,13 @@ static bool b_task_manage_func_cb(Task_T *tp_task)
 /***********************************************************************************************************************
  * 函数功能    : 队列事件及添加回调函数
  * 说明(备注)  : 处理任务入队等事件
- * 传入参数    : tp_task: 任务控制块指针; num: 事件类型/回调编号
+ * 传入参数    : p_task: 任务控制块指针; num: 事件类型/回调编号
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-static void v_add_task_return_func_cb(Task_T *tp_task, u8 num)
+static void v_add_task_return_func_cb(Task_T *p_task, u8 num)
 {
-    (void)tp_task;
+    (void)p_task;
 
     switch (num)
     {
@@ -244,7 +246,7 @@ s8 cSys_JumpToApp(void)
     /* 设置下次重启直接进 APP;落盘失败禁止带病跳转,由任务重试机制兜底 */
     if (cBoot_CtrlUpdate(false, AS_OK) <= 0)
         return -5;
-    vPrint_DeInit();
+    vPrint_IfaceDeInit();
     #endif  /* boardPRINT_IFACE */
 
     vSys_MsDelay(2);

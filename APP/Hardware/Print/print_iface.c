@@ -292,7 +292,7 @@ static void v_print_dma_init(void)
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void vPrint_Init(void)
+void vPrint_IfaceInit(void)
 {
 	v_print_gpio_init();
 	v_print_usart_init();
@@ -308,7 +308,7 @@ void vPrint_Init(void)
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void vPrint_DeInit(void)
+void vPrint_IfaceDeInit(void)
 {
 	usart_deinit(printUSART);
 	

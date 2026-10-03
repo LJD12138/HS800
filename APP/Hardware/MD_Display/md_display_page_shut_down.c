@@ -4,7 +4,7 @@
  * File    : md_display_page_shut_down.c
  * Date    : 2026-09-21
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 关机状态页面 (TFT+LVGL) - 松开电源键即息屏
+ * Desc    : UniDisplay 关机状态页面- 松开电源键即息屏
  * -------------------------------------------------------
  * todo    :
  * 1. 无
@@ -16,12 +16,9 @@
 #include "MD_Display/md_display_data.h"
 
 #if (boardDISPLAY_EN)
-#include "uni_disp_core.h"
 #include "MD_Display/md_display_task.h"
 
-#if (boardKEY_EN)
-#include "Key/key_iface.h"                  /* bKey_IsPressById / keyPOWER */
-#endif  /* boardKEY_EN */
+#include "uni_disp_core.h"
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_shut_down_enter(void);
@@ -33,27 +30,22 @@ const DispPage_T G_tPageShutDown =
 {
     .ePageId     = PAGE_ID_SHUT_DOWN,
     .vOnEnter    = v_page_shut_down_enter,
+    .vOnExit     = v_page_shut_down_exit,
     .vOnUpdate   = v_page_shut_down_update,
     .bOnEvent    = b_page_shut_down_event,
-    .vOnExit     = v_page_shut_down_exit,
     .usRefreshMs = 50,
 };
 
 /***********************************************************************************************************************
  * 函数功能    : 进入关机状态页
- * 说明(备注)  : 若已松开电源键则立即息屏
+ * 说明(备注)  : 息屏
  * 传入参数    : 无
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
 static void v_page_shut_down_enter(void)
 {
-    #if (boardKEY_EN)
-    if (bKey_IsPressById(keyPOWER) == false)
-        bDisp_SwitchBacklight(DISP_BKL_OFF, false);
-    #else
-    bDisp_SwitchBacklight(DISP_BKL_OFF, false);
-    #endif  /* boardKEY_EN */
+    bDisp_Switch(ST_OFF, false);
 }
 
 /***********************************************************************************************************************
@@ -78,13 +70,6 @@ static void v_page_shut_down_update(const DispDataSnapshot_T *p_data, bool b_for
 {
     (void)p_data;
     (void)b_force;
-
-    #if (boardKEY_EN)
-    if (bKey_IsPressById(keyPOWER) == false)
-        bDisp_SwitchBacklight(DISP_BKL_OFF, false);
-    #else
-    bDisp_SwitchBacklight(DISP_BKL_OFF, false);
-    #endif  /* boardKEY_EN */
 }
 
 /***********************************************************************************************************************

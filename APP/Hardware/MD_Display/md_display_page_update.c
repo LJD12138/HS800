@@ -118,7 +118,7 @@ static void v_page_update_enter(void)
 
     /* 载入升级专属屏幕并点亮背光 */
     vDisp_LoadScreen(SCREEN_ID_MAIN_UPDATE);
-    bDisp_SwitchBacklight(DISP_BKL_ON, false);
+    bDisp_Switch(ST_ON, false);
 
     /* 复位状态机参数与显示缓存 */
     v_update_ui_reset(t_now_tick);

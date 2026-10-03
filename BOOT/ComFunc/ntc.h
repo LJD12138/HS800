@@ -48,7 +48,7 @@ typedef NtcVal_T ntc_val_t;                 /* 兼容旧类型定义 */
 //****************************************************Extern********************************************************************//
 void vNtc_Init(ntc_val_t *p_val, float sys_vol, u16 volt_res, u16 ntc_res, u16 hex_x, u16 b_x);
 s16  sNtc_GetTempByRes(const u32 *p_buff, const s16 zero_index_temp, const u16 len, const u32 res);
-
+int16_t sNtc_CalcTempByAd(uint16_t us_ad_val);
 #endif  /* 1 */
 
 #ifdef __cplusplus

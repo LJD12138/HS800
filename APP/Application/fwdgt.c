@@ -24,7 +24,7 @@
 #endif
 
 //****************************************************Parameter Initialization**************************************************//
-ResetReason_T G_tResetReason;
+ResetReason_T g_reset_reason;
 
 /***********************************************************************************************************************
  * 函数功能    : 独立看门狗初始化
@@ -112,12 +112,12 @@ void vFwdgt_ExitLowPower(void)
  ************************************************************************************************************************/
 void vResetReason_Capture(void)
 {
-	G_tResetReason.ext_pin   = (rcu_flag_get(RCU_FLAG_EPRST)    == SET);
-	G_tResetReason.por       = (rcu_flag_get(RCU_FLAG_PORRST)   == SET);
-	G_tResetReason.sw        = (rcu_flag_get(RCU_FLAG_SWRST)    == SET);
-	G_tResetReason.fwdgt     = (rcu_flag_get(RCU_FLAG_FWDGTRST) == SET);
-	G_tResetReason.wwdgt     = (rcu_flag_get(RCU_FLAG_WWDGTRST) == SET);
-	G_tResetReason.low_power = (rcu_flag_get(RCU_FLAG_LPRST)    == SET);
+	g_reset_reason.ext_pin   = (rcu_flag_get(RCU_FLAG_EPRST)    == SET);
+	g_reset_reason.por       = (rcu_flag_get(RCU_FLAG_PORRST)   == SET);
+	g_reset_reason.sw        = (rcu_flag_get(RCU_FLAG_SWRST)    == SET);
+	g_reset_reason.fwdgt     = (rcu_flag_get(RCU_FLAG_FWDGTRST) == SET);
+	g_reset_reason.wwdgt     = (rcu_flag_get(RCU_FLAG_WWDGTRST) == SET);
+	g_reset_reason.low_power = (rcu_flag_get(RCU_FLAG_LPRST)    == SET);
 
 	// 读取完马上清掉，防止下次误判
 	rcu_all_reset_flag_clear();
@@ -134,17 +134,17 @@ void vFwdgt_PrintResetReason(void)
 {
 	vResetReason_Capture();
 
-	if (G_tResetReason.fwdgt)
+	if (g_reset_reason.fwdgt)
 		printf("[Reset] reason: FWDGT reset\r\n");
-	else if (G_tResetReason.wwdgt)
+	else if (g_reset_reason.wwdgt)
 		printf("[Reset] reason: WWDGT reset\r\n");
-	else if (G_tResetReason.sw)
+	else if (g_reset_reason.sw)
 		printf("[Reset] reason: software reset\r\n");
-	else if (G_tResetReason.ext_pin)
+	else if (g_reset_reason.ext_pin)
 		printf("[Reset] reason: external pin reset\r\n");
-	else if (G_tResetReason.por)
+	else if (g_reset_reason.por)
 		printf("[Reset] reason: power on reset\r\n");
-	else if (G_tResetReason.low_power)
+	else if (g_reset_reason.low_power)
 		printf("[Reset] reason: low power reset\r\n");
 }
 

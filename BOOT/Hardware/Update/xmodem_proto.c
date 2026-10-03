@@ -629,6 +629,8 @@ void bXmodem_Reset(Xmodem_T *obj)
 	obj->usRecLen = 0;
 	/* 清除帧计数 */
 	obj->frm_cnt = 1;
+	/* 允许发送首帧/ECHO */
+	obj->bStartSendFrm = true;
 }
 
 #endif  /* boardUPDATE */

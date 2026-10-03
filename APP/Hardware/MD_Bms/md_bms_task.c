@@ -31,13 +31,14 @@
 #include "Sys/sys_queue_task_update.h"
 #endif  /* boardUPDATE */
 
-//****************************************************Macros********************************************************************//
+//****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			BMS_TASK_PRIO							3		/* 任务优先级(通信执行层) */
-#define			BMS_TASK_SIZE							256		/* 任务堆栈大小 */
-TaskHandle_t tBmsTaskHandler = NULL;
-void         vBms_Task(void *pvParameters);
+#define			BMS_TASK_SIZE							256		/* 任务堆栈(字) */
+TaskHandle_t tBmsTaskHandler = NULL;							/* 任务句柄 */
+void         vBms_Task(void *pvParameters);						/* 任务函数 */
 #endif  /* boardUSE_OS */
+
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) Bms_T tBms;

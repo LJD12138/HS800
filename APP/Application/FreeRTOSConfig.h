@@ -183,7 +183,7 @@ extern void PostSleepProcessing(uint32_t ulExpectedIdleTime);
 //<i> 1:需自己实现vApplicationIdleHook
 //-------------------------------------------------------------------
 //          	<q0> 使能系统时钟节拍中断钩子函数
-#define 		configUSE_TICK_HOOK						 1
+#define 		configUSE_TICK_HOOK						 0
 //<i> 0:默认
 //<i> 1:需自己实现vApplicationTickHook
 //-------------------------------------------------------------------

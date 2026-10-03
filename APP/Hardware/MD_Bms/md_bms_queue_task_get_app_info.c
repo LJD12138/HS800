@@ -59,8 +59,7 @@ void v_bms_queue_task_get_app_info(Task_T *p_task)
         break;
     }
     
-    p_task->usTaskWaitCnt++;
-    if (p_task->usTaskWaitCnt > (5000 / bmsTASK_APP_INFO_CYCLE_TIME))  /* 等待超时 */
+    if (bQueue_IsTaskTimeoutMs(p_task, 5000))  /* 等待超时 */
     {
         if (uPrint.tFlag.bBmsTask)
             log_w("bBmsTask:回复信息任务等待超时,步骤%d", p_task->ucStep);

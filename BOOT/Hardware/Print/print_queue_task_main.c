@@ -30,18 +30,18 @@ static s8 c_print_rec_proc_data(BaikuProtoRx_t* proto);
 /***********************************************************************************************************************
  * 函数功能    : Print主循环队列任务
  * 说明(备注)  : 定时轮询发送数据、校验协议并分发接收指令
- * 传入参数    : tp_task: 任务结构体指针
+ * 传入参数    : p_task: 任务结构体指针
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void v_print_queue_task_main(Task_T *tp_task)
+void v_print_queue_task_main(Task_T *p_task)
 {
 	s8 c_ret = 0;
 
 	//队列里面有任务
-	if (lwrb_get_full(&tp_task->tQueueBuff))  
+	if (lwrb_get_full(&p_task->tQueueBuff))  
 	{
-		cQueue_GotoStep(tp_task, STEP_END);  //结束
+		cQueue_GotoStep(p_task, STEP_END);  //结束
 		return;
 	}
 
@@ -61,7 +61,7 @@ void v_print_queue_task_main(Task_T *tp_task)
 	if (c_ret > 0)
 		c_print_rec_proc_data(tpPrintProtoRx);
 	
-	switch (tp_task->ucStep)
+	switch (p_task->ucStep)
     {
         case 0:
         {
@@ -71,7 +71,7 @@ void v_print_queue_task_main(Task_T *tp_task)
 
 		default:
 		{
-			cQueue_GotoStep(tp_task, STEP_END);  //结束
+			cQueue_GotoStep(p_task, STEP_END);  //结束
 		}
 		break;
     }
