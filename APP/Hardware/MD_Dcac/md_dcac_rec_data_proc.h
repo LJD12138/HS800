@@ -28,7 +28,9 @@ extern "C" {
 
 //****************************************************Extern********************************************************************//
 int8_t c_dcac_rec_proc_data(ModbusProtoRx_t *p_proto_rx, ModbusProtoTx_t *p_proto_tx);
+#if (boardUPDATE)
 int8_t c_dcac_rec_proc_megmeet_proto(MegmeetProtoRx_t *p_proto_rx);
+#endif  /* boardUPDATE */
 
 #endif  /* boardDCAC_EN */
 

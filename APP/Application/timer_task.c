@@ -241,23 +241,6 @@ static void v_timer_repet_callback(TimerHandle_t xTimer)
 		#if (boardWDGT_EN && boardPRINT_IFACE == 0)
 		vFwdgt_Reload();
 		#endif  //boardWDGT_EN && boardPRINT_IFACE == 0
-
-		#if (boardUSE_OS_DEBUG_OUT)
-		if (uPrint.tFlag.bFreeRTOS)
-		{
-			size_t num = xPortGetFreeHeapSize();         //获取当前未分配的内存堆大小
-			sMyPrint("bFreeRTOS:未分配的内存堆 = %d word\r\n", num);
-
-			num = xPortGetMinimumEverFreeHeapSize();     //获取未分配的内存堆历史最小值
-			sMyPrint("bFreeRTOS:未分配的内存堆最小值 = %d word\r\n", num);
-
-			/* 定时器服务任务栈仅1KB,该缓冲必须为静态分配,放栈上必溢出 */
-			static char InfoBuffer[1024] = {0};
-			vTaskList((char *)&InfoBuffer);
-			printf("\r\n任务名      任务状态  优先级  剩余栈  任务序号\r\n");
-			printf("\r\n %s \r\n", InfoBuffer);
-		}
-		#endif  //boardUSE_OS_DEBUG_OUT
 	}
 
 	#if (boardBMS_EN && (!boardDEBUG))

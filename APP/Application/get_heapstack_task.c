@@ -67,9 +67,9 @@ volatile uint32_t ulHealthIdleLoopCnt = 0;
 /* 任务状态静态数组: 共享单一缓冲区，避免多处分配吃任务栈与 BSS (节省 1KB SRAM) */
 static TaskStatus_t s_task_status[24];
 
-#if (boardUSE_OS && boardPRINT_IFACE && configGENERATE_RUN_TIME_STATS && configUSE_STATS_FORMATTING_FUNCTIONS)
-static char s_ca_rt_stats[1024]; /* vTaskGetRunTimeStats 输出缓冲: 仅用于全量体检报表按需调试 */
-#endif  //boardUSE_OS && boardPRINT_IFACE && configGENERATE_RUN_TIME_STATS && configUSE_STATS_FORMATTING_FUNCTIONS
+#if (boardUSE_OS && boardPRINT_IFACE && configUSE_STATS_FORMATTING_FUNCTIONS)
+static char s_ca_rt_stats[1024]; /* 共享格式化缓冲: vTaskList任务表(周期打印)与vTaskGetRunTimeStats(按需体检)复用,勿并发调用 */
+#endif  //boardUSE_OS && boardPRINT_IFACE && configUSE_STATS_FORMATTING_FUNCTIONS
 
 //****************************************************Function Declaration******************************************************//
 static void                   v_health_report_summary(uint32_t ul_window_cpu, uint32_t ul_cum_cpu, bool b_alarm_active);
@@ -81,6 +81,7 @@ static uint32_t               ul_health_cpu_by_run_time(uint32_t *pul_window_cpu
 static uint32_t               ul_health_cpu_by_idle_cnt(void);
 static configSTACK_DEPTH_TYPE ul_health_worst_stack(const char **ppc_name);
 void 						  v_print_heapstack_task_watermark (void);
+static void                   v_health_print_tasklist(void);
 
 /***********************************************************************************************************************
  * 函数功能    : 健康巡检任务初始化
@@ -165,6 +166,10 @@ static void v_health_task(void *pvParameters)
 			if ((s_ul_cycle_cnt % HEALTH_HEARTBEAT_CYCLES) == 0)
 				v_health_report_summary(ul_window_cpu, ul_cum_cpu, b_has_alarm);
 		}
+
+		/* FreeRTOS 堆与任务状态表周期打印 (独立开关 bFreeRTOS, 不受 bHealthTask 联动) */
+		if (uPrint.tFlag.bFreeRTOS)
+			v_health_print_tasklist();
 		#endif  //boardPRINT_IFACE
 	}
 }
@@ -428,6 +433,43 @@ static void v_health_check_waste_advisory(void)
 }
 
 /***********************************************************************************************************************
+ * 函数功能    : FreeRTOS 堆内存与任务状态表周期打印
+ * 说明(备注)  : 由 bFreeRTOS 运行时开关独立控制(随健康巡检周期输出,默认 2s 一次),
+ *               复用 s_ca_rt_stats 共享缓冲, 勿与 v_print_heapstack_task_watermark 并发调用
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : void
+ ************************************************************************************************************************/
+static void v_health_print_tasklist(void)
+{
+	/* 堆内存水位 */
+	size_t st_num = xPortGetFreeHeapSize();             //获取当前未分配的内存堆大小
+	sMyPrint("bFreeRTOS:未分配的内存堆 = %u word\r\n", (unsigned int)st_num);
+
+	st_num = xPortGetMinimumEverFreeHeapSize();         //获取未分配的内存堆历史最小值
+	sMyPrint("bFreeRTOS:未分配的内存堆最小值 = %u word\r\n", (unsigned int)st_num);
+
+	/* 任务状态表 */
+	vTaskList(s_ca_rt_stats);
+	sMyPrint("\r\n任务名      任务状态  优先级  剩余栈  任务序号\r\n");
+
+	/* sMyPrint单次格式化上限256字节,整表输出超限会被静默丢弃,须按行拆分发送 */
+	char *p_line = s_ca_rt_stats;
+	char *p_end = NULL;
+	while ((p_end = strchr(p_line, '\n')) != NULL)
+	{
+		if (p_end > p_line && *(p_end - 1) == '\r')
+			*(p_end - 1) = '\0';
+		else
+			*p_end = '\0';
+		sMyPrint("%s\r\n", p_line);
+		p_line = p_end + 1;
+	}
+	if (*p_line != '\0')
+		sMyPrint("%s\r\n", p_line);
+}
+
+/***********************************************************************************************************************
  * 函数功能    : 打印全系统 FreeRTOS 任务栈高水位线与堆内存完整体检报告
  * 说明(备注)  : 量化获取每个任务自启动以来的最小剩余栈深 (High Water Mark)，支持按需调试调用
  * 传入参数    : 无
@@ -634,7 +676,7 @@ static uint32_t ul_health_cpu_by_idle_cnt(void)
 static configSTACK_DEPTH_TYPE ul_health_worst_stack(const char **ppc_name)
 {
 	uint32_t ul_total = 0;
-	configSTACK_DEPTH_TYPE ul_worst = 0xFFFFFFFF;
+	configSTACK_DEPTH_TYPE ul_worst = (configSTACK_DEPTH_TYPE)~0U;
 	const char *pc_worst = "?";
 
 	UBaseType_t ux_num = uxTaskGetSystemState(s_task_status,

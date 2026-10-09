@@ -21,9 +21,7 @@
 #include "Usb/usb_queue_task.h"
 #include "Usb/usb_task.h"
 #include "Usb/usb_iface.h"
-#if(boardPRINT_IFACE)
 #include "Print/print_task.h"
-#endif  /* boardPRINT_IFACE */
 
 #include "filtration.h"
 #include "ntc.h"

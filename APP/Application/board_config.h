@@ -26,7 +26,7 @@ extern "C" {
 
 //-------------------------------------------------------------------
 //<s>       	软件版本(此处缩进不可以用Tab)
-#define         boardSOFTWARE_VERSION                    "HS803_Ver_2_2_0(230V)"
+#define         boardSOFTWARE_VERSION                    "HS803_Ver_2_2_1(230V)"
 //-------------------------------------------------------------------
 //<s>       	硬件版本(此处缩进不可以用Tab)
 #define         boardHARDWARE_VERSION                    "HS803_Ver_1_2_0"
@@ -144,7 +144,7 @@ extern "C" {
 #define     	boardHEALTH_MONITOR_EN           		 1
 #endif  //boardDEBUG
 //<i> 	1:调试/开发期开启 —— 健康巡检任务(HealthTask)+队列遥测(水位/峰值/满队/损坏计数)
-//<i> 		+Idle空闲计数器+FreeRTOS运行时统计(RUN_TIME_STATS)全部参与编译
+//<i> 		+Idle空闲计数器+FreeRTOS运行时统计(RUN_TIME_STATS)+FreeRTOS调试输出(剩余堆/任务表)全部参与编译
 //<i> 	0:量产后关闭 —— 上述代码全部条件编译裁剪,零RAM/Flash/CPU开销,
 //<i> 		同时联动关闭configGENERATE_RUN_TIME_STATS(任务切换零统计负担)
 //-------------------------------------------------------------------
@@ -192,11 +192,6 @@ extern "C" {
 #define			boardIC_STM32G4XX						 2
 #define			boardIC_GD32F50X						 3
 //-------------------------------------------------------------------
-//          	<q0> 使用OS Debug输出
-//                                          			<i> 勾选为开启
-#define     	boardUSE_OS_DEBUG_OUT					 0
-//<i> 会打开FreeRTOS的系统调试
-//-------------------------------------------------------------------
 //</h>       	中间层配置
 
 
@@ -215,7 +210,8 @@ extern "C" {
 //														<4=> Print--UART3
 //														<5=> Print--UART4
 //														<6=> Print--UART5
-#define     	boardPRINT_IFACE                		 5
+//														<7=> Print--USB_CDC
+#define     	boardPRINT_IFACE                		 7
 #if (boardPRINT_IFACE)
 //-------------------------------------------------------------------
 //          	<q0> Print串口DMA功能使能

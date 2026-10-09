@@ -42,11 +42,15 @@
 
 #if (boardPRINT_IFACE)
 #include "Print/print_task.h"
+#elif (boardSEGGER)
+#include "SEGGER_RTT.h"
 #endif  //boardPRINT_IFACE
 
 #if (boardWDGT_EN)
 #include "fwdgt.h"
 #endif  //boardWDGT_EN
+
+
 
 //****************************************************Macros********************************************************************//
 //APP中断向量表地址偏移

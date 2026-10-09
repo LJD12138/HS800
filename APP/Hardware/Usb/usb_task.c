@@ -21,9 +21,7 @@
 #include "Usb/usb_prot_frame.h"
 #include "app_info.h"
 
-#if (boardPRINT_IFACE)
 #include "Print/print_task.h"
-#endif  /* boardPRINT_IFACE */
 
 #if (boardBUZ_EN)
 #include "Buz/buz_task.h"

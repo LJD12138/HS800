@@ -19,9 +19,7 @@
 #include "Usb/usb_task.h"
 #include "Sys/sys_task.h"
 
-#if (boardPRINT_IFACE)
 #include "Print/print_task.h"
-#endif  /* boardPRINT_IFACE */
 
 #if (boardUSE_OS)
 #include "freertos.h"

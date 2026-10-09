@@ -64,8 +64,9 @@ static s8 c_print_start_check(const char *str)
         return -1;
     
     /* 如果没有开启输出,返回错误 */
-    if ((boardPRINT_IFACE == 0) && (boardSEGGER == 0))
-        return -2;
+    #if (boardPRINT_IFACE == 0 && boardSEGGER == 0)
+    return -2;
+    #endif  /* boardPRINT_IFACE == 0 && boardSEGGER == 0 */
     
     #if (boardPRINT_IFACE)
     if (tPrintTxBuff.buff == NULL)

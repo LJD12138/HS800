@@ -151,7 +151,11 @@ void vKey_Task(void *p_v_parameters)
 	#endif  /* boardUSE_OS */
 	{
 		/* GPIO初始化未完成或系统升级状态 (长按开机锁定) */
-		if (tSysInfo.uInit.tFinish.bIF_Gpio == 0 || tpSysTask->ucID == STI_UPDATE)
+		if (tSysInfo.uInit.tFinish.bIF_Gpio == 0 
+			#if (boardUPDATE)
+			|| tpSysTask->ucID == STI_UPDATE
+			#endif  /* boardUPDATE */
+		)
 		{
 			s_b_key_lock = bKey_IsPressById(keyPOWER);
 

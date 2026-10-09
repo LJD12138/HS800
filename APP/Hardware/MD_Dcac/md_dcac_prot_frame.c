@@ -63,8 +63,10 @@ static DcacInitPkt_T s_tDcacInit;
 SemaphoreHandle_t dcacSemaphoreMutex = NULL;
 #endif  /* boardUSE_OS */
 
+#if (boardUPDATE)
 MegmeetProtoTx_t *tDcacMegmeetProtoTx  = NULL;
 MegmeetProtoRx_t *tpDcacMegmeetProtoRx = NULL;
+#endif  /* boardUPDATE */
 
 //****************************************************Function Declaration******************************************************//
 static int8_t c_dcac_data_trans(uint8_t uc_cmd, uint16_t us_reg_addr, uint8_t *p_data, uint8_t uc_len);
@@ -387,6 +389,7 @@ static int8_t c_dcac_data_trans(uint8_t uc_cmd, uint16_t us_reg_addr, uint8_t *p
     return result;
 }
 
+#if (boardUPDATE)
 /***********************************************************************************************************************
  * 函数功能    : DCAC Megmeet 升级协议初始化
  * 说明(备注)  : 无
@@ -546,6 +549,8 @@ bool b_dcac_cs_send_fw_data(uint8_t uc_cmd, const uint8_t *p_payload, uint16_t u
         vUpdate_ResetRecTimeout(true);
     return b_send_ok;
 }
+
+#endif  /* boardUPDATE */
 
 #endif  /* boardDCAC_EN */
 

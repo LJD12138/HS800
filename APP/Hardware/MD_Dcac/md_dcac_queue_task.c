@@ -152,9 +152,11 @@ static bool b_task_manage_func_cb(Task_T *p_task)
 
         case DTI_UPDATE:
         {
+            #if (boardUPDATE)
             if (uPrint.tFlag.bDcacTask)
                 sMyPrint("bDcacTask:----装载升级任务----\r\n");
             p_task->vp_func = v_dcac_queue_task_update;
+            #endif  /* boardUPDATE */
         }
         break;
         

@@ -109,6 +109,7 @@ int main(void)
 			#endif  /* boardLED_EN */
 
 			//确保tick稳定
+			#if (boardUPDATE)
 			if (tpSysTask->ucID == STI_UPDATE)
 			{
 				#if (boardBMS_EN)
@@ -124,6 +125,7 @@ int main(void)
 				vDisp_Task(NULL);
 				#endif  /* boardDISPLAY_EN */
 			}
+			#endif  /* boardUPDATE */
 		}
 
 		if (bSystick_100MsFlag)
@@ -131,8 +133,6 @@ int main(void)
 			bSystick_100MsFlag = false;
 			
 			vTimer_Task();
-			
-		
 		}
 		
 		#if (boardPRINT_IFACE)

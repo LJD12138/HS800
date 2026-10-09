@@ -187,6 +187,9 @@ extern "C" {
 #define     	printUSART_BAUD                 		115200
 #define     	printUSART_IRQ                  		UART4_IRQn
 #define     	printUSART_IRQ_HANDLER          		UART4_IRQHandler
+#elif (boardPRINT_IFACE == 7)
+/* 7: USB_CDC (CherryUSB 虚拟串口) */
+#include "Print/print_usb_iface.h"
 #endif  /* boardPRINT_IFACE */
 
 #if (boardPRINT_485_IFACE_EN)

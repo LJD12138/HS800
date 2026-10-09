@@ -122,6 +122,13 @@ virtualFolder:
         - path: Middlewares/TaskQueue/queue_telemetry.c
         - path: Middlewares/TaskQueue/queue_telemetry.h
       folders: []
+    - name: MW-CherryUSB
+      files:
+        - path: Middlewares/CherryUSB/core/usbd_core.c
+        - path: Middlewares/CherryUSB/class/cdc/usbd_cdc_acm.c
+        - path: Middlewares/CherryUSB/port/dwc2/usb_dc_dwc2.c
+        - path: Middlewares/CherryUSB/port/dwc2/usb_glue_gd.c
+      folders: []
     - name: MW-UniDisplay
       files:
         - path: Middlewares/UniDisplay/uni_disp_core.c
@@ -205,6 +212,8 @@ virtualFolder:
         - path: Hardware/Print/Print_update_bms.c
         - path: Hardware/Print/print_update_dcac.c
         - path: Hardware/Print/print_queue_task_reply_run_log.c
+        - path: Hardware/Print/print_usb_iface.c
+        - path: Hardware/Print/print_usb_iface.h
       folders: []
     - name: HW-Adc
       files:
@@ -605,6 +614,12 @@ targets:
         - Middlewares/MultiFuncKey
         - Middlewares/TaskQueue
         - Middlewares/UniDisplay
+        - Middlewares/CherryUSB
+        - Middlewares/CherryUSB/common
+        - Middlewares/CherryUSB/core
+        - Middlewares/CherryUSB/class/cdc
+        - Middlewares/CherryUSB/port/dwc2
+        - Hardware/Usb
       libList: []
     excludeList: []
     settings:
@@ -742,7 +757,7 @@ targets:
             language-c: c99
             language-cpp: c++11
             one-elf-section-per-function: true
-            optimization: level-1
+            optimization: level-2
             short-enums#wchar: true
             warnings: ac5-like-warnings
           global:

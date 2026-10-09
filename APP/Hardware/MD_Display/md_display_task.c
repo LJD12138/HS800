@@ -29,7 +29,7 @@
 //****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			dispTASK_PRIO							2U		/* 任务优先级 */
-#define			dispTASK_STK_SIZE						256U	/* 任务堆栈 */
+#define			dispTASK_STK_SIZE						1024U	/* 任务堆栈 */
 TaskHandle_t    tDispTaskHandler = NULL;
 void            vDisp_Task(void *pvParameters);
 #endif  /* boardUSE_OS */
@@ -125,8 +125,8 @@ static bool b_task_param_init(void)
 
 /***********************************************************************************************************************
  * 函数功能    : Disp 显示任务主体
- * 说明(备注)  : 统一等待原语 (通知+超时): 亮屏按当前页 33ms 帧节拍等待, 息屏 2 秒低频挂起;
- *               事件入队/背光点亮均触发任务通知提前唤醒, 响应无需等到下一周期
+ * 说明(备注)  : 统一等待原语 (通知+超时): 亮屏按当前页帧周期做耗时补偿等待(扣除本次渲染已耗时, 保证
+ *               实际帧周期贴近页面声明值), 息屏 2 秒低频挂起; 事件入队/背光点亮均触发任务通知提前唤醒
  * 传入参数    : pvParameters: 任务入参
  * 输出参数    : 无
  * 返回值      : 无
@@ -136,19 +136,33 @@ void vDisp_Task(void *pvParameters)
     (void)pvParameters;
 
     #if (boardUSE_OS)
+    TickType_t x_start;
+    TickType_t x_period;
+    TickType_t x_elapsed;
+
     for (;;)
     #endif  /* boardUSE_OS */
     {
+        #if (boardUSE_OS)
+        x_start = xTaskGetTickCount();
+        #endif  /* boardUSE_OS */
+
         /* 执行 UniDisplay 轮询引擎 (快照抓取 -> 状态路由 -> 事件分发 -> 切页 -> 适配器渲染) */
         vDisp_EnginePoll();
 
         #if (boardUSE_OS)
         if (bDisp_IsBacklightOn() == false)
+        {
             /* 息屏: 2 秒低频心跳挂起, CPU 占用 0% */
             ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
+        }
         else
-            /* 亮屏: 按当前页面声明的帧周期节拍等待 */
-            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(usDisp_GetFramePeriod()));
+        {
+            /* 亮屏: 帧周期 - 已耗渲染时间 = 剩余等待时间 (已超时则立刻进入下一帧) */
+            x_period  = pdMS_TO_TICKS(usDisp_GetFramePeriod());
+            x_elapsed = xTaskGetTickCount() - x_start;
+            ulTaskNotifyTake(pdTRUE, (x_elapsed < x_period) ? (x_period - x_elapsed) : 1U);
+        }
         #endif  /* boardUSE_OS */
     }
 }

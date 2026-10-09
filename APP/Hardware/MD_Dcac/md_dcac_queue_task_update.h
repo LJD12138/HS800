@@ -22,7 +22,7 @@ extern "C" {
 //****************************************************Includes******************************************************************//
 #include "main.h"
 
-#if (boardDCAC_EN)
+#if (boardDCAC_EN && boardUPDATE)
 #include "Megmeet/megmeet_proto.h"
 #include "Sys/sys_queue_task_update.h"
 #include "MD_Dcac/md_dcac_prot_frame.h"
@@ -86,7 +86,7 @@ bool bDcac_SetPrepStage(Task_T *p_task, DcacPrepStage_E stage);
 bool bDcac_SetFwTransStage(Task_T *p_task, DcacFwTransStage_E stage);
 int8_t cDcac_GetUpdateStage(void);
 
-#endif  /* boardDCAC_EN */
+#endif  /* boardDCAC_EN && boardUPDATE */
 
 #ifdef __cplusplus
 }

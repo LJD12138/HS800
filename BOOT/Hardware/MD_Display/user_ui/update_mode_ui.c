@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if (boardDISPLAY_EN)
+#if (boardDISPLAY_EN && boardUPDATE)
 //****************************************************Macros********************************************************************//
 
 /* 屏幕尺寸 */
@@ -614,4 +614,4 @@ void vDisp_UpdateModeUi(void)
     s_b_first_run = false;
 }
 
-#endif  /* boardDISPLAY_EN */
+#endif  /* boardDISPLAY_EN && boardUPDATE */

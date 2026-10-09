@@ -17,6 +17,7 @@
 
 #if (boardUSB_EN || boardPRINT_IFACE == 7)
 #include "usbd_core.h"
+#include "usb_dc.h"
 #include "usbd_cdc_acm.h"
 
 #if (boardPRINT_IFACE)
@@ -377,7 +378,8 @@ void vUsbCdc_Init(void)
  ***********************************************************************************************************************/
 void vUsbCdc_DeInit(void)
 {
-    usb_dc_low_level_deinit(0);
+    /* 完整去初始化: 软断开(SDIS)使主机看到干净断开,关内核中断,清FIFO,再关NVIC与时钟 */
+    usb_dc_deinit(0);
     s_b_usb_configured = false;
     s_b_usb_tx_busy    = false;
 }

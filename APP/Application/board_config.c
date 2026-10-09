@@ -132,53 +132,69 @@ static void v_print_init_fail_cb(s16 s_err_code);
 static const TaskInitEntry_T c_task_init_table[] = {
 	/* 任务名称       初始化函数        基准错误码  是否关键任务  失败回调 */
 	{"SysTask",      cSys_TaskInit,          0,         true,        NULL},
+	
 	#if (boardPRINT_IFACE)
 	{"PrintTask",    cPrint_TaskInit,        -10,       false,       v_print_init_fail_cb},
 	#endif  /* boardPRINT_IFACE */
+	
 	#if (boardADC_EN)
 	{"AdcTask",      cAdc_TaskInit,          -20,       true,       NULL},
 	#endif  /* boardADC_EN */
+	
 	#if (boardDISPLAY_EN)
 	{"DispTask",     cDisp_TaskInit,         -30,       true,       NULL},
 	#endif  /* boardDISPLAY_EN */
+	
 	#if (boardBUZ_EN)
 	{"BuzTask",      cBuz_TaskInit,          -40,       false,       NULL},
 	#endif  /* boardBUZ_EN */
+	
 	#if (boardKEY_EN)
 	{"KeyTask",      cKey_TaskInit,          -50,       true,       NULL},
 	#endif  /* boardKEY_EN */
+	
 	#if (boardLED_EN)
 	{"LedTask",      cLed_TaskInit,          -60,       false,       NULL},
 	#endif  /* boardLED_EN */
+	
 	#if (boardLIGHT_EN)
 	{"LightTask",    cLight_TaskInit,        -70,       false,       NULL},
 	#endif  /* boardLIGHT_EN */
+	
 	#if (boardHEAT_MANAGE_EN)
 	{"HMTask",       cHM_TaskInit,           -80,       false,       NULL},
 	#endif  /* boardHEAT_MANAGE_EN */
+	
 	#if (boardUSB_EN)
 	{"UsbTask",      cUsb_TaskInit,          -90,       false,       NULL},
 	#endif  /* boardUSB_EN */
+	
 	#if (boardDC_EN)
 	{"DcTask",       cDc_TaskInit,           -100,      false,       NULL},
 	#endif  /* boardDC_EN */
+	
 	#if (boardDCAC_EN)
 	{"DcacTask",     cDcac_TaskInit,         -110,      false,       NULL},
 	{"DcacRecTask",  cDcac_RecTaskInit,      -120,      false,       NULL},
 	#endif  /* boardDCAC_EN */
+	
 	#if (boardBMS_EN)
 	{"BmsTask",      cBms_TaskInit,          -130,      true,       NULL},
 	{"BmsRecTask",   cBms_RecTaskInit,       -140,      true,       NULL},
 	#endif  /* boardBMS_EN */
+	
 	#if (boardMPPT_EN)
 	{"MpptTask",     cMppt_TaskInit,         -150,      false,       NULL},
 	{"MpptRecTask",  cMppt_RecTaskInit,      -160,      false,       NULL},
 	#endif  /* boardMPPT_EN */
+	
 	#if (boardWIFI_IFACE)
 	{"WifiTask",     cWifi_TaskInit,         -170,      false,       NULL},
 	{"WifiRecTask",  cWiFi_RecTaskInit,      -180,      false,       NULL},
 	#endif  /* boardWIFI_IFACE */
+	
 	{"TimerTask",    cTimer_TaskInit,        -190,      false,       NULL},
+	
 	#if (boardUSE_OS && boardHEALTH_MONITOR_EN)
 	{"HealthTask",   cHealth_TaskInit,       -200,      false,       NULL},
 	#endif  /* boardUSE_OS && boardHEALTH_MONITOR_EN */
@@ -197,7 +213,7 @@ void SysParamInit(void)
 	#if (boardPRINT_IFACE)
 	uPrint.tFlag.bImportant   = 1;
 	uPrint.tFlag.bAppInfo     = 1;
-	uPrint.tFlag.bSysTask     = 0;
+	uPrint.tFlag.bSysTask     = 1;
 	uPrint.tFlag.bKeyTask     = 1;
 	uPrint.tFlag.bBmsRecTask  = 0;
 	uPrint.tFlag.bBmsTask     = 0;
@@ -211,11 +227,8 @@ void SysParamInit(void)
 
 	#if (boardHEALTH_MONITOR_EN)
 	uPrint.tFlag.bHealthTask  = 1;	/* 健康巡检遥测(CPU/队列/栈/堆) */
+	uPrint.tFlag.bFreeRTOS    = 1;	/* FreeRTOS剩余堆/任务表打印 */
 	#endif  /* boardHEALTH_MONITOR_EN */
-	
-	#if (boardUSE_OS_DEBUG_OUT)
-	uPrint.tFlag.bFreeRTOS    = 1;
-	#endif  /* boardUSE_OS_DEBUG_OUT */
 	
 	// 非调试模式下，关闭一般调试输出
 	#if(!boardDEBUG)

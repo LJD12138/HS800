@@ -120,7 +120,7 @@ static bool b_page_boot_event(DispEvent_E e_event, uint32_t ul_param)
  ************************************************************************************************************************/
 static void v_page_boot_exit(void)
 {
-    /* 无特殊退出清理 */
+    bDisp_Switch(ST_OFF, false);
 }
 
 #endif  /* boardDISPLAY_EN */

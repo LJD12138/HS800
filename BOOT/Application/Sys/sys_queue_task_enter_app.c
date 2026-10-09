@@ -99,7 +99,6 @@ void v_sys_queue_task_enter_app(Task_T *p_task)
                 cQueue_GotoStep(p_task, STEP_END);
                 break;
             }
-            #endif  /* boardUPDATE */
 
             #if (boardIC_TYPE == boardIC_STM32H7XX)
             ret = cQSPI_MemoryMapped();
@@ -108,6 +107,8 @@ void v_sys_queue_task_enter_app(Task_T *p_task)
             #endif  /* boardIC_TYPE == boardIC_STM32H7XX */
 
             log_e("BOOT跳转APP失败%d,错误代码%d!!!", s_uc_illegal_addr_cnt, ret);
+            #endif  /* boardUPDATE */
+            
             cQueue_GotoStep(p_task, STEP_FORWARD);
         }
         break;

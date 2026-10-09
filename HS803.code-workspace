@@ -13,5 +13,8 @@
         "cortex-debug.variableUseNaturalFormat": true,
         "git.ignoreLimitWarning": true,
         "powershell.cwd": "BOOT"
-    }
+	},
+	"trae": {
+		"workspaceId": "1fc181e39d88cb2d13a96775543c8115"
+	}
 }

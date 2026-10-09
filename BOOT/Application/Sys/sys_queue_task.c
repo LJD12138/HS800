@@ -47,6 +47,7 @@ typedef void (*pAppFunction)(void);
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) Task_T *tpSysTask = NULL;      /* 系统总任务控制块指针 */
+static pAppFunction S_pApplication = NULL;  /* APP 入口函数指针(固定地址存储,不随栈切换失效) */
 
 //****************************************************Function Declaration******************************************************//
 static bool b_task_manage_func_cb(Task_T *p_task);
@@ -269,14 +270,11 @@ s8 cSys_JumpToApp(void)
     SysTick->LOAD = 0;
     SysTick->VAL = 0;
 
-    pAppFunction p_application = (pAppFunction)(uintptr_t)JumpAddress;
+    S_pApplication = (pAppFunction)JumpAddress;
 
-    __set_CONTROL(0);                                       /* 确保处于特权线程模式使用 MSP */
-    __set_MSP(*(__IO uint32_t *)flashAPP_START);           /* 加载 APP 堆栈指针 */
-    __ISB();
-    __DSB();
+    __set_MSP(*(__IO uint32_t *)flashAPP_START);           //APP程序堆栈指针起始(用户代码区的第一个字用于存放栈顶地址)
 
-    p_application();                                        /* 跳转到 Reset_Handler 即 APP */
+    S_pApplication();                                      //跳转到Reset_Handler即APP
 
     return -3;
 }

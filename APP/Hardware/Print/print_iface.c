@@ -50,11 +50,13 @@ static __ALIGNED(4) uint8_t s_uca_print_rx_dma_buff[printRX_DMA_BUFF_SIZE];
 static __ALIGNED(4) uint8_t s_uca_print_tx_dma_buff[printTX_DMA_BUFF_SIZE];
 
 //****************************************************Function Declaration******************************************************//
+#if (boardPRINT_IFACE != 7)
 static void v_print_gpio_init(void);
 static void v_print_usart_init(void);
 #if (boardPRINT_IFACE_DMA_EN)
 static void v_print_dma_init(void);
 #endif  /* boardPRINT_IFACE_DMA_EN */
+#endif  /* boardPRINT_IFACE != 7 */
 
 #if (boardCM_BACKTRACE)
 #if defined(__CC_ARM)
@@ -102,6 +104,16 @@ __attribute__((used)) void _sys_exit(int x)
  ************************************************************************************************************************/
 int fputc(int ch, FILE *f)
 {
+	#if (boardPRINT_IFACE == 7)
+	uint8_t uc_c = (uint8_t)ch;
+	uint32_t ul_timeout = 50000;
+	while (bUsbCdc_IsTxBusy() && --ul_timeout)
+	{
+		__NOP();
+	}
+	bUsbCdc_Send(&uc_c, 1);
+	return ch;
+	#else
 	#if (boardPRINT_485_IFACE_EN)
 	vPrint_485TransEnable(true);
 	#endif  /* boardPRINT_485_IFACE_EN */
@@ -117,8 +129,11 @@ int fputc(int ch, FILE *f)
 	vPrint_485TransEnable(false);
 	#endif  /* boardPRINT_485_IFACE_EN */
 	return ch;
+	#endif  /* boardPRINT_IFACE == 7 */
 }
 #endif  /* boardCM_BACKTRACE */
+
+#if (boardPRINT_IFACE != 7)
 
 /***********************************************************************************************************************
  * 函数功能    : 相关 IO 初始化
@@ -284,6 +299,7 @@ static void v_print_dma_init(void)
 	usart_interrupt_enable(printUSART, USART_INT_IDLE); 
 }
 #endif  /* boardPRINT_IFACE_DMA_EN */
+#endif  /* boardPRINT_IFACE != 7 */
 
 /***********************************************************************************************************************
  * 函数功能    : 串口初始化
@@ -294,28 +310,36 @@ static void v_print_dma_init(void)
  ************************************************************************************************************************/
 void vPrint_IfaceInit(void)
 {
+	#if (boardPRINT_IFACE == 7)
+	vUsbCdc_Init();
+	#else
 	v_print_gpio_init();
 	v_print_usart_init();
 	#if (boardPRINT_IFACE_DMA_EN)
 	v_print_dma_init();
 	#endif  /* boardPRINT_IFACE_DMA_EN */
+	#endif  /* boardPRINT_IFACE == 7 */
 }
 
 /***********************************************************************************************************************
  * 函数功能    : 串口去初始化
- * 说明(备注)  : 复位串口及 DMA 通道
+ * 说明(备注)  : 复位串口及 DMA 通道，或去初始化 USB CDC
  * 传入参数    : 无
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
 void vPrint_IfaceDeInit(void)
 {
+	#if (boardPRINT_IFACE == 7)
+	vUsbCdc_DeInit();
+	#else
 	usart_deinit(printUSART);
 	
 	#if (boardPRINT_IFACE_DMA_EN)
 	dma_deinit(printUSART_DMA, printUSART_DMA_TX_CH);
 	dma_deinit(printUSART_DMA, printUSART_DMA_RX_CH);
 	#endif  /* boardPRINT_IFACE_DMA_EN */
+	#endif  /* boardPRINT_IFACE == 7 */
 }
 
 /***********************************************************************************************************************
@@ -329,7 +353,27 @@ bool bPrint_DataSendStart(uint16_t us_len)
 {
 	if (us_len == 0)
 		return false;
-	
+
+	#if (boardPRINT_IFACE == 7)
+	if (!bUsbCdc_IsConfigured() || bUsbCdc_IsTxBusy())
+		return false;
+
+	if (us_len > printTX_DMA_BUFF_SIZE)
+		us_len = printTX_DMA_BUFF_SIZE;
+
+	s_us_data_send_size = lwrb_peek(&tPrintTxBuff, 0, s_uca_print_tx_dma_buff, us_len);
+	if (s_us_data_send_size == 0)
+		return false;
+
+	if (!bUsbCdc_Send(s_uca_print_tx_dma_buff, s_us_data_send_size))
+	{
+		s_us_data_send_size = 0;
+		return false;
+	}
+	lwrb_skip(&tPrintTxBuff, s_us_data_send_size);
+	s_us_data_send_size = 0;
+	return true;
+	#else
 	if (us_len > printTX_DMA_BUFF_SIZE)
 		us_len = printTX_DMA_BUFF_SIZE;
 
@@ -368,6 +412,7 @@ bool bPrint_DataSendStart(uint16_t us_len)
 	usart_interrupt_enable(printUSART, USART_INT_TBE);           
 	return true;
 	#endif  /* boardPRINT_IFACE_DMA_EN */
+	#endif  /* boardPRINT_IFACE == 7 */
 }
 
 /***********************************************************************************************************************
@@ -401,10 +446,14 @@ void vPrint_485TransEnable(bool b_en)
  ************************************************************************************************************************/
 bool bPrint_CheckSendFinish(void)
 {
+	#if (boardPRINT_IFACE == 7)
+	return !bUsbCdc_IsTxBusy();
+	#else
 	if (s_us_data_send_size)
 		return false;
 	else 
 		return true;
+	#endif  /* boardPRINT_IFACE == 7 */
 }
 
 /***********************************************************************************************************************
@@ -417,6 +466,9 @@ bool bPrint_CheckSendFinish(void)
 #if (boardLOW_POWER)
 void vPrint_EnterLowPower(void)
 {
+	#if (boardPRINT_IFACE == 7)
+	vUsbCdc_DeInit();
+	#else
 	rcu_periph_clock_enable(printUSART_GPIO_TX_RCU);
 	#if (boardIC_TYPE == boardIC_GD32F50X)
 	gpio_mode_set(printUSART_GPIO_TX_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, printUSART_GPIO_TX_PIN);
@@ -439,8 +491,11 @@ void vPrint_EnterLowPower(void)
 	usart_interrupt_flag_clear(printUSART, USART_INT_FLAG_TBE);
 	usart_interrupt_disable(printUSART, USART_INT_TBE); 
 	usart_disable(printUSART);
+	#endif  /* boardPRINT_IFACE == 7 */
 }
 #endif  /* boardLOW_POWER */
+
+#if (boardPRINT_IFACE != 7)
 
 #if (boardPRINT_IFACE_DMA_EN)
 /***********************************************************************************************************************
@@ -609,5 +664,6 @@ void printUSART_IRQ_HANDLER(void)
 	#endif  /* boardUSE_OS */
 }
 #endif  /* boardPRINT_IFACE_DMA_EN */
+#endif  /* boardPRINT_IFACE != 7 */
 
 #endif  /* boardPRINT_IFACE */

@@ -15,7 +15,7 @@
 //****************************************************Includes******************************************************************//
 #include "MD_Display/md_display_data.h"
 
-#if (boardDISPLAY_EN)
+#if (boardDISPLAY_EN && boardUPDATE)
 #include "uni_disp_core.h"
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
@@ -775,4 +775,4 @@ static const char *pc_update_proto_str(ProtoType_E e_proto)
     }
 }
 
-#endif  /* boardDISPLAY_EN */
+#endif  /* boardDISPLAY_EN && boardUPDATE */

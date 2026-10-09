@@ -165,6 +165,10 @@ void vPrint_Task(void *pvParameters)
         else
             printIFACE_EN_OFF();
         #endif  /* boardUSB_EN */
+
+        #if (boardPRINT_IFACE == 7)
+        vUsbCdc_Tick();
+        #endif  /* boardPRINT_IFACE == 7 */
         
         vQueue_TaskPoll(p_task, printTASK_CYCLE_TIME);
     }

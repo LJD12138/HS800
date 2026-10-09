@@ -41,8 +41,10 @@ extern "C" {
 /* 初始化 */
 #define			dcacREG_ADDR_INIT						4049
 
+#if (boardUPDATE)
 /* DCAC升级模块使用的Megmeet芯片类型，应与固件文件头及A6回复中的芯片ID保持一致 */
 #define			dcacUPDATE_IC_TYPE						MEGMEET_IC_TYPE_AC
+#endif  /* boardUPDATE */
 
 /* 放电开关 */
 #define			dcacREG_ADDR_DISCHG_SW					4049
@@ -77,6 +79,8 @@ bool b_dcac_cs_sys_switch(uint16_t us_temp);
 
 bool bDcac_SendProtInit(void);
 bool bDcac_RecProtInit(void);
+
+#if (boardUPDATE)
 bool bDcac_MegmeetProtInit(void);
 
 /* 协议帧发送函数 */
@@ -87,6 +91,7 @@ bool b_dcac_send_f0(uint8_t uc_payload);
 bool b_dcac_send_f6(bool b_reset_timeout);
 bool b_dcac_send_f2(uint32_t ul_baud, bool b_reset_timeout);
 bool b_dcac_cs_send_fw_data(uint8_t uc_cmd, const uint8_t *p_payload, uint16_t us_payload_len, bool b_reset_timeout);
+#endif  /* boardUPDATE */
 
 /* 升级阶段DCAC任务回复缓存的线程安全访问接口 */
 bool b_dcac_update_buf_write(Task_T *p_task, const uint8_t *p_data, uint16_t us_len);

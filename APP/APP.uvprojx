@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT,LV_LVGL_H_INCLUDE_SIMPLE</Define>
               <Undefine></Undefine>
-              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\TaskQueue</IncludePath>
+              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\TaskQueue;.\Middlewares\CherryUSB;.\Middlewares\CherryUSB\common;.\Middlewares\CherryUSB\core;.\Middlewares\CherryUSB\class\cdc;.\Middlewares\CherryUSB\port\dwc2;.\Hardware\Usb</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -838,7 +838,67 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>MW-CherryUSB</GroupName>
+          <Files>
+            <File>
+              <FileName>usbd_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\core\usbd_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_cdc_acm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\class\cdc\usbd_cdc_acm.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dc_dwc2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\port\dwc2\usb_dc_dwc2.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_glue_gd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\CherryUSB\port\dwc2\usb_glue_gd.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>MW-LVGL</GroupName>
+          <GroupOption>
+            <GroupArmAds>
+              <Cads>
+                <interw>2</interw>
+                <Optim>3</Optim>
+                <oTime>2</oTime>
+                <SplitLS>2</SplitLS>
+                <OneElfS>2</OneElfS>
+                <Strict>2</Strict>
+                <EnumInt>2</EnumInt>
+                <PlainCh>2</PlainCh>
+                <Ropi>2</Ropi>
+                <Rwpi>2</Rwpi>
+                <wLevel>0</wLevel>
+                <uThumb>2</uThumb>
+                <uSurpInc>2</uSurpInc>
+                <uC99>2</uC99>
+                <uGnu>2</uGnu>
+                <useXO>2</useXO>
+                <v6Lang>0</v6Lang>
+                <v6LangP>0</v6LangP>
+                <vShortEn>2</vShortEn>
+                <vShortWch>2</vShortWch>
+                <v6Lto>2</v6Lto>
+                <v6WtE>2</v6WtE>
+                <v6Rtti>2</v6Rtti>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
+              </Cads>
+            </GroupArmAds>
+          </GroupOption>
           <Files>
             <File>
               <FileName>lv_global.h</FileName>
@@ -6206,6 +6266,16 @@
               <FileType>1</FileType>
               <FilePath>.\Application\gd32f50x_it.c</FilePath>
             </File>
+            <File>
+              <FileName>get_heapstack_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Application\get_heapstack_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>get_heapstack_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Application\get_heapstack_task.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6401,6 +6471,16 @@
               <FileType>1</FileType>
               <FilePath>.\Hardware\Print\print_queue_task_reply_run_log.c</FilePath>
             </File>
+            <File>
+              <FileName>print_usb_iface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Print\print_usb_iface.c</FilePath>
+            </File>
+            <File>
+              <FileName>print_usb_iface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Print\print_usb_iface.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6545,11 +6625,6 @@
               <FileName>dc_queue_task_err.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\Dc\dc_queue_task_err.c</FilePath>
-            </File>
-            <File>
-              <FileName>dc_queue_task_prot.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\Dc\dc_queue_task_prot.c</FilePath>
             </File>
             <File>
               <FileName>dc_queue_task_shut_down.c</FileName>
@@ -6707,16 +6782,6 @@
           <GroupName>HW-MD_Display</GroupName>
           <Files>
             <File>
-              <FileName>disp_adapt_lvgl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\disp_adapt_lvgl.c</FilePath>
-            </File>
-            <File>
-              <FileName>disp_adapt_lvgl.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\disp_adapt_lvgl.h</FilePath>
-            </File>
-            <File>
               <FileName>lv_port_disp.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\lv_port_disp.c</FilePath>
@@ -6745,16 +6810,6 @@
               <FileName>md_display_data.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\MD_Display\md_display_data.h</FilePath>
-            </File>
-            <File>
-              <FileName>md_display_eng_mode.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\MD_Display\md_display_eng_mode.c</FilePath>
-            </File>
-            <File>
-              <FileName>md_display_eng_mode.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\MD_Display\md_display_eng_mode.h</FilePath>
             </File>
             <File>
               <FileName>md_display_err.c</FileName>

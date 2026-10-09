@@ -377,7 +377,7 @@ static void tft_hw_spi_dma_init(void)
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_8BIT;
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
-    dma_init_struct.priority = DMA_PRIORITY_HIGH;
+    dma_init_struct.priority = DMA_PRIORITY_ULTRA_HIGH;	/* 刷屏通道最高优先级, 减少与USB/Flash DMA的总线争用延迟 */
     dma_init_struct.number = 1U;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
