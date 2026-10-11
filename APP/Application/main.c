@@ -40,17 +40,15 @@
 #include "freertos.h"
 #include "task.h"
 
-#if (boardPRINT_IFACE)
-#include "Print/print_task.h"
-#elif (boardSEGGER)
-#include "SEGGER_RTT.h"
-#endif  //boardPRINT_IFACE
-
 #if (boardWDGT_EN)
 #include "fwdgt.h"
 #endif  //boardWDGT_EN
 
 
+//****************************************************Task Declaration**********************************************************//
+#define      	startTASK_PRIO             			    1U       /* 任务优先级 */
+#define			startTASK_STK_SIZE					    512U	/* 任务堆栈 */
+static TaskHandle_t s_start_task_handler; 
 
 //****************************************************Macros********************************************************************//
 //APP中断向量表地址偏移
@@ -59,27 +57,9 @@
 #define			VECT_TAB_OFFSET							((uint32_t)(flashAPP_START - FLASH_BASE))	//APP中断向量表相对Flash基址偏移量
 #endif  //USER_BOOT_EXIST
 
-#define			START_TASK_PRIO							1		//任务优先级
-
-//****************************************************Parameter Initialization**************************************************//
-static TaskHandle_t s_start_task_handler;
-
 //****************************************************Function Declaration******************************************************//
-void vBoard_StartTask(void *pvParameters);
-void vBoard_SysInit(void);
+static void nvic_init(void);
 
-/***********************************************************************************************************************
- * 函数功能    : 中断优先级分组初始化
- * 说明(备注)  : 配置 4 位抢占优先级，0 位响应优先级
- * 传入参数    : 无
- * 输出参数    : 无
- * 返回值      : void
- ************************************************************************************************************************/
-static void nvic_init(void)
-{
-	/* configure 4 bits pre-emption priority */
-	nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
-}
 
 /***********************************************************************************************************************
  * 函数功能    : 应用程序主入口
@@ -106,15 +86,15 @@ int main(void)
 	#endif  //boardWDGT_EN
 
 	#if (boardSEGGER)
-	SEGGER_RTT_printf(0, "------------------APP OK--------------------!\r\n");
+	printf(0, "------------------APP OK--------------------!\r\n");
 	#endif  //boardSEGGER
 
-	//创建开始任务
-	if (xTaskCreate((TaskFunction_t)vBoard_StartTask,  //任务函数
+    //创建开始任务
+	if (xTaskCreate((TaskFunction_t)vBoard_StartTask,//任务函数
 	            (const char *)"StartTask",          //任务名称
-	            (uint16_t)512,                     //任务堆栈大小
-	            (void *)NULL,                      //传递给任务函数的参数
-	            (UBaseType_t)START_TASK_PRIO,      //任务优先级
+	            (uint16_t)startTASK_STK_SIZE,       //任务堆栈大小
+	            (void *)NULL,                       //传递给任务函数的参数
+	            (UBaseType_t)startTASK_PRIO,        //任务优先级
 	            (TaskHandle_t *)&s_start_task_handler) != pdPASS) //任务句柄
 	{
 		/* 根任务创建失败(堆耗尽),复位重试,避免无人喂狗前的静默挂死 */
@@ -123,7 +103,19 @@ int main(void)
 
 	vTaskStartScheduler();
 
-	while (1)
-	{
-	}
+	while (1){}
 }
+
+/***********************************************************************************************************************
+ * 函数功能    : 中断优先级分组初始化
+ * 说明(备注)  : 配置 4 位抢占优先级，0 位响应优先级
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : void
+ ************************************************************************************************************************/
+static void nvic_init(void)
+{
+	/* configure 4 bits pre-emption priority */
+	nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
+}
+

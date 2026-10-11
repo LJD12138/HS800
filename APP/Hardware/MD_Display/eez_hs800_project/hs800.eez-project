@@ -15,7 +15,8 @@
       "displayHeight": 240,
       "displayBorderRadius": 0,
       "darkTheme": true,
-      "colorFormat": "BGR",
+      "colorBpp": "16",
+      "bitmapColorFormat": "BGR",
       "resourceFiles": [],
       "hiddenWidgetLines": "dimmed",
       "dimmedLinesOpacity": "20",
@@ -93,7 +94,7 @@
           "template": "#if defined(EEZ_FOR_LVGL)\n#include <eez/core/vars.h>\n#endif\n\n#include \"ui.h\"\n#include \"screens.h\"\n#include \"images.h\"\n#include \"actions.h\"\n#include \"vars.h\"\n\n//${eez-studio GUI_ASSETS_DEF}\n\n//${eez-studio LVGL_NATIVE_VARS_TABLE_DEF}\n\n//${eez-studio LVGL_ACTIONS_ARRAY_DEF}\n\n#if defined(EEZ_FOR_LVGL)\n\nvoid ui_init() {\n    eez_flow_init(assets, sizeof(assets), (lv_obj_t **)&objects, sizeof(objects), images, sizeof(images), actions);\n}\n\nvoid ui_tick() {\n    eez_flow_tick();\n    tick_screen(g_currentScreen);\n}\n\n#else\n\n#include <string.h>\n\nstatic int16_t currentScreen = -1;\n\nstatic lv_obj_t *getLvglObjectFromIndex(int32_t index) {\n    if (index == -1) {\n        return 0;\n    }\n    return ((lv_obj_t **)&objects)[index];\n}\n\nvoid loadScreen(enum ScreensEnum screenId) {\n    currentScreen = screenId - 1;\n    lv_obj_t *screen = getLvglObjectFromIndex(currentScreen);\n    lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);\n}\n\nvoid ui_init() {\n    create_screens();\n    loadScreen(SCREEN_ID_MAIN_BOOTING);\n}\n\nvoid ui_tick() {\n    tick_screen(currentScreen);\n}\n\n#endif\n"
         }
       ],
-      "destinationFolder": "..\\eez_ui",
+      "destinationFolder": "..\\..\\..\\..\\..\\..\\..\\..\\2-User_Projects\\11-ESP\\ESP-C3\\Hardware\\MD_Display\\eez_ui",
       "separateFolderForImagesAndFonts": false,
       "imageExportMode": "source",
       "fontExportMode": "source",
@@ -325,7 +326,8 @@
               "textType": "literal",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": "ON"
+              "previewValue": "ON",
+              "useStaticText": true
             },
             {
               "objID": "67890123-4567-8901-bcde-f12345678902",
@@ -477,7 +479,8 @@
               "textType": "expression",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": "0"
+              "previewValue": "0",
+              "useStaticText": true
             },
             {
               "objID": "344fc44e-18eb-4545-aa5e-a116eb0bb2bb",
@@ -530,7 +533,8 @@
               "textType": "expression",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": "0"
+              "previewValue": "0",
+              "useStaticText": true
             },
             {
               "objID": "597271b7-265e-47e8-f945-0ee6fd9557fe",
@@ -580,7 +584,8 @@
               "textType": "expression",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": " 0h  0m"
+              "previewValue": " 0h  0m",
+              "useStaticText": true
             },
             {
               "objID": "717f8939-8538-46e1-8971-246e61662c50",
@@ -633,7 +638,8 @@
               "textType": "expression",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": "0"
+              "previewValue": "0",
+              "useStaticText": true
             },
             {
               "objID": "2523fcfc-3234-4af5-ca15-bfce66c40f7b",
@@ -1452,7 +1458,8 @@
               "textType": "expression",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": "E99"
+              "previewValue": "E99",
+              "useStaticText": true
             }
           ],
           "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
@@ -1554,7 +1561,8 @@
               "textType": "literal",
               "longMode": "WRAP",
               "recolor": false,
-              "previewValue": "OFF"
+              "previewValue": "OFF",
+              "useStaticText": true
             }
           ],
           "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
@@ -1684,7 +1692,8 @@
                   "textType": "literal",
                   "longMode": "DOTS",
                   "recolor": false,
-                  "previewValue": "FIRMWARE UPDATE"
+                  "previewValue": "FIRMWARE UPDATE",
+                  "useStaticText": true
                 }
               ],
               "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
@@ -1787,7 +1796,8 @@
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "OBJ"
+                  "previewValue": "OBJ",
+                  "useStaticText": true
                 },
                 {
                   "objID": "d51c1966-460f-4836-afa9-4db6d136f9bb",
@@ -1841,7 +1851,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "Host"
+                  "previewValue": "Host",
+                  "useStaticText": true
                 },
                 {
                   "objID": "0cda911b-e92e-4d41-973d-933b659a7309",
@@ -1894,7 +1905,8 @@
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "CH"
+                  "previewValue": "CH",
+                  "useStaticText": true
                 },
                 {
                   "objID": "30376e42-5d26-4f92-8c54-6629f19706fc",
@@ -1948,7 +1960,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "Console"
+                  "previewValue": "Console",
+                  "useStaticText": true
                 },
                 {
                   "objID": "577e258d-a239-49ae-8b2d-128a2d40614d",
@@ -2001,7 +2014,8 @@
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "PROT"
+                  "previewValue": "PROT",
+                  "useStaticText": true
                 },
                 {
                   "objID": "4b129dd2-2d15-4bb9-9e5d-6660c1f66f9e",
@@ -2055,7 +2069,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "Xmodem"
+                  "previewValue": "Xmodem",
+                  "useStaticText": true
                 },
                 {
                   "objID": "f2210772-1191-4091-b768-bc61eed3a31c",
@@ -2108,7 +2123,8 @@
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "FRM"
+                  "previewValue": "FRM",
+                  "useStaticText": true
                 },
                 {
                   "objID": "065de33a-df1c-4d1e-9c2a-0fe393c08c3a",
@@ -2162,7 +2178,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "0000/1024"
+                  "previewValue": "0000/1024",
+                  "useStaticText": true
                 },
                 {
                   "objID": "f04d0d84-6f14-4c34-866f-4c3a91d0558f",
@@ -2215,7 +2232,8 @@
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "TIMEOUT"
+                  "previewValue": "TIMEOUT",
+                  "useStaticText": true
                 },
                 {
                   "objID": "8418de98-e5cd-4d29-b2dd-ff6a4d72e9f0",
@@ -2269,7 +2287,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "360"
+                  "previewValue": "360",
+                  "useStaticText": true
                 }
               ],
               "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SNAPPABLE",
@@ -2399,7 +2418,8 @@
                       "textType": "expression",
                       "longMode": "WRAP",
                       "recolor": false,
-                      "previewValue": "75"
+                      "previewValue": "75",
+                      "useStaticText": true
                     }
                   ],
                   "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
@@ -2508,7 +2528,8 @@
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "%"
+                  "previewValue": "%",
+                  "useStaticText": true
                 },
                 {
                   "objID": "6054818b-cd79-4c92-8357-f76a1ed0ad9c",
@@ -2616,7 +2637,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "Upgrading..."
+                  "previewValue": "Upgrading...",
+                  "useStaticText": true
                 }
               ],
               "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SNAPPABLE",
@@ -2720,7 +2742,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "Reboot in 10s"
+                  "previewValue": "Reboot in 10s",
+                  "useStaticText": true
                 },
                 {
                   "objID": "13c1ea6b-baad-4c61-9598-b30512cf32e2",
@@ -2775,7 +2798,8 @@
                   "textType": "expression",
                   "longMode": "WRAP",
                   "recolor": false,
-                  "previewValue": "Normal"
+                  "previewValue": "Normal",
+                  "useStaticText": true
                 }
               ],
               "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",

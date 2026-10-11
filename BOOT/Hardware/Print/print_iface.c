@@ -58,7 +58,6 @@ static void v_print_dma_init(void);
 #endif  /* boardPRINT_IFACE_DMA_EN */
 #endif  /* boardPRINT_IFACE != 7 */
 
-#if (boardCM_BACKTRACE)
 #if defined(__CC_ARM)
 #pragma import(__use_no_semihosting)             
 /* 标准库需要的支持函数 */
@@ -104,11 +103,12 @@ __attribute__((used)) void _sys_exit(int x)
  ************************************************************************************************************************/
 int fputc(int ch, FILE *f)
 {
-#if (boardPRINT_IFACE == 7)
-	uint8_t uc_c = (uint8_t)ch;
-	bUsbCdc_Send(&uc_c, 1);
+	#if (boardPRINT_IFACE == 7)
+	#if (boardSEGGER)
+	SEGGER_RTT_PutChar(0, (char)ch);
+	#endif  /* boardSEGGER */
 	return ch;
-#else
+	#else
 	#if (boardPRINT_485_IFACE_EN)
 	vPrint_485TransEnable(true);
 	#endif  /* boardPRINT_485_IFACE_EN */
@@ -124,9 +124,8 @@ int fputc(int ch, FILE *f)
 	vPrint_485TransEnable(false);
 	#endif  /* boardPRINT_485_IFACE_EN */
 	return ch;
-#endif  /* boardPRINT_IFACE == 7 */
+	#endif  /* boardPRINT_IFACE == 7 */
 }
-#endif  /* boardCM_BACKTRACE */
 
 #if (boardPRINT_IFACE != 7)
 /***********************************************************************************************************************

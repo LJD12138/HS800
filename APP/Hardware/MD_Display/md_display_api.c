@@ -54,9 +54,6 @@
 /* UI屏幕对象已创建标志 (防重复 ui_init 导致 EEZ 屏幕对象重复创建) */
 static bool G_bUiInitialized = false;
 
-/* 刷屏缓冲区 - 用于纯色填充 */
-// __ALIGNED(4) static uint8_t S_tft_fill_buf[dispTFT_BUF_SIZE];
-
 #if(!LV_USE_ST7789)
 /* ST7789 初始化命令表项结构体 */
 typedef struct {
@@ -202,7 +199,6 @@ void vDisp_UiRefresh(void)
     lv_timer_handler();
 }
 
-
 /***********************************************************************************************************************
  * 函数功能    : 关闭UI界面
  * 说明(备注)  : none
@@ -211,7 +207,7 @@ void vDisp_UiRefresh(void)
  * 返回值      : none
  * 日期        : 2026-05-28
  ************************************************************************************************************************/
-void vDisp_CloseUi(u16 us_color)
+void vDisp_ClearScreen(u16 us_color)
 {
     v_disp_fill_color(0, 0, dispTFT_WIDTH - 1, dispTFT_HEIGHT - 1, us_color);
 }

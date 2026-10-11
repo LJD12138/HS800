@@ -656,14 +656,10 @@ void vSys_TickTimer(void)
 
 			#if (boardENG_MODE_EN)
 			case DS_ENG_MODE:
+			{
 				if (uPrint.tFlag.bSysTask)
-				{
 					sMyPrint("bSysTask = DS_ENG_MODE !\r\n");
-				#if printSEGGER
-					SEGGER_RTT_printf(0, "bSysTask = DS_INIT !\r\n");
-				#endif  //printSEGGER
-				}
-				break;
+			}break;
 			#endif  //boardENG_MODE_EN
 
 			default:

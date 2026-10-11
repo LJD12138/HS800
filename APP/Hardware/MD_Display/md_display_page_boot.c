@@ -42,7 +42,7 @@ const DispPage_T G_tPageBoot =
 	.vOnExit     = v_page_boot_exit,
     .vOnUpdate   = v_page_boot_update,
     .bOnEvent    = b_page_boot_event,
-    .usRefreshMs = 33,
+    .usRefreshMs = 20,
 };
 
 /***********************************************************************************************************************
@@ -113,14 +113,14 @@ static bool b_page_boot_event(DispEvent_E e_event, uint32_t ul_param)
 
 /***********************************************************************************************************************
  * 函数功能    : 退出开机页面
- * 说明(备注)  : none
+ * 说明(备注)  : 切屏已改为立即切换(LVGL 全屏失效覆盖所有像素), 无需再清黑抹残影;
+ *               若切屏恢复动画模式(FADE), 需重新启用 vDisp_ClearScreen 抹除 BOOT 残影
  * 传入参数    : none
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
 static void v_page_boot_exit(void)
 {
-    bDisp_Switch(ST_OFF, false);
 }
 
 #endif  /* boardDISPLAY_EN */

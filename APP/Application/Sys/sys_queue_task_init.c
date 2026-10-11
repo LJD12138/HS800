@@ -229,6 +229,7 @@ void v_sys_queue_task_init(Task_T *p_task)
 					bBuz_Tweet(SHORT_2);
 					#endif  //boardBUZ_EN
 
+					bQueue_Reset(tpSysTask);  //丢弃充电唤醒预入队的启动任务,防止工程模式被启动流程阻塞
 					cQueue_AddQueueTask(tpSysTask, STI_ENG, NULL, false);
 
 					#if (boardBMS_EN)

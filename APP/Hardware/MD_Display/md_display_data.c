@@ -163,7 +163,7 @@ DispPageId_E eDisp_MapDevStateToPage(uint8_t uc_dev_state)
     {
         case DS_INIT:        return PAGE_ID_INIT;        /* 初始化: 保持息屏 */
         case DS_BOOTING:     return PAGE_ID_BOOT;        /* 启动中: 开机步进动画页 */
-        case DS_WORK:        return PAGE_ID_WORK;        /* 工作中: 主工作界面 */
+        // case DS_WORK:        return PAGE_ID_WORK;        /* 工作中: 主工作界面 */
         case DS_ERR:         return PAGE_ID_FAULT;       /* 故障态: 故障专用告警页 */
         case DS_CLOSING:     return PAGE_ID_CLOSING;     /* 关机中: 关机画面展示 */
         case DS_SHUT_DOWN:   return PAGE_ID_SHUT_DOWN;   /* 已关机: 关机状态页(松开电源键息屏) */

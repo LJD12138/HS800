@@ -327,11 +327,6 @@ void vBoard_StartTask(void *p_v_parameters)
 			       p_entry->p_name, (int)s_err_code, (int)ret, (unsigned int)s_ul_free_heap_bytes);
 			#endif  /* boardPRINT_IFACE */
 
-			#if (boardSEGGER)
-			SEGGER_RTT_printf(0, "\r\n[ERROR] Task init failed! Task: %s, Err: %d (ret: %d), FreeHeap: %u B\r\n",
-			                  p_entry->p_name, (int)s_err_code, (int)ret, (unsigned int)s_ul_free_heap_bytes);
-			#endif  /* boardSEGGER */
-
 			/* 执行任务专属失败回调 (如关闭打印标志位等) */
 			if (p_entry->p_fn_on_fail != NULL)
 				p_entry->p_fn_on_fail(s_err_code);
@@ -342,9 +337,7 @@ void vBoard_StartTask(void *p_v_parameters)
 				#if (boardPRINT_IFACE)
 				printf("[FATAL] Critical task failed! System halt.\r\n");
 				#endif  /* boardPRINT_IFACE */
-				#if (boardSEGGER)
-				SEGGER_RTT_printf(0, "[FATAL] Critical task failed! System halt.\r\n");
-				#endif  /* boardSEGGER */
+				
 				configASSERT(0);
 				taskDISABLE_INTERRUPTS();
 				for (;;)
@@ -395,10 +388,6 @@ void vApplicationStackOverflowHook(TaskHandle_t x_task, char *p_c_task_name)
 	printf("\r\n[FATAL ERROR] Stack Overflow detected in task: %s!\r\n", p_c_task_name ? p_c_task_name : "Unknown");
 	#endif  /* boardPRINT_IFACE */
 
-	#if (boardSEGGER)
-	SEGGER_RTT_printf(0, "\r\n[FATAL ERROR] Stack Overflow detected in task: %s!\r\n", p_c_task_name ? p_c_task_name : "Unknown");
-	#endif  /* boardSEGGER */
-
 	/* 关全局中断，等待硬件看门狗复位以恢复系统安全 */
 	taskDISABLE_INTERRUPTS();
 	for (;;)
@@ -419,10 +408,6 @@ void vApplicationMallocFailedHook(void)
 	#if (boardPRINT_IFACE)
 	printf("\r\n[FATAL ERROR] FreeRTOS pvPortMalloc failed! Heap exhausted!\r\n");
 	#endif  /* boardPRINT_IFACE */
-
-	#if (boardSEGGER)
-	SEGGER_RTT_printf(0, "\r\n[FATAL ERROR] FreeRTOS pvPortMalloc failed! Heap exhausted!\r\n");
-	#endif  /* boardSEGGER */
 
 	taskDISABLE_INTERRUPTS();
 	for (;;)

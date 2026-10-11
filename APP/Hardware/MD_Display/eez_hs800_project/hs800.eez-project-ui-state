@@ -1,9 +1,5 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[eez_project.eez-project]:/userPages/3",
-    "selectedGlobalVariableObject": "[eez_project.eez-project]:/variables/globalVariables/6",
-    "selectedFontObject": "[eez_project.eez-project]:/fonts/3",
-    "selectedBitmapObject": "[eez_project.eez-project]:/bitmaps/7",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -207,25 +203,15 @@
               "children": [
                 {
                   "type": "tab",
-                  "id": "#3b8e8889-101a-4f85-a9de-74ac162a5fe7",
-                  "name": "Main_Update",
+                  "id": "#3c08c049-e9e5-4092-bdf1-b928db066e1a",
+                  "name": "Settings",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[eez_project.eez-project]:/userPages/3",
+                    "objectPath": "[hs800.eez-project]:/settings",
+                    "subObjectPath": "[hs800.eez-project]:/settings",
                     "permanent": false
                   },
-                  "icon": "svg:page"
-                },
-                {
-                  "type": "tab",
-                  "id": "#d86dd23c-ca30-40d5-bb36-3142559fbf5b",
-                  "name": "Main_Work",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[eez_project.eez-project]:/userPages/1",
-                    "permanent": true
-                  },
-                  "icon": "svg:page"
+                  "icon": "material:settings"
                 }
               ],
               "active": true
@@ -1287,5 +1273,5 @@
   "globalFlowZoom": true,
   "flowZoom": 1.1,
   "implementationLanguage": "C",
-  "openDialogDefaultPath": "G:\\1-Baiku_Projects\\25-HS800\\1.software\\HS800\\APP\\Hardware\\MD_Display\\eez_project\\Image\\light.png"
+  "openDialogDefaultPath": "G:\\2-User_Projects\\11-ESP\\ESP-C3\\Hardware\\MD_Display\\eez_ui"
 }

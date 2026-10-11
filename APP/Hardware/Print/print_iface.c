@@ -58,7 +58,6 @@ static void v_print_dma_init(void);
 #endif  /* boardPRINT_IFACE_DMA_EN */
 #endif  /* boardPRINT_IFACE != 7 */
 
-#if (boardCM_BACKTRACE)
 #if defined(__CC_ARM)
 #pragma import(__use_no_semihosting)             
 /* 标准库需要的支持函数 */
@@ -105,13 +104,9 @@ __attribute__((used)) void _sys_exit(int x)
 int fputc(int ch, FILE *f)
 {
 	#if (boardPRINT_IFACE == 7)
-	uint8_t uc_c = (uint8_t)ch;
-	uint32_t ul_timeout = 50000;
-	while (bUsbCdc_IsTxBusy() && --ul_timeout)
-	{
-		__NOP();
-	}
-	bUsbCdc_Send(&uc_c, 1);
+	#if (boardSEGGER)
+	SEGGER_RTT_PutChar(0, (char)ch);
+	#endif  /* boardSEGGER */
 	return ch;
 	#else
 	#if (boardPRINT_485_IFACE_EN)
@@ -131,10 +126,9 @@ int fputc(int ch, FILE *f)
 	return ch;
 	#endif  /* boardPRINT_IFACE == 7 */
 }
-#endif  /* boardCM_BACKTRACE */
+
 
 #if (boardPRINT_IFACE != 7)
-
 /***********************************************************************************************************************
  * 函数功能    : 相关 IO 初始化
  * 说明(备注)  : 配置 USART TX/RX 复用引脚及 485/接口控制引脚

@@ -17,7 +17,6 @@
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
-#if (1)
 
 //****************************************************Parameter Initialization**************************************************//
 __ALIGNED(4) Task_T *tpSysTask = NULL;      /* 系统总任务控制块指针 */
@@ -216,5 +215,4 @@ static void v_add_task_return_func_cb(Task_T *p_task, u8 num)
 		break;
 	}
 }
-#endif  /* 1 */
 

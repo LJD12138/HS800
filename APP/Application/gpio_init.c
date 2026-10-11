@@ -14,8 +14,6 @@
 
 //****************************************************Includes******************************************************************//
 #include "gpio_init.h"
-#include "freertos.h"
-#include "task.h"
 
 #include "Sys/sys_task.h"
 #include "timer_task.h"

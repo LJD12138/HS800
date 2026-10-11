@@ -50,7 +50,6 @@
 #include "key_func_eng.h"
 #endif  /* boardENG_MODE_EN */
 
-#if (1)
 //****************************************************Macros********************************************************************//
 typedef void (*fnKeyAction_T)(void);
 
@@ -424,7 +423,6 @@ static bool b_key_dispatch(const KeyActionItem_T *p_table, uint8_t uc_num, u8 *p
 	}
 	return false;
 }
-#endif  /* 1 */
 
 #endif  /* boardKEY_EN */
 

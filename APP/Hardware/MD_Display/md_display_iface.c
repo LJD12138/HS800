@@ -30,7 +30,8 @@
 typedef enum
 {
 	DISP_TFT_DMA_XFER_NONE = 0,
-	DISP_TFT_DMA_XFER_LVGL_COLOR
+	DISP_TFT_DMA_XFER_LVGL_COLOR,		/* LVGL 刷屏: ISR 需调 lv_display_flush_ready */
+	DISP_TFT_DMA_XFER_CLEAR				/* 独立清屏: ISR 仅归还信号量, 不触碰 LVGL 状态机 */
 }disp_tft_dma_xfer_t;
 
 static volatile disp_tft_dma_xfer_t s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
@@ -270,13 +271,59 @@ bool bDisp_WriteColorAsync(const u8 *data, u32 len)
 
     dispTFT_A0_H();
     dispTFT_CS_L();
-    
+
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
     dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
     s_eDmaXferType = DISP_TFT_DMA_XFER_LVGL_COLOR;
     dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
     dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
-	
+
+	#if (boardIC_TYPE == boardIC_GD32F50X)
+	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+	#elif  (boardIC_TYPE == boardIC_GD32F30X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+	#endif //boardIC_TYPE
+
+    dma_interrupt_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    return true;
+    #else
+    {
+        const u8 *byte_data = (const u8 *)data;
+        u32 byte_len = len;
+
+        for(u32 i = 0U; i < byte_len; i++)
+            tft_spi_send_byte(byte_data[i]);
+    }
+
+    dispTFT_CS_H();
+    return false;
+    #endif  //boardDISP_SPI_MODE
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 异步发送清屏颜色数据 (独立清屏使用, 不触碰 LVGL 状态机)
+ * 说明(备注)  : 与 bDisp_WriteColorAsync 区别仅在于 DMA 完成 ISR 不调用 lv_display_flush_ready,
+ *               供切页瞬间整屏清屏等独立于 LVGL 渲染循环的场景使用
+ * 传入参数    : data: 待发送颜色数据指针; len: 数据字节数
+ * 输出参数    : 无
+ * 返回值      : true: 数据已交给 DMA 发送; false: 入参非法（data 为 NULL 或 len 为 0）
+ ************************************************************************************************************************/
+bool bDisp_WriteClearAsync(const u8 *data, u32 len)
+{
+    if((data == NULL) || (len == 0U))
+        return false;
+
+    dispTFT_A0_H();
+    dispTFT_CS_L();
+
+    #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    s_eDmaXferType = DISP_TFT_DMA_XFER_CLEAR;
+    dma_memory_address_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, (uint32_t)data);
+    dma_transfer_number_config(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, len);
+
 	#if (boardIC_TYPE == boardIC_GD32F50X)
 	dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
 	#elif  (boardIC_TYPE == boardIC_GD32F30X)
@@ -519,8 +566,9 @@ static void v_tft_spi_dma_finish_isr(void)
 
     dispTFT_CS_H();
 
-    if(s_eDmaXferType == DISP_TFT_DMA_XFER_LVGL_COLOR)
+    if(s_eDmaXferType != DISP_TFT_DMA_XFER_NONE)
     {
+        disp_tft_dma_xfer_t e_type = s_eDmaXferType;
         s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
 
         #if(boardUSE_OS)
@@ -531,7 +579,8 @@ static void v_tft_spi_dma_finish_isr(void)
             xSemaphoreGiveFromISR(DispFlushDoneSemaphore, px_higher_priority_task_woken);
         #endif  /* boardUSE_OS */
 
-        if(disp != NULL)
+        /* 仅 LVGL 刷屏完成才通知 LVGL 状态机; 独立清屏不触碰, 避免在渲染循环外误触发 */
+        if((e_type == DISP_TFT_DMA_XFER_LVGL_COLOR) && (disp != NULL))
             lv_display_flush_ready(disp);
     }
 }

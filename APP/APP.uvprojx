@@ -865,6 +865,22 @@
         <Group>
           <GroupName>MW-LVGL</GroupName>
           <GroupOption>
+            <CommonProperty>
+              <UseCPPCompiler>0</UseCPPCompiler>
+              <RVCTCodeConst>0</RVCTCodeConst>
+              <RVCTZI>0</RVCTZI>
+              <RVCTOtherData>0</RVCTOtherData>
+              <ModuleSelection>0</ModuleSelection>
+              <IncludeInBuild>1</IncludeInBuild>
+              <AlwaysBuild>0</AlwaysBuild>
+              <GenerateAssemblyFile>0</GenerateAssemblyFile>
+              <AssembleAssemblyFile>0</AssembleAssemblyFile>
+              <PublicsOnly>0</PublicsOnly>
+              <StopOnExitCode>3</StopOnExitCode>
+              <CustomArgument></CustomArgument>
+              <IncludeLibraryModules></IncludeLibraryModules>
+              <ComprImg>0</ComprImg>
+            </CommonProperty>
             <GroupArmAds>
               <Cads>
                 <interw>2</interw>
@@ -897,6 +913,24 @@
                   <IncludePath></IncludePath>
                 </VariousControls>
               </Cads>
+              <Aads>
+                <interw>2</interw>
+                <Ropi>2</Ropi>
+                <Rwpi>2</Rwpi>
+                <thumb>2</thumb>
+                <SplitLS>2</SplitLS>
+                <SwStkChk>2</SwStkChk>
+                <NoWarn>2</NoWarn>
+                <uSurpInc>2</uSurpInc>
+                <useXO>2</useXO>
+                <ClangAsOpt>0</ClangAsOpt>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
+              </Aads>
             </GroupArmAds>
           </GroupOption>
           <Files>
@@ -6138,6 +6172,46 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>MW-UniDisplay</GroupName>
+          <Files>
+            <File>
+              <FileName>uni_disp_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_core.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_core.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_event.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_event.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_event.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_event.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_page.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_page.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>ComFunc</GroupName>
           <Files>
             <File>
@@ -6735,46 +6809,6 @@
               <FileName>led_iface.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\Led\led_iface.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>MW-UniDisplay</GroupName>
-          <Files>
-            <File>
-              <FileName>uni_disp_core.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_core.c</FilePath>
-            </File>
-            <File>
-              <FileName>uni_disp_core.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_core.h</FilePath>
-            </File>
-            <File>
-              <FileName>uni_disp_event.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_event.c</FilePath>
-            </File>
-            <File>
-              <FileName>uni_disp_event.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_event.h</FilePath>
-            </File>
-            <File>
-              <FileName>uni_disp_page.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_page.h</FilePath>
-            </File>
-            <File>
-              <FileName>uni_disp_port.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.c</FilePath>
-            </File>
-            <File>
-              <FileName>uni_disp_port.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.h</FilePath>
             </File>
           </Files>
         </Group>

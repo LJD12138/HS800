@@ -29,7 +29,7 @@
 //****************************************************Task Declaration**********************************************************//
 #if (boardUSE_OS)
 #define			dispTASK_PRIO							2U		/* 任务优先级 */
-#define			dispTASK_STK_SIZE						1024U	/* 任务堆栈 */
+#define			dispTASK_STK_SIZE						1536U	/* 任务堆栈 */
 TaskHandle_t    tDispTaskHandler = NULL;
 void            vDisp_Task(void *pvParameters);
 #endif  /* boardUSE_OS */

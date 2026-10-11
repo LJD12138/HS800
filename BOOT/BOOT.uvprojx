@@ -556,11 +556,6 @@
           <GroupName>MW-SeggerRtt</GroupName>
           <Files>
             <File>
-              <FileName>Seeger_print.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Middlewares\SeggerRtt\Seeger_print.c</FilePath>
-            </File>
-            <File>
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Middlewares\SeggerRtt\SEGGER_RTT.c</FilePath>

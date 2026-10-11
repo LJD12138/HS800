@@ -21,9 +21,6 @@
 #include "MD_Bms/md_bms_task.h"
 #endif  //boardBMS_EN
 
-#if (boardDCAC_EN)
-#include "MD_Dcac/md_dcac_task.h"
-#endif  //boardDCAC_EN
 
 //****************************************************Macros********************************************************************//
 #define			sysTASK_CLOSE_CYCLE_TIME				10		//任务时间

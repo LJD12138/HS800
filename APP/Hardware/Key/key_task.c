@@ -243,16 +243,24 @@ bool bKey_IsAnyPress(void)
  ************************************************************************************************************************/
 bool bKey_IsFactoryModePress(void)
 {
-	#if (boardDC_EN)
 	return (bKey_IsPressById(keyPOWER)
+
+		#if (boardDC_EN)
 		&& bKey_IsPressById(keyDC)
+		#endif  /* boardDC_EN */
+		
+		#if (boardUSB_EN)
+		&& !bKey_IsPressById(keyUSB)
+		#endif  /* boardUSB_EN */
+		
+		#if (boardLIGHT_EN )
+		&& !bKey_IsPressById(keyLIGHT)
+		#endif  /* boardLIGHT_EN */
+		
 		#if (boardDCAC_EN)
 		&& !bKey_IsPressById(keyAC)
 		#endif  /* boardDCAC_EN */
 	);
-	#else
-	return false;
-	#endif  /* boardDC_EN */
 }
 
 /***********************************************************************************************************************
@@ -264,16 +272,24 @@ bool bKey_IsFactoryModePress(void)
  ************************************************************************************************************************/
 bool bKey_IsEngModePress(void)
 {
-	#if (boardDC_EN)
 	return (bKey_IsPressById(keyPOWER)
-			&& !bKey_IsPressById(keyDC)
-			#if (boardDCAC_EN)
-			&& bKey_IsPressById(keyAC)
-			#endif  /* boardDCAC_EN */
+
+		#if (boardDC_EN)
+		&& !bKey_IsPressById(keyDC)
+		#endif  /* boardDC_EN */
+		
+		#if (boardUSB_EN)
+		&& bKey_IsPressById(keyUSB)
+		#endif  /* boardUSB_EN */
+		
+		#if (boardLIGHT_EN )
+		&& !bKey_IsPressById(keyLIGHT)
+		#endif  /* boardLIGHT_EN */
+		
+		#if (boardDCAC_EN)
+		&& !bKey_IsPressById(keyAC)
+		#endif  /* boardDCAC_EN */
 	);
-	#else
-	return false;
-	#endif  /* boardDC_EN */
 }
 
 #if (boardLOW_POWER)
@@ -311,8 +327,6 @@ void vKey_ExitLowPower(void)
 	#endif  /* boardUSE_OS */
 }
 #endif  /* boardLOW_POWER */
-
-//****************************************************Function Declaration******************************************************//
 
 /***********************************************************************************************************************
  * 函数功能    : 事件录入前预处理回调

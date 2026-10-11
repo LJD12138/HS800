@@ -27,7 +27,7 @@
 #endif  /* boardHEAT_MANAGE_EN */
 
 //****************************************************Parameter Initialization**************************************************//
-#define			dispPAGE_ENG_CYCLE_TIME_MS				33U
+#define			dispPAGE_ENG_CYCLE_TIME_MS				20U
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_eng_enter(void);

@@ -259,7 +259,7 @@ void vDisp_UiRefresh(void)
  * 返回值      : none
  * 日期        : 2026-05-28
  ************************************************************************************************************************/
-void vDisp_CloseUi(u16 us_color)
+void vDisp_ClearScreen(u16 us_color)
 {
     v_disp_fill_color(0, 0, dispTFT_WIDTH - 1, dispTFT_HEIGHT - 1, us_color);
 }
