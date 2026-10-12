@@ -32,7 +32,6 @@ extern "C" {
 //****************************************************Extern********************************************************************//
 void vDisp_Init(void);
 void vDisp_LoadScreen(int screen_id);
-void vDisp_ReqUiRefresh(void);
 void vDisp_UiRefresh(void);
 bool bDisp_IsReady(void);
 

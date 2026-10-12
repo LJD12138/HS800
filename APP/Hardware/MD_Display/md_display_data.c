@@ -56,6 +56,7 @@ void vDisp_DataCaptureSnapshot(DispDataSnapshot_T *p_snapshot)
 {
     uint32_t ul_active = 0;
     uint32_t ul_blink = 0;
+    bool b_dis_chg = false;
 
     if (p_snapshot == NULL)
         return;
@@ -68,47 +69,64 @@ void vDisp_DataCaptureSnapshot(DispDataSnapshot_T *p_snapshot)
     p_snapshot->usInPwr      = tSysInfo.usInPwr;
     p_snapshot->usOutPwr     = tSysInfo.usOutPwr;
 
-    /*----------------端口状态 -> 位图----------------*/
+    /*----------------端口状态 -> 位图 (错误/保护态优先判闪烁, 与图标显隐语义一致)----------------*/
     #if (boardUSB_EN)
-    if (tUsb.eDevState >= DS_BOOTING)
-        ul_active |= DISP_PORT_BIT_USB_OUT;
-    else if (tUsb.eDevState == DS_ERR)
+    if (tUsb.eDevState == DS_ERR)
         ul_blink |= DISP_PORT_BIT_USB_OUT;
+    else if (tUsb.eDevState >= DS_BOOTING)
+        ul_active |= DISP_PORT_BIT_USB_OUT;
+
+    if (tUsb.eDevState >= DS_BOOTING)
+        b_dis_chg = true;
     #endif  /* boardUSB_EN */
 
     #if (boardDC_EN)
-    if (tDc.eDevState >= DS_BOOTING)
-        ul_active |= DISP_PORT_BIT_DC_OUT;
-    else if (tDc.eDevState == DS_ERR)
+    if (tDc.eDevState == DS_ERR)
         ul_blink |= DISP_PORT_BIT_DC_OUT;
+    else if (tDc.eDevState >= DS_BOOTING)
+        ul_active |= DISP_PORT_BIT_DC_OUT;
+
+    if (tDc.eDevState >= DS_BOOTING)
+        b_dis_chg = true;
     #endif  /* boardDC_EN */
 
     #if (boardDCAC_EN)
-    if (tDcac.eDisChgState >= IOS_STARTING)
-        ul_active |= DISP_PORT_BIT_AC_OUT;
-    else if (tDcac.eDisChgState == IOS_ERR)
+    if (tDcac.eDisChgState == IOS_ERR || tDcac.eDisChgState == IOS_PROTE)
         ul_blink |= DISP_PORT_BIT_AC_OUT;
+    else if (tDcac.eDisChgState >= IOS_STARTING)
+        ul_active |= DISP_PORT_BIT_AC_OUT;
 
-    if (tDcac.eChgState >= IOS_STARTING)
-        ul_active |= DISP_PORT_BIT_AC_IN;
-    else if (tDcac.eChgState == IOS_PROTE || tDcac.eChgState == IOS_ERR)
+    if (tDcac.eChgState == IOS_PROTE || tDcac.eChgState == IOS_ERR)
         ul_blink |= DISP_PORT_BIT_AC_IN;
+    else if (tDcac.eChgState >= IOS_STARTING)
+        ul_active |= DISP_PORT_BIT_AC_IN;
+
+    if (tDcac.eDisChgState >= IOS_WORK)
+        b_dis_chg = true;
     #endif  /* boardDCAC_EN */
 
     #if (boardMPPT_EN)
-    if (tMppt.eDevState >= DS_BOOTING)
-        ul_active |= DISP_PORT_BIT_DC_IN;
-    else if (tMppt.eDevState == DS_ERR)
+    if (tMppt.eDevState == DS_ERR)
         ul_blink |= DISP_PORT_BIT_DC_IN;
+    else if (tMppt.eDevState >= DS_BOOTING)
+        ul_active |= DISP_PORT_BIT_DC_IN;
+
+    p_snapshot->ucPvWorkMode = (uint8_t)tMppt.eWorkMode;
+    #else
+    p_snapshot->ucPvWorkMode = 0;
     #endif  /* boardMPPT_EN */
 
     #if (boardLIGHT_EN)
-    if (tLight.eDevState == DS_WORK)
+    if (tLight.eDevState >= DS_WORK)
         ul_active |= DISP_PORT_BIT_LIGHT;
+
+    if (tLight.eDevState >= DS_WORK)
+        b_dis_chg = true;
     #endif  /* boardLIGHT_EN */
 
     p_snapshot->ulPortActiveFlags = ul_active;
     p_snapshot->ulPortBlinkFlags  = ul_blink;
+    p_snapshot->bDisChgActive     = b_dis_chg;
 
     /*----------------电池相关 (BMS 64 位故障字临界区内防撕裂)----------------*/
     #if (boardBMS_EN)
@@ -119,6 +137,7 @@ void vDisp_DataCaptureSnapshot(DispDataSnapshot_T *p_snapshot)
         p_snapshot->bBatErr              = (ull_bms_err != 0);
         p_snapshot->bBatLock             = ((tBms.uPerm.tPerm.bDisChgPerm == 0) ||
                                             (tBms.uPerm.tPerm.bChgPerm == 0));
+        p_snapshot->bBmsChg              = (tBms.eWorkState == BWS_CHG);
         p_snapshot->ucSoc                = (uint8_t)tBmsRx.usSOC;
         p_snapshot->usChgFullTimeMin     = tBmsRx.usChgFullTime;
         p_snapshot->usDisChgEmptyTimeMin = tBmsRx.usDisChgEmptyTime;
@@ -126,6 +145,7 @@ void vDisp_DataCaptureSnapshot(DispDataSnapshot_T *p_snapshot)
     #else
     p_snapshot->bBatErr              = false;
     p_snapshot->bBatLock             = false;
+    p_snapshot->bBmsChg              = false;
     p_snapshot->ucSoc                = 0;
     p_snapshot->usChgFullTimeMin     = 0;
     p_snapshot->usDisChgEmptyTimeMin = 0;

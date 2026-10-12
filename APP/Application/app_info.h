@@ -32,9 +32,9 @@ extern "C" {
 #include "Usb/usb_task.h"
 #endif  /* boardUSB_EN */
 
-#if (boardBMS_EN)
+#if (boardBMS_EN && boardBMS_IFACE)
 #include "MD_Bms/md_bms_task.h"
-#endif  /* boardBMS_EN */
+#endif  /* boardBMS_EN && boardBMS_IFACE */
 
 #if (boardMPPT_EN)
 #include "MD_Mppt/md_mppt_task.h"
@@ -126,9 +126,9 @@ typedef struct
 	#if (boardUSB_EN)
 	UsbMemParam_T		tUSB;				/* USB模块参数 */
 	#endif  /* boardUSB_EN */
-	#if (boardBMS_EN)
+	#if (boardBMS_EN && boardBMS_IFACE)
 	BmsMemParam_T		tBMS;				/* BMS模块参数 */
-	#endif  /* boardBMS_EN */
+	#endif  /* boardBMS_EN && boardBMS_IFACE */
 	#if (boardMPPT_EN)
 	MpptMemParam_T		tMPPT;				/* MPPT模块参数 */
 	#endif  /* boardMPPT_EN */
@@ -155,9 +155,9 @@ extern const char                       tDcMemParamStr[];
 #if (boardUSB_EN)
 extern const char                       tUsbMemParamStr[];
 #endif  /* boardUSB_EN */
-#if (boardBMS_EN)
+#if (boardBMS_EN && boardBMS_IFACE)
 extern const char                       tBmsMemParamStr[];
-#endif  /* boardBMS_EN */
+#endif  /* boardBMS_EN && boardBMS_IFACE */
 #if (boardMPPT_EN)
 extern const char                       tMpptMemParamStr[];
 #endif  /* boardMPPT_EN */
@@ -174,17 +174,18 @@ extern const ef_env                     default_env_set[];
 //****************************************************Extern********************************************************************//
 /* 统一返回码见 AppInfoErr_E:APPINFO_OK(>0)成功 / APPINFO_UNINIT(0)未初始化 / APPINFO_ERR_*(<0)失败 */
 void vApp_JumpToBoot(uint32_t ul_cmd);
-s8 cApp_BootInfoInit(void);
-s8 cApp_AppInfoInit(void);                          /* 1:参数已存在  2:刚完成出厂初始化  <0:失败 */
-s8 cApp_MemParamInit(const char *p_id_str);         /* 将RAM镜像置为出厂默认值 */
-s8 cApp_UpdateMemParam(const char *p_id_str);       /* 将RAM镜像写入ENV/Flash */
-s8 cApp_GetMemParam(const char *p_id_str);          /* 将ENV/Flash数据读入RAM镜像 */
-u16 sApp_GetMemParamSize(void);
-s8 cApp_BootUpdateMemParam(const char *p_id_str);
-s8 cApp_BootGetMemParam(const char *p_id_str);
+s8   cApp_BootInfoInit(void);
+s8   cApp_AppInfoInit(void);                          /* 1:参数已存在  2:刚完成出厂初始化  <0:失败 */
+s8   cApp_MemParamInit(const char *p_id_str);         /* 将RAM镜像置为出厂默认值 */
+s8   cApp_UpdateMemParam(const char *p_id_str);       /* 将RAM镜像写入ENV/Flash */
+s8   cApp_GetMemParam(const char *p_id_str);          /* 将ENV/Flash数据读入RAM镜像 */
+u16  usApp_GetMemParamSize(void);
+s8   cApp_BootUpdateMemParam(const char *p_id_str);
+s8   cApp_BootGetMemParam(const char *p_id_str);
 
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */
 
 #endif  /* APP_INFO_H_ */
+

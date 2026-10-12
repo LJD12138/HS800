@@ -22,6 +22,7 @@
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
+//****************************************************Macros********************************************************************//
 /* 芯片唯一ID基地址 (96bit = 12字节 = 6 x u16) */
 #if (boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
 #define			appUID_BASE								0x1FFFF7E8UL
@@ -80,9 +81,9 @@ const char tDcacMemParamStr[]   = "tDCAC";
 const char tSysMemParamStr[]    = "tSYS";
 #define			APP_PARAM_LIST_SYS(X)					X(tSysMemParamStr, tSYS, SysMemParam_T, bSys_MemParamInit)
 
-/* 把版本信息写入APP的Falsh中,要加偏移,flashAPP_START是NVIC中断向量表 */
+/* 把版本信息写入APP的Flash中,要加偏移,flashAPP_START是NVIC中断向量表 */
 #if defined(__CC_ARM)
-const __attribute__((at(flashAPP_START + FLASH_PAGE_SIZE)))  VerInfo_T tAppDefaultVer =
+const __attribute__((at(flashAPP_START + FLASH_PAGE_SIZE))) VerInfo_T tAppDefaultVer =
 #elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
 /* ARMCLANG不支持at属性,使用section放置到固定地址 */
 const __attribute__((section(".ARM.__at_0x08020000"))) __attribute__((used)) VerInfo_T tAppDefaultVer =
@@ -233,7 +234,7 @@ const ef_env default_env_set[] = {
 
 /***********************************************************************************************************************
  * 函数功能    : 跳转到Boot程序
- * 说明(备注)  : 根据跳转指令配置 BOOT 参数镜像，保存到存储介质并触发 NVIC 系统复位
+ * 说明(备注)  : 根据跳转指令配置 BOOT 参数镜像，保存到存储介质并触发系统复位
  * 传入参数    : ul_cmd: 跳转指令码 (mainINIT_FINISH_FLAG / mainUPDATE_FLAG / mainDISPLAY_FLAG 等)
  * 输出参数    : 无
  * 返回值      : 无
@@ -259,7 +260,7 @@ void vApp_JumpToBoot(uint32_t ul_cmd)
 	}
 
 	if (ul_cmd == mainINIT_APP_PARAM_FLAG)
-		cQueue_AddQueueTask(tpSysTask, STI_RESET, NULL, true);
+		cQueue_AddQueueTask(tpSysTask, STI_RESET, 0, true);
 	else
 	{
 		/* 标记指令 */
@@ -279,8 +280,6 @@ void vApp_JumpToBoot(uint32_t ul_cmd)
 		if (ul_cmd != mainINIT_FINISH_FLAG)
 		{
 			__disable_irq();  /* 关闭总中断 */
-
-			/* 关闭中断, 确保跳转过程中不会进入中断导致跳转失败 */
 			__set_FAULTMASK(1);
 			NVIC_SystemReset();
 		}
@@ -456,7 +455,7 @@ s8 cApp_UpdateMemParam(const char *p_id_str)
 			return APPINFO_ERR_WRITE;
 	}
 	#else
-	/* 擦除Falsh准备写入 */
+	/* 擦除Flash准备写入 */
 	if (cFlash_EraseSector(flashAPP_INFO_START, flashAPP_INFO_END) <= 0)
 		return APPINFO_ERR_FLASH;
 	/* 开始写入数据 */
@@ -546,12 +545,12 @@ s8 cApp_GetMemParam(const char *p_id_str)
  * 输出参数    : 无
  * 返回值      : EasyFlash: ENV条目数, 非EasyFlash: 参数结构体字节数
  ************************************************************************************************************************/
-u16 sApp_GetMemParamSize(void)
+u16 usApp_GetMemParamSize(void)
 {
 	#if (boardEASY_FLASH)
-	return sizeof(default_env_set) / sizeof(default_env_set[0]);
+	return (u16)(sizeof(default_env_set) / sizeof(default_env_set[0]));
 	#else
-	return sizeof(tAppMemParam);
+	return (u16)sizeof(tAppMemParam);
 	#endif  /* boardEASY_FLASH */
 }
 
@@ -590,7 +589,7 @@ s8 cApp_BootUpdateMemParam(const char *p_id_str)
 		return APPINFO_ERR_ID;
 
 	#else
-	/* 擦除Falsh准备写入 */
+	/* 擦除Flash准备写入 */
 	if (cFlash_EraseSector(flashAPP_INFO_START, flashAPP_INFO_END) <= 0)
 		return APPINFO_ERR_FLASH;
 	/* 开始写入数据 */
@@ -772,7 +771,7 @@ static void v_print_info(void)
 	sMyPrint("Boot: Version		: %s\r\n", tBootMemParam.tVerInfo.saVersion);
 	sMyPrint("Boot: buildDate	: %s\r\n", tBootMemParam.tVerInfo.saBuildDate);
 	sMyPrint("Boot: buildTime	: %s\r\n", tBootMemParam.tVerInfo.saBuildTime);
-	sMyPrint("Boot: ulCmd		: %x\r\n", tBootMemParam.tParam.ulCmd);
+	sMyPrint("Boot: ulCmd		: %x\r\n", (unsigned int)tBootMemParam.tParam.ulCmd);
 	sMyPrint("Boot: eAppState	: %d\r\n", tBootMemParam.tParam.eAppState);
 	sMyPrint("Boot: ucAppFaultCnt: %d\r\n", tBootMemParam.tParam.ucAppFaultCnt);
 

@@ -90,3 +90,4 @@ void vLcd_ExitLowPower(void);
 #endif  /* __cplusplus */
 
 #endif  /* MD_DISPLAY_TASK_H_ */
+

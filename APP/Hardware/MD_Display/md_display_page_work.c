@@ -50,20 +50,25 @@ const DispPage_T G_tPageWork =
  ************************************************************************************************************************/
 static void v_page_work_enter(void)
 {
+    DispDataSnapshot_T t_snapshot;
+
     /* 确保当前活动屏幕为主工作屏幕 */
     if (lv_screen_active() != objects.main_work)
         vDisp_LoadScreen(SCREEN_ID_MAIN_WORK);
 
+    /* 抓取一次快照用于首帧静态渲染 */
+    vDisp_DataCaptureSnapshot(&t_snapshot);
+
     /* 初始刷新一次 EEZ 静态数据 (仅设置控件属性, 标记脏区域; 不触碰能量环避免其提前创建) */
-    vDisp_UpdateDevParam();
-    
+    vDisp_UpdateDevParam(&t_snapshot);
+
     lv_refr_now(NULL);
 
     /* 再启动自绘组件与动画 (创建能量环等重组件) */
     vDisp_Main1UiStart();
 
     /* 能量环对象已创建, 补一次主界面数据刷新写入 SOC/充电状态 */
-    bDisp_Main1DataUpdate();
+    bDisp_Main1DataUpdate(&t_snapshot);
 
     /* 进入工作页若背光未开启, 显式点亮背光 */
     if (bDisp_IsBacklightOn() == false)
@@ -84,19 +89,18 @@ static void v_page_work_exit(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 工作页面帧更新
- * 说明(备注)  : 33ms 节拍驱动 EEZ 数据绑定与自绘部件更新
+ * 说明(备注)  : 驱动 EEZ 数据绑定与参数周期更新
  * 传入参数    : p_data: 快照数据指针, b_force: 强制刷新标志
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
 static void v_page_work_update(const DispDataSnapshot_T *p_data, bool b_force)
 {
-    (void)p_data;
     (void)b_force;
 
-    /* 周期更新设备数据与图标动画 */
-    vDisp_UpdateDevParam();
-    bDisp_Main1DataUpdate();
+    /* 周期更新设备数据与图标动画 (数据源: 帧快照) */
+    vDisp_UpdateDevParam(p_data);
+    bDisp_Main1DataUpdate(p_data);
 }
 
 /***********************************************************************************************************************

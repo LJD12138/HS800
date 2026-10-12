@@ -10,9 +10,9 @@
  * | 接口                     | 允许调用上下文            | 机制                     |
  * | bDisp_PostEvent          | 任意任务(不建议 ISR)      | 临界区入队+通知唤醒      |
  * | vDisp_RequestPage        | 任意任务                  | 目标页单字节写, 原子     |
- * | bDisp_Switch             | 任意任务                  | 内部状态单写+通知唤醒    |
+ * | bDisp_Switch             | 任意任务(禁止 ISR)       | 内部状态单写+通知唤醒    |
  * | bDisp_IsBacklightOn      | 任意任务                  | 布量单读                 |
- * | vDisp_TickTimer          | 任意任务/定时器           | 息屏 1S 周期递减         |
+ * | vDisp_TickTimer          | 任意任务/软件定时器(禁止硬件 ISR) | 息屏 1S 周期递减  |
  * | vDisp_PushPage/PopPage   | 仅显示任务                | 单上下文                 |
  * | vDisp_EnginePoll         | 仅显示任务                | 单上下文                 |
  * | usDisp_GetFramePeriod    | 任意任务                  | 单读(切页单写)           |

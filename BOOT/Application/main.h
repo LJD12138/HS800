@@ -11,8 +11,8 @@
  * -------------------------------------------------------
  * Copyright (c) 2026 -inc
  ************************************************************************************************************************/
-#ifndef __MAIN_H
-#define __MAIN_H
+#ifndef MAIN_H_
+#define MAIN_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -226,4 +226,4 @@ typedef struct
 }
 #endif  /* __cplusplus */
 
-#endif  /* __MAIN_H */
+#endif  /* MAIN_H_ */

@@ -19,7 +19,7 @@
 
 #if (boardUPDATE)
 #include "Sys/sys_queue_task_update.h"
-#endif  //boardUPDATE
+#endif  /* boardUPDATE */
 
 #if (boardUSB_EN)
 #include "Usb/usb_task.h"
@@ -31,15 +31,15 @@
 
 #if (boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
-#endif  //boardDISPLAY_EN
+#endif  /* boardDISPLAY_EN */
 
 #if (boardPRINT_IFACE)
 #include "Print/print_task.h"
-#endif  //boardPRINT_IFACE
+#endif  /* boardPRINT_IFACE */
 
-#if (boardBMS_EN)
+#if (boardBMS_EN && boardBMS_IFACE)
 #include "MD_Bms/md_bms_rec_task.h"
-#endif  //boardBMS_EN
+#endif  /* boardBMS_EN && boardBMS_IFACE */
 
 #if (boardMPPT_EN)
 #include "MD_Mppt/md_mppt_rec_task.h"
@@ -52,12 +52,12 @@
 
 #if (boardWDGT_EN)
 #include "fwdgt.h"
-#endif  //boardWDGT_EN
+#endif  /* boardWDGT_EN */
 
 //****************************************************Parameter Initialization**************************************************//
 #if (boardBMS_485_IFACE_EN)
-TimerHandle_t    tBmsRxEnTimer = NULL;     //单次定时器,BMS的485发送延时切换
-#endif  //boardBMS_485_IFACE_EN
+TimerHandle_t        tBmsRxEnTimer   = NULL;    /* 单次定时器, BMS的485发送延时切换 */
+#endif  /* boardBMS_485_IFACE_EN */
 
 #if (boardMPPT_485_IFACE_EN)
 TimerHandle_t    tMpptRxEnTimer = NULL;    //单次定时器,MPPT的485发送延时切换
@@ -68,11 +68,11 @@ TimerHandle_t    tDcacRxEnTimer = NULL;    //单次定时器,DCAC的485发送延
 #endif  //boardDCAC_485_IFACE_EN
 
 #if (boardBMS_EN)
-TimerHandle_t    tWakeUpBmsTimer = NULL;   //单次定时器,BMS的唤醒使能延时关闭
-#endif  //boardBMS_EN
+TimerHandle_t        tWakeUpBmsTimer = NULL;    /* 单次定时器, BMS的唤醒使能延时关闭 */
+#endif  /* boardBMS_EN */
 
-static TimerHandle_t s_t_repet_timer = NULL; //重复定时器
-static vu8           s_uc_timer_cnt = 0;
+static TimerHandle_t s_t_repet_timer = NULL;    /* 重复定时器 */
+static vu8           s_uc_timer_cnt  = 0;
 
 //****************************************************Function Declaration******************************************************//
 static void v_timer_signal_callback(TimerHandle_t xTimer);
@@ -137,7 +137,7 @@ s8 cTimer_TaskInit(void)
 	if (s_t_repet_timer == NULL)
 		return -5;
 
-	// 启动定时器
+	/* 启动定时器 */
 	#if (boardBMS_485_IFACE_EN)
 	xTimerStart(tBmsRxEnTimer, 0);
 	#endif  /* boardBMS_485_IFACE_EN */
@@ -164,7 +164,7 @@ s8 cTimer_TaskInit(void)
  * 说明(备注)  : 处理 485 发送使能撤回或 BMS 辅助开机脉冲拉低
  * 传入参数    : xTimer: 定时器句柄
  * 输出参数    : 无
- * 返回值      : void
+ * 返回值      : 无
  ************************************************************************************************************************/
 static void v_timer_signal_callback(TimerHandle_t xTimer)
 {
@@ -172,7 +172,7 @@ static void v_timer_signal_callback(TimerHandle_t xTimer)
 	{
 		#if (boardBMS_485_IFACE_EN)
 		vBms_485TransEnable(false);
-		#endif  //boardBMS_485_IFACE_EN
+		#endif  /* boardBMS_485_IFACE_EN */
 	}
 	else if (pvTimerGetTimerID(xTimer) == ((void *)2))
 		vGPIO_AssistBmsOpen(false);
@@ -195,7 +195,7 @@ static void v_timer_signal_callback(TimerHandle_t xTimer)
  * 说明(备注)  : 定周期调度各模块接收超时、升级超时及 1S 系统心跳管理
  * 传入参数    : xTimer: 定时器句柄
  * 输出参数    : 无
- * 返回值      : void
+ * 返回值      : 无
  ************************************************************************************************************************/
 static void v_timer_repet_callback(TimerHandle_t xTimer)
 {
@@ -205,8 +205,14 @@ static void v_timer_repet_callback(TimerHandle_t xTimer)
 	if (tSysInfo.eDevState == DS_UPDATE_MODE)
 	{
 		vUpdate_TickTimer();
+		
+		#if (boardBMS_EN && boardBMS_IFACE)
 		vBms_RecTickTimer();
+		#endif  /* boardBMS_EN && boardBMS_IFACE */
+		
+		#if (boardPRINT_IFACE)
 		vPrint_RecTickTimer();
+		#endif  /* boardPRINT_IFACE */
 
 		#if (boardDCAC_EN && (!boardDEBUG))
 		vDcac_RecTickTimer();
@@ -214,10 +220,10 @@ static void v_timer_repet_callback(TimerHandle_t xTimer)
 
 		return;
 	}
-	#endif  //boardUPDATE
+	#endif  /* boardUPDATE */
 
 	s_uc_timer_cnt++;
-	if (s_uc_timer_cnt >= (1000 / boardREPET_TIMER_CYCLE_TMIE)) //1S计时
+	if (s_uc_timer_cnt >= (1000 / boardREPET_TIMER_CYCLE_TMIE))  /* 1S计时 */
 	{
 		s_uc_timer_cnt = 0;
 		vSys_TickTimer();
@@ -236,16 +242,16 @@ static void v_timer_repet_callback(TimerHandle_t xTimer)
 
 		#if (boardDISPLAY_EN)
 		vDisp_TickTimer();
-		#endif  //boardDISPLAY_EN
+		#endif  /* boardDISPLAY_EN */
 
 		#if (boardWDGT_EN && boardPRINT_IFACE == 0)
 		vFwdgt_Reload();
-		#endif  //boardWDGT_EN && boardPRINT_IFACE == 0
+		#endif  /* boardWDGT_EN && boardPRINT_IFACE == 0 */
 	}
 
-	#if (boardBMS_EN && (!boardDEBUG))
+	#if (boardBMS_EN && boardBMS_IFACE && (!boardDEBUG))
 	vBms_RecTickTimer();
-	#endif  //boardBMS_EN && (!boardDEBUG)
+	#endif  /* boardBMS_EN && boardBMS_IFACE && (!boardDEBUG) */
 
 	#if (boardMPPT_EN && (!boardDEBUG))
 	vMppt_RecTickTimer();
@@ -261,7 +267,7 @@ static void v_timer_repet_callback(TimerHandle_t xTimer)
 
 	#if (boardPRINT_IFACE && (!boardDEBUG))
 	vPrint_RecTickTimer();
-	#endif  //boardPRINT_IFACE && (!boardDEBUG)
+	#endif  /* boardPRINT_IFACE && (!boardDEBUG) */
 }
 
 #if (boardLOW_POWER)
@@ -270,17 +276,17 @@ static void v_timer_repet_callback(TimerHandle_t xTimer)
  * 说明(备注)  : 删除处于运行状态的软件定时器以避免休眠期间唤醒
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : void
+ * 返回值      : 无
  ************************************************************************************************************************/
 void vCount_EnterLowPower(void)
 {
 	#if (boardBMS_485_IFACE_EN)
 	xTimerDelete(tBmsRxEnTimer, 100);
-	#endif  //boardBMS_485_IFACE_EN
+	#endif  /* boardBMS_485_IFACE_EN */
 
 	#if (boardBMS_EN)
 	xTimerDelete(tWakeUpBmsTimer, 100);
-	#endif  //boardBMS_EN
+	#endif  /* boardBMS_EN */
 
 	#if (boardDCAC_485_IFACE_EN)
 	xTimerDelete(tDcacRxEnTimer, 100);
@@ -304,4 +310,5 @@ void vCount_ExitLowPower(void)
 {
 	cTimer_TaskInit();
 }
-#endif  //boardLOW_POWER
+#endif  /* boardLOW_POWER */
+

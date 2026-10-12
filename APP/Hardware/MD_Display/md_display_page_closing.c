@@ -21,9 +21,11 @@
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/eez_ui/screens.h"
 
+//****************************************************Macros********************************************************************//
+#define			dispPAGE_CLOSING_HOLD_CNT				(1500U / 33U)	/* 关机画面保持 1500ms (约 45 帧) */
+
 //****************************************************Parameter Initialization**************************************************//
 static uint16_t s_us_close_wait_cnt = 0;
-#define			dispPAGE_CLOSING_HOLD_CNT				(1500U / 33U)	/* 关机画面保持 1500ms (约 45 帧) */
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_closing_enter(void);

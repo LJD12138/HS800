@@ -21,14 +21,7 @@
 #include "uni_disp_core.h"
 
 #if (boardDISPLAY_EN)
-#include "uni_disp_port.h"
-#include "MD_Display/md_display_data.h"
-#include "MD_Display/md_display_api.h"
-#include "app_info.h"
-
-#if (boardBUZ_EN)
-#include "Buz/buz_task.h"
-#endif  /* boardBUZ_EN */
+#include "uni_disp_port.h"      /* 项目快照定义与适配原语 (通用件唯一项目耦合点, 见 port 层) */
 
 
 //****************************************************Parameter Initialization**************************************************//
@@ -80,7 +73,7 @@ void vDisp_CoreInit(void)
     S_usFramePeriodMs  = boardDISP_REFRESH_TIME;
 
     S_bLight            = false;
-    S_usAutoOffTime     = tAppMemParam.tDISP.usAutoOffTime;
+    S_usAutoOffTime     = usDisp_PortGetAutoOffTime();
     S_usAutoOffCnt      = 0;
     S_ucCurrentDevState = 0xFFU;
 }
@@ -177,12 +170,12 @@ bool bDisp_Switch(SwitchType_E e_type, bool b_fore_en)
         if (!S_bLight)
         {
             S_bLight = true;
-            vDisp_SetBacklight(true);
+            vDisp_PortSetBacklight(true);
             S_bForceRefresh = true;             /* 标记下次渲染全量重绘 */
         }
 
         /* 更新息屏参数: 优先使用持久化参数, 为0则使用板级默认值 */
-        S_usAutoOffTime = b_fore_en ? 0 : tAppMemParam.tDISP.usAutoOffTime;
+        S_usAutoOffTime = b_fore_en ? 0 : usDisp_PortGetAutoOffTime();
         S_usAutoOffCnt  = S_usAutoOffTime;
     }
     else if (e_type == ST_OFF)
@@ -190,21 +183,19 @@ bool bDisp_Switch(SwitchType_E e_type, bool b_fore_en)
         if(S_bLight)
         {
             S_bLight = false;
-            vDisp_SetBacklight(false);
+            vDisp_PortSetBacklight(false);
         }
 
         /* 复位息屏参数 */
-        S_usAutoOffTime = tAppMemParam.tDISP.usAutoOffTime;
+        S_usAutoOffTime = usDisp_PortGetAutoOffTime();
         S_usAutoOffCnt  = 0;
     }
 
     /* 唤醒可能处于低频休眠心跳的显示任务 */
     vDisp_PortWakeTask();
 
-    #if (boardBUZ_EN)
     if (b_fore_en && S_bLight)
-        bBuz_Tweet(LONG_1);
-    #endif  /* boardBUZ_EN */
+        vDisp_PortBeepOnLightOn();
 
     return true;
 }
@@ -273,7 +264,8 @@ void vDisp_EnginePoll(void)
     /* 2. 设备状态路由 (状态变化沿, 高优先级: 覆盖弹窗栈) */
     v_disp_route_by_dev_state(&t_snapshot);
 
-    /* 3. 事件分发: 在本任务上下文统一消费事件队列 */
+    /* 3. 事件分发: 在本任务上下文统一消费事件队列
+     * (队列深度 4, 单帧最多处理 3 条, 事件风暴天然受限于队列容量, 无需额外帧预算) */
     while (bDisp_EventDequeue(&t_msg))
     {
         if (S_ptCurrentPage != NULL && S_ptCurrentPage->bOnEvent != NULL)
@@ -310,13 +302,13 @@ void vDisp_EnginePoll(void)
         if (S_ptCurrentPage != NULL && S_ptCurrentPage->vOnUpdate != NULL)
             S_ptCurrentPage->vOnUpdate(&t_snapshot, S_bForceRefresh);
 
-        vDisp_UiRefresh();
+        vDisp_PortUiRefresh();
         S_bForceRefresh = false;
     }
     else
     {
         if (S_bLight != S_bLastLight)
-            vDisp_UiRefresh();
+            vDisp_PortUiRefresh();
     }
     S_bLastLight = S_bLight;
 }
@@ -380,7 +372,7 @@ static void v_disp_route_by_dev_state(const DispDataSnapshot_T *p_snapshot)
 {
     DispPageId_E e_mapped;
 
-    if (tSysInfo.uInit.tFinish.bIF_DispTask == 0)
+    if (!bDisp_PortIsSystemReady())
     {
         if (S_eCurrentPageId == PAGE_ID_INIT)
             return;

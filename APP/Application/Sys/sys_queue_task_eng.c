@@ -19,12 +19,31 @@
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
+
+#if (boardADC_EN)
 #include "Adc/adc_task.h"
+#endif  /* boardADC_EN */
+
+#if (boardBUZ_EN)
 #include "Buz/buz_task.h"
+#endif  /* boardBUZ_EN */
+
+#if (boardUSB_EN)
 #include "Usb/usb_task.h"
+#endif  /* boardUSB_EN */
+
+#if (boardDC_EN)
 #include "Dc/dc_task.h"
+#endif  /* boardDC_EN */
+
+#if (boardLIGHT_EN)
 #include "MD_Light/md_light_task.h"
+#endif  /* boardLIGHT_EN */
+
+#if (boardHEAT_MANAGE_EN)
 #include "MD_HeatManage/md_hm_task.h"
+#endif  /* boardHEAT_MANAGE_EN */
+
 #include "..\..\BOOT\Application\flash_allot_table.h"
 
 #include "app_info.h"

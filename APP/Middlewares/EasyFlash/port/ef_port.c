@@ -81,7 +81,7 @@ EfErrCode ef_port_init(ef_env const **default_env, size_t *default_env_size) {
 		result = EF_ENV_INIT_FAILED;
 
     *default_env = default_env_set;
-    *default_env_size = sApp_GetMemParamSize();
+    *default_env_size = usApp_GetMemParamSize();
 	#endif  //boardEASY_FLASH
 	
     return result;

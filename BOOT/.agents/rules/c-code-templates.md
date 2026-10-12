@@ -70,7 +70,7 @@ alwaysApply: true
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  /* __cplusplus */
 
 //****************************************************Includes******************************************************************//
 #include "main.h"
@@ -96,7 +96,7 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif  /* __cplusplus */
 
 #endif  /* XXX_H */
 

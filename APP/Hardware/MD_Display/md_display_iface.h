@@ -90,14 +90,32 @@ extern "C" {
 #define     	dispTFT_DMA_TX_IRQ_HANDLER  			DMA1_Channel0_IRQHandler
 #endif  /* boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW */
 
+/* ST7789 控制器命令定义 */
+#define         ST7789_SWRESET                          0x01U    //软件复位命令
+#define         ST7789_SLPOUT                           0x11U    //退出睡眠模式
+#define         ST7789_NORON                            0x13U    //正常显示模式开启
+#define         ST7789_INVON                            0x21U    //显示反转开启
+#define         ST7789_DISPOFF                          0x28U    //关闭显示
+#define         ST7789_DISPON                           0x29U    //开启显示
+#define         ST7789_CASET                            0x2AU    //列地址设置
+#define         ST7789_RASET                            0x2BU    //行地址设置
+#define         ST7789_RAMWR                            0x2CU    //内存写入
+#define         ST7789_COLMOD                           0x3AU    //颜色模式设置
+#define         ST7789_MADCTL                           0x36U    //内存访问控制
+/* ST7789 内存访问控制位定义 */
+#define         ST7789_MADCTL_MY                        0x80U    //Y轴镜像
+#define         ST7789_MADCTL_MX                        0x40U    //X轴镜像
+#define         ST7789_MADCTL_MV                        0x20U    //行列交换
+#define         ST7789_MADCTL_BGR                       0x08U    //BGR颜色顺序
+
 //****************************************************Globals*******************************************************************//
 
 //****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
 void vDisp_IfaceInit(void);
-void vDisp_SpiSendByte(const u8 *data, u16 len);
 void vDisp_SetBacklight(bool on);
+void vDisp_SpiSendByte(const u8 *data, u16 len);
 void vDisp_WriteCommand(u8 cmd);
 void vDisp_WriteData8(u8 data);
 void vDisp_WriteData16(u16 data);

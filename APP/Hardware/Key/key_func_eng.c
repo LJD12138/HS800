@@ -93,6 +93,9 @@ void v_key_func_eng(uint8_t *p_uc_key_tri_type_buff)
 {
 	for (uint8_t i = 0; i < ENG_KEY_ACTION_NUM; i++)
 	{
+		if (s_t_eng_action_tbl[i].pPattern == NULL)
+			continue;
+
 		if (bFun_DataCompare(p_uc_key_tri_type_buff, (u8 *)s_t_eng_action_tbl[i].pPattern, s_t_eng_action_tbl[i].ucLen))
 		{
 			if (s_t_eng_action_tbl[i].pfAction != NULL)

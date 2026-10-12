@@ -1754,3 +1754,4 @@ s8 c_print_info_trans(u8* data, u8 len)
 #endif  //boardUPDATE
 
 #endif  //boardPRINT_IFACE
+

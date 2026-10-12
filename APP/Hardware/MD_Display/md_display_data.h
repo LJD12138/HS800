@@ -60,7 +60,10 @@ struct DispDataSnapshot_T
 	uint16_t			usPrimaryErrCode;		/* 主告警轮显错误码 (0 为无故障, 源自 usDisp_ErrCodeDisplay) */
 	uint16_t			usSysErrCode;			/* 系统故障位图镜像 (tSysInfo.uErrCode.usCode) */
 	uint32_t			ulPortActiveFlags;		/* 各端口稳态激活位图 */
-	uint32_t			ulPortBlinkFlags;		/* 各端口错误态位图 */
+	uint32_t			ulPortBlinkFlags;		/* 各端口错误态位图 (错误/保护态闪烁) */
+	uint8_t				ucPvWorkMode;			/* MPPT 工作模式 (MpptWorkMode_E, PV 图标选源依据) */
+	bool				bBmsChg;				/* BMS 充电中 (tBms.eWorkState == BWS_CHG, 剩余时间字段选择) */
+	bool				bDisChgActive;			/* 任一输出端口放电中 (AC>=WORK/USB/DC/照明, AC 模式动画依据) */
 	bool				bBatErr;				/* 电池硬件故障标志 */
 	bool				bBatLock;				/* 电池保护锁定标志 */
 };

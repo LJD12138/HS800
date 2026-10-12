@@ -18,37 +18,18 @@
 
 //****************************************************Includes******************************************************************//
 #include "MD_Display/user_ui/main_1_ui.h"
-#include "MD_Bms/md_bms_task.h"
 #include "main.h"
 #include <stdbool.h>
 
 #if(boardDISPLAY_EN)
-#include "MD_Display/md_display_task.h"
 #include "MD_Display/eez_ui/screens.h"
 #include "MD_Display/eez_ui/images.h"
 #include "MD_Display/eez_ui/vars.h"
 #include "MD_Display/user_ui/energy_ring.h"
-#include "Sys/sys_task.h"
-
-#if(boardDCAC_EN)
-#include "MD_Dcac/md_dcac_task.h"
-#endif
 
 #if(boardMPPT_EN)
-#include "MD_Mppt/md_mppt_task.h"
-#endif
-
-#if(boardUSB_EN)
-#include "Usb/usb_task.h"
-#endif
-
-#if(boardDC_EN)
-#include "Dc/dc_task.h"
-#endif
-
-#if(boardLIGHT_EN)
-#include "MD_Light/md_light_task.h"
-#endif
+#include "MD_Mppt/md_mppt_task.h"			/* MpptWorkMode_E/MWM_DC (PV 图标选源比较, 数据经快照传入) */
+#endif  /* boardMPPT_EN */
 
 #include <stdio.h>
 #include "lvgl.h"
@@ -58,16 +39,16 @@
 
 
 //****************************************************Parameter Initialization**************************************************//
-// 设备状态
-bool S_bDevAcOutShow;  // AC输出设备显示(true=开, false=关)
-bool S_bDevAcInShow;   // AC输入设备显示(true=开, false=关)
-bool S_bDevPvShow;     // PV设备显示(true=开, false=关)
-bool S_bDevLightShow;   // Light设备显示(true=开, false=关)
-bool S_bDevUsbShow;    // USB设备显示(true=开, false=关)
+// 设备状态显隐标志 (仅本文件使用, 由 v_disp_apply_port_flags 依据快照位图刷新)
+static bool S_bDevAcOutShow;  // AC输出设备显示(true=开, false=关)
+static bool S_bDevAcInShow;   // AC输入设备显示(true=开, false=关)
+static bool S_bDevPvShow;     // PV设备显示(true=开, false=关)
+static bool S_bDevLightShow;  // Light设备显示(true=开, false=关)
+static bool S_bDevUsbShow;    // USB设备显示(true=开, false=关)
 // bool S_bDevUsbAState;   // USB A设备显示(true=开, false=关)
 // bool S_bDevUsbC1State;  // USB C1设备显示(true=开, false=关)
 // bool S_bDevUsbC2State;  // USB C2设备显示(true=开, false=关)
-bool S_bDevDcShow;     // DC设备显示(true=开, false=关)
+static bool S_bDevDcShow;     // DC设备显示(true=开, false=关)
 
 static EnergyRing_T s_tEnergyRing;
 static bool S_bMain1InitialFinish = false;
@@ -98,18 +79,49 @@ static void v_disp_set_icon_visible(lv_obj_t *obj, bool visible)
 
 
 /***********************************************************************************************************************
+ * 函数功能    : 由快照端口位图刷新设备图标显隐标志
+ * 说明(备注)  : 闪烁位按 500ms 相位统一翻转(替代旧 vDisp_SetDevStateIcon 分散计时, 各端口同步闪烁);
+ *               激活位稳态点亮, 两者皆无则隐藏
+ * 传入参数    : p_data: 数据快照
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+static void v_disp_apply_port_flags(const DispDataSnapshot_T *p_data)
+{
+	static uint32_t	s_ul_blink_tick = 0;		/* 上次闪烁相位翻转时刻 */
+	static bool		s_b_blink_phase = true;		/* 闪烁相位(true=亮) */
+	uint32_t ul_now = xTaskGetTickCount();
+	bool b_blink_show;
+
+	if (ul_now - s_ul_blink_tick >= 500U)
+	{
+		s_ul_blink_tick = ul_now;
+		s_b_blink_phase = !s_b_blink_phase;
+	}
+	b_blink_show = s_b_blink_phase;
+
+	S_bDevAcOutShow = (p_data->ulPortBlinkFlags & DISP_PORT_BIT_AC_OUT) ? b_blink_show : ((p_data->ulPortActiveFlags & DISP_PORT_BIT_AC_OUT) != 0);
+	S_bDevAcInShow  = (p_data->ulPortBlinkFlags & DISP_PORT_BIT_AC_IN)  ? b_blink_show : ((p_data->ulPortActiveFlags & DISP_PORT_BIT_AC_IN)  != 0);
+	S_bDevPvShow    = (p_data->ulPortBlinkFlags & DISP_PORT_BIT_DC_IN)  ? b_blink_show : ((p_data->ulPortActiveFlags & DISP_PORT_BIT_DC_IN)  != 0);
+	S_bDevUsbShow   = (p_data->ulPortBlinkFlags & DISP_PORT_BIT_USB_OUT)? b_blink_show : ((p_data->ulPortActiveFlags & DISP_PORT_BIT_USB_OUT)!= 0);
+	S_bDevDcShow    = (p_data->ulPortBlinkFlags & DISP_PORT_BIT_DC_OUT) ? b_blink_show : ((p_data->ulPortActiveFlags & DISP_PORT_BIT_DC_OUT) != 0);
+	S_bDevLightShow = (p_data->ulPortActiveFlags & DISP_PORT_BIT_LIGHT) != 0;	/* 照明无错误闪烁态 */
+}
+
+
+/***********************************************************************************************************************
  * 函数功能    : 更新所有设备状态图标UI
- * 说明(备注)  : 在display_task中调用，根据状态标志更新所有设备UI显示
- * 传入参数    : none
+ * 说明(备注)  : 在display_task中调用，根据显隐标志更新所有设备UI显示 (标志由 v_disp_apply_port_flags 自快照位图刷新)
+ * 传入参数    : p_data: 数据快照, b_force: 是否强制更新
  * 输出参数    : none
  * 返回值      : true:更新 false:无更新
  ************************************************************************************************************************/
-bool b_disp_update_all_dev_states(bool b_force)
+static bool b_disp_update_all_dev_states(const DispDataSnapshot_T *p_data, bool b_force)
 {
     bool b_ret = false;
 
 	extern objects_t objects;
-	
+
 	static int8_t s_last_dev_ac_out_state = -1;
 	static int8_t s_last_dev_ac_in_state = -1;
 	static int8_t s_last_dev_pv_state = -1;
@@ -136,7 +148,7 @@ bool b_disp_update_all_dev_states(bool b_force)
 		b_dc_show = true;
 		b_light_show = true;
 	}
-	
+
 	if(s_last_dev_ac_out_state != b_ac_out_show || b_force)
 	{
 		s_last_dev_ac_out_state = b_ac_out_show;
@@ -150,9 +162,9 @@ bool b_disp_update_all_dev_states(bool b_force)
 		v_disp_set_icon_visible(objects.b_dev_ac_in_state, b_ac_in_show);
         b_ret = true;
 	}
-	
+
 	#if(boardMPPT_EN)
-	MpptWorkMode_E e_work_mode = tMppt.eWorkMode;
+	MpptWorkMode_E e_work_mode = (MpptWorkMode_E)p_data->ucPvWorkMode;
 	if(s_last_dev_pv_state != b_pv_show || s_last_pv_work_mode != (int8_t)e_work_mode || b_force)
 	{
 		s_last_dev_pv_state = b_pv_show;
@@ -205,18 +217,18 @@ bool b_disp_update_all_dev_states(bool b_force)
 /***********************************************************************************************************************
  * 函数功能    : 更新所有错误状态图标UI
  * 说明(备注)  : 返回 0~99 错误码时 -> 标签可见; 返回 100(切换间隙)时 -> 标签隐藏
- * 传入参数    : b_force: 是否强制更新
+ * 传入参数    : p_data: 数据快照, b_force: 是否强制更新
  * 输出参数    : none
  * 返回值      : true:更新 false:无更新
  ************************************************************************************************************************/
-static bool b_update_error_states(bool b_force)
+static bool b_update_error_states(const DispDataSnapshot_T *p_data, bool b_force)
 {
 	bool b_ret = false;
-	
+
 	// Determine if OT and OL are active
 	bool b_ot_active = false;
 	bool b_ol_active = false;
-	bool b_has_error = (usDisp_ErrCodeDisplay() != 0);
+	bool b_has_error = (p_data->usPrimaryErrCode != 0);
 	// bool b_has_error = true;//测试
 	if (S_bTestAllParam)
 	{
@@ -227,11 +239,11 @@ static bool b_update_error_states(bool b_force)
 	else
 	{
 		// OT check
-		if (tSysInfo.uErrCode.tCode.bOT)
+		if (p_data->usSysErrCode & DISP_SYSERR_BIT_OT)
 			b_ot_active = true;
 
 		// OL check
-		if (tSysInfo.uErrCode.tCode.bOL)
+		if (p_data->usSysErrCode & DISP_SYSERR_BIT_OL)
 			b_ol_active = true;
 	}
 	
@@ -271,37 +283,21 @@ static bool b_update_error_states(bool b_force)
 
 /***********************************************************************************************************************
  * 函数功能    : 更新AC工作模式图标UI
- * 说明(备注)  : 在display_task中调用，根据状态标志更新AC工作模式图标显示
- * 传入参数    : b_force: 是否强制更新
+ * 说明(备注)  : 在display_task中调用，根据快照充放电状态更新AC工作模式图标显示
+ * 传入参数    : p_data: 数据快照, b_force: 是否强制更新
  * 输出参数    : none
  * 返回值      : true:更新 false:无更新
  ************************************************************************************************************************/
-static bool b_update_ac_work_mode(bool b_force)
+static bool b_update_ac_work_mode(const DispDataSnapshot_T *p_data, bool b_force)
 {
 	bool b_ret = false;
 	bool b_chg_flag = false;
 	bool b_dis_chg_flag = false;
 
-	if(cSys_IsChgState() > 0)
+	if(p_data->ucChgState > 0)
 		b_chg_flag = true;
 
-	if(
-		#if(boardUSB_EN)
-		tUsb.eDevState		>= DS_BOOTING	//USB工作
-		#endif  /* boardUSB_EN */
-
-		#if(boardLIGHT_EN)
-	    || tLight.eDevState	>= DS_WORK			//照明工作
-		#endif  /* boardLIGHT_EN */
-
-		#if(boardDC_EN)
-	    || tDc.eDevState		>= DS_BOOTING	//DC工作
-		#endif  /* boardDC_EN */
-		
-		#if(boardDCAC_EN)
-		|| tDcac.eDisChgState 	>= IOS_WORK		//逆变开启
-		#endif  /* boardDCAC_EN */
-	)
+	if(p_data->bDisChgActive)
 		b_dis_chg_flag = true;
 	
 	//更新AC工作模式
@@ -460,182 +456,39 @@ void vDisp_Main1Exit(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 更新主界面数据
- * 说明(备注)  : 刷新主界面显示的数据
- * 传入参数    : none
+ * 说明(备注)  : 依据数据快照刷新主界面显示的数据
+ * 传入参数    : p_data: 数据快照
  * 输出参数    : none
  * 返回值      : true:更新 false:无更新
  ************************************************************************************************************************/
-bool bDisp_Main1DataUpdate(void)
+bool bDisp_Main1DataUpdate(const DispDataSnapshot_T *p_data)
 {
     bool b_ret = false;
-    
+
+    if (p_data == NULL)
+        return false;
+
 	//更新设备状态
-    b_ret |= b_disp_update_all_dev_states(false);
+    b_ret |= b_disp_update_all_dev_states(p_data, false);
 	//更新错误状态
-    b_ret |= b_update_error_states(false);
+    b_ret |= b_update_error_states(p_data, false);
 	//更新AC工作模式
-	b_ret |= b_update_ac_work_mode(false);
+	b_ret |= b_update_ac_work_mode(p_data, false);
 	//更新电池图标
 	static int16_t s_last_soc = -1;
 	static int8_t b_last_chg_flag = -1;
-	bool b_chg_flag = (cSys_IsChgState() >= 2 || S_bTestAllParam) ? true : false;
-	if(s_last_soc != ucBms_GetSoc() || b_chg_flag != b_last_chg_flag)
+	bool b_chg_flag = (p_data->ucChgState >= 2 || S_bTestAllParam) ? true : false;
+	int16_t s_soc = p_data->ucSoc;
+	if(s_last_soc != s_soc || b_chg_flag != b_last_chg_flag)
 	{
-		s_last_soc = ucBms_GetSoc();
+		s_last_soc = s_soc;
 		b_last_chg_flag = b_chg_flag;
 		EnergyRing_UpdateSoc(&s_tEnergyRing, s_last_soc, b_chg_flag);
 		b_ret = true;
 	}
-	
+
 
     return b_ret;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 统一设置设备状态
- * 说明(备注)  : 设置设备状态标志，实际的UI更新在displaytask中处理
- * 传入参数    : devType: 设备类型, ucState: 设备状态
- * 输出参数    : none
- * 返回值      : none
- ************************************************************************************************************************/
-void vDisp_SetDevStateIcon(DevType_E devType, u8 ucState)
-{
-	DevState_E eState;
-	InOutState_E eInOutState;
-
-	switch(devType)
-	{
-		case DEV_TYPE_AC_OUT:
-		{
-			eInOutState = (InOutState_E)ucState;
-
-			//0.5S频率闪烁
-			if(eInOutState == IOS_ERR || eInOutState == IOS_PROTE)
-			{
-				static uint32_t s_ul_last_tick = 0;
-				uint32_t ul_now_tick = xTaskGetTickCount();
-				
-				if(ul_now_tick - s_ul_last_tick >= 500)
-				{
-					s_ul_last_tick = ul_now_tick;
-					S_bDevAcOutShow = !S_bDevAcOutShow;
-				}
-			}
-			else if(eInOutState >= IOS_STARTING)
-				S_bDevAcOutShow = true;
-			else
-			   	S_bDevAcOutShow = false;
-		}
-		break;
-		
-		case DEV_TYPE_AC_IN:
-		{
-			eInOutState = (InOutState_E)ucState;
-
-			//0.5S频率闪烁
-			if(eInOutState == IOS_ERR || eInOutState == IOS_PROTE)
-			{
-				static uint32_t s_ul_last_tick = 0;
-				uint32_t ul_now_tick = xTaskGetTickCount();
-				
-				if(ul_now_tick - s_ul_last_tick >= 500)
-				{
-					s_ul_last_tick = ul_now_tick;
-					S_bDevAcInShow = !S_bDevAcInShow;
-				}
-			}
-			else if(eInOutState >= IOS_STARTING)
-				S_bDevAcInShow = true;
-			else
-			   	S_bDevAcInShow = false;
-		}
-		break;
-		
-		case DEV_TYPE_PV:
-		{
-			eState = (DevState_E)ucState;
-
-			//0.5S频率闪烁
-			if(eState == DS_ERR)
-			{
-				static uint32_t s_ul_last_tick = 0;
-				uint32_t ul_now_tick = xTaskGetTickCount();
-				
-				if(ul_now_tick - s_ul_last_tick >= 500)
-				{
-					s_ul_last_tick = ul_now_tick;
-					S_bDevPvShow = !S_bDevPvShow;
-				}
-			}
-			else if(eState >= DS_BOOTING)
-				S_bDevPvShow = true;
-			else
-			   	S_bDevPvShow = false;
-		}
-		break;
-		
-		case DEV_TYPE_USB:
-		{
-			eState = (DevState_E)ucState;
-
-			//0.5S频率闪烁
-			if(eState == DS_ERR)
-			{
-				static uint32_t s_ul_last_tick = 0;
-				uint32_t ul_now_tick = xTaskGetTickCount();
-				
-				if(ul_now_tick - s_ul_last_tick >= 500)
-				{
-					s_ul_last_tick = ul_now_tick;
-					S_bDevUsbShow = !S_bDevUsbShow;
-				}
-			}
-			else if(eState >= DS_BOOTING)
-				S_bDevUsbShow = true;
-			else
-			   	S_bDevUsbShow = false;
-		}
-		break;
-		
-		case DEV_TYPE_DC:
-		{
-			eState = (DevState_E)ucState;
-
-			//0.5S频率闪烁
-			if(eState == DS_ERR)
-			{
-				static uint32_t s_ul_last_tick = 0;
-				uint32_t ul_now_tick = xTaskGetTickCount();
-				
-				if(ul_now_tick - s_ul_last_tick >= 500)
-				{
-					s_ul_last_tick = ul_now_tick;
-					S_bDevDcShow = !S_bDevDcShow;
-				}
-			}
-			else if(eState >= DS_BOOTING)
-				S_bDevDcShow = true;
-			else
-			   	S_bDevDcShow = false;
-		}
-		break;
-		
-		case DEV_TYPE_LIGHT:
-		{
-			eState = (DevState_E)ucState;
-
-			if(eState >= DS_WORK)
-				S_bDevLightShow = true;
-			else
-			   	S_bDevLightShow = false;
-		}
-		break;
-		
-		default:
-		{
-		}
-		break;
-	}
 }
 
 /***********************************************************************************************************************
@@ -688,58 +541,44 @@ void vDisp_SetAcWorkMode(ImgAnimMode_E eMode)
 
 /***********************************************************************************************************************
  * 函数功能    : 更新设备参数
- * 说明(备注)  : 这里只需要更新数据,eez_ui里面会根据数据变化自动更新显示;但是DevStateIcon需要单独更新,在user_ui中实现
- * 传入参数    : none
+ * 说明(备注)  : 这里只需要依据快照更新数据,eez_ui里面会根据数据变化自动更新显示;
+ *               端口图标显隐标志由 v_disp_apply_port_flags 依据快照位图统一刷新
+ * 传入参数    : p_data: 数据快照
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-void vDisp_UpdateDevParam(void)
+void vDisp_UpdateDevParam(const DispDataSnapshot_T *p_data)
 {
     char cStr[10];
 
+    if (p_data == NULL)
+        return;
+
+    /* 端口图标显隐标志刷新 (闪烁位 0.5s 相位翻转, 激活位稳态点亮) */
+    v_disp_apply_port_flags(p_data);
+
     #if (boardBMS_EN)
-    snprintf(cStr, sizeof(cStr), "%d", tBmsRx.usSOC);
+    snprintf(cStr, sizeof(cStr), "%d", p_data->ucSoc);
     set_var_uca_bat_soc_value(cStr);
 
     u16 usTotalMinutes;
-    if (tBms.eWorkState == BWS_CHG)
-        usTotalMinutes = tBmsRx.usChgFullTime;
+    if (p_data->bBmsChg)
+        usTotalMinutes = p_data->usChgFullTimeMin;
     else
-        usTotalMinutes = tBmsRx.usDisChgEmptyTime;
+        usTotalMinutes = p_data->usDisChgEmptyTimeMin;
     v_disp_work_format_remaining_time(cStr, sizeof(cStr), usTotalMinutes);
     set_var_uca_remaining_usage_time(cStr);
     #endif // boardBMS_EN
 
-    #if (boardUSB_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_USB, tUsb.eDevState);
-    #endif // boardUSB_EN
-
-    #if (boardDC_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_DC, tDc.eDevState);
-    #endif // boardDC_EN
-
-    #if (boardLIGHT_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_LIGHT, tLight.eDevState);
-    #endif // boardLIGHT_EN
-
-    #if (boardMPPT_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_PV, tMppt.eDevState);
-    #endif // boardMPPT_EN
-
-    #if (boardDCAC_EN)
-    vDisp_SetDevStateIcon(DEV_TYPE_AC_OUT, tDcac.eDisChgState);
-    vDisp_SetDevStateIcon(DEV_TYPE_AC_IN, tDcac.eChgState);
-    #endif // boardDCAC_EN
-    
-    snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usOutPwr);
+    snprintf(cStr, sizeof(cStr), "%d", p_data->usOutPwr);
     set_var_uca_out_pwr_value(cStr);
 
-    snprintf(cStr, sizeof(cStr), "%d", tSysInfo.usInPwr);
+    snprintf(cStr, sizeof(cStr), "%d", p_data->usInPwr);
     set_var_uca_in_pwr_value(cStr);
 
     // 故障码轮询显示: 切换间隙(返回0)时不更新错误码文本,
     // 避免将"0"字符串显示到标签上, 同时配合 user_ui 的可见性控制实现闪烁效果
-    u16 us_err_code = usDisp_ErrCodeDisplay();
+    u16 us_err_code = p_data->usPrimaryErrCode;
     if (us_err_code != 0)
     {
         snprintf(cStr, sizeof(cStr), "E%d", us_err_code);

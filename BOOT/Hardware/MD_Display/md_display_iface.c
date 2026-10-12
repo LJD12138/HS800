@@ -532,8 +532,8 @@ static void v_tft_spi_dma_finish_isr(void)
             xSemaphoreGiveFromISR(DispFlushDoneSemaphore, px_higher_priority_task_woken);
         #endif  /* boardUSE_OS */
 
-        if(disp != NULL)
-            lv_display_flush_ready(disp);
+        if(tp_disp != NULL)
+            lv_display_flush_ready(tp_disp);
     }
     #endif  /* 0 */
 }

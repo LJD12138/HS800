@@ -37,7 +37,7 @@ typedef struct
 	uint32_t			gpio;				/* GPIO 端口 */
 	uint32_t			pin;				/* GPIO 引脚 */
 	uint32_t			mode;				/* GPIO 模式 */
-	bool				bPressHigh;			/* 按下有效电平: true=高电平按下(浮空Power), false=低电平按下(上拉) */
+	bool				bPressHigh;			/* 按下有效电平: true=高电平按下, false=低电平按下 */
 	const char			*pName;				/* 按键调试名称 */
 }KeyCfgGpio_T;
 

@@ -65,7 +65,7 @@
 #endif  /* boardCM_BACKTRACE */
 
 #if (boardEASY_LOGGER)
-#include "elog_init.h"
+#include "elog_Init.h"
 #endif  /* boardEASY_LOGGER */
 
 #if (boardEASY_FLASH)
@@ -124,9 +124,9 @@ static s16         s_s_failed_err_code  = 0;    /* 首个故障综合错误码 (
 static uint32_t    s_ul_free_heap_bytes = 0;    /* 故障发生时 FreeRTOS 剩余堆大小 (字节) */
 
 //****************************************************Function Declaration******************************************************//
+#if (boardPRINT_IFACE)
 static void v_print_init_fail_cb(s16 s_err_code);
-
-
+#endif  /* boardPRINT_IFACE */
 
 /* 表驱动式任务注册表 (统一配置任务函数、基准错误码与关键级别) */
 static const TaskInitEntry_T c_task_init_table[] = {
@@ -142,7 +142,7 @@ static const TaskInitEntry_T c_task_init_table[] = {
 	#endif  /* boardADC_EN */
 	
 	#if (boardDISPLAY_EN)
-	{"DispTask",     cDisp_TaskInit,         -30,       true,       NULL},
+	{"DispTask",     cDisp_TaskInit,         -30,       true,        NULL},
 	#endif  /* boardDISPLAY_EN */
 	
 	#if (boardBUZ_EN)
@@ -150,7 +150,7 @@ static const TaskInitEntry_T c_task_init_table[] = {
 	#endif  /* boardBUZ_EN */
 	
 	#if (boardKEY_EN)
-	{"KeyTask",      cKey_TaskInit,          -50,       true,       NULL},
+	{"KeyTask",      cKey_TaskInit,          -50,       true,        NULL},
 	#endif  /* boardKEY_EN */
 	
 	#if (boardLED_EN)
@@ -226,15 +226,15 @@ void SysParamInit(void)
 	uPrint.tFlag.bDispTask    = 0;
 
 	#if (boardHEALTH_MONITOR_EN)
-	uPrint.tFlag.bHealthTask  = 1;	/* 健康巡检遥测(CPU/队列/栈/堆) */
-	uPrint.tFlag.bFreeRTOS    = 1;	/* FreeRTOS剩余堆/任务表打印 */
+	uPrint.tFlag.bHealthTask = 1;	/* 健康巡检遥测(CPU/队列/栈/堆) */
+	uPrint.tFlag.bFreeRTOS   = 1;	/* FreeRTOS剩余堆/任务表打印 */
 	#endif  /* boardHEALTH_MONITOR_EN */
 	
-	// 非调试模式下，关闭一般调试输出
-	#if(!boardDEBUG)
+	/* 非调试模式下，关闭一般调试输出 */
+	#if (!boardDEBUG)
 	uPrint.ulFlag = 0;
-	uPrint.tFlag.bImportant   = 1;
-	#endif  //boardDEBUG
+	uPrint.tFlag.bImportant  = 1;
+	#endif  /* !boardDEBUG */
 
 	#endif  /* boardPRINT_IFACE */
 }

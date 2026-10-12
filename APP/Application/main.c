@@ -42,7 +42,7 @@
 
 #if (boardWDGT_EN)
 #include "fwdgt.h"
-#endif  //boardWDGT_EN
+#endif  /* boardWDGT_EN */
 
 
 //****************************************************Task Declaration**********************************************************//
@@ -83,21 +83,21 @@ int main(void)
 
 	#if (boardWDGT_EN)
 	vFwdgt_PrintResetReason();
-	#endif  //boardWDGT_EN
+	#endif  /* boardWDGT_EN */
 
 	#if (boardSEGGER)
 	printf(0, "------------------APP OK--------------------!\r\n");
 	#endif  //boardSEGGER
 
-    //创建开始任务
-	if (xTaskCreate((TaskFunction_t)vBoard_StartTask,//任务函数
-	            (const char *)"StartTask",          //任务名称
-	            (uint16_t)startTASK_STK_SIZE,       //任务堆栈大小
-	            (void *)NULL,                       //传递给任务函数的参数
-	            (UBaseType_t)startTASK_PRIO,        //任务优先级
-	            (TaskHandle_t *)&s_start_task_handler) != pdPASS) //任务句柄
+	/* 创建根任务 */
+	if (xTaskCreate((TaskFunction_t)vBoard_StartTask,
+	                "StartTask",
+	                (uint16_t)startTASK_STK_SIZE,
+	                NULL,
+	                (UBaseType_t)startTASK_PRIO,
+	                &s_start_task_handler) != pdPASS)
 	{
-		/* 根任务创建失败(堆耗尽),复位重试,避免无人喂狗前的静默挂死 */
+		/* 根任务创建失败(堆耗尽), 复位重试, 避免静默挂死 */
 		NVIC_SystemReset();
 	}
 

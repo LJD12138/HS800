@@ -53,13 +53,45 @@ static const uint8_t disp_st7789_panel_cmds[] = {
 };
 #endif
 
+/* 非内置 ST7789 路径：本地驱动使用的初始化命令表与发送函数 */
+#if (!LV_USE_ST7789)
+/* ST7789 初始化命令表项结构体 */
+typedef struct {
+    uint8_t  u8Cmd;             /* 命令寄存器地址 */
+    uint8_t  u8Len;             /* 参数数据长度(字节数) */
+    uint8_t  u8DelayMs;         /* 发送后延时毫秒数 */
+    uint8_t  aucData[14];       /* 参数数据缓冲区 (ST7789最大单条参数为Gamma的14字节) */
+} LcdInitCmd_T;
+
+/* ST7789 初始化命令配置表 (适配 ZJY240KP-IF10 320x240 横屏) */
+static const LcdInitCmd_T S_atSt7789InitCmds[] = {
+    /* 命令,          长度, 延时(ms), 参数数据 */
+    { ST7789_SLPOUT,  0U,   120U,    { 0 } },
+    { ST7789_MADCTL,  1U,     0U,    { ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_BGR } },
+    { ST7789_COLMOD,  1U,     0U,    { 0x55U } },
+    { 0xB2U,          5U,     0U,    { 0x0CU, 0x0CU, 0x00U, 0x33U, 0x33U } },
+    { 0xB7U,          1U,     0U,    { 0x35U } },
+    { 0xBBU,          1U,     0U,    { 0x32U } },
+    { 0xC2U,          1U,     0U,    { 0x01U } },
+    { 0xC3U,          1U,     0U,    { 0x15U } },
+    { 0xC4U,          1U,     0U,    { 0x20U } },
+    { 0xC6U,          1U,     0U,    { 0x0FU } },
+    { 0xD0U,          2U,     0U,    { 0xA4U, 0xA1U } },
+    { 0xE0U,         14U,     0U,    { 0xD0U, 0x08U, 0x0EU, 0x09U, 0x09U, 0x05U, 0x31U, 0x33U, 0x48U, 0x17U, 0x14U, 0x15U, 0x31U, 0x34U } },
+    { 0xE1U,         14U,     0U,    { 0xD0U, 0x08U, 0x0EU, 0x09U, 0x09U, 0x15U, 0x31U, 0x33U, 0x48U, 0x17U, 0x14U, 0x15U, 0x31U, 0x34U } },
+    { ST7789_INVON,   0U,    10U,    { 0 } },
+    { ST7789_NORON,   0U,    10U,    { 0 } },
+    { ST7789_DISPON,  0U,   100U,    { 0 } },
+};
+#endif  /* !LV_USE_ST7789 */
+
 /* 显示访问的二值信号量（用于串行化对 TFT 的访问） */
 #if (boardUSE_OS)
 SemaphoreHandle_t DispSemaphoreBinary = NULL;
 SemaphoreHandle_t DispFlushDoneSemaphore = NULL;
 #endif
 
-lv_display_t *disp;
+lv_display_t *tp_disp;
 
 #define			DISP_DRAW_BUF_LINE_COUNT				15U
 
@@ -67,18 +99,23 @@ lv_display_t *disp;
 static bool b_disp_bus_take(TickType_t wait_ticks);
 static void v_disp_bus_give(void);
 static void v_disp_flush_done_reset(void);
-static void v_disp_flush_wait(lv_display_t *disp);
+static void v_disp_flush_wait(lv_display_t *tp_disp);
 #endif
 
 #if (LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
-static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, const uint8_t *param, size_t param_size);
-static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, uint8_t *param, size_t param_size);
+static void st7789_send_cmd(lv_display_t *tp_disp, const uint8_t *cmd, size_t cmd_size, const uint8_t *param, size_t param_size);
+static void st7789_send_color(lv_display_t *tp_disp, const uint8_t *cmd, size_t cmd_size, uint8_t *param, size_t param_size);
 #endif
 
 #if !(LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
-static void disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map);
+static void disp_flush(lv_display_t *tp_disp, const lv_area_t *area, uint8_t *px_map);
 static bool b_disp_flush_area_is_valid(const lv_area_t *area);
 #endif
+
+#if (!LV_USE_ST7789)
+static void v_disp_delay_ms(u16 ms);
+static void lcd_send_init_commands(void);
+#endif  /* !LV_USE_ST7789 */
 
 /***********************************************************************************************************************
  * 函数功能    : LVGL显示端口初始化
@@ -107,25 +144,98 @@ void lv_port_disp_init(void)
     #endif  /* boardUSE_OS */
 
     #if (LV_USE_ST7789 && LV_USE_GENERIC_MIPI)
-    disp = lv_st7789_create(DISP_HOR_RES, DISP_VER_RES, DISP_ST7789_FLAGS, st7789_send_cmd, st7789_send_color);
-    if (disp != NULL)
-        lv_st7789_send_cmd_list(disp, disp_st7789_panel_cmds);
+    tp_disp = lv_st7789_create(DISP_HOR_RES, DISP_VER_RES, DISP_ST7789_FLAGS, st7789_send_cmd, st7789_send_color);
+    if (tp_disp != NULL)
+        lv_st7789_send_cmd_list(tp_disp, disp_st7789_panel_cmds);
     #else
-    disp = lv_display_create(DISP_HOR_RES, DISP_VER_RES);
-    if (disp != NULL)
-        lv_display_set_flush_cb(disp, disp_flush);
+    tp_disp = lv_display_create(DISP_HOR_RES, DISP_VER_RES);
+    if (tp_disp != NULL)
+        lv_display_set_flush_cb(tp_disp, disp_flush);
+
+        #if (!LV_USE_ST7789)
+    /* 本地驱动路径：发送面板初始化命令表并整屏清黑 */
+    lcd_send_init_commands();
+    vDisp_FastDrawColor(0U, 0U, dispTFT_WIDTH, dispTFT_HEIGHT, 0x0000U);
+        #endif  /* !LV_USE_ST7789 */
     #endif  /* LV_USE_ST7789 */
 
-    if (disp != NULL)
+    if (tp_disp != NULL)
     {
-        lv_display_set_buffers(disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
+        lv_display_set_buffers(tp_disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
         #if (boardUSE_OS)
         if (DispFlushDoneSemaphore != NULL)
-            lv_display_set_flush_wait_cb(disp, v_disp_flush_wait);
+            lv_display_set_flush_wait_cb(tp_disp, v_disp_flush_wait);
         #endif  /* boardUSE_OS */
     }
 }
+
+#if (!LV_USE_ST7789)
+/***********************************************************************************************************************
+ * 函数功能    : 毫秒级延时函数
+ * 说明(备注)  : 支持FreeRTOS操作系统和裸机两种模式
+ *               - OS模式：使用vTaskDelay进行任务延时
+ *               - 裸机模式：使用CPU空循环实现延时
+ * 传入参数    : ms: 延时毫秒数
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+static void v_disp_delay_ms(u16 ms)
+{
+    #if(boardUSE_OS)
+    /* FreeRTOS模式：将毫秒转换为系统节拍数进行延时 */
+    vTaskDelay(pdMS_TO_TICKS(ms));
+    #else
+    /* 裸机模式：通过CPU空循环实现延时 */
+    while(ms--)
+    {
+        /* 根据系统时钟频率计算循环次数，实现约1ms延时 */
+        for(volatile u32 i = 0U; i < (SystemCoreClock / 8000U); i++)
+            __NOP();  /* 空指令，防止编译器优化 */
+    }
+    #endif  /* boardUSE_OS */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 发送初始化命令序列
+ * 说明(备注)  : 按照ST7789 datasheet要求的时序初始化显示屏
+ *               包括硬件复位、软件复位、颜色模式设置等
+ *               初始化完成后清屏为黑色
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+static void lcd_send_init_commands(void)
+{
+    /* 硬件复位时序：高-低-高，确保控制器可靠复位 */
+    dispTFT_RES_H();
+    v_disp_delay_ms(10U);
+    dispTFT_RES_L();
+    v_disp_delay_ms(50U);
+    dispTFT_RES_H();
+    v_disp_delay_ms(50U);
+
+    /* 遍历表驱动初始化序列 */
+    for (uint32_t i = 0U; i < (sizeof(S_atSt7789InitCmds) / sizeof(S_atSt7789InitCmds[0])); i++)
+    {
+        const LcdInitCmd_T *pt_cmd = &S_atSt7789InitCmds[i];
+
+        vDisp_WriteCommand(pt_cmd->u8Cmd);
+        for (uint8_t j = 0U; j < pt_cmd->u8Len; j++)
+        {
+            vDisp_WriteData8(pt_cmd->aucData[j]);
+        }
+
+        if (pt_cmd->u8DelayMs > 0U)
+        {
+            v_disp_delay_ms((u16)pt_cmd->u8DelayMs);
+        }
+    }
+
+    /* 开启背光 */
+    vDisp_SetBacklight(false);
+}
+#endif  /* !LV_USE_ST7789 */
 
 #if (boardUSE_OS)
 /***********************************************************************************************************************
@@ -178,13 +288,13 @@ static void v_disp_flush_done_reset(void)
  * 函数功能    : 等待刷新完成
  * 说明(备注)  : 阻塞等待DispFlushDoneSemaphore信号量，直到底层异步刷新传输完成
  *               作为LVGL的flush_wait回调，在渲染下一帧前确保上一帧数据已全部写入TFT控制器
- * 传入参数    : disp:LVGL显示对象指针（未使用，仅为匹配回调签名）
+ * 传入参数    : tp_disp:LVGL显示对象指针（未使用，仅为匹配回调签名）
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-static void v_disp_flush_wait(lv_display_t *disp)
+static void v_disp_flush_wait(lv_display_t *tp_disp)
 {
-    LV_UNUSED(disp);
+    LV_UNUSED(tp_disp);
 
     if (DispFlushDoneSemaphore != NULL)
         (void)xSemaphoreTake(DispFlushDoneSemaphore, portMAX_DELAY);
@@ -195,13 +305,13 @@ static void v_disp_flush_wait(lv_display_t *disp)
 /***********************************************************************************************************************
  * 函数功能    : ST7789 发送命令回调函数
  * 说明(备注)  : LVGL内置ST7789驱动的命令发送回调，用于向TFT控制器发送命令和参数
- * 传入参数    : disp:显示对象  cmd:命令缓冲区  cmd_size:命令大小  param:参数数据  param_size:参数大小
+ * 传入参数    : tp_disp:显示对象  cmd:命令缓冲区  cmd_size:命令大小  param:参数数据  param_size:参数大小
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, const uint8_t *param, size_t param_size)
+static void st7789_send_cmd(lv_display_t *tp_disp, const uint8_t *cmd, size_t cmd_size, const uint8_t *param, size_t param_size)
 {
-    LV_UNUSED(disp);
+    LV_UNUSED(tp_disp);
 
     #if (boardUSE_OS)
     if (!b_disp_bus_take(pdMS_TO_TICKS(100U)))
@@ -224,16 +334,16 @@ static void st7789_send_cmd(lv_display_t *disp, const uint8_t *cmd, size_t cmd_s
 /***********************************************************************************************************************
  * 函数功能    : ST7789 发送颜色数据回调函数
  * 说明(备注)  : LVGL内置ST7789驱动的颜色数据发送回调，用于向TFT控制器发送像素数据
- * 传入参数    : disp:显示对象  cmd:命令缓冲区  cmd_size:命令大小  param:像素数据  param_size:数据大小(字节数)
+ * 传入参数    : tp_disp:显示对象  cmd:命令缓冲区  cmd_size:命令大小  param:像素数据  param_size:数据大小(字节数)
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd_size, uint8_t *param, size_t param_size)
+static void st7789_send_color(lv_display_t *tp_disp, const uint8_t *cmd, size_t cmd_size, uint8_t *param, size_t param_size)
 {
     #if (boardUSE_OS)
     if (!b_disp_bus_take(pdMS_TO_TICKS(100U)))
     {
-        lv_display_flush_ready(disp);
+        lv_display_flush_ready(tp_disp);
         return;
     }
     #endif  /* boardUSE_OS */
@@ -255,7 +365,7 @@ static void st7789_send_color(lv_display_t *disp, const uint8_t *cmd, size_t cmd
     v_disp_bus_give();
     #endif  /* boardUSE_OS */
 
-    lv_display_flush_ready(disp);
+    lv_display_flush_ready(tp_disp);
 }
 #endif
 
