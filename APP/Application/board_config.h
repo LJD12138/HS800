@@ -26,7 +26,7 @@ extern "C" {
 
 //-------------------------------------------------------------------
 //<s>       	软件版本(此处缩进不可以用Tab)
-#define         boardSOFTWARE_VERSION                    "HS803_Ver_2_2_2(230V)"
+#define         boardSOFTWARE_VERSION                    "HS803_Ver_2_2_3(230V)"
 //-------------------------------------------------------------------
 //<s>       	硬件版本(此处缩进不可以用Tab)
 #define         boardHARDWARE_VERSION                    "HS803_Ver_1_2_0"

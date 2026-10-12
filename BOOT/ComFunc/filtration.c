@@ -293,7 +293,7 @@ u16 usFilter_RecursionAverage(FilterHandler_T *p_handler, const u16 *p_data)
  * 输出参数    : p_filter: 更新状态
  * 返回值      : s8: 1: 判定稳定; -1: 判定波动超标; 0: 数据收集中尚未满周期
  ************************************************************************************************************************/
-s8 cFilter_CkeckDataStability(FilterHandler_T *p_filter, u16 num)
+s8 cFilter_CheckDataStability(FilterHandler_T *p_filter, u16 num)
 {
     int32_t i;
 
@@ -327,7 +327,7 @@ s8 cFilter_CkeckDataStability(FilterHandler_T *p_filter, u16 num)
  * 输出参数    : p_filter: 更新状态
  * 返回值      : s8: 1: 稳定; -1: 超标; 0: 采集中
  ************************************************************************************************************************/
-s8 cFilter_CkeckFloatDataStability(fFilterHandler_T *p_filter, float num)
+s8 cFilter_CheckFloatDataStability(fFilterHandler_T *p_filter, float num)
 {
     int32_t i;
 
@@ -849,14 +849,14 @@ static bool b_test_data_stability(void)
     /* 6.1 平稳序列: 100, 101, 100, 102, 101 -> 相邻差之和 1+1+2+1 = 5 <= 10 -> 返回 1 */
     s_res = 0;
     for (i = 0; i < 5; i++)
-        s_res = cFilter_CkeckDataStability(&t_filter, stable_seq[i]);
+        s_res = cFilter_CheckDataStability(&t_filter, stable_seq[i]);
 
     if (s_res != 1)
         return false;
 
     /* 6.2 剧烈抖动序列: 100, 150, 100, 150, 100 -> 相邻差之和 200 > 10 -> 返回 -1 */
     for (i = 0; i < 5; i++)
-        s_res = cFilter_CkeckDataStability(&t_filter, shock_seq[i]);
+        s_res = cFilter_CheckDataStability(&t_filter, shock_seq[i]);
 
     if (s_res != -1)
         return false;

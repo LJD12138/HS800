@@ -139,10 +139,16 @@ virtualFolder:
         - path: Middlewares/UniDisplay/uni_disp_port.c
         - path: Middlewares/UniDisplay/uni_disp_port.h
       folders: []
+    - name: MW-Filter
+      files:
+        - path: Middlewares/Filter/src/filter.c
+        - path: Middlewares/Filter/inc/filter.h
+        - path: Middlewares/Filter/src/filter_test.c
+        - path: Middlewares/Filter/inc/filter_test.h
+      folders: []
     - name: ComFunc
       files:
         - path: ComFunc/check.c
-        - path: ComFunc/filtration.c
         - path: ComFunc/function.c
         - path: ComFunc/i2c.c
         - path: ComFunc/ntc.c
@@ -614,6 +620,7 @@ targets:
         - Middlewares/MultiFuncKey
         - Middlewares/TaskQueue
         - Middlewares/UniDisplay
+        - Middlewares/Filter/inc
         - Middlewares/CherryUSB
         - Middlewares/CherryUSB/common
         - Middlewares/CherryUSB/core

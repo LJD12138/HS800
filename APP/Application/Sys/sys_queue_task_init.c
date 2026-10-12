@@ -15,7 +15,10 @@
 //****************************************************Includes******************************************************************//
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
+
+#if (boardPRINT_EN)
 #include "Print/print_task.h"
+#endif  //boardPRINT_EN
 
 #if (boardKEY_EN)
 #include "Key/Key_task.h"
@@ -31,6 +34,7 @@
 
 #include "gpio_init.h"
 #include "app_info.h"
+#include "filter_test.h"
 
 //****************************************************Macros********************************************************************//
 #define			sysTASK_INIT_CYCLE_TIME					100		//任务时间
@@ -117,7 +121,18 @@ void v_sys_queue_task_init(Task_T *p_task)
 			}
 		}break;
 
+		/* 自检 */
 		case 2:
+		{
+			#if (filterSELF_TEST_ENABLE)
+			bFilter_RunSelfTest(NULL);	/* 滤波算法精度与抗扰性自动化自检 */
+			#endif  /* filterSELF_TEST_ENABLE */
+			cQueue_GotoStep(p_task, STEP_NEXT);
+		}
+		break;
+
+		/* 等待重要任务初始化完成 */
+		case 3:
 		{
 			if (
 				#if (boardADC_EN)
@@ -136,7 +151,8 @@ void v_sys_queue_task_init(Task_T *p_task)
 			}
 		}break;
 
-		case 3:
+		/* 检查激活类型 */
+		case 4:
 		{
 			if (bSys_ExistInVolt() == true)
 			{
@@ -168,7 +184,8 @@ void v_sys_queue_task_init(Task_T *p_task)
 				vQueue_RefreshStepTick(p_task);
 		}break;
 
-		case 4:
+		/* 进入对应模式 */
+		case 5:
 		{
 			if (
 				#if (boardKEY_EN)
@@ -242,7 +259,7 @@ void v_sys_queue_task_init(Task_T *p_task)
 			}
 		}break;
 
-		case 5:
+		case 6:
 		{
 			tSysInfo.uInit.tFinish.bIF_SysTask = 1;
 			tSysInfo.uInit.tFinish.bIF_SysInit = 1;

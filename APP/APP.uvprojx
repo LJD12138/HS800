@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT,LV_LVGL_H_INCLUDE_SIMPLE</Define>
               <Undefine></Undefine>
-              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\TaskQueue;.\Middlewares\CherryUSB;.\Middlewares\CherryUSB\common;.\Middlewares\CherryUSB\core;.\Middlewares\CherryUSB\class\cdc;.\Middlewares\CherryUSB\port\dwc2;.\Hardware\Usb</IncludePath>
+              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\Filter\inc;.\Middlewares\TaskQueue;.\Middlewares\CherryUSB;.\Middlewares\CherryUSB\common;.\Middlewares\CherryUSB\core;.\Middlewares\CherryUSB\class\cdc;.\Middlewares\CherryUSB\port\dwc2;.\Hardware\Usb</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -6212,17 +6212,37 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>MW-Filter</GroupName>
+          <Files>
+            <File>
+              <FileName>filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\Filter\src\filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>filter.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\Filter\inc\filter.h</FilePath>
+            </File>
+            <File>
+              <FileName>filter_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\Filter\src\filter_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>filter_test.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\Filter\inc\filter_test.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>ComFunc</GroupName>
           <Files>
             <File>
               <FileName>check.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ComFunc\check.c</FilePath>
-            </File>
-            <File>
-              <FileName>filtration.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ComFunc\filtration.c</FilePath>
             </File>
             <File>
               <FileName>function.c</FileName>

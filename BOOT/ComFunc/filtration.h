@@ -155,8 +155,8 @@ float fFilter_MadianAverage(fFilterHandler_T *p_handler, const float *p_datain);
 u16   usFilter_RecursionAverage(FilterHandler_T *p_handler, const u16 *p_data);
 
 /* 3. 数据稳定性检测 */
-s8    cFilter_CkeckDataStability(FilterHandler_T *p_filter, u16 num);
-s8    cFilter_CkeckFloatDataStability(fFilterHandler_T *p_filter, float num);
+s8    cFilter_CheckDataStability(FilterHandler_T *p_filter, u16 num);
+s8    cFilter_CheckFloatDataStability(fFilterHandler_T *p_filter, float num);
 
 /* 4. 句柄复位初始化接口 */
 void  vFilter_HandlerReset(FilterHandler_T *p_handler);

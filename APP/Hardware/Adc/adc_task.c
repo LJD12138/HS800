@@ -29,7 +29,7 @@
 #include "Dc/dc_task.h"
 #endif  /* boardDC_EN */
 
-#include "filtration.h"
+#include "filter.h"
 #include <string.h>
 #include "ntc.h"
 

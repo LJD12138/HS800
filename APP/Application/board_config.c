@@ -16,7 +16,8 @@
 #include "board_config.h"
 #include "timer_task.h"
 #include "gpio_init.h"
-#include "filtration.h"
+#include "filter.h"
+#include "filter_test.h"
 
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
@@ -280,10 +281,6 @@ void vBoard_SysInit(void)
 	#endif  /* boardEASY_FLASH */
 	
 	SysParamInit();        /* 初始化系统参数 */
-
-	#if (filterSELF_TEST_ENABLE)
-	bFilter_RunSelfTest(NULL);	/* 滤波算法精度与抗扰性自动化自检 */
-	#endif  /* filterSELF_TEST_ENABLE */
 }
 
 /***********************************************************************************************************************

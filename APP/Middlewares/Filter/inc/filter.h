@@ -1,11 +1,13 @@
 /***********************************************************************************************************************
  * Project : APP
- * Module  : APP\ComFunc
- * File    : filtration.h
- * Date    : 2026-09-20
+ * Module  : APP\Middlewares\Filter
+ * File    : filter.h
+ * Date    : 2026-10-12
  * Author  : LJD(291483914@qq.com)
- * Desc    : 嵌入式常用数字滤波算法库头文件
- *           包含中位值平均滤波、递推滑动平均滤波、限幅滤波、一阶滞后滤波、消抖滤波及卡尔曼滤波
+ * Desc    : 嵌入式常用通用数字滤波算法中间件头文件
+ *           包含中位值去极值平均滤波、滑动递推平均滤波、限幅滤波、一阶滞后滤波、消抖滤波及卡尔曼滤波
+ * @note   并发约束: 所有滤波句柄/上下文均不支持多任务并发调用, 同一实例仅允许在单一任务上下文中使用
+ *         (多实例隔离无限制, 不同句柄可在不同任务中各自独立运行)
  * -------------------------------------------------------
  * todo    :
  * 1. none
@@ -13,20 +15,20 @@
  * Copyright (c) 2026 -inc
  ************************************************************************************************************************/
 
-#ifndef FILTRATION_H_
-#define FILTRATION_H_
+#ifndef FILTER_H
+#define FILTER_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  /* __cplusplus */
 
 //****************************************************Includes******************************************************************//
 #include "main.h"
 
 #if (1)
 //****************************************************Macros********************************************************************//
-#define			filterMEDIAN_STACK_BUF_MAX				32		/* 中位值滤波窗口深度上限; 句柄 Buff_Size 超过此值时窗口静默截断为 32 点 */
-#define			filterWEIGHT_RECUR_BUF_MAX				12		/* 加权递推滤波缓冲区深度 */
+#define			filterMEDIAN_STACK_BUF_MAX				32		/* 中位值滤波窗口参考建议深度; 当前算法已升级为零栈分配扫描 */
+#define			filterWEIGHT_RECUR_BUF_MAX				12		/* 加权递推滤波缓冲区最大深度 */
 
 
 //****************************************************Globals*******************************************************************//
@@ -65,7 +67,7 @@ typedef struct
 /**
  * @brief 卡尔曼滤波器参数结构体
  */
-typedef struct 
+typedef struct
 {
 	float				LastP;				//上次估算协方差，初始推荐 0.02f
 	float				Now_P;				//当前估算协方差
@@ -74,8 +76,6 @@ typedef struct
 	float				Q;					//过程噪声协方差，初始推荐 0.001f
 	float				R;					//观测噪声协方差，初始推荐 0.543f
 }KFP_t;
-
-typedef KFP_t Kalman_T;
 
 /**
  * @brief 多实例限幅滤波上下文结构体
@@ -96,6 +96,17 @@ typedef struct
 	uint8_t				ucCoeff;			//本次采样权重 a (0~100)
 	bool				bInitialized;		//初值有效标志
 }FirstOrderFilter_T;
+
+/**
+ * @brief 定点数一阶滞后滤波上下文结构体 (Q15高精度无死区，零浮点开销，完美适配 ESP32-C3)
+ */
+typedef struct
+{
+	int32_t				lStateQ15;			//Q15定点状态累积器(保存小数残差)
+	uint16_t			usLastValue;		//上次滤波输出值
+	uint16_t			usCoeffQ15;			//权重系数 a (0~32768, 32768 对应 1.0)
+	bool				bInitialized;		//初值有效标志
+}FirstOrderQ15Filter_T;
 
 /**
  * @brief 多实例消抖滤波上下文结构体
@@ -128,57 +139,44 @@ typedef struct
 typedef struct
 {
 	uint16_t			usaBuffer[filterWEIGHT_RECUR_BUF_MAX];	//数据环形队列
-	uint8_t				ucCount;			//采样计数
+	uint8_t				ucCount;			//当前有效采样点数
+	uint8_t				ucIndex;			//环形入队游标
 }WeightRecurFilter_T;
-
-/* 滤波算法自动化自检与精度验证接口 (方便验证算法准确性与抗扰性) */
-#define			filterSELF_TEST_ENABLE					1		/* 0: 关闭自测代码节省代码空间, 1: 开启自测试 */
-
-#if (filterSELF_TEST_ENABLE)
-typedef struct
-{
-	uint16_t			usTotalCases;		//总测试用例数
-	uint16_t			usPassCount;		//通过用例数
-	uint16_t			usFailCount;		//失败用例数
-}FilterTestReport_T;
-#endif
 
 //****************************************************Extern********************************************************************//
 
-/* 1. 中位值平均滤波算法 (时序保护、小数组插入排序、防溢出)
- * 注意: lFilter_MadianAverage / fFilter_MadianAverage 的窗口深度上限为 filterMEDIAN_STACK_BUF_MAX(32),
- *       当句柄 Buff_Size > 32 时窗口将被静默截断为 32 点 (不报错、不额外分配) */
-s32   lFilter_MadianAverage(FilterHandler_T *p_handler, const s32 *p_datain);
-float fFilter_MadianAverage(fFilterHandler_T *p_handler, const float *p_datain); /* 入口含 NaN/Inf 异常值防护 */
+/* 1. 中位值去极值平均滤波算法 (O(N) 极速扫描、零栈分配、四舍五入防截断偏置) */
+s32      lFilter_MadianAverage(FilterHandler_T *p_handler, const s32 *p_datain);
+float    fFilter_MadianAverage(fFilterHandler_T *p_handler, const float *p_datain);
 
-/* 2. 递推平均滤波算法 (滑动窗口 O(1) 复杂度升级，彻底防溢出) */
-u16   usFilter_RecursionAverage(FilterHandler_T *p_handler, const u16 *p_data);
+/* 2. 递推滑动平均滤波算法 (滑动窗口 O(1) 增量更新，64位防溢出，四舍五入) */
+s32      lFilter_RecursionAverage(FilterHandler_T *p_handler, const s32 *p_data);
+u16      usFilter_RecursionAverage(FilterHandler_T *p_handler, const u16 *p_data);
 
-/* 3. 数据稳定性检测 */
-s8    cFilter_CkeckDataStability(FilterHandler_T *p_filter, u16 num);
-s8    cFilter_CkeckFloatDataStability(fFilterHandler_T *p_filter, float num);
+/* 3. 数据稳定性检测 (结合相邻差与极差双重判定，杜绝斜坡漂移误判) */
+s8       cFilter_CheckDataStability(FilterHandler_T *p_filter, u16 num);
+s8       cFilter_CheckFloatDataStability(fFilterHandler_T *p_filter, float num);
 
-/* 4. 句柄复位初始化接口 */
-void  vFilter_HandlerReset(FilterHandler_T *p_handler);
-void  vFilter_FloatHandlerReset(fFilterHandler_T *p_handler);
+/* 4. 句柄复位初始化接口 (彻底清零状态与底层缓冲区) */
+void     vFilter_HandlerReset(FilterHandler_T *p_handler);
+void     vFilter_FloatHandlerReset(fFilterHandler_T *p_handler);
 
-/* 5. 多实例新接口 (推荐新功能模块使用) */
+/* 5. 多实例滤波算法接口 */
 uint16_t usFilter_LimitCalc(LimitFilter_T *p_filter, uint16_t us_new_val);
 uint16_t usFilter_FirstOrderCalc(FirstOrderFilter_T *p_filter, uint16_t us_new_val);
+uint16_t usFilter_FirstOrderQ15Calc(FirstOrderQ15Filter_T *p_filter, uint16_t us_new_val);
+void     vFilter_FirstOrderQ15Reset(FirstOrderQ15Filter_T *p_filter, uint16_t us_init_val, uint16_t us_coeff_q15);
 uint16_t usFilter_ClearShakeCalc(ClearShakeFilter_T *p_filter, uint16_t us_new_val);
 uint16_t usFilter_LimitClearShakeCalc(LimitClearShakeFilter_T *p_filter, uint16_t us_new_val);
+uint16_t usFilter_WeightRecurCalc(WeightRecurFilter_T *p_filter, uint16_t us_new_val);
+void     vFilter_WeightRecurReset(WeightRecurFilter_T *p_filter);
 void     vFilter_KalmanInit(KFP_t *p_kfp, float q, float r, float p_init, float out_init);
-float    Filter_Kalman(KFP_t *p_kfp, float input);
-
-#if (filterSELF_TEST_ENABLE)
-bool bFilter_RunSelfTest(FilterTestReport_T *p_report);
-#endif
+float    fFilter_KalmanCalc(KFP_t *p_kfp, float input);
 
 #endif  /* 1 */
 
 #ifdef __cplusplus
 }
-#endif
+#endif  /* __cplusplus */
 
-#endif  /* FILTRATION_H_ */
-
+#endif  /* FILTER_H */
