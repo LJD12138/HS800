@@ -14,10 +14,12 @@
 
 //****************************************************Includes******************************************************************//
 #include "Print/print_iface.h"
+#include <stdbool.h>
 
 #if (boardPRINT_IFACE)
 #include "Print/print_task.h"
 #include "Print/print_prot_frame.h"
+#include "Print/print_usb_iface.h"
 #include "Sys/sys_task.h"
 
 #include "lwrb.h"
@@ -43,6 +45,7 @@
 //****************************************************Parameter Initialization**************************************************//
 static vu16 s_us_data_send_size = 0;
 static vu16 s_us_data_send_cnt  = 0;
+static __IO bool s_b_print_inited = false;
 
 #if (boardPRINT_IFACE_DMA_EN)
 static __ALIGNED(4) uint8_t s_uca_print_rx_dma_buff[printRX_DMA_BUFF_SIZE];
@@ -103,6 +106,9 @@ __attribute__((used)) void _sys_exit(int x)
  ************************************************************************************************************************/
 int fputc(int ch, FILE *f)
 {
+	if (s_b_print_inited == false)
+		return ch;
+
 	#if (boardPRINT_IFACE == 7)
 	#if (boardSEGGER)
 	SEGGER_RTT_PutChar(0, (char)ch);
@@ -303,15 +309,20 @@ static void v_print_dma_init(void)
  ************************************************************************************************************************/
 void vPrint_IfaceInit(void)
 {
-#if (boardPRINT_IFACE == 7)
+	if(s_b_print_inited ==true)
+		return;
+
+	#if (boardPRINT_IFACE == 7)
 	vUsbCdc_Init();
-#else
+	#else
 	v_print_gpio_init();
 	v_print_usart_init();
 	#if (boardPRINT_IFACE_DMA_EN)
 	v_print_dma_init();
 	#endif  /* boardPRINT_IFACE_DMA_EN */
-#endif  /* boardPRINT_IFACE == 7 */
+	#endif  /* boardPRINT_IFACE == 7 */
+
+	s_b_print_inited = true;
 }
 
 /***********************************************************************************************************************
@@ -323,6 +334,9 @@ void vPrint_IfaceInit(void)
  ************************************************************************************************************************/
 void vPrint_IfaceDeInit(void)
 {
+	if(s_b_print_inited == false)
+		return;
+
 	#if (boardPRINT_IFACE == 7)
 	vUsbCdc_DeInit();
 	#else
@@ -333,6 +347,8 @@ void vPrint_IfaceDeInit(void)
 	dma_deinit(printUSART_DMA, printUSART_DMA_RX_CH);
 	#endif  /* boardPRINT_IFACE_DMA_EN */
 	#endif  /* boardPRINT_IFACE == 7 */
+
+	s_b_print_inited = false;
 }
 
 /***********************************************************************************************************************
@@ -344,6 +360,9 @@ void vPrint_IfaceDeInit(void)
  ************************************************************************************************************************/
 bool bPrint_DataSendStart(uint16_t us_len)
 {
+	if(s_b_print_inited == false)
+		return false;
+
 	if (us_len == 0)
 		return false;
 
@@ -439,14 +458,29 @@ void vPrint_485TransEnable(bool b_en)
  ************************************************************************************************************************/
 bool bPrint_CheckSendFinish(void)
 {
-#if (boardPRINT_IFACE == 7)
+	if(s_b_print_inited == false)
+		return true;
+
+	#if (boardPRINT_IFACE == 7)
 	return !bUsbCdc_IsTxBusy();
-#else
+	#else
 	if (s_us_data_send_size)
 		return false;
 	else 
 		return true;
-#endif  /* boardPRINT_IFACE == 7 */
+	#endif  /* boardPRINT_IFACE == 7 */
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 打印接口是否已经初始化
+ * 说明(备注)  : 
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : true: 初始化, false: 未初始化
+ ************************************************************************************************************************/
+bool bPrint_IfaceInited(void)
+{
+	return s_b_print_inited;
 }
 
 /***********************************************************************************************************************

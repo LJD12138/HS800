@@ -11,7 +11,7 @@
 #define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
 
 #ifndef CONFIG_USB_DBG_LEVEL
-#define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
+#define CONFIG_USB_DBG_LEVEL USB_DBG_ERROR
 #endif
 
 /* Enable print with color */

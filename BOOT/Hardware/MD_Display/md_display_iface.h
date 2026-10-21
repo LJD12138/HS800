@@ -96,6 +96,7 @@ extern "C" {
 
 //****************************************************Extern********************************************************************//
 void vDisp_IfaceInit(void);
+void vDisp_IfaceDeInit(void);
 void vDisp_SpiSendByte(const u8 *data, u16 len);
 void vDisp_SetBacklight(bool on);
 void vDisp_WriteCommand(u8 cmd);
@@ -103,6 +104,7 @@ void vDisp_WriteData8(u8 data);
 void vDisp_WriteData16(u16 data);
 void vDisp_WriteBuffer(const u8 *data, u32 len);
 bool bDisp_WriteColorAsync(const u8 *data, u32 len);
+bool bDisp_IfaceInited(void);
 
 #endif  /* boardDISPLAY_EN */
 #ifdef __cplusplus

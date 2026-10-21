@@ -19,6 +19,7 @@
 #include "uni_disp_core.h"
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
+#include "uni_disp_port.h"      /* vDisp_PortWakeTask: 就绪后唤醒显示任务 */
 #include "Sys/sys_task.h"
 
 
@@ -79,11 +80,12 @@ static void v_page_init_update(const DispDataSnapshot_T *p_data, bool b_force)
     (void)p_data;
     (void)b_force;
 
-    /* 标记系统显示任务已就绪 */
-    tSysInfo.uInit.tFinish.bIF_DispTask = 1;
-
-    /* 即时唤醒显示任务，使下一帧无延迟根据实际状态切页 */
-    vDisp_PortWakeTask();
+    /* 标记系统显示任务已就绪 (仅首次置位并唤醒, 避免每帧重复写/唤醒) */
+    if (tSysInfo.uInit.tFinish.bIF_DispTask == 0)
+    {
+        tSysInfo.uInit.tFinish.bIF_DispTask = 1;
+        vDisp_PortWakeTask();
+    }
 }
 
 /***********************************************************************************************************************

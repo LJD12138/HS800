@@ -33,6 +33,7 @@ static void v_page_boot_enter(void);
 static void v_page_boot_exit(void);
 static void v_page_boot_update(const DispDataSnapshot_T *p_data, bool b_force);
 static bool b_page_boot_event(DispEvent_E e_event, uint32_t ul_param);
+static bool b_page_boot_done(void);
 
 
 const DispPage_T G_tPageBoot =
@@ -42,7 +43,8 @@ const DispPage_T G_tPageBoot =
 	.vOnExit     = v_page_boot_exit,
     .vOnUpdate   = v_page_boot_update,
     .bOnEvent    = b_page_boot_event,
-    .usRefreshMs = 20,
+    .bOnDone     = b_page_boot_done,
+    .usRefreshMs = 33,
 };
 
 /***********************************************************************************************************************
@@ -79,7 +81,7 @@ static void v_page_boot_exit(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 开机页面帧更新
- * 说明(备注)  : 步进进度计数；当达到 100% 且系统已进入 DS_WORK 时，显式请求切换至工作页
+ * 说明(备注)  : 步进进度计数; 推进权在场景流程状态机 BOOT 步 (页面 bOnDone 自报完成 ∧ 项目 bDone 条件)
  * 传入参数    : p_data: 数据快照, b_force: 强制刷新标志
  * 输出参数    : 无
  * 返回值      : 无
@@ -99,10 +101,19 @@ static void v_page_boot_update(const DispDataSnapshot_T *p_data, bool b_force)
         if (objects.uc_booting_bar != NULL)
             lv_bar_set_value(objects.uc_booting_bar, s_uc_loading_step, LV_ANIM_ON);
     }
+}
 
-    /* 当进度条走满且系统已经处于工作态时，请求切入工作页面 */
-    if ((p_data->ucDevState == DS_WORK) && (s_uc_loading_step >= 100))
-        vDisp_RequestPage(PAGE_ID_WORK);
+/***********************************************************************************************************************
+ * 函数功能    : 开机动画完成自报 (页面 bOnDone)
+ * 说明(备注)  : 页面内在流程完成判定, 场景步骤推进时与 BOOT 步 bDone (DS_WORK) 与合成;
+ *               仅读页面自身 static 进度, 禁止直读全局
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : true: 动画已走满 100%; false: 进行中
+ ************************************************************************************************************************/
+static bool b_page_boot_done(void)
+{
+    return (s_uc_loading_step >= 100);
 }
 
 /***********************************************************************************************************************

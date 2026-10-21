@@ -36,6 +36,7 @@ typedef enum
 	ENG_PAGE_PARAM_SET,		/* 记忆参数设置 */
 	ENG_PAGE_SYS_SET,		/* 系统设置 */
 	ENG_PAGE_CONFIRM,		/* 确认对话框 */
+	ENG_PAGE_PV_DETAIL,		/* 参数查看详情 (框架页面栈管理的页内子级, 无独立LVGL容器体系) */
 	ENG_PAGE_MAX
 }EngModePage_E;
 
@@ -47,6 +48,16 @@ void vEngMode_UiCreate(void);
 void vEngMode_UiDelete(void);
 void vEngMode_UiTick(void);
 bool bEngMode_IsExitReq(void);
+
+/* 页内子级粒度生命周期 (框架页面控制块调用) */
+void vEngMode_PageEnter(EngModePage_E e_page);
+
+/* 框架页 vOnExit 统一入口: 有返回链时仅释放本页; 无返回链(离场景/弹栈到根)时整树释放 */
+void vEngMode_PageLeave(EngModePage_E e_page);
+
+/* 参数查看详情页 UI (三级页面栈试点) */
+void vEngPvDetail_UiCreate(uint32_t ul_arg);	/* ul_arg 低 8 位: PV Tab 索引 */
+void vEngPvDetail_UiDelete(void);
 
 void vEngMode_KeyUp(void);
 void vEngMode_KeyDown(void);

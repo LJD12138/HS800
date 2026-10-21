@@ -46,6 +46,7 @@
 
 #if (boardDISPLAY_EN)
 #include "MD_Display/md_display_task.h"
+#include "uni_disp_port.h"      /* vDisp_PortWakeTask: 设备状态切换唤醒显示任务 */
 #endif  //(boardDISPLAY_EN)
 
 #if (boardLIGHT_EN)
@@ -396,12 +397,10 @@ static void v_sys_check_prote(void)
 
 	//-----------------------------------------------系统输入欠压--------------------------------------------------
 	static u16 s_us_low_volt_cnt = 0;
-	if ((sSys_CheckInVolt() < 0
-	#if (boardBMS_EN)
+	if (sSys_CheckInVolt() < 0
+		#if (boardBMS_EN)
 	     || tBms.uErrCode.tCode.uBmsCode.tCode.bCellUV
-	#endif  //(boardBMS_EN)
-	    )
-	    && (bSys_ExistInVolt() == false)
+		#endif  //(boardBMS_EN)
 	)
 	{
 		if (tSysInfo.uErrCode.tCode.bUV == 0)
@@ -412,11 +411,6 @@ static void v_sys_check_prote(void)
 				s_us_low_volt_cnt = 0;
 				bSys_SetErrCode(SEC_UV, true);
 			}
-		}
-		else if (tpSysTask->ucID == STI_WORK)
-		{
-			cQueue_AddQueueTask(tpSysTask, STI_ERR, SEC_UV, false);
-			s_us_low_volt_cnt = 0;
 		}
 	}
 	else
@@ -1029,10 +1023,6 @@ s8 cSys_Switch(SwitchObject_E obj, SwitchType_E type, bool fore_en)
 				sMyPrint("bSysTask:屏幕休眠,开始唤醒屏幕\r\n");
 		}
 	}
-
-	#if (boardDISPLAY_EN)
-	bDisp_Switch(ST_ON, false);
-	#endif  //(boardDISPLAY_EN)
 
 	return 1;
 }

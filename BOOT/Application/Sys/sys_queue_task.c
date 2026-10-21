@@ -37,6 +37,10 @@
 #include "Led/led_iface.h"
 #endif  /* boardLED_EN */
 
+#if (boardDISPLAY_EN)
+#include "MD_Display/md_display_iface.h"
+#endif  /* boardDISPLAY_EN */
+
 #include "systick.h"
 #include "boot_info.h"
 #include "flash_allot_table.h"
@@ -242,6 +246,10 @@ s8 cSys_JumpToApp(void)
     #if (boardBMS_EN)
     vBms_IfaceDeInit();
     #endif  /* boardBMS_EN */
+
+    #if (boardDISPLAY_EN)
+    vDisp_IfaceDeInit();
+    #endif  /* boardDISPLAY_EN */
 
     #if (boardPRINT_IFACE)
     /* 设置下次重启直接进 APP;落盘失败禁止带病跳转,由任务重试机制兜底 */

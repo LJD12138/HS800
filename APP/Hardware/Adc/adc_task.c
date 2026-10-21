@@ -253,7 +253,7 @@ void vAdc_Task(void *p_v_parameters)
 
 		#if (boardUSE_OS)
 		if (tSysInfo.eDevState == DS_INIT)
-			vTaskDelay(30);
+			vTaskDelay(10);
 		else
 			vTaskDelay(100);
 		#endif  /* boardUSE_OS */

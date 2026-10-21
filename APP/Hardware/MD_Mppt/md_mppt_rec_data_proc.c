@@ -14,6 +14,8 @@
 
 //****************************************************Includes******************************************************************//
 #include "MD_Mppt/md_mppt_rec_data_proc.h"
+#include "main.h"
+#include <stdbool.h>
 
 #if (boardMPPT_EN)
 #include "MD_Mppt/md_mppt_rec_task.h"
@@ -80,7 +82,12 @@ s8 c_mppt_rec_proc_data(ModbusProtoRx_t *proto_rx, ModbusProtoTx_t *proto_tx)
             bFunc_SwapU16Array((u8*)&t_param, proto_rx->ucpValidData, proto_rx->ucCharLen / 2);
 
             if (t_param.usInState != 0)
-                bMppt_SetDevState(DS_WORK);
+            {
+                if(tMppt.bChgPerm == false)
+                    bMppt_SetDevState(DS_ERR);
+                else
+                    bMppt_SetDevState(DS_WORK);
+            }
             else
                 bMppt_SetDevState(DS_SHUT_DOWN);
 

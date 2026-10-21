@@ -2,17 +2,21 @@
 
 > 参考实现：HS800 APP 工程 `APP\Hardware\MD_Display` + `APP\Middlewares\UniDisplay`。
 > 本文档是 SKILL.md 的深度参考，含目录职责、设计依据、关键代码模式与移植清单。
-> 架构版本：2026-10（P1 通用件解耦 + P2 快照消费收敛 + P3~P6 治理项已落地）。
+> 架构版本：2026-10-19（P1 通用件解耦 + P2 快照消费收敛 + P3~P6 治理项 + 显示操作集 `DispOps_T` 收敛）。
+> 最新接口以 SKILL.md 第 4 节为准；本文旧接口示例仅保留设计依据。
 
 ## 1. 目录结构与职责
 
 ```
 APP/
-├── Middlewares/UniDisplay/               # 通用件（跨项目复用；core/page/event 零项目依赖）
-│   ├── uni_disp_core.c/.h                # 调度引擎：页面注册表/状态路由/弹窗栈/背光息屏/EnginePoll
-│   ├── uni_disp_page.h                   # 页面契约：DispPageId_E / DispPage_T / 三个数据钩子声明
-│   ├── uni_disp_event.c/.h               # 事件总线：静态环形队列（深度 4, DispEvent_E / DispEventMsg_T）
-│   └── uni_disp_port.c/.h                # 移植层：临界区 + 任务唤醒钩子 + 项目适配原语（唯一项目耦合点）
+├── Middlewares/UniDisplay/               # 通用件（跨项目复用；零项目依赖）
+│   ├── uni_disp_core.c/.h                # 调度引擎 + DispOps_T 注册/获取 + EnginePoll
+│   ├── uni_disp_page.h                   # 页面/场景/DispOps_T 契约 + 通用哨兵/容量宏
+│   ├── uni_disp_scene.c/.h               # 场景状态机（唯一导航权威）
+│   ├── uni_disp_nav.c/.h                 # 页面注册表/页面表批量注册/导航/页面栈
+│   ├── uni_disp_power.c/.h               # 背光息屏/显示活动判定/强制刷新
+│   ├── uni_disp_event.c/.h               # 事件总线：静态环形队列（深度 4）
+│   └── （无 port：项目适配实现放项目件）
 │
 └── Hardware/MD_Display/                  # 项目件（HS800 业务，移植时按此骨架重建）
     ├── md_display_task.c/.h              # 任务外壳：cDisp_TaskInit 建任务/页面静态注册/记忆参数/低功耗
@@ -60,7 +64,7 @@ APP/
 
 | 设计决策 | 依据 |
 | :--- | :--- |
-| 通用件/项目件分离 + port 原语 | core/page/event 只经 port.h 访问项目资源（快照定义/渲染出口/背光/息屏参数/就绪判定/提示音），换产品零改核心三文件 |
+| 通用件/项目件分离 + `DispOps_T` | core/nav/scene/power/event 只经 `DispOps_T` 访问项目资源（快照指针/渲染出口/背光/息屏/overlay/时基），换产品零改通用件 |
 | 快照模式（p_data 逐层传递） | 其它任务全局变量多线程裸读有撕裂风险；每帧临界区抓一次快照，路由与渲染共用一份数据，帧内绝对一致；渲染链禁止直读业务全局 |
 | 事件队列而非直接调用 | 其它任务直接调页面回调会引入并发；静态环形队列 + 任务通知唤醒，生产者任意任务、消费者唯一显示任务 |
 | 队列深度 4 | 单帧事件处理天然封顶 3 条，事件风暴受限于队列容量，无需额外帧预算；队列满丢弃并返回 false（调用方可记日志） |
@@ -107,26 +111,43 @@ void vDisp_Task(void *pvParameters)
 ```c
 s8 cDisp_TaskInit(void)
 {
-    vDisp_CoreInit();                       /* 1. 引擎复位（息屏参数经 port 原语载入） */
+    vDisp_CoreInit(&tDispOps);              /* 1. 注册项目 ops（同时复位各域） */
     vDisp_IfaceInit();                      /* 2. 显示接口引脚/时钟 */
-    if (!b_task_param_init())               /* 3. 页面静态注册 */
+    if (!b_task_param_init())               /* 3. 页面表批量注册 */
         return -1;
     xTaskCreate(...);                       /* 4. 创建显示任务 */
     vDisp_PortSetTaskHandle(tDispTaskHandler); /* 5. 绑定唤醒钩子 */
 }
 ```
 
-### 3.3 移植层适配原语（uni_disp_port.c，项目耦合唯一汇聚点）
+### 3.3 项目操作集 `DispOps_T`（项目耦合唯一汇聚点）
 
 ```c
-void vDisp_PortUiRefresh(void)              { vDisp_UiRefresh(); }                 /* 渲染出口 */
-void vDisp_PortSetBacklight(bool on)        { vDisp_SetBacklight(on); }            /* 背光硬件 */
-uint16_t usDisp_PortGetAutoOffTime(void)    { return tAppMemParam.tDISP.usAutoOffTime; }
-bool bDisp_PortIsSystemReady(void)          { return (tSysInfo.uInit.tFinish.bIF_DispTask != 0); }
-void vDisp_PortBeepOnLightOn(void)          { #if (boardBUZ_EN) bBuz_Tweet(LONG_1); #endif }
+static const DispOps_T tDispOps =
+{
+    .pGetSnapshot        = pDisp_DataSnapshot,          /* 项目持有快照, 框架只读指针 */
+    .ucGetDevState       = ucDisp_DataGetDevState,
+    .eMapDevStateToScene = eDisp_MapDevStateToScene,
+    .pGetSceneSteps      = pDisp_GetSceneSteps,
+    .ucSceneEntryStep    = ucDisp_SceneEntryStep,
+    .bAutoOffArmed       = bDisp_DataAutoOffArmed,
+    .vFlush              = vDisp_PortUiRefresh,         /* 渲染出口 */
+    .vPostSwitchAudit    = vDisp_PortMemAudit,          /* 切页后 LVGL 内存水位审计 */
+    .vBacklight          = vDisp_PortSetBacklight,      /* 背光硬件 */
+    .bDisplayActive      = NULL,                        /* TFT 跟随背光; 断码屏可恒 true */
+    .ulGetTickMs         = ulDisp_PortGetTickMs,        /* 场景驻留墙钟 */
+    .vEnterCritical      = vDisp_PortEnterCritical,     /* 临界区（ops 化, 通用件不引项目头） */
+    .vExitCritical       = vDisp_PortExitCritical,
+    .usDefaultFramePeriodMs = boardDISP_REFRESH_TIME,   /* 页面未声明周期/空页回退值 */
+    .bOverlayActive      = bDisp_PortIsOverlayActive,
+    .eOverlayPage        = eDisp_PortGetOverlayPage,
+    .usGetAutoOffTime    = usDisp_PortGetAutoOffTime,
+    .vWakeTask           = vDisp_PortWakeTask,
+    .vBeepOnLightOn      = vDisp_PortBeepOnLightOn,
+};
 ```
 
-core.c 中对应调用点：`vDisp_CoreInit`/`bDisp_Switch` 读息屏时间、背光开关、`v_disp_route_by_dev_state` 判就绪、`EnginePoll` 步骤 5 出口渲染——全部走原语，core/page/event 不 include 任何项目头。
+core/scene/nav/power/event 不 include 任何项目头；未赋值的 ops 字段由框架使用默认行为（如 `bDisplayActive` 缺省跟随背光、`ulGetTickMs` 缺省按帧周期累计、`vBacklight` 缺省空操作）。
 
 ### 3.4 数据钩子实现（项目件三契约）
 
@@ -287,16 +308,14 @@ if (s_last_dev_usb_state != b_show || b_force)
 
 ## 5. 移植到新项目的完整清单
 
-1. **拷贝通用件**：`Middlewares/UniDisplay/` 四文件原样复制。
-2. **只改 port 两文件**：
-   - `uni_disp_port.h`：`#include` 换成新项目快照头；原语声明按需增删；
-   - `uni_disp_port.c`：FreeRTOS 用任务通知唤醒（vTaskNotifyGive / ulTaskNotifyTake），临界区用工程统一 mainENTER_CRITICAL；裸机唤醒空宏。core/page/event 三文件零修改。
+1. **拷贝通用件**：`Middlewares/UniDisplay/` 六文件原样复制（core/nav/scene/power/event/page），通用件不 include 项目头。
+2. **项目侧装配 `DispOps_T`**：在 `xx_display_task.c` 定义一个 `static const DispOps_T` 并 `vDisp_CoreInit(&tDispOps)`；快照、场景、页面、后端全部经 ops 注入。OS 唤醒/时基可放 `uni_disp_port.c` 供 ops 引用。通用件零修改。
 3. **重建项目件**（按第 1 节骨架，替换 "md_display" 前缀为项目前缀）：
    - [ ] iface：引脚/时钟/SPI/DMA 宏 + 写命令原语（vDisp_WriteCommand/WriteData8/16/WriteBuffer）；
    - [ ] lv_port_disp：LVGL 显示驱动注册、缓冲策略（双缓冲 DMA、FlushDone 信号量）；
    - [ ] api：vDisp_Init（lv_init + tick 回调 + 驱动注册 + ST7789 初始化命令表 + ui_init 防重）、vDisp_LoadScreen、vDisp_UiRefresh（ui_tick → 自绘 ManualTick → lv_timer_handler）；
-   - [ ] data：快照结构体字段集 + 端口位掩码宏 + 三数据钩子 + 状态路由表；
-   - [ ] task：DispMemParam_T 记忆参数、任务创建、页面注册、vDisp_TickTimer 挂接、低功耗挂起/恢复；
+   - [ ] data：快照结构体字段集 + `pDisp_DataSnapshot`/`ucDisp_DataGetDevState` + 端口位掩码宏 + 状态路由表；
+   - [ ] task：`DispOps_T` 装配、页面表 + `vDisp_PageRegisterAll`、DispMemParam_T、任务创建、vDisp_TickTimer 挂接、低功耗挂起/恢复；
    - [ ] err：错误码轮显（多故障轮播 + 切换间隙返回 0 配合闪烁）；
    - [ ] page_*：按契约逐页实现（p_data 逐层传递，勿直读业务全局）。
 4. **EEZ Studio**：新建工程（320x240 横屏示例），设计 Screen，配 Native 变量，构建生成 eez_ui，手写 vars.c，把 `.eez-project-build` 清单内文件加入构建。
@@ -308,7 +327,7 @@ if (s_last_dev_usb_state != b_show || b_force)
    - [ ] 按键任务投递 DISP_EVT_KEY_SHORT/LONG；
    - [ ] 故障管理投递 FAULT_POPUP/FAULT_CLEAR。
 7. **验证**：
-   - [ ] 上电 INIT→BOOT→WORK 路由正确；
+   - [ ] 上电 INIT 场景→BOOT→WORK 路由正确；
    - [ ] 亮屏帧率贴近页面声明（GPIO 翻转或 RTOS 运行时统计）；
    - [ ] 息屏后显示任务 CPU 占用归零；
    - [ ] 事件风暴（队列满）不死机，bDisp_PostEvent 返回 false 有日志；

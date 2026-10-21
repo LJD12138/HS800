@@ -2,14 +2,16 @@
  * Project : APP
  * Module  : APP\Middlewares\UniDisplay
  * File    : uni_disp_core.c
- * Date    : 2026-09-16
+ * Date    : 2026-10-15
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 调度核心 - 页面注册表/状态路由/N 深弹窗栈/背光息屏管理/轮询引擎
+ * Desc    : UniDisplay 调度核心 - 轮询引擎 (聚合各域: uni_disp_scene 场景状态机 / uni_disp_nav 导航 /
+ *           uni_disp_power 背光息屏; 本文件只保留引擎时序与事件默认处理)
  * -------------------------------------------------------
  * 调度时序约定 (优先级从高到低):
- * 1. 设备状态路由 (状态变化沿, EnginePoll 步骤 2): 显式导航语义, 覆盖弹窗栈;
+ * 1. 场景流程调度 (Scene Manager, EnginePoll 步骤 2): 唯一导航权威 - FAULT overlay 电平评估 ->
+ *    场景边界仲裁 -> 步骤推进 (完成条件/超时兜底), 显式导航语义;
  * 2. 事件队列分发 (EnginePoll 步骤 3): 页面消费/框架默认处理两级;
- * 3. 页内导航 (页面回调内的 Request/Push/Pop): 状态未变化时不受干扰。
+ * 3. 页内导航 (页面回调内的 RequestPage): 场景与状态未变化时不受干扰。
  * -------------------------------------------------------
  * todo    :
  * 1. 无
@@ -21,375 +23,171 @@
 #include "uni_disp_core.h"
 
 #if (boardDISPLAY_EN)
-#include "uni_disp_port.h"      /* 项目快照定义与适配原语 (通用件唯一项目耦合点, 见 port 层) */
+#include "uni_disp_nav.h"       /* 导航域内部接口 */
+#include "uni_disp_power.h"     /* 电源域内部接口 */
+#include "uni_disp_scene.h"     /* 场景域内部接口 */
 
 
 //****************************************************Parameter Initialization**************************************************//
-/*----------------页面静态注册表----------------*/
-static const DispPage_T *S_aptPages[PAGE_ID_MAX] = { NULL };
-
-/*----------------路由与弹窗栈----------------*/
-#define			dispPOPUP_STACK_DEPTH					(4U)	/* 弹窗返回栈深度 */
-
-static const DispPage_T *S_ptCurrentPage  = NULL;   /* 当前页面控制块 (NULL=空页/无映射) */
-static DispPageId_E      S_eCurrentPageId = PAGE_ID_MAX;
-static DispPageId_E      S_eTargetPageId  = PAGE_ID_MAX;
-static DispPageId_E      S_aePopupStack[dispPOPUP_STACK_DEPTH];   /* 弹窗返回栈 */
-static uint8_t           S_ucPopupDepth   = 0;
-static bool              S_bForceRefresh  = true;   /* 切页/首帧强制刷新标志 */
-static uint8_t           S_ucMappedDevState = 0xFFU; /* 已路由的设备状态 (初始无效) */
-static uint16_t          S_usFramePeriodMs  = 0;     /* 当前页面帧刷新周期 ms (0=未加载, getter 回退默认) */
-
-/*----------------背光与息屏 (Power Manager)----------------*/
-static bool     S_bLight            = false;            /* 背光状态 */
-static bool     S_bLastLight        = false;            /* 上一个背光状态 */
-static uint16_t S_usAutoOffTime     = 0;                /* 息屏时间 (0=常亮) */
-static uint16_t S_usAutoOffCnt      = 0;                /* 息屏倒计时 */
-static uint8_t  S_ucCurrentDevState = 0xFFU;            /* 最近一次快照的设备状态 */
+/* 项目操作集 (框架唯一项目耦合点; 未注册时各调用点使用默认行为) */
+static const DispOps_T *S_ptOps = NULL;
 
 //****************************************************Function Declaration******************************************************//
-static void v_disp_set_target(DispPageId_E e_page);
-static void v_disp_route_by_dev_state(const DispDataSnapshot_T *p_snapshot);
 static void v_disp_event_default(DispEvent_E e_event, uint32_t ul_param);
-static uint16_t v_disp_load_page_period(const DispPage_T *p_page);
-
-
 
 /***********************************************************************************************************************
  * 函数功能    : 框架核心初始化
- * 说明(备注)  : 显示任务创建前调用; 初始为空页(PAGE_ID_MAX), 由状态路由驱动首个页面
+ * 说明(备注)  : 显示任务创建前调用; 先注册项目操作集, 再聚合转调各域初始化 (电源/导航/场景)
+ * 传入参数    : p_ops: [IN] 项目操作集指针 (可为 NULL, 各域使用默认行为)
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vDisp_CoreInit(const DispOps_T *p_ops)
+{
+    S_ptOps = p_ops;
+    vDisp_PowerInit();
+    vDisp_NavInit();
+    vDisp_SceneInit();
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 获取项目操作集
+ * 说明(备注)  : 框架内部与项目件均可读取; 未注册返回 NULL
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 项目操作集指针
+ ************************************************************************************************************************/
+const DispOps_T *pDisp_GetOps(void)
+{
+    return S_ptOps;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 读取快照中的设备状态
+ * 说明(备注)  : 经项目 ops 适配, 通用件不感知快照结构; 无适配返回 dispDEV_STATE_NONE
+ * 传入参数    : p_snapshot: [IN] 快照指针 (可为 NULL)
+ * 输出参数    : 无
+ * 返回值      : 设备状态
+ ************************************************************************************************************************/
+uint8_t ucDisp_DataDevState(const DispDataSnapshot_T *p_snapshot)
+{
+    if ((p_snapshot != NULL) && (S_ptOps != NULL) && (S_ptOps->ucGetDevState != NULL))
+        return S_ptOps->ucGetDevState(p_snapshot);
+
+    return dispDEV_STATE_NONE;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 进入框架临界区
+ * 说明(备注)  : 经项目 ops 映射 (如 mainENTER_CRITICAL); 项目未提供时为空实现 (裸机单上下文)
  * 传入参数    : 无
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void vDisp_CoreInit(void)
+void vDisp_CoreEnterCritical(void)
 {
-    S_ucPopupDepth     = 0;
-    S_ptCurrentPage    = NULL;
-    S_eCurrentPageId   = PAGE_ID_MAX;
-    S_eTargetPageId    = PAGE_ID_MAX;
-    S_ucMappedDevState = 0xFFU;
-    S_bForceRefresh    = true;
-    S_usFramePeriodMs  = boardDISP_REFRESH_TIME;
-
-    S_bLight            = false;
-    S_usAutoOffTime     = usDisp_PortGetAutoOffTime();
-    S_usAutoOffCnt      = 0;
-    S_ucCurrentDevState = 0xFFU;
+    if ((S_ptOps != NULL) && (S_ptOps->vEnterCritical != NULL))
+        S_ptOps->vEnterCritical();
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 页面静态注册
- * 说明(备注)  : 页面对象须为 static/全局 const 生命周期; 越界或空指针忽略
- * 传入参数    : p_page: 页面控制块指针
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-void vDisp_PageRegister(const DispPage_T *p_page)
-{
-    if (p_page != NULL && p_page->ePageId < PAGE_ID_MAX)
-        S_aptPages[p_page->ePageId] = p_page;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 请求切换页面 (任意任务上下文)
- * 说明(备注)  : 显式导航语义: 清空弹窗栈, 与"弹窗返回"互斥;
- *               目标页单字节写原子, 显示任务下一轮询生效
- * 传入参数    : e_new_page: 目标页面 ID
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-void vDisp_RequestPage(DispPageId_E e_new_page)
-{
-    if (e_new_page < PAGE_ID_MAX)
-    {
-        S_ucPopupDepth = 0;                     /* 显式导航清栈 */
-        S_eTargetPageId = e_new_page;
-    }
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 弹窗式压栈 (仅显示任务上下文: 页面回调/事件默认处理内调用)
- * 说明(备注)  : 幂等保护: 目标页是当前页或已在栈中时忽略, 防止重复事件卡死在弹窗页
- * 传入参数    : e_popup_page: 弹窗页面 ID
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-void vDisp_PushPage(DispPageId_E e_popup_page)
-{
-    uint8_t i;
-
-    /* 已在弹窗页: 幂等忽略 */
-    if (e_popup_page >= PAGE_ID_MAX || e_popup_page == S_eCurrentPageId)
-        return;
-
-    for (i = 0; i < S_ucPopupDepth; i++)
-    {
-        /* 已在栈中: 幂等忽略 */
-        if (S_aePopupStack[i] == e_popup_page)
-            return;
-    }
-
-    if (S_ucPopupDepth < dispPOPUP_STACK_DEPTH)
-    {
-        S_aePopupStack[S_ucPopupDepth++] = S_eCurrentPageId;
-        v_disp_set_target(e_popup_page);        /* 内部设定目标页, 不清栈 */
-    }
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 弹窗退栈返回 (仅显示任务上下文)
- * 说明(备注)  : 只退一级, 嵌套弹窗逐级返回
+ * 函数功能    : 退出框架临界区
+ * 说明(备注)  : 必须与 vDisp_CoreEnterCritical 成对调用
  * 传入参数    : 无
  * 输出参数    : 无
  * 返回值      : 无
  ************************************************************************************************************************/
-void vDisp_PopPage(void)
+void vDisp_CoreExitCritical(void)
 {
-    if (S_ucPopupDepth > 0U)
-        v_disp_set_target(S_aePopupStack[--S_ucPopupDepth]);
-    else
-        v_disp_set_target(PAGE_ID_WORK);
+    if ((S_ptOps != NULL) && (S_ptOps->vExitCritical != NULL))
+        S_ptOps->vExitCritical();
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 背光开关 (任意任务上下文)
- * 说明(备注)  : 平移旧 bDisp_Switch(): 点亮时进入运行模式并标记强制刷新, 关闭时进入待机模式并清显存;
- *               b_fore_en=true 表示常亮(息屏时间清零), false 按板级默认息屏时间重置倒计时
- * 传入参数    : e_type: OFF/ON/TOGGLE; b_fore_en: true=常亮
- * 输出参数    : 无
- * 返回值      : true: 已处理
- ************************************************************************************************************************/
-bool bDisp_Switch(SwitchType_E e_type, bool b_fore_en)
-{
-    if (e_type == ST_NULL)
-        e_type = S_bLight ? ST_OFF : ST_ON;
-
-    if (e_type == ST_ON)
-    {
-        if (!S_bLight)
-        {
-            S_bLight = true;
-            vDisp_PortSetBacklight(true);
-            S_bForceRefresh = true;             /* 标记下次渲染全量重绘 */
-        }
-
-        /* 更新息屏参数: 优先使用持久化参数, 为0则使用板级默认值 */
-        S_usAutoOffTime = b_fore_en ? 0 : usDisp_PortGetAutoOffTime();
-        S_usAutoOffCnt  = S_usAutoOffTime;
-    }
-    else if (e_type == ST_OFF)
-    {
-        if(S_bLight)
-        {
-            S_bLight = false;
-            vDisp_PortSetBacklight(false);
-        }
-
-        /* 复位息屏参数 */
-        S_usAutoOffTime = usDisp_PortGetAutoOffTime();
-        S_usAutoOffCnt  = 0;
-    }
-
-    /* 唤醒可能处于低频休眠心跳的显示任务 */
-    vDisp_PortWakeTask();
-
-    if (b_fore_en && S_bLight)
-        vDisp_PortBeepOnLightOn();
-
-    return true;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 查询背光状态 (任意任务上下文)
- * 说明(备注)  : none
+ * 函数功能    : 获取默认帧刷新周期
+ * 说明(备注)  : 页面 usRefreshMs=0/空页时回退; 项目未配置时使用通用常量
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : true: 背光开启; false: 息屏
+ * 返回值      : 默认帧刷新周期 ms
  ************************************************************************************************************************/
-bool bDisp_IsBacklightOn(void)
+uint16_t usDisp_CoreDefaultFramePeriod(void)
 {
-    return S_bLight;
-}
+    if ((S_ptOps != NULL) && (S_ptOps->usDefaultFramePeriodMs != 0U))
+        return S_ptOps->usDefaultFramePeriodMs;
 
-/***********************************************************************************************************************
- * 函数功能    : 重置息屏倒计时 (任意任务上下文)
- * 说明(备注)  : 不点亮屏幕, 仅重置自动息屏计数 (供按键事件默认处理调用)
- * 传入参数    : 无
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-void vDisp_ResetAutoOffCountdown(void)
-{
-    S_usAutoOffCnt = S_usAutoOffTime;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 显示 1S 定时节拍 (息屏电源管理)
- * 说明(备注)  : 由 timer_task 的 1S 重复定时器直接调用;
- *               脱离 EnginePoll 轮询次数, 计时绝对准确
- * 传入参数    : 无
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-void vDisp_TickTimer(void)
-{
-    if (S_bLight && (S_usAutoOffTime > 0) && bDisp_DataAutoOffArmed(S_ucCurrentDevState))
-    {
-        if (S_usAutoOffCnt > 0)
-        {
-            S_usAutoOffCnt--;
-            if (S_usAutoOffCnt == 0)
-                bDisp_Switch(ST_OFF, false);     /* 倒计时结束息屏 */
-        }
-    }
+    return dispFRAME_PERIOD_DEFAULT_MS;
 }
 
 /***********************************************************************************************************************
  * 函数功能    : UniDisplay 调度轮询引擎 (仅显示任务调用)
- * 说明(备注)  : 快照抓取 -> 息屏计时 -> 状态路由 -> 事件分发 -> 页面切换 -> 息屏门控渲染
+ * 说明(备注)  : 快照抓取 -> 场景调度 -> 事件分发 -> 页面切换 -> 息屏门控渲染
  * 传入参数    : 无
  * 输出参数    : 无
- * 返回值      : 无
+ * 返回值      : 建议下次轮询间隔 ms (当前页帧周期; 事件/导航请求经 vWakeTask 即时唤醒, 不受此限)
  ************************************************************************************************************************/
-void vDisp_EnginePoll(void)
+uint16_t usDisp_EnginePoll(void)
 {
-    DispDataSnapshot_T t_snapshot;
+    const DispDataSnapshot_T *p_snapshot = NULL;
     DispEventMsg_T     t_msg;
+    const DispPage_T  *p_page;
 
-    /* 1. 抓取快照 (状态路由与页面渲染共用一份数据, 帧内一致) */
-    vDisp_DataCaptureSnapshot(&t_snapshot);
-    S_ucCurrentDevState = t_snapshot.ucDevState;
+    /* 1. 抓取快照 (项目持有快照, 框架只读指针; 场景调度与页面渲染共用, 帧内一致) */
+    if ((S_ptOps != NULL) && (S_ptOps->pGetSnapshot != NULL))
+        p_snapshot = S_ptOps->pGetSnapshot();
 
-    /* 2. 设备状态路由 (状态变化沿, 高优先级: 覆盖弹窗栈) */
-    v_disp_route_by_dev_state(&t_snapshot);
+    if (p_snapshot != NULL)
+    {
+        uint8_t uc_dev_state = ucDisp_DataDevState(p_snapshot);     /* 设备状态提取一次, 电源/场景两域共用 */
+
+        vDisp_PowerUpdateDevState(uc_dev_state);
+
+        /* 2. 场景调度 (唯一导航权威) */
+        vDisp_SceneSchedule(p_snapshot, uc_dev_state);
+    }
 
     /* 3. 事件分发: 在本任务上下文统一消费事件队列
-     * (队列深度 4, 单帧最多处理 3 条, 事件风暴天然受限于队列容量, 无需额外帧预算) */
+     * (队列深度 dispEVT_QUEUE_DEPTH, 单帧最多处理 深度-1 条, 事件风暴受限于队列容量) */
     while (bDisp_EventDequeue(&t_msg))
     {
-        if (S_ptCurrentPage != NULL && S_ptCurrentPage->bOnEvent != NULL)
+        p_page = pDisp_NavGetCurrentPage();
+        if (p_page != NULL && p_page->bOnEvent != NULL)
         {
-            if (S_ptCurrentPage->bOnEvent(t_msg.eEvent, t_msg.ulParam))
+            if (p_page->bOnEvent(t_msg.eEvent, t_msg.ulParam))
                 continue;                       /* 页面已消费 */
         }
         v_disp_event_default(t_msg.eEvent, t_msg.ulParam);
     }
 
-    /* 4. 页面切换生命周期 (OnExit -> OnEnter -> 强刷置位) */
-    if ((S_eTargetPageId != S_eCurrentPageId) && (S_eTargetPageId < PAGE_ID_MAX))
+    /* 4. 页面切换生命周期 (OnExit -> OnEnter -> 加载帧周期; 发生切页则置强制刷新) */
+    if (bDisp_NavApplySwitch())
     {
-        if (S_ptCurrentPage != NULL && S_ptCurrentPage->vOnExit != NULL)
-            S_ptCurrentPage->vOnExit();
+        vDisp_PowerMarkForceRefresh();
 
-        S_eCurrentPageId = S_eTargetPageId;
-        S_ptCurrentPage  = S_aptPages[S_eCurrentPageId];
-
-        if (S_ptCurrentPage != NULL && S_ptCurrentPage->vOnEnter != NULL)
-            S_ptCurrentPage->vOnEnter();
-
-        /* 加载页面声明的帧周期 (0/空页回退默认, 下限钳位) */
-        S_usFramePeriodMs = v_disp_load_page_period(S_ptCurrentPage);
-
-        S_bForceRefresh = true;
+        /* 切页后审计 (项目可选: 如 LVGL 内存水位/碎片率, 在显示任务上下文执行) */
+        if ((S_ptOps != NULL) && (S_ptOps->vPostSwitchAudit != NULL))
+            S_ptOps->vPostSwitchAudit();
     }
 
-    //vDisp_ClearRam(); /* 渲染前清除显存 */
-
-    /* 5. 渲染输出幕 */
-    if (S_bLight || S_bForceRefresh)
+    /* 5. 渲染输出 (显示活动或强制刷新才渲染) */
+    if (bDisp_IsDisplayActive() || bDisp_PowerIsForceRefresh())
     {
-        if (S_ptCurrentPage != NULL && S_ptCurrentPage->vOnUpdate != NULL)
-            S_ptCurrentPage->vOnUpdate(&t_snapshot, S_bForceRefresh);
+        p_page = pDisp_NavGetCurrentPage();
+        if (p_page != NULL && p_page->vOnUpdate != NULL)
+            p_page->vOnUpdate(p_snapshot, bDisp_PowerIsForceRefresh());
 
-        vDisp_PortUiRefresh();
-        S_bForceRefresh = false;
+        if ((S_ptOps != NULL) && (S_ptOps->vFlush != NULL))
+            S_ptOps->vFlush();
+
+        vDisp_PowerClearForceRefresh();
     }
     else
     {
-        if (S_bLight != S_bLastLight)
-            vDisp_PortUiRefresh();
-    }
-    S_bLastLight = S_bLight;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 查询当前页面帧刷新周期
- * 说明(备注)  : 显示任务切页时单写, 其余任务只读; 未加载时回退框架默认周期
- * 传入参数    : 无
- * 输出参数    : 无
- * 返回值      : 当前帧刷新周期 ms (页面声明值经下限钳位后)
- ************************************************************************************************************************/
-uint16_t usDisp_GetFramePeriod(void)
-{
-    return (S_usFramePeriodMs != 0U) ? S_usFramePeriodMs : boardDISP_REFRESH_TIME;
-}
-
-
-
-
-
-/***********************************************************************************************************************
- * 函数功能    : 设定目标页 (框架内部)
- * 说明(备注)  : 仅显示任务上下文调用; 越界 ID 忽略
- * 传入参数    : e_page: [IN] 目标页 ID
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-static void v_disp_set_target(DispPageId_E e_page)
-{
-    if (e_page < PAGE_ID_MAX)
-        S_eTargetPageId = e_page;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 加载页面声明的帧周期 (框架内部)
- * 说明(备注)  : 仅显示任务上下文调用; 0/空页回退默认, 低于下限钳位 (防误配打满 CPU)
- * 传入参数    : p_page: [IN] 页面控制块指针 (可为 NULL)
- * 输出参数    : 无
- * 返回值      : 生效的帧刷新周期 ms
- ************************************************************************************************************************/
-static uint16_t v_disp_load_page_period(const DispPage_T *p_page)
-{
-    if ((p_page == NULL) || (p_page->usRefreshMs == 0U))
-        return boardDISP_REFRESH_TIME;
-
-    if (p_page->usRefreshMs < dispFRAME_PERIOD_MIN_MS)
-        return dispFRAME_PERIOD_MIN_MS;
-
-    return p_page->usRefreshMs;
-}
-
-/***********************************************************************************************************************
- * 函数功能    : 设备状态路由 (仅显示任务上下文)
- * 说明(备注)  : 状态变化沿触发(非电平触发, 避免与页内导航互踩);
- *               无映射状态(PAGE_ID_MAX)不产生切换请求, 维持当前页
- * 传入参数    : p_snapshot: [IN] 快照数据
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-static void v_disp_route_by_dev_state(const DispDataSnapshot_T *p_snapshot)
-{
-    DispPageId_E e_mapped;
-
-    if (!bDisp_PortIsSystemReady())
-    {
-        if (S_eCurrentPageId == PAGE_ID_INIT)
-            return;
-
-        vDisp_RequestPage(PAGE_ID_INIT);
-        return;
+        /* 显示关闭边沿补一帧 (清显存) */
+        vDisp_PowerIdleEdgeRefresh();
     }
 
-    if (p_snapshot->ucDevState == S_ucMappedDevState)
-        return; /* 未变化 */
-
-    e_mapped = eDisp_MapDevStateToPage(p_snapshot->ucDevState);
-    if (e_mapped < PAGE_ID_MAX)
-    {
-        S_ucMappedDevState = p_snapshot->ucDevState;
-        vDisp_RequestPage(e_mapped);    /* 显式导航: 清弹窗栈 */
-    }
+    /* 建议下次轮询间隔: 当前页帧周期 (切页后为新页声明值) */
+    return usDisp_GetFramePeriod();
 }
 
 /***********************************************************************************************************************
@@ -404,22 +202,7 @@ static void v_disp_event_default(DispEvent_E e_event, uint32_t ul_param)
 {
     switch (e_event)
     {
-        /* 故障弹出 */
-        case DISP_EVT_FAULT_POPUP:
-        {
-            vDisp_PushPage(PAGE_ID_FAULT);
-        }
-        break;
-
-        /* 故障清除 */
-        case DISP_EVT_FAULT_CLEAR:
-        {
-            if (S_eCurrentPageId == PAGE_ID_FAULT)
-                vDisp_PopPage();
-        }
-        break;
-
-        /* 页面请求 */
+        /* 页面请求 (调试后门: 显式页切换; 生产导航已由场景调度接管) */
         case DISP_EVT_REQ_PAGE:
         {
             vDisp_RequestPage((DispPageId_E)ul_param);
@@ -431,6 +214,13 @@ static void v_disp_event_default(DispEvent_E e_event, uint32_t ul_param)
         case DISP_EVT_KEY_LONG:
         {
             vDisp_ResetAutoOffCountdown();          /* 按键重置息屏倒计时 */
+        }
+        break;
+
+        /* 返回请求: 页面栈非空弹出返回, 空栈无行为 (页面可自行消费该事件实现兜底) */
+        case DISP_EVT_BACK:
+        {
+            (void)bDisp_PagePop(0U);
         }
         break;
 

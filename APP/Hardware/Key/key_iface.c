@@ -145,7 +145,7 @@ bool bKey_IsPressById(KeyId_E e_id)
 	#if (boardADC_EN)
 	/* Power 按键由 ADC 模块负责 */
 	if (uc_idx == keyPOWER)
-		return (usAdc_GetChannelValue(adcKEY_POWER) > 1000);
+		return (usAdc_GetChannelValue(adcKEY_POWER) > 200);
 	#endif  /* boardADC_EN */
 
 	bool b_pin_level = (gpio_input_bit_get(s_t_key_hw_config[uc_idx].gpio, s_t_key_hw_config[uc_idx].pin) != RESET);

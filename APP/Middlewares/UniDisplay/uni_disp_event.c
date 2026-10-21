@@ -16,14 +16,15 @@
 #include "uni_disp_event.h"
 
 #if (boardDISPLAY_EN)
-#include "uni_disp_port.h"
+#include "uni_disp_core.h"      /* pDisp_GetOps / 临界区适配 */
+
+//****************************************************Macros********************************************************************//
 
 //****************************************************Parameter Initialization**************************************************//
-#define			dispEVT_QUEUE_DEPTH						(4U)	/* 事件队列深度 */
-
 static DispEventMsg_T   S_atEvtQueue[dispEVT_QUEUE_DEPTH];
 static volatile uint8_t S_ucEvtHead = 0;    /* 写指针: 仅生产者侧(临界区内)修改 */
 static volatile uint8_t S_ucEvtTail = 0;    /* 读指针: 仅显示任务修改 */
+static volatile uint32_t S_ulEvtDropCnt = 0; /* 队满丢弃计数 (仅生产者侧临界区内写, 单调递增) */
 
 /***********************************************************************************************************************
  * 函数功能    : 事件入队 (任意任务上下文)投递事件
@@ -39,7 +40,7 @@ bool bDisp_PostEvent(DispEvent_E e_event, uint32_t ul_param)
 
     if (e_event > DISP_EVT_NONE && e_event < DISP_EVT_MAX)
     {
-        mainENTER_CRITICAL();
+        vDisp_CoreEnterCritical();
         uc_next = (uint8_t)((S_ucEvtHead + 1U) % dispEVT_QUEUE_DEPTH);
         if (uc_next != S_ucEvtTail)             /* 未满 */
         {
@@ -48,11 +49,20 @@ bool bDisp_PostEvent(DispEvent_E e_event, uint32_t ul_param)
             S_ucEvtHead = uc_next;
             b_ok = true;
         }
-        mainEXIT_CRITICAL();
+        else
+        {
+            S_ulEvtDropCnt++;                   /* 队满丢弃: 计数供调试观测 (事件风暴/按键丢失定位) */
+        }
+        vDisp_CoreExitCritical();
     }
 
     if (b_ok)
-        vDisp_PortWakeTask();                    /* 任务通知唤醒显示任务, 事件即时响应 */
+    {
+        const DispOps_T *p_ops = pDisp_GetOps();
+
+        if ((p_ops != NULL) && (p_ops->vWakeTask != NULL))
+            p_ops->vWakeTask();                  /* 任务通知唤醒显示任务, 事件即时响应 */
+    }
 
     return b_ok;
 }
@@ -73,6 +83,18 @@ bool bDisp_EventDequeue(DispEventMsg_T *p_msg)
     p_msg->ulParam = S_atEvtQueue[S_ucEvtTail].ulParam;
     S_ucEvtTail = (uint8_t)((S_ucEvtTail + 1U) % dispEVT_QUEUE_DEPTH);
     return true;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 查询事件溢出丢弃计数 (任意任务上下文)
+ * 说明(备注)  : 队满丢弃累计值, 单调递增不复位; 调试期定位 "按键没反应/事件丢失" 的首选观测点
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 溢出丢弃计数
+ ************************************************************************************************************************/
+uint32_t ulDisp_GetEventDropCnt(void)
+{
+    return S_ulEvtDropCnt;
 }
 
 #endif  /* boardDISPLAY_EN */

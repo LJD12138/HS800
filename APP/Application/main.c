@@ -46,7 +46,7 @@
 
 
 //****************************************************Task Declaration**********************************************************//
-#define      	startTASK_PRIO             			    1U       /* 任务优先级 */
+#define      	startTASK_PRIO                         (configMAX_PRIORITIES - 1) /* 任务优先级 */
 #define			startTASK_STK_SIZE					    512U	/* 任务堆栈 */
 static TaskHandle_t s_start_task_handler; 
 
@@ -86,7 +86,7 @@ int main(void)
 	#endif  /* boardWDGT_EN */
 
 	#if (boardSEGGER)
-	printf(0, "------------------APP OK--------------------!\r\n");
+	printf("------------------APP OK--------------------!\r\n");
 	#endif  //boardSEGGER
 
 	/* 创建根任务 */

@@ -24,10 +24,6 @@ DebugPrint_U uPrint;
 #include "Print/print_queue_task.h"
 #include "Sys/sys_task.h"
 
-#if (boardUSB_EN)
-#include "Usb/usb_task.h"
-#endif  /* boardUSB_EN */
-
 #if (boardWDGT_EN)
 #include "fwdgt.h"
 #endif  /* boardWDGT_EN */
@@ -143,7 +139,7 @@ void vPrint_Task(void *pvParameters)
         vFwdgt_Reload();
         #endif  /* boardWDGT_EN && boardPRINT_IFACE */
         
-        if (p_task == NULL)
+        if (p_task == NULL || bPrint_IfaceInited() == false)
         {
             if (p_task == NULL)
                 b_print_task_param_init();
@@ -156,15 +152,6 @@ void vPrint_Task(void *pvParameters)
             #endif  /* boardUSE_OS */
         }
 
-		#if (boardUSB_EN)
-		if (tUsb.eDevState == DS_SHUT_DOWN)
-			printIFACE_EN_ON();
-		else
-			printIFACE_EN_OFF();
-		#else
-		printIFACE_EN_ON();
-		#endif  /* boardUSB_EN */
-        
         vQueue_TaskPoll(p_task, printTASK_CYCLE_TIME);
     }
 }

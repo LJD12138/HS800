@@ -4,7 +4,7 @@
  * File    : md_display_page_closing.c
  * Date    : 2026-09-21
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 关机页面 - 关机画面展示与延时息屏
+ * Desc    : UniDisplay 关机页面 - 关机画面展示 (保持时序由场景调度器管理, 页面仅渲染)
  * -------------------------------------------------------
  * todo    :
  * 1. 无
@@ -20,12 +20,6 @@
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/eez_ui/screens.h"
-
-//****************************************************Macros********************************************************************//
-#define			dispPAGE_CLOSING_HOLD_CNT				(1500U / 33U)	/* 关机画面保持 1500ms (约 45 帧) */
-
-//****************************************************Parameter Initialization**************************************************//
-static uint16_t s_us_close_wait_cnt = 0;
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_closing_enter(void);
@@ -52,7 +46,6 @@ const DispPage_T G_tPageClosing =
  ************************************************************************************************************************/
 static void v_page_closing_enter(void)
 {
-    s_us_close_wait_cnt = 0;
     vDisp_LoadScreen(SCREEN_ID_MAIN_CLOSING);
     bDisp_Switch(ST_ON, false);
 }
@@ -66,12 +59,12 @@ static void v_page_closing_enter(void)
  ************************************************************************************************************************/
 static void v_page_closing_exit(void)
 {
-    s_us_close_wait_cnt = 0;
 }
 
 /***********************************************************************************************************************
  * 函数功能    : 关机页面帧更新
- * 说明(备注)  : 维持 1500ms 完整展示关机动画，防止主界面残影，倒计时结束后关闭背光
+ * 说明(备注)  : 本页仅渲染: 保持 1500ms 由场景表 b_flow_done_closing 判定, 到时步进
+ *               SHUT_DOWN 页并由其 vOnEnter 息屏
  * 传入参数    : p_data: 数据快照
  * 输出参数    : b_force: 是否强制刷新
  * 返回值      : 无
@@ -80,14 +73,6 @@ static void v_page_closing_update(const DispDataSnapshot_T *p_data, bool b_force
 {
     (void)p_data;
     (void)b_force;
-
-    if (s_us_close_wait_cnt < dispPAGE_CLOSING_HOLD_CNT)
-    {
-        s_us_close_wait_cnt++;
-        if (s_us_close_wait_cnt >= dispPAGE_CLOSING_HOLD_CNT)
-            /* 延时达到, 关闭背光 */
-            bDisp_Switch(ST_OFF, false);
-    }
 }
 
 /***********************************************************************************************************************

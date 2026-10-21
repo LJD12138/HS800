@@ -41,8 +41,6 @@ void 			vDisp_Task(void *pvParameters);					/* 任务函数 */
 //****************************************************Parameter Initialization**************************************************//
 Disp_T   tDisp; 
 
-bool bDispIfaceInit = false;
-
 //****************************************************Function Declaration******************************************************//
 static void v_disp_param_init(void);
 
@@ -71,6 +69,9 @@ static void v_disp_param_init(void)
  ************************************************************************************************************************/
 s8 cDisp_TaskInit(void)
 {
+	if (bDisp_IfaceInited())
+		return 1;
+
 	v_disp_param_init();
 	
 	vDisp_IfaceInit();
@@ -86,7 +87,6 @@ s8 cDisp_TaskInit(void)
 	                (TaskHandle_t *)&tDispTaskHandler) != pdPASS)	/* 任务句柄 */
 		return -1;
 	#endif  /* boardUSE_OS */
-	bDispIfaceInit = true;
 	return 1;
 }
 
@@ -104,7 +104,7 @@ void vDisp_Task(void *pvParameters)
 	for (;;)
 	#endif  /* boardUSE_OS */
 	{
-		if(tpSysTask == NULL || bDispIfaceInit == false)
+		if(tpSysTask == NULL || bDisp_IfaceInited() == false)
 		{
 			#if(boardUSE_OS)
 			vTaskDelay(100);
@@ -219,7 +219,7 @@ bool bDisp_Switch(SwitchType_E type, bool fore_en)
 		if (tDisp.bLight == false)
 		{
 			// 清屏，静态标题由 vDisp_UpdateModeUi 首次运行时绘制
-			if(bDispIfaceInit == true)
+			if(bDisp_IfaceInited() == true)
 			vDisp_DrawFillRect(0, 0, dispTFT_WIDTH, dispTFT_HEIGHT, 0x0000);
 
 			vDisp_SetBacklight(true);

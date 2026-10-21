@@ -26,6 +26,8 @@
 #include "Print/print_api.h"
 #include "Middlewares/LVGL/src/stdlib/lv_mem.h"
 #if(boardDISPLAY_EN)
+#include "Middlewares/UniDisplay/uni_disp_core.h"	/* 页面栈导航原语 bDisp_PagePush/bDisp_PagePop */
+#include "MD_Display/md_display_data.h"			/* 项目页面 ID (PAGE_ID_ENG_*) */
 #include "MD_Display/md_display_task.h"
 #include "MD_Display/md_display_api.h"
 #include "MD_Display/md_display_iface.h"
@@ -101,8 +103,8 @@
 #define			ENG_NUM_VIEW_TABS						7
 #define			ENG_NUM_SET_TABS						7
 
-/* 刷新周期: 50 * 10ms = 500ms */
-#define			ENG_DATA_REFRESH_CNT					50
+/* 数据刷新周期: 页面节拍 50ms × 20 = 1s */
+#define			ENG_DATA_REFRESH_CNT					20
 
 /* 字体选择 */
 #define			ENG_FONT_TITLE							(&ui_font_barlow_condensed_regular_26)
@@ -131,12 +133,23 @@ typedef enum
 	ENG_UI_ACTION_CFM_SEL,	/* 确认对话框选中变化 */
 }EngUiAction_E;
 
+/* 框架页面栈导航请求 (按键任务置位, 显示任务 vEngMode_UiTick 执行; 栈原语仅显示任务上下文可调用) */
+typedef enum
+{
+	ENG_NAV_REQ_NONE = 0,		/* 无请求 */
+	ENG_NAV_REQ_PUSH_PV,		/* 压栈: 主菜单 -> PAGE_ID_ENG_PV (param=ucMainMenuSel) */
+	ENG_NAV_REQ_PUSH_PS,		/* 压栈: 主菜单 -> PAGE_ID_ENG_PARAM_SET */
+	ENG_NAV_REQ_PUSH_SS,		/* 压栈: 主菜单 -> PAGE_ID_ENG_SYS_SET */
+	ENG_NAV_REQ_PUSH_DETAIL,	/* 压栈: PV -> PAGE_ID_ENG_PV_DETAIL (param=ucPvTab) */
+	ENG_NAV_REQ_PUSH_CONFIRM,	/* 压栈: SYS_SET -> PAGE_ID_ENG_CONFIRM */
+	ENG_NAV_REQ_POP				/* 出栈返回上一级 */
+}EngModeNavReq_E;
+
 /* 工程模式UI状态 */
 typedef struct
 {
 	EngModePage_E		ePage;				/* 当前页面 */
-	EngModePage_E		ePrevPage;			/* 上一页面(用于确认对话框返回) */
-	EngModePage_E		ePendingPage;		/* 待切换页面(按键任务设置, 显示任务执行) */
+	EngModeNavReq_E		ePendingNav;		/* 待执行框架页面栈导航(按键任务设置, 显示任务执行) */
 	EngUiAction_E		eUiAction;			/* 待执行的UI动作(按键任务设置, 显示任务执行) */
 	uint8_t				ucMainMenuSel;		/* 主菜单选中项 0-2 */
 	uint8_t				ucPvTab;			/* 参数查看当前Tab 0-6 */
@@ -204,6 +217,7 @@ typedef struct
 
 static EngModeState_T S_tState;
 static EngModeObjs_T  S_tObjs;
+static uint8_t        S_ucLastMenuSel = 0;	/* 主菜单选中项 (整树重建时保留) */
 
 /* 参数查看Tab名称 */
 static const char *S_apcPvTabNames[] = { "BMS", "MPPT", "DCAC", "USB", "DC", "ADC", "SYS" };
@@ -253,7 +267,7 @@ static void v_page_delete_pv(void);
 static void v_page_delete_ps(void);
 static void v_page_delete_ss(void);
 static void v_page_delete_cfm(void);
-static void v_page_show(EngModePage_E e_page);
+static void v_eng_base_create(void);
 static void v_pv_update_data(void);
 static void v_ps_update_data(void);
 static void v_ps_update_selection(void);
@@ -1318,7 +1332,7 @@ static void v_cfm_update_selection(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 删除主菜单页面LVGL对象
- * 说明(备注)  : DispTask上下文: 删除p_menu_page并置NULL; 用于v_page_show切页时释放旧页
+ * 说明(备注)  : DispTask上下文: 删除p_menu_page并置NULL; 用于框架页 exit 释放本页
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
@@ -1334,7 +1348,7 @@ static void v_page_delete_menu(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 删除参数查看页LVGL对象
- * 说明(备注)  : DispTask上下文: 删除p_pv_page并置NULL; 用于v_page_show切页时释放旧页
+ * 说明(备注)  : DispTask上下文: 删除p_pv_page并置NULL; 用于框架页 exit 释放本页
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
@@ -1350,7 +1364,7 @@ static void v_page_delete_pv(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 删除记忆参数设置页LVGL对象
- * 说明(备注)  : DispTask上下文: 删除p_ps_page并置NULL; 用于v_page_show切页时释放旧页
+ * 说明(备注)  : DispTask上下文: 删除p_ps_page并置NULL; 用于框架页 exit 释放本页
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
@@ -1366,7 +1380,7 @@ static void v_page_delete_ps(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 删除系统设置页LVGL对象
- * 说明(备注)  : DispTask上下文: 删除p_ss_page并置NULL; 用于v_page_show切页时释放旧页
+ * 说明(备注)  : DispTask上下文: 删除p_ss_page并置NULL; 用于框架页 exit 释放本页
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
@@ -1382,7 +1396,7 @@ static void v_page_delete_ss(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 删除确认对话框LVGL对象
- * 说明(备注)  : DispTask上下文: 删除p_cfm_page(半透明遮罩)并置NULL; 用于v_page_show切页时释放旧页
+ * 说明(备注)  : DispTask上下文: 删除p_cfm_page(半透明遮罩)并置NULL; 用于框架页 exit 释放本页
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
@@ -1399,35 +1413,40 @@ static void v_page_delete_cfm(void)
 
 
 /***********************************************************************************************************************
- * 函数功能    : 页面导航(销毁旧页+创建/显示新页)
- * 说明(备注)  : DispTask上下文: 销毁上一页LVGL对象+更新S_tState.ePage+按需创建新页+绘制标题/选中态;
- *               切到ENG_PAGE_CONFIRM时记录来源页ePrevPage; 同页调用安全;
- *               由vEngMode_UiTick通过ePendingPage触发
+ * 函数功能    : 页内子级粒度退出 (框架页面控制块 vOnExit 复用)
+ * 说明(备注)  : DispTask上下文: 仅删除指定页面对象树, 不触碰基础容器/标题栏 (其生命周期归 UiCreate/UiDelete)
+ * 传入参数    : e_page: 待删除页面
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+static void vEngMode_PageExit(EngModePage_E e_page)
+{
+    switch(e_page)
+    {
+        case ENG_PAGE_MAIN_MENU:  v_page_delete_menu(); break;
+        case ENG_PAGE_PARAM_VIEW: v_page_delete_pv();   break;
+        case ENG_PAGE_PARAM_SET:  v_page_delete_ps();   break;
+        case ENG_PAGE_SYS_SET:    v_page_delete_ss();   break;
+        case ENG_PAGE_CONFIRM:    v_page_delete_cfm();  break;
+        default: break;
+    }
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 页内子级粒度进入 (框架页面控制块 vOnEnter 复用)
+ * 说明(备注)  : DispTask上下文: 确保基础容器存在 -> 更新S_tState.ePage -> 按需创建新页+绘制标题/选中态;
+ *               故障 overlay 恢复等直接进入子页时基础容器可能已释放, 此处按需重建
  * 传入参数    : e_page: 目标页面
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-static void v_page_show(EngModePage_E e_page)
+void vEngMode_PageEnter(EngModePage_E e_page)
 {
-    EngModePage_E e_prev = S_tState.ePage;
-
-    /* 切换页面时销毁旧页面, 释放内存 */
-    if(e_prev != e_page)
-    {
-        switch(e_prev)
-        {
-            case ENG_PAGE_MAIN_MENU:  v_page_delete_menu(); break;
-            case ENG_PAGE_PARAM_VIEW: v_page_delete_pv();   break;
-            case ENG_PAGE_PARAM_SET:  v_page_delete_ps();   break;
-            case ENG_PAGE_SYS_SET:    v_page_delete_ss();   break;
-            case ENG_PAGE_CONFIRM:    v_page_delete_cfm();  break;
-            default: break;
-        }
-    }
-
-    /* 确认对话框需要记录来源页面 */
-    if(e_page == ENG_PAGE_CONFIRM)
-        S_tState.ePrevPage = e_prev;
+    /* 基础容器可能因离场景/弹栈到根被整树释放, 直接进入子页时按需重建 */
+    if(S_tObjs.p_base == NULL)
+        v_eng_base_create();
+    else if(lv_screen_active() != objects.main_eng)
+        lv_screen_load(objects.main_eng);
 
     S_tState.ePage = e_page;
 
@@ -1493,6 +1512,22 @@ static void v_page_show(EngModePage_E e_page)
         }
         break;
     }
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 框架页 vOnExit 统一入口
+ * 说明(备注)  : 有返回链(压栈进入子页)时仅释放本页, 保留基础容器供子页复用;
+ *               无返回链(场景切换/overlay 抢占/弹栈到根)时整树释放, 避免 ENG 资源跨场景驻留
+ * 传入参数    : e_page: 待释放页面
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vEngMode_PageLeave(EngModePage_E e_page)
+{
+    if(bDisp_PageCanPop())
+        vEngMode_PageExit(e_page);
+    else
+        vEngMode_UiDelete();
 }
 
 
@@ -1716,7 +1751,7 @@ void vEngMode_KeyRight(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 工程模式下按Enter键处理
- * 说明(备注)  : 按键任务上下文: 主菜单确认后仅设置ePendingPage(显示任务切页);
+ * 说明(备注)  : 按键任务上下文: 主菜单确认后仅设置ePendingNav(显示任务执行框架页面栈导航);
  *               PARAM_SET选中项切换+后端tEngMode同步, UI刷新由DispTask通过eUiAction执行
  * 传入参数    : none
  * 输出参数    : none
@@ -1732,11 +1767,19 @@ void vEngMode_KeyEnter(void)
         {
             switch(S_tState.ucMainMenuSel)
             {
-                case 0: S_tState.ePendingPage = ENG_PAGE_PARAM_VIEW; break;
-                case 1: S_tState.ePendingPage = ENG_PAGE_PARAM_SET; break;
-                case 2: S_tState.ePendingPage = ENG_PAGE_SYS_SET; break;
+                /* 主菜单三项均为框架页面栈二级页 */
+                case 0: S_tState.ePendingNav = ENG_NAV_REQ_PUSH_PV; break;
+                case 1: S_tState.ePendingNav = ENG_NAV_REQ_PUSH_PS; break;
+                case 2: S_tState.ePendingNav = ENG_NAV_REQ_PUSH_SS; break;
                 default: break;
             }
+        }
+        break;
+
+        case ENG_PAGE_PARAM_VIEW:
+        {
+            /* 压栈打开当前 Tab 的详情页 (三级页面栈试点) */
+            S_tState.ePendingNav = ENG_NAV_REQ_PUSH_DETAIL;
         }
         break;
 
@@ -1753,7 +1796,7 @@ void vEngMode_KeyEnter(void)
         {
             /* 保存退出(SAVE&EXIT)默认选中确认, 重置/升级等危险操作默认选中取消, 防止误触发 */
             S_tState.ucConfirmSel = (S_tState.ucSsSel == 0) ? 1 : 0;
-            S_tState.ePendingPage = ENG_PAGE_CONFIRM;
+            S_tState.ePendingNav = ENG_NAV_REQ_PUSH_CONFIRM;
         }
         break;
 
@@ -1798,8 +1841,8 @@ void vEngMode_KeyEnter(void)
                     break;
                 }
             }
-            else  /* 取消 */
-                S_tState.ePendingPage = ENG_PAGE_SYS_SET;
+            else  /* 取消: 出栈返回系统设置页 */
+                S_tState.ePendingNav = ENG_NAV_REQ_POP;
             break;
 
         default:
@@ -1811,7 +1854,7 @@ void vEngMode_KeyEnter(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 工程模式下按Back键处理
- * 说明(备注)  : 按键任务上下文: 仅设置ePendingPage(显示任务切页)或bExitReq;
+ * 说明(备注)  : 按键任务上下文: 仅设置ePendingNav(框架页面栈导航)或bExitReq;
  *               UI销毁/页面切换由DispTask执行, 避免跨任务并发
  * 传入参数    : none
  * 输出参数    : none
@@ -1824,9 +1867,23 @@ void vEngMode_KeyBack(void)
     switch(S_tState.ePage)
     {
         case ENG_PAGE_PARAM_VIEW:
+        {
+            /* 参数查看为框架页面栈二级页: 出栈返回主菜单 */
+            S_tState.ePendingNav = ENG_NAV_REQ_POP;
+        }
+        break;
+
+        case ENG_PAGE_PV_DETAIL:
+        {
+            /* 详情页为框架页面栈三级页: 出栈返回参数查看 */
+            S_tState.ePendingNav = ENG_NAV_REQ_POP;
+        }
+        break;
+
         case ENG_PAGE_SYS_SET:
         {
-            S_tState.ePendingPage = ENG_PAGE_MAIN_MENU;
+            /* 系统设置为框架页面栈二级页: 出栈返回主菜单 */
+            S_tState.ePendingNav = ENG_NAV_REQ_POP;
         }
         break;
 
@@ -1839,14 +1896,15 @@ void vEngMode_KeyBack(void)
                 S_tState.eUiAction = ENG_UI_ACTION_PS_ITEM;
             }
             else
-                /* 浏览模式: 返回主菜单 */
-                S_tState.ePendingPage = ENG_PAGE_MAIN_MENU;
+                /* 浏览模式: 出栈返回主菜单 */
+                S_tState.ePendingNav = ENG_NAV_REQ_POP;
         }
         break;
 
         case ENG_PAGE_CONFIRM:
         {
-            S_tState.ePendingPage = ENG_PAGE_SYS_SET;
+            /* 取消: 出栈返回系统设置页 */
+            S_tState.ePendingNav = ENG_NAV_REQ_POP;
         }
         break;
 
@@ -1869,39 +1927,15 @@ void vEngMode_KeyBack(void)
 //****************************************************Function Declaration******************************************************//
 
 /***********************************************************************************************************************
- * 函数功能    : 创建工程模式UI(主菜单/参数查看/记忆参数设置/系统设置)
- * 说明(备注)  : 必须在DispTask上下文中调用: 切换EEZ屏幕+创建LVGL基础容器+显示主菜单;
- *               若旧UI仍存在则先删除; 内存充足时按需懒加载子页面
+ * 函数功能    : 创建工程模式基础容器与标题栏 (按需重建)
+ * 说明(备注)  : DispTask上下文: 仅创建 p_base/p_title_bar/p_title_label, 页面对象由各页面 enter 按需创建;
+ *               故障 overlay 恢复等"直接进入 ENG 子页"场景由 vEngMode_PageEnter 调用本函数补齐基础容器
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
  ************************************************************************************************************************/
-void vEngMode_UiCreate(void)
+static void v_eng_base_create(void)
 {
-    if(uPrint.tFlag.bDispTask)
-    {
-        lv_mem_monitor_t t_mon;
-        lv_mem_monitor(&t_mon);
-        sMyPrint("EngUiCreate: entering, free_size = %d\r\n", (int)t_mon.free_size);
-    }
-    
-    /* 清除旧UI */
-    if(S_tObjs.p_base != NULL)
-        vEngMode_UiDelete();
-
-    /* 初始化状态 */
-    memset(&S_tState, 0, sizeof(S_tState));
-    S_tState.ePage = ENG_PAGE_MAIN_MENU;
-    S_tState.ucMainMenuSel = 0;
-    S_tState.ucPvTab = 0;
-    S_tState.ucPsTab = 0;
-    S_tState.ucPsItem = 0;
-    S_tState.ucSsSel = 0;
-    S_tState.ucConfirmSel = 0;
-    S_tState.bExitReq = false;
-    S_tState.ePendingPage = ENG_PAGE_MAX;
-    S_tState.eUiAction = ENG_UI_ACTION_NONE;
-
     /* 切换到EEZ Studio预定义的工程模式专用屏幕, 避免与工作屏幕的对象树重叠 */
     lv_screen_load(objects.main_eng);
 
@@ -1932,9 +1966,47 @@ void vEngMode_UiCreate(void)
 
     S_tObjs.p_title_label = p_create_label(p_title_bar, 8, 2, ENG_FONT_TITLE, ENG_CLR_TEXT);
     lv_label_set_text(S_tObjs.p_title_label, "ENG MODE");
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 创建工程模式UI(主菜单/参数查看/记忆参数设置/系统设置)
+ * 说明(备注)  : 必须在DispTask上下文中调用: 切换EEZ屏幕+创建LVGL基础容器+显示主菜单;
+ *               若旧UI仍存在则先删除; 内存充足时按需懒加载子页面
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vEngMode_UiCreate(void)
+{
+    if(uPrint.tFlag.bDispTask)
+    {
+        lv_mem_monitor_t t_mon;
+        lv_mem_monitor(&t_mon);
+        sMyPrint("EngUiCreate: entering, free_size = %d\r\n", (int)t_mon.free_size);
+    }
+
+    /* 清除旧UI */
+    if(S_tObjs.p_base != NULL)
+        vEngMode_UiDelete();
+
+    /* 初始化状态 (菜单选中项跨整树重建保留) */
+    memset(&S_tState, 0, sizeof(S_tState));
+    S_tState.ePage = ENG_PAGE_MAIN_MENU;
+    S_tState.ucMainMenuSel = S_ucLastMenuSel;
+    S_tState.ucPvTab = 0;
+    S_tState.ucPsTab = 0;
+    S_tState.ucPsItem = 0;
+    S_tState.ucSsSel = 0;
+    S_tState.ucConfirmSel = 0;
+    S_tState.bExitReq = false;
+    S_tState.ePendingNav = ENG_NAV_REQ_NONE;
+    S_tState.eUiAction = ENG_UI_ACTION_NONE;
+
+    /* 创建基础容器与标题栏 */
+    v_eng_base_create();
 
     /* 显示主菜单(页面按需创建, 避免一次性创建所有页面导致内存不足) */
-    v_page_show(ENG_PAGE_MAIN_MENU);
+    vEngMode_PageEnter(ENG_PAGE_MAIN_MENU);
 
     if(uPrint.tFlag.bDispTask)
     {
@@ -1947,7 +2019,7 @@ void vEngMode_UiCreate(void)
 /***********************************************************************************************************************
  * 函数功能    : 删除工程模式UI(释放LVGL对象和状态)
  * 说明(备注)  : 必须在DispTask上下文中调用: 删除基础容器并清零S_tObjs/S_tState;
- *               在超时退出或bExitReq时由显示队列任务调用
+ *               由 vEngMode_PageLeave 在离场景/弹栈到根时调用
  * 传入参数    : none
  * 输出参数    : none
  * 返回值      : none
@@ -1963,6 +2035,7 @@ void vEngMode_UiDelete(void)
         lv_obj_delete(S_tObjs.p_base);
         S_tObjs.p_base = NULL;
     }
+    S_ucLastMenuSel = S_tState.ucMainMenuSel;	/* 保留菜单选中项 */
     memset(&S_tObjs, 0, sizeof(S_tObjs));
     memset(&S_tState, 0, sizeof(S_tState));
 }
@@ -1982,7 +2055,7 @@ bool bEngMode_IsExitReq(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 工程模式UI周期任务(由显示队列任务周期调用)
- * 说明(备注)  : 必须在DispTask上下文中执行: 1)处理按键设置的ePendingPage切页 2)处理eUiAction渲染请求
+ * 说明(备注)  : 必须在DispTask上下文中执行: 1)处理框架页面栈导航请求 2)处理eUiAction渲染请求
  *               3)周期性刷新参数查看/参数设置页数据; 调用前确保ui_init已执行
  * 传入参数    : none
  * 输出参数    : none
@@ -1993,13 +2066,59 @@ void vEngMode_UiTick(void)
     if(S_tObjs.p_base == NULL)
         return;
 
-    /* 执行待切换页面(在显示任务上下文中创建/销毁LVGL对象, 避免与按键任务并发) */
-    if(S_tState.ePendingPage < ENG_PAGE_MAX)
+    /* 执行框架页面栈导航请求(显示任务上下文执行栈原语, 避免与按键任务并发) */
+    if(S_tState.ePendingNav != ENG_NAV_REQ_NONE)
     {
-        v_page_show(S_tState.ePendingPage);
-        S_tState.ePendingPage = ENG_PAGE_MAX;
-        /* 页面切换后, 旧页面的LVGL对象已被销毁, 清除遗留的UI动作请求以防止访问已释放对象 */
-        S_tState.eUiAction = ENG_UI_ACTION_NONE;
+        EngModeNavReq_E e_nav = S_tState.ePendingNav;
+        S_tState.ePendingNav = ENG_NAV_REQ_NONE;
+
+        switch(e_nav)
+        {
+            case ENG_NAV_REQ_PUSH_PV:
+            {
+                /* 主菜单选中项作为导航参数带入, PV 页可经 ulDisp_GetNavParam 获知来源 */
+                (void)bDisp_PagePush(PAGE_ID_ENG_PV, S_tState.ucMainMenuSel);
+            }
+            break;
+
+            case ENG_NAV_REQ_PUSH_PS:
+            {
+                (void)bDisp_PagePush(PAGE_ID_ENG_PARAM_SET, 0U);
+            }
+            break;
+
+            case ENG_NAV_REQ_PUSH_SS:
+            {
+                (void)bDisp_PagePush(PAGE_ID_ENG_SYS_SET, 0U);
+            }
+            break;
+
+            case ENG_NAV_REQ_PUSH_DETAIL:
+            {
+                /* 当前 PV Tab 索引作为导航参数带入详情页 */
+                (void)bDisp_PagePush(PAGE_ID_ENG_PV_DETAIL, S_tState.ucPvTab);
+            }
+            break;
+
+            case ENG_NAV_REQ_PUSH_CONFIRM:
+            {
+                (void)bDisp_PagePush(PAGE_ID_ENG_CONFIRM, 0U);
+            }
+            break;
+
+            case ENG_NAV_REQ_POP:
+            {
+                /* 出栈失败(栈空, 如故障overlay抢占清栈后)兜底回主菜单, 防子页无出口 */
+                if(!bDisp_PagePop(0U))
+                    vDisp_RequestPage(PAGE_ID_ENG_MODE);
+            }
+            break;
+
+            default:
+            {
+            }
+            break;
+        }
     }
 
     /* 执行按键产生的UI更新请求(在显示任务上下文中操作LVGL对象, 避免跨任务并发) */
@@ -2088,5 +2207,69 @@ void vEngMode_UiTick(void)
     }
 }
 
+//****************************************************Function Declaration******************************************************//
+/*----------------参数查看详情页 UI (页面栈三级页)----------------*/
+static lv_obj_t *S_pDetailPage = NULL;	/* 详情页容器 (enter 创建/exit 删除, 挂在基础容器之上) */
+
+/***********************************************************************************************************************
+ * 函数功能    : 创建参数查看详情页 UI
+ * 说明(备注)  : DispTask上下文; 三级页面栈试点页: 显示 Push 带入的 PV Tab 名称与操作提示
+ * 传入参数    : ul_arg: 导航参数 (低 8 位=PV Tab 索引)
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vEngPvDetail_UiCreate(uint32_t ul_arg)
+{
+    uint8_t uc_tab = (uint8_t)(ul_arg & 0xFFU);
+
+    if(S_tObjs.p_base == NULL || uc_tab >= ENG_NUM_VIEW_TABS)
+        return;
+
+    if(S_pDetailPage != NULL)
+        vEngPvDetail_UiDelete();
+
+    /* 详情容器 (覆盖在基础容器之上) */
+    lv_obj_t *p_page = lv_obj_create(S_tObjs.p_base);
+    lv_obj_set_pos(p_page, 0, ENG_TITLE_H);
+    lv_obj_set_size(p_page, ENG_SCREEN_W, ENG_SCREEN_H - ENG_TITLE_H);
+    lv_obj_remove_flag(p_page, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(p_page, lv_color_hex(ENG_CLR_BG), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(p_page, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(p_page, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(p_page, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(p_page, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    /* 标题: Tab 名 + DETAIL */
+    char c_buf[24];
+    (void)snprintf(c_buf, sizeof(c_buf), "%s DETAIL", S_apcPvTabNames[uc_tab]);
+    lv_obj_t *p_title = p_create_label(p_page, 16, 60, ENG_FONT_TITLE, ENG_CLR_TEXT);
+    lv_label_set_text(p_title, c_buf);
+
+    /* 内容行 */
+    lv_obj_t *p_line = p_create_label(p_page, 16, 120, ENG_FONT_NORMAL, ENG_CLR_TEXT);
+    lv_label_set_text(p_line, "Realtime telemetry group");
+
+    /* 操作提示 */
+    lv_obj_t *p_hint = p_create_label(p_page, 16, 200, ENG_FONT_NORMAL, ENG_CLR_SELECTED);
+    lv_label_set_text(p_hint, "BACK: return");
+
+    S_pDetailPage = p_page;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 删除参数查看详情页 UI
+ * 说明(备注)  : DispTask上下文; 配对 vEngPvDetail_UiCreate, 重复调用安全
+ * 传入参数    : none
+ * 输出参数    : none
+ * 返回值      : none
+ ************************************************************************************************************************/
+void vEngPvDetail_UiDelete(void)
+{
+    if(S_pDetailPage != NULL)
+    {
+        lv_obj_delete(S_pDetailPage);
+        S_pDetailPage = NULL;
+    }
+}
 
 #endif  /* boardENG_MODE_EN && boardDISPLAY_EN */

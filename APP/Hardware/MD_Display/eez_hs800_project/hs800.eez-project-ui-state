@@ -1,6 +1,6 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[hs800.eez-project]:/userPages/3",
+    "selectedUserPageObject": "[hs800.eez-project]:/userPages/2",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -175,7 +175,8 @@
                       "enableClose": false,
                       "icon": "svg:hierarchy"
                     }
-                  ]
+                  ],
+                  "active": true
                 },
                 {
                   "type": "tabset",
@@ -205,10 +206,10 @@
                 {
                   "type": "tab",
                   "id": "#ba75d9f4-9e85-4049-8426-8063b2f366e0",
-                  "name": "Main_Update",
+                  "name": "Main_Closing",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[hs800.eez-project]:/userPages/3",
+                    "objectPath": "[hs800.eez-project]:/userPages/2",
                     "permanent": false
                   },
                   "icon": "svg:page"
@@ -251,8 +252,7 @@
                   "enableClose": false,
                   "icon": "svg:properties"
                 }
-              ],
-              "active": true
+              ]
             }
           ]
         }
@@ -1290,7 +1290,13 @@
     },
     "[hs800.eez-project]:/userPages/0[flow-state]": {
       "selectionFront": {},
-      "selectionBack": {},
+      "selectionBack": {
+        "0": {
+          "1": {
+            "$selected": true
+          }
+        }
+      },
       "transform": {
         "translate": {
           "x": -160,
@@ -1307,7 +1313,13 @@
     },
     "[hs800.eez-project]:/userPages/2[flow-state]": {
       "selectionFront": {},
-      "selectionBack": {},
+      "selectionBack": {
+        "0": {
+          "0": {
+            "$selected": true
+          }
+        }
+      },
       "transform": {
         "translate": {
           "x": -160,

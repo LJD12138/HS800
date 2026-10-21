@@ -93,7 +93,10 @@ SemaphoreHandle_t DispFlushDoneSemaphore = NULL;
 
 lv_display_t *tp_disp;
 
-#define			DISP_DRAW_BUF_LINE_COUNT				15U
+#define			DISP_DRAW_BUF_LINE_COUNT				20U
+/* LVGL v9 的 lv_color_t 是 RGB888 (3B/px)，本屏 flush 按 RGB565 (2B/px) 发送；
+ * 缓冲区按显示格式字节数分配，避免每像素多占 1 字节 (两块共省 12.8KB) */
+#define			DISP_DRAW_BUF_BYTES						(DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT * LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_NATIVE))
 
 #if (boardUSE_OS)
 static bool b_disp_bus_take(TickType_t wait_ticks);
@@ -127,8 +130,8 @@ static void lcd_send_init_commands(void);
 void lv_port_disp_init(void)
 {
     /* 按硬件分辨率与行数分配两块对齐缓存（双缓冲），提高渲染效率 */
-    __ALIGNED(4) static lv_color_t buf_1[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
-    __ALIGNED(4) static lv_color_t buf_2[DISP_HOR_RES * DISP_DRAW_BUF_LINE_COUNT];
+    __ALIGNED(4) static uint8_t buf_1[DISP_DRAW_BUF_BYTES];
+    __ALIGNED(4) static uint8_t buf_2[DISP_DRAW_BUF_BYTES];
 
     /* 初始化底层显示控制器与同步对象 */
     #if (boardUSE_OS)
@@ -161,6 +164,8 @@ void lv_port_disp_init(void)
 
     if (tp_disp != NULL)
     {
+        /* 本屏 flush 固定按 RGB565 发送, 显式声明颜色格式, 与缓冲区字节数保持一致 */
+        lv_display_set_color_format(tp_disp, LV_COLOR_FORMAT_RGB565);
         lv_display_set_buffers(tp_disp, buf_1, buf_2, sizeof(buf_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
         #if (boardUSE_OS)

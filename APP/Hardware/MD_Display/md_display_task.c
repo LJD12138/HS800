@@ -17,6 +17,7 @@
 
 #if (boardDISPLAY_EN)
 #include "MD_Display/md_display_iface.h"
+#include "MD_Display/md_display_data.h"
 
 #include "uni_disp_port.h"
 #include "app_info.h"
@@ -35,6 +36,62 @@ void            vDisp_Task(void *pvParameters);
 #endif  /* boardUSE_OS */
 
 //****************************************************Parameter Initialization**************************************************//
+/* 项目操作集: 框架唯一项目耦合点 (未赋值项使用框架默认行为) */
+static const DispOps_T tDispOps =
+{
+	.pGetSnapshot        = pDisp_DataSnapshot,
+	.ucGetDevState       = ucDisp_DataGetDevState,
+	.eMapDevStateToScene = eDisp_MapDevStateToScene,
+	.pGetSceneSteps      = pDisp_GetSceneSteps,
+	.ucSceneEntryStep    = ucDisp_SceneEntryStep,
+	.bAutoOffArmed       = bDisp_DataAutoOffArmed,
+	.vFlush              = vDisp_PortUiRefresh,
+	.vPostSwitchAudit    = vDisp_PortMemAudit,
+	.vBacklight          = vDisp_PortSetBacklight,
+	.bDisplayActive      = NULL,						/* TFT: 跟随背光状态 */
+	#if (boardUSE_OS)
+	.ulGetTickMs         = ulDisp_PortGetTickMs,
+	#else
+	.ulGetTickMs         = NULL,						/* 裸机无时基: 按帧周期累计驻留 */
+	#endif  /* boardUSE_OS */
+	.vEnterCritical      = vDisp_PortEnterCritical,
+	.vExitCritical       = vDisp_PortExitCritical,
+	.usDefaultFramePeriodMs = boardDISP_REFRESH_TIME,	/* 页面未声明周期/空页回退值 */
+	.bOverlayActive      = bDisp_PortIsOverlayActive,
+	.eOverlayPage        = eDisp_PortGetOverlayPage,
+	.usGetAutoOffTime    = usDisp_PortGetAutoOffTime,
+	#if (boardUSE_OS)
+	.vWakeTask           = vDisp_PortWakeTask,
+	#else
+	.vWakeTask           = NULL,
+	#endif  /* boardUSE_OS */
+	.vBeepOnLightOn      = vDisp_PortBeepOnLightOn,
+};
+
+/* 页面静态注册表 (新增页面只改这里) */
+static const DispPage_T *const S_apDispPages[] =
+{
+	&G_tPageInit,
+	&G_tPageBoot,
+	&G_tPageWorkMain1,
+	&G_tPageClosing,
+	&G_tPageShutDown,
+	&G_tPageFault,
+
+	#if (boardUPDATE)
+	&G_tPageUpdate,
+	#endif  /* boardUPDATE */
+
+	#if (boardENG_MODE_EN)
+	&G_tPageEng,
+	&G_tPageEngPv,
+	&G_tPageEngPvDetail,
+	&G_tPageEngParamSet,
+	&G_tPageEngSysSet,
+	&G_tPageEngConfirm,
+	#endif  /* boardENG_MODE_EN */
+};
+
 #if (boardENG_MODE_EN)
 /* 显示记忆参数步进配置表 */
 typedef struct
@@ -66,8 +123,8 @@ static bool b_task_param_init(void);
  ************************************************************************************************************************/
 s8 cDisp_TaskInit(void)
 {
-    /* 1. 初始化 UniDisplay 调度核心 */
-    vDisp_CoreInit();
+    /* 1. 初始化 UniDisplay 调度核心 (注册项目操作集) */
+    vDisp_CoreInit(&tDispOps);
 
     /* 2. 初始化显示接口引脚与时钟 */
     vDisp_IfaceInit();
@@ -104,22 +161,8 @@ s8 cDisp_TaskInit(void)
  ************************************************************************************************************************/
 static bool b_task_param_init(void)
 {
-    /* 页面静态注册 (项目件) */
-    vDisp_PageRegister(&G_tPageInit);
-    vDisp_PageRegister(&G_tPageBoot);
-    vDisp_PageRegister(&G_tPageWork);
-    vDisp_PageRegister(&G_tPageClosing);
-    vDisp_PageRegister(&G_tPageShutDown);
-    vDisp_PageRegister(&G_tPageFault);
-
-    #if (boardUPDATE)
-    vDisp_PageRegister(&G_tPageUpdate);
-    #endif  /* boardUPDATE */
-
-    #if (boardENG_MODE_EN)
-    vDisp_PageRegister(&G_tPageEng);
-    #endif  /* boardENG_MODE_EN */
-
+    /* 页面表批量注册 (项目件) */
+    vDisp_PageRegisterAll(S_apDispPages, (uint8_t)mainARRAY_SIZE(S_apDispPages));
     return true;
 }
 
@@ -147,13 +190,13 @@ void vDisp_Task(void *pvParameters)
         x_start = xTaskGetTickCount();
         #endif  /* boardUSE_OS */
 
-        /* 执行 UniDisplay 轮询引擎 (快照抓取 -> 状态路由 -> 事件分发 -> 切页 -> 适配器渲染) */
-        vDisp_EnginePoll();
+        /* 执行 UniDisplay 轮询引擎 (快照抓取 -> 场景调度 -> 事件分发 -> 切页 -> 门控渲染) */
+        usDisp_EnginePoll();
 
         #if (boardUSE_OS)
-        if (bDisp_IsBacklightOn() == false)
+        if (bDisp_IsDisplayActive() == false)
         {
-            /* 息屏: 2 秒低频心跳挂起, CPU 占用 0% */
+            /* 显示关闭: 2 秒低频心跳挂起, CPU 占用 0% (断码屏可经 bDisplayActive 保持常开) */
             ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
         }
         else
@@ -227,26 +270,6 @@ void vDisp_MemParamSet(u8 item, bool add)
 #endif  /* boardENG_MODE_EN */
 
 #if (boardLOW_POWER)
-/***********************************************************************************************************************
- * 函数功能    : 选择显示供电通路
- * 说明(备注)  : 根据外部输入电源状态控制显示屏电池供电开关
- * 传入参数    : none
- * 输出参数    : 无
- * 返回值      : 无
- ************************************************************************************************************************/
-static void v_dis_power_select(void)
-{
-    if (bDisp_IsBacklightOn())
-    {
-        if (tAdcSamp.usSysInVolt >= boardBMS_MIN_VOLT)
-            Disp_EN_OFF();
-        else
-            Disp_EN_ON();
-    }
-    else
-        Disp_EN_OFF();
-}
-
 /***********************************************************************************************************************
  * 函数功能    : 进入显示低功耗
  * 说明(备注)  : 挂起显示任务以降低低功耗模式下的运行消耗

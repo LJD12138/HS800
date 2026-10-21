@@ -20,6 +20,10 @@
 
 #include "uni_disp_core.h"
 
+//****************************************************Macros********************************************************************//
+/* 关机状态页为静态页, 500ms 刷新足够, 降低该页驻留时的 CPU/SPI 占用 */
+#define			dispPAGE_SHUTDOWN_CYCLE_MS				500U
+
 //****************************************************Function Declaration******************************************************//
 static void v_page_shut_down_enter(void);
 static void v_page_shut_down_exit(void);
@@ -33,7 +37,7 @@ const DispPage_T G_tPageShutDown =
     .vOnExit     = v_page_shut_down_exit,
     .vOnUpdate   = v_page_shut_down_update,
     .bOnEvent    = b_page_shut_down_event,
-    .usRefreshMs = 50,
+    .usRefreshMs = dispPAGE_SHUTDOWN_CYCLE_MS,
 };
 
 /***********************************************************************************************************************

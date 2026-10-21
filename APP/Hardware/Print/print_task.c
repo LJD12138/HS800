@@ -24,10 +24,6 @@ DebugPrint_U uPrint;
 #include "Print/print_queue_task.h"
 #include "Sys/sys_task.h"
 
-#if (boardUSB_EN)
-#include "Usb/usb_task.h"
-#endif  /* boardUSB_EN */
-
 #if (boardWDGT_EN)
 #include "fwdgt.h"
 #endif  /* boardWDGT_EN */
@@ -158,13 +154,6 @@ void vPrint_Task(void *pvParameters)
             return;
             #endif  /* boardUSE_OS */
         }
-
-        #if (boardUSB_EN)
-        if (tUsb.eDevState == DS_SHUT_DOWN || tSysInfo.eDevState == DS_UPDATE_MODE)
-            printIFACE_EN_ON();
-        else
-            printIFACE_EN_OFF();
-        #endif  /* boardUSB_EN */
 
         #if (boardPRINT_IFACE == 7)
         vUsbCdc_Tick();

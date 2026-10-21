@@ -1,16 +1,16 @@
 /***********************************************************************************************************************
  * Project : APP
- * Module  : APP\Middlewares\UniDisplay
+ * Module  : APP\Hardware\MD_Display
  * File    : uni_disp_port.h
  * Date    : 2026-09-16
  * Author  : LJD(291483914@qq.com)
- * Desc    : UniDisplay 移植层 - 临界区宏/任务唤醒钩子/项目适配原语 (工程唯一需要按项目/平台适配的文件)
+ * Desc    : UniDisplay 项目适配实现 - 临界区/tick/任务唤醒/背光等项目原语 (由项目件 DispOps_T 引用)
  * -------------------------------------------------------
  * 移植说明:
  * 1. FreeRTOS 环境: 提供任务级临界区与任务通知唤醒, 等待原语由任务主体(通知+超时)实现;
  * 2. 裸机环境: 临界区为空实现, 唤醒为空操作;
- * 3. 项目适配: 本文件引入项目快照定义并声明适配原语, 调度核心(core/page/event)经由本层访问
- *    项目资源, 移植新工程时除本文件与 uni_disp_port.c 外的 UniDisplay 文件零修改;
+ * 3. 项目适配: 通用件只经 DispOps_T 访问项目资源; 本文件提供 ops 所需的项目原语实现,
+ *    移植新工程时通用件(core/nav/scene/power/page/event)零修改;
  * 4. 本文件不含任何业务逻辑, 业务实现位于 uni_disp_port.c (转调项目件)。
  * -------------------------------------------------------
  * todo    :
@@ -30,7 +30,7 @@ extern "C" {
 #include "main.h"
 
 #if (boardDISPLAY_EN)
-#include "MD_Display/md_display_data.h"		/* 工程适配点: 项目快照定义 (调度引擎需栈分配快照并访问首字段 ucDevState) */
+#include "uni_disp_page.h"		/* 快照前向声明 / DispPageId_E / 通用哨兵 (项目快照结构不再进入通用层) */
 
 #if (boardUSE_OS)
 #include "freertos.h"
@@ -39,15 +39,21 @@ extern "C" {
 
 //****************************************************Macros********************************************************************//
 
-/* 板级显示参数转接 (框架唯一允许引用 board_config 显示参数的位置, 其余通用文件一律使用别名) */
-#define			dispFRAME_PERIOD_MIN_MS					(20U)	/* 页面帧周期下限 ms (50MHz SPI 下全屏传输约25ms, 动画页按20ms/50FPS目标) */
+
 
 //****************************************************Types*********************************************************************//
 
 //****************************************************Extern********************************************************************//
 /*----------------项目适配原语 (由 uni_disp_port.c 转调项目件实现, 调度核心经此访问项目资源)----------------*/
+/* 临界区进入/退出 (绑定 DispOps_T.vEnterCritical/vExitCritical) */
+void vDisp_PortEnterCritical(void);
+void vDisp_PortExitCritical(void);
+
 /* 执行一轮 UI 刷新 (项目件实现: EEZ ui_tick/自绘动画/lv_timer_handler) */
 void vDisp_PortUiRefresh(void);
+
+/* 切页后内存审计 (绑定 DispOps_T.vPostSwitchAudit; LVGL 水位/碎片率) */
+void vDisp_PortMemAudit(void);
 
 /* 背光硬件开关 (项目件实现) */
 void vDisp_PortSetBacklight(bool on);
@@ -55,8 +61,17 @@ void vDisp_PortSetBacklight(bool on);
 /* 获取持久化自动息屏时间 (0=常亮, 项目件实现) */
 uint16_t usDisp_PortGetAutoOffTime(void);
 
-/* 系统初始化就绪判定 (false 时框架锁定 INIT 页, 项目件实现) */
+/* 获取毫秒时基 (场景驻留计时; 无时基项目返回 0, 框架退回按帧周期累计) */
+uint32_t ulDisp_PortGetTickMs(void);
+
+/* 系统初始化就绪判定 (INIT 步完成条件输入: 未就绪保持 INIT 步, 项目件实现) */
 bool bDisp_PortIsSystemReady(void);
+
+/* overlay 激活判定 (项目件实现: 场景调度每帧电平评估压入/弹出的触发条件, 可基于任意快照字段扩展, 如 ucDevState==DS_ERR) */
+bool bDisp_PortIsOverlayActive(const DispDataSnapshot_T *p_snapshot);
+
+/* 故障 overlay 页 ID (项目件指定; 场景调度 overlay 压入时使用) */
+DispPageId_E eDisp_PortGetOverlayPage(void);
 
 /* 常亮亮屏提示钩子 (项目件实现, 如蜂鸣提示音; 无需求可空实现) */
 void vDisp_PortBeepOnLightOn(void);

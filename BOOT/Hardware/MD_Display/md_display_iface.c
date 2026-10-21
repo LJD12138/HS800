@@ -36,6 +36,9 @@ typedef enum
 static volatile disp_tft_dma_xfer_t s_eDmaXferType = DISP_TFT_DMA_XFER_NONE;
 #endif
 
+//****************************************************Parameter Initialization**************************************************//
+static __IO bool s_b_display_inited = false;
+
 //****************************************************Function Declaration******************************************************//
 static void tft_delay_ms(vu16 ms);
 
@@ -64,6 +67,9 @@ static void tft_spi_send_byte(u8 data);
  ************************************************************************************************************************/
 void vDisp_IfaceInit(void)
 {
+    if (s_b_display_inited == true)
+        return;
+
     rcu_periph_clock_enable(dispTFT_CS_RCU);
     rcu_periph_clock_enable(dispTFT_RES_RCU);
     rcu_periph_clock_enable(dispTFT_A0_RCU);
@@ -114,6 +120,59 @@ void vDisp_IfaceInit(void)
     tft_delay_ms(20);
     dispTFT_RES_H();
     tft_delay_ms(120);
+
+    s_b_display_inited = true;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 显示接口硬件反初始化
+ * 说明(备注)  : 等待发送完成，关闭背光，复位 SPI 及 DMA，复位初始化标志
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 无
+ ************************************************************************************************************************/
+void vDisp_IfaceDeInit(void)
+{
+    if (s_b_display_inited == false)
+        return;
+
+    /* 熄灭背光 */
+    dispTFT_BL_L();
+
+    #if (boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
+    /* 等待可能正在进行的 DMA 传输完成(带超时保护) */
+    uint32_t timeout = TFT_SPI_TIMEOUT;
+    while ((dma_transfer_number_get(dispTFT_DMA_PERIPH, dispTFT_DMA_CH) > 0U) && (timeout > 0U))
+    {
+        timeout--;
+    }
+
+    /* 停止并禁用 DMA 通道, 关闭中断 */
+    dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+    dma_interrupt_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_CHXCTL_FTFIE);
+    #if (boardIC_TYPE == boardIC_GD32F50X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_GIF);
+    #elif (boardIC_TYPE == boardIC_GD32F30X)
+    dma_flag_clear(dispTFT_DMA_PERIPH, dispTFT_DMA_CH, DMA_FLAG_G);
+    #endif  /* boardIC_TYPE */
+    dma_deinit(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);
+
+    /* 等待 SPI 移位寄存器空闲 */
+    tft_hw_spi_wait_idle();
+
+    /* 关闭 SPI 外设并复位 */
+    spi_disable(dispTFT_SPI_PERIPH);
+    spi_i2s_deinit(dispTFT_SPI_PERIPH);
+
+    /* 禁用 NVIC 中的 DMA 中断 */
+    nvic_irq_disable(dispTFT_DMA_TX_IRQ);
+    #endif  /* boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW */
+
+    /* 拉高片选与指令线, 避免总线浮空误触发 */
+    dispTFT_CS_H();
+    dispTFT_A0_H();
+
+    s_b_display_inited = false;
 }
 
 /***********************************************************************************************************************
@@ -126,6 +185,9 @@ void vDisp_IfaceInit(void)
 void vDisp_SpiSendByte(const u8 *data, u16 len)
 {
     if((data == NULL) || (len == 0U))
+        return;
+
+    if(s_b_display_inited == false)
         return;
     
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
@@ -163,6 +225,9 @@ void vDisp_SetBacklight(bool on)
  ************************************************************************************************************************/
 void vDisp_WriteCommand(u8 cmd)
 {
+    if(s_b_display_inited == false)
+        return;
+
     dispTFT_A0_L();
     dispTFT_CS_L();
     
@@ -186,6 +251,9 @@ void vDisp_WriteCommand(u8 cmd)
  ************************************************************************************************************************/
 void vDisp_WriteData8(u8 data)
 {
+    if(s_b_display_inited == false)
+        return;
+
     dispTFT_A0_H();
     dispTFT_CS_L();
     
@@ -209,6 +277,9 @@ void vDisp_WriteData8(u8 data)
  ************************************************************************************************************************/
 void vDisp_WriteData16(u16 data)
 {
+    if(s_b_display_inited == false)
+        return;
+
     dispTFT_A0_H();
     dispTFT_CS_L();
     
@@ -236,6 +307,9 @@ void vDisp_WriteData16(u16 data)
 void vDisp_WriteBuffer(const u8 *data, u32 len)
 {
     if((data == NULL) || (len == 0U))
+        return;
+
+    if(s_b_display_inited == false)
         return;
 
     dispTFT_A0_H();
@@ -266,6 +340,9 @@ void vDisp_WriteBuffer(const u8 *data, u32 len)
 bool bDisp_WriteColorAsync(const u8 *data, u32 len)
 {
     if((data == NULL) || (len == 0U))
+        return false;
+
+    if(s_b_display_inited == false)
         return false;
 
     dispTFT_A0_H();
@@ -300,6 +377,19 @@ bool bDisp_WriteColorAsync(const u8 *data, u32 len)
     return false;
     #endif  //boardDISP_SPI_MODE
 }
+
+/***********************************************************************************************************************
+ * 函数功能    : 显示接口是否已经初始化
+ * 说明(备注)  : 
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : true: 初始化, false: 未初始化
+ ************************************************************************************************************************/
+bool bDisp_IfaceInited(void)
+{
+	return s_b_display_inited;
+}
+
 
 
 
@@ -408,6 +498,9 @@ static void tft_hw_spi_dma_init(void)
 static void v_tft_spi_dma_send_bytes(const u8 *data, u32 len)
 {
     if((data == NULL) || (len == 0U))
+        return;
+
+    if(s_b_display_inited == false)
         return;
 
     dma_channel_disable(dispTFT_DMA_PERIPH, dispTFT_DMA_CH);

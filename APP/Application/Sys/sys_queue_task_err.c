@@ -16,6 +16,7 @@
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
+#include <stdbool.h>
 
 #if (boardKEY_EN)
 #include "Key/Key_task.h"
@@ -63,7 +64,8 @@ void v_sys_queue_task_err(Task_T *p_task)
 			#endif  //boardKEY_EN
 
 			//存在充电或者错误清除
-			if ((bSys_ExistInVolt() == true) || (tSysInfo.uErrCode.usCode == 0))
+			if ((bSys_ExistInVolt() == true && tSysInfo.uPerm.tPerm.bChgPerm == true)
+				|| (tSysInfo.uErrCode.usCode == 0))
 			{
 				cQueue_GotoStep(p_task, 3);
 				return;
@@ -85,14 +87,19 @@ void v_sys_queue_task_err(Task_T *p_task)
 		//************************************步骤2:进入关机**************************************************
 		case 2:
 		{
-			//存在充电
+			//存在充电并许可权限
 			if (bSys_ExistInVolt() == true)
 			{
-				cQueue_GotoStep(p_task, 3);
-				return;
-			}
+				if(tSysInfo.uPerm.tPerm.bChgPerm == true)
+				{
+					cQueue_GotoStep(p_task, 3);
+					return;
+				}
 
-			bSys_SetDevState(DS_SHUT_DOWN, false);
+				p_task->usTaskWaitCnt = 0;
+			}
+			else
+				bSys_SetDevState(DS_SHUT_DOWN, true);
 
 			#if (boardBMS_EN)
 			cBms_Switch(SO_KEY, ST_OFF, true);

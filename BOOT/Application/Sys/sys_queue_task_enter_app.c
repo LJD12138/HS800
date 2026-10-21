@@ -19,6 +19,10 @@
 #include "Print/print_iface.h"
 #include "boot_info.h"
 
+#if (boardDISPLAY_EN)
+#include "MD_Display/md_display_task.h"
+#endif  /* boardDISPLAY_EN */
+
 #if (1)
 //****************************************************Macros********************************************************************//
 
@@ -48,9 +52,9 @@ void v_sys_queue_task_enter_app(Task_T *p_task)
         {
             /* 等待 Print 打印完成,5S超时强制放行,防止串口发送异常导致BOOT静默挂死 */
             #if (boardPRINT_IFACE)
-            if (bPrint_CheckSendFinish() == false)
+            if (bPrint_IfaceInited() && bPrint_CheckSendFinish() == false)
             {
-                if (bQueue_IsStepTimeout(p_task, (5000 / sysTASK_CYCLE_TIME)))
+                if (bQueue_IsStepTimeout(p_task, (100 / sysTASK_CYCLE_TIME)))
                     log_e("BOOT:等待打印完成超时,强制跳转");
                 else
                     break;
@@ -91,11 +95,17 @@ void v_sys_queue_task_enter_app(Task_T *p_task)
 
                 s_uc_illegal_addr_cnt = 0;
                 cBoot_CtrlUpdate(true, AS_ERASE);
+
                 #if (boardCONSOLE_EN)
                 cUpdate_ChSelect(CT_CONSOLE, PT_BAIKU);
                 #elif (boardPRINT_IFACE)
                 cUpdate_ChSelect(CT_PRINT, PT_XMODEM);
                 #endif  /* (boardCONSOLE_EN) */
+
+                #if (boardDISPLAY_EN)
+                cDisp_TaskInit();
+                #endif  /* (boardDISPLAY_EN) */
+                
                 cQueue_GotoStep(p_task, STEP_END);
                 break;
             }

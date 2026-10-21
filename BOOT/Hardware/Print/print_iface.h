@@ -189,7 +189,6 @@ extern "C" {
 #define     	printUSART_IRQ_HANDLER          		UART4_IRQHandler
 #elif (boardPRINT_IFACE == 7)
 /* 7: USB_CDC (CherryUSB 虚拟串口) */
-#include "Print/print_usb_iface.h"
 #endif  /* boardPRINT_IFACE */
 
 #if (boardPRINT_485_IFACE_EN)
@@ -215,6 +214,7 @@ void vPrint_IfaceInit(void);
 void vPrint_IfaceDeInit(void);
 bool bPrint_DataSendStart(uint16_t us_len);
 bool bPrint_CheckSendFinish(void);
+bool bPrint_IfaceInited(void);
 
 #if (boardPRINT_485_IFACE_EN)
 void vPrint_485TransEnable(bool b_en);

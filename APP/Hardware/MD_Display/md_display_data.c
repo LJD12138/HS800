@@ -45,6 +45,10 @@
 #include "MD_Light/md_light_task.h"
 #endif  /* boardLIGHT_EN */
 
+//****************************************************Parameter Initialization**************************************************//
+/* 框架每帧读取的快照缓冲 (仅显示任务写/读, 无跨任务共享) */
+static DispDataSnapshot_T tDispSnapshot;
+
 /***********************************************************************************************************************
  * 函数功能    : 获取当前全局数据快照
  * 说明(备注)  : 临界区保护读取全局状态、功率与端口位图，实现单向原子输入
@@ -159,6 +163,34 @@ void vDisp_DataCaptureSnapshot(DispDataSnapshot_T *p_snapshot)
 }
 
 /***********************************************************************************************************************
+ * 函数功能    : 获取框架帧快照
+ * 说明(备注)  : 项目持有快照缓冲, 框架只读指针; 仅显示任务调用 (单读者, 无跨任务共享)
+ * 传入参数    : 无
+ * 输出参数    : 无
+ * 返回值      : 快照指针 (始终有效)
+ ************************************************************************************************************************/
+const DispDataSnapshot_T *pDisp_DataSnapshot(void)
+{
+    vDisp_DataCaptureSnapshot(&tDispSnapshot);
+    return &tDispSnapshot;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 读取快照中的设备状态
+ * 说明(备注)  : DispOps_T.ucGetDevState 的项目实现; 通用件不感知快照字段
+ * 传入参数    : p_snapshot: [IN] 快照指针 (可为 NULL)
+ * 输出参数    : 无
+ * 返回值      : 设备状态; 空指针返回 dispDEV_STATE_NONE
+ ************************************************************************************************************************/
+uint8_t ucDisp_DataGetDevState(const DispDataSnapshot_T *p_snapshot)
+{
+    if (p_snapshot == NULL)
+        return dispDEV_STATE_NONE;
+
+    return p_snapshot->ucDevState;
+}
+
+/***********************************************************************************************************************
  * 函数功能    : 息屏倒计时生效判定
  * 说明(备注)  : 判断当前设备状态是否允许倒计时息屏
  * 传入参数    : uc_dev_state: 当前设备状态
@@ -170,27 +202,139 @@ bool bDisp_DataAutoOffArmed(uint8_t uc_dev_state)
     return (uc_dev_state == DS_WORK);
 }
 
+/*----------------场景步骤完成条件 (约束: 仅允许读入参快照与页面自身 static 进度, 禁止直读全局)----------------*/
+/* BOOT 步: 系统已工作 (动画走满由 BOOT 页 bOnDone 自报, 与本草件与合成; 5s 兜底强制步进) */
+static bool b_flow_done_boot(const DispDataSnapshot_T *p_snapshot, uint32_t ul_dwell_ms)
+{
+    (void)ul_dwell_ms;
+    return (p_snapshot->ucDevState == DS_WORK);
+}
+
+/*----------------场景步骤表----------------*/
+/* 初始化场景: 单步常驻, 退出全靠场景边界 (未就绪由 eDisp_MapDevStateToScene 门控映射到本场景) */
+static const DispFlowStep_T s_tSceneInit[] = { {PAGE_ID_INIT, NULL, 0} };      /* 单步: 常驻 */
+
+static const DispFlowStep_T s_tScenePowerOn[] =
+{
+    {PAGE_ID_BOOT,        b_flow_done_boot,    5000},     /* 0: 动画走满(页 bOnDone 自报) ∧ DS_WORK, 5s 兜底强制步进 */
+    {PAGE_ID_WORK_MAIN1,  NULL,                0},        /* 1: 常驻 (WORK 组入口页) */
+};
+
+static const DispFlowStep_T s_tScenePowerOff[] =
+{
+    {PAGE_ID_CLOSING,    NULL,                   1500},     /* 0: 驻留 1500ms, 超时兜底步进 */
+    {PAGE_ID_SHUT_DOWN,  NULL,                   0},        /* 1: 常驻 */
+};
+
+static const DispFlowStep_T s_tSceneUpdate[] = { {PAGE_ID_UPDATE, NULL, 0} };        /* 单步: 常驻 */
+static const DispFlowStep_T s_tSceneEng[]    = { {PAGE_ID_ENG_MODE, NULL, 0} };    /* 单步: 常驻 */
+
 /***********************************************************************************************************************
- * 函数功能    : 设备状态 -> 页面 映射表
- * 说明(备注)  : 根据设备全局状态返回目标页面 ID (HS800 映射表)
+ * 函数功能    : 设备状态 -> 场景 映射表
+ * 说明(备注)  : ① 未就绪门控: bDisp_PortIsSystemReady() 为假时无视设备状态, 一律映射初始化场景
+ *                 (只允许 INIT 页, 含 DS_ERR 也不弹故障 overlay, 故障待就绪后由电平评估补入);
+ *               ② 状态仅在场景边界生效; DS_ERR 返回 DISP_SCENE_NONE, 由框架 overlay 以电平语义处理
  * 传入参数    : uc_dev_state: 当前设备状态
  * 输出参数    : 无
- * 返回值      : 目标页面 ID
+ * 返回值      : 目标场景
  ************************************************************************************************************************/
-DispPageId_E eDisp_MapDevStateToPage(uint8_t uc_dev_state)
+DispScene_E eDisp_MapDevStateToScene(uint8_t uc_dev_state)
 {
+    /* 未就绪门控: 初始化完成前只允许初始化页 */
+    if (!bDisp_PortIsSystemReady())
+        return DISP_SCENE_INIT;
+
     switch ((DevState_E)uc_dev_state)
     {
-        case DS_INIT:        return PAGE_ID_INIT;        /* 初始化: 保持息屏 */
-        case DS_BOOTING:     return PAGE_ID_BOOT;        /* 启动中: 开机步进动画页 */
-        // case DS_WORK:        return PAGE_ID_WORK;        /* 工作中: 主工作界面 */
-        case DS_ERR:         return PAGE_ID_FAULT;       /* 故障态: 故障专用告警页 */
-        case DS_CLOSING:     return PAGE_ID_CLOSING;     /* 关机中: 关机画面展示 */
-        case DS_SHUT_DOWN:   return PAGE_ID_SHUT_DOWN;   /* 已关机: 关机状态页(松开电源键息屏) */
-        case DS_UPDATE_MODE: return PAGE_ID_UPDATE;      /* 升级中: 固件升级进度页 */
-        case DS_ENG_MODE:    return PAGE_ID_ENG_MODE;    /* 工程模式: 工程校准设置页 */
-        default:             return PAGE_ID_MAX;         /* 无映射: 维持当前页 */
+        case DS_INIT:       return DISP_SCENE_INIT;         /* 就绪但状态未进入开机方向: 仍驻留初始化场景 */
+        case DS_BOOTING:
+        case DS_WORK:       return DISP_SCENE_POWER_ON;
+        case DS_CLOSING:
+        case DS_SHUT_DOWN:  return DISP_SCENE_POWER_OFF;
+        case DS_UPDATE_MODE:    return DISP_SCENE_UPDATE;
+        case DS_ENG_MODE:   return DISP_SCENE_ENG;
+        default:            return DISP_SCENE_NONE;        /* DS_ERR 由 overlay 电平处理; DS_LOST/未知保持 */
     }
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 场景 -> 步骤表 查询
+ * 说明(备注)  : 返回表首地址, 步数经 p_num 回填; 无效场景返回 NULL (步数 0)
+ * 传入参数    : e_scene: 目标场景
+ * 输出参数    : p_num: 步数回填指针 (可为 NULL)
+ * 返回值      : 步骤表首地址; 无效场景返回 NULL
+ ************************************************************************************************************************/
+const DispFlowStep_T *pDisp_GetSceneSteps(DispScene_E e_scene, uint8_t *p_num)
+{
+    const DispFlowStep_T *p_table = NULL;
+    uint8_t uc_num = 0;
+
+    switch (e_scene)
+    {
+        case DISP_SCENE_INIT:
+        {
+            p_table = s_tSceneInit;
+            uc_num  = (uint8_t)mainARRAY_SIZE(s_tSceneInit);
+        }
+        break;
+
+        case DISP_SCENE_POWER_ON:
+        {
+            p_table = s_tScenePowerOn;
+            uc_num  = (uint8_t)mainARRAY_SIZE(s_tScenePowerOn);
+        }
+        break;
+
+        case DISP_SCENE_POWER_OFF:
+        {
+            p_table = s_tScenePowerOff;
+            uc_num  = (uint8_t)mainARRAY_SIZE(s_tScenePowerOff);
+        }
+        break;
+
+        case DISP_SCENE_UPDATE:
+        {
+            p_table = s_tSceneUpdate;
+            uc_num  = (uint8_t)mainARRAY_SIZE(s_tSceneUpdate);
+        }
+        break;
+
+        case DISP_SCENE_ENG:
+        {
+            p_table = s_tSceneEng;
+            uc_num  = (uint8_t)mainARRAY_SIZE(s_tSceneEng);
+        }
+        break;
+
+        default:
+        {
+        }
+        break;
+    }
+
+    if (p_num != NULL)
+        *p_num = uc_num;
+
+    return p_table;
+}
+
+/***********************************************************************************************************************
+ * 函数功能    : 场景入口步选择
+ * 说明(备注)  : 处理"关机后再开机跳过 INIT""工程/升级退回直接进 WORK"等边界;
+ *               前置: 能进入开机场景即已就绪 (未就绪由 eDisp_MapDevStateToScene 门控在初始化场景)
+ * 传入参数    : e_scene: 目标场景; p_snapshot: 快照数据
+ * 输出参数    : 无
+ * 返回值      : 入口步骤索引
+ ************************************************************************************************************************/
+uint8_t ucDisp_SceneEntryStep(DispScene_E e_scene, const DispDataSnapshot_T *p_snapshot)
+{
+    if (p_snapshot == NULL)
+        return 0U;
+
+    if (e_scene == DISP_SCENE_POWER_ON)
+        return (p_snapshot->ucDevState == DS_BOOTING) ? 0U : 1U;   /* BOOT 步 / WORK 步 */
+
+    return 0U;        /* 默认从首步进入 */
 }
 
 #endif  /* boardDISPLAY_EN */

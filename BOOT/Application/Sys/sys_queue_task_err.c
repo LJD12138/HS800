@@ -17,6 +17,10 @@
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
+#if (boardPRINT_IFACE)
+#include "Print/print_iface.h"
+#endif  /* boardPRINT_IFACE */
+
 #if (1)
 //****************************************************Macros********************************************************************//
 
@@ -43,6 +47,10 @@ void v_sys_queue_task_err(Task_T *p_task)
                 cQueue_GotoStep(p_task, STEP_END);
                 break;
             }
+
+            #if (boardPRINT_IFACE)
+            vPrint_IfaceInit();
+            #endif  /* boardPRINT_IFACE */
 
             if (tSysInfo.eDevState != DS_ERR)
                 bSys_SetDevState(DS_ERR, false);

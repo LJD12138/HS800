@@ -125,8 +125,11 @@ void v_sys_queue_task_init(Task_T *p_task)
 		case 2:
 		{
 			#if (filterSELF_TEST_ENABLE)
-			bFilter_RunSelfTest(NULL);	/* 滤波算法精度与抗扰性自动化自检 */
+			/* 滤波算法精度与抗扰性自动化自检 */
+			if(bFilter_RunSelfTest(NULL) == false)
+				break;
 			#endif  /* filterSELF_TEST_ENABLE */
+
 			cQueue_GotoStep(p_task, STEP_NEXT);
 		}
 		break;

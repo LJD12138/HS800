@@ -87,6 +87,10 @@ void vDisp_IfaceInit(void)
     gpio_init(dispTFT_A0_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_A0_PIN);
     gpio_init(dispTFT_BL_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_BL_PIN);
     #endif  //boardIC_TYPE
+	
+	dispTFT_CS_H();
+    dispTFT_A0_H();
+    dispTFT_BL_L();
 
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_HW)
     tft_hw_spi_dma_init();
@@ -101,10 +105,6 @@ void vDisp_IfaceInit(void)
     gpio_init(dispTFT_SDA_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, dispTFT_SDA_PIN);
     #endif  //boardIC_TYPE
     #endif  //boardDISP_SPI_MODE
-
-    dispTFT_CS_H();
-    dispTFT_A0_H();
-    dispTFT_BL_L();
 
     #if(boardDISP_SPI_MODE == dispTFT_SPI_MODE_SW)
     dispTFT_SCK_H();

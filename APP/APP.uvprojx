@@ -315,7 +315,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>2</Optim>
+            <Optim>3</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, GD32F50X, GD32F502, FW_DEBUG_ERR_REPORT,LV_LVGL_H_INCLUDE_SIMPLE</Define>
               <Undefine></Undefine>
-              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\Filter\inc;.\Middlewares\TaskQueue;.\Middlewares\CherryUSB;.\Middlewares\CherryUSB\common;.\Middlewares\CherryUSB\core;.\Middlewares\CherryUSB\class\cdc;.\Middlewares\CherryUSB\port\dwc2;.\Hardware\Usb</IncludePath>
+              <IncludePath>.;.\Middlewares;.\Firmware\CMSIS\GD\GD32F50x\Include;.\Firmware\GD32F50x_standard_peripheral\Include;.\Firmware\CMSIS;.\Middlewares\FreeRTOS\portable\GCC\ARM_CM33_NTZ\non_secure;.\Middlewares\FreeRTOS\include;.\Middlewares\SeggerRtt;.\ComFunc;.\Application;.\Hardware;.\Hardware\MD_Display;.\Hardware\BSP;.\Middlewares\CmBacktrace;.\Middlewares\CmBacktrace\Languages\zh-CN;.\Middlewares\LightweightRingBuffer\src;.\Middlewares\EasyLogger\inc;.\Middlewares\EasyLogger\plugins\flash;.\Middlewares\EasyFlash\inc;.\Middlewares\Protocol;.\Middlewares\LVGL;.\Middlewares\LVGL\src;.\Hardware\MD_Display\eez_ui;.\Hardware\MD_Display\user_ui;.\Middlewares\MultiFuncKey;.\Middlewares\UniDisplay;.\Middlewares\Filter\inc;.\Middlewares\TaskQueue;.\Middlewares\CherryUSB;.\Middlewares\CherryUSB\common;.\Middlewares\CherryUSB\core;.\Middlewares\CherryUSB\class\cdc;.\Middlewares\CherryUSB\port\dwc2;.\Hardware\Usb</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -6200,14 +6200,34 @@
               <FilePath>.\Middlewares\UniDisplay\uni_disp_page.h</FilePath>
             </File>
             <File>
-              <FileName>uni_disp_port.c</FileName>
+              <FileName>uni_disp_nav.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.c</FilePath>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_nav.c</FilePath>
             </File>
             <File>
-              <FileName>uni_disp_port.h</FileName>
+              <FileName>uni_disp_nav.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Middlewares\UniDisplay\uni_disp_port.h</FilePath>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_nav.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_power.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_power.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_power.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_power.h</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_scene.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_scene.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_scene.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Middlewares\UniDisplay\uni_disp_scene.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -6846,6 +6866,16 @@
               <FilePath>.\Hardware\MD_Display\lv_port_disp.h</FilePath>
             </File>
             <File>
+              <FileName>uni_disp_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\uni_disp_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>uni_disp_port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\MD_Display\uni_disp_port.h</FilePath>
+            </File>
+            <File>
               <FileName>md_display_api.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\md_display_api.c</FilePath>
@@ -6894,6 +6924,11 @@
               <FileName>md_display_page_eng.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\MD_Display\md_display_page_eng.c</FilePath>
+            </File>
+            <File>
+              <FileName>md_display_page_eng_pv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\MD_Display\md_display_page_eng_pv.c</FilePath>
             </File>
             <File>
               <FileName>md_display_page_fault.c</FileName>

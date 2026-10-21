@@ -135,9 +135,13 @@ virtualFolder:
         - path: Middlewares/UniDisplay/uni_disp_core.h
         - path: Middlewares/UniDisplay/uni_disp_event.c
         - path: Middlewares/UniDisplay/uni_disp_event.h
+        - path: Middlewares/UniDisplay/uni_disp_nav.c
+        - path: Middlewares/UniDisplay/uni_disp_nav.h
         - path: Middlewares/UniDisplay/uni_disp_page.h
-        - path: Middlewares/UniDisplay/uni_disp_port.c
-        - path: Middlewares/UniDisplay/uni_disp_port.h
+        - path: Middlewares/UniDisplay/uni_disp_power.c
+        - path: Middlewares/UniDisplay/uni_disp_power.h
+        - path: Middlewares/UniDisplay/uni_disp_scene.c
+        - path: Middlewares/UniDisplay/uni_disp_scene.h
       folders: []
     - name: MW-Filter
       files:
@@ -288,6 +292,8 @@ virtualFolder:
       files:
         - path: Hardware/MD_Display/lv_port_disp.c
         - path: Hardware/MD_Display/lv_port_disp.h
+        - path: Hardware/MD_Display/uni_disp_port.c
+        - path: Hardware/MD_Display/uni_disp_port.h
         - path: Hardware/MD_Display/md_display_api.c
         - path: Hardware/MD_Display/md_display_api.h
         - path: Hardware/MD_Display/md_display_data.c
@@ -298,6 +304,7 @@ virtualFolder:
         - path: Hardware/MD_Display/md_display_page_boot.c
         - path: Hardware/MD_Display/md_display_page_closing.c
         - path: Hardware/MD_Display/md_display_page_eng.c
+        - path: Hardware/MD_Display/md_display_page_eng_pv.c
         - path: Hardware/MD_Display/md_display_page_fault.c
         - path: Hardware/MD_Display/md_display_page_init.c
         - path: Hardware/MD_Display/md_display_page_shut_down.c
@@ -602,6 +609,7 @@ targets:
         - ComFunc
         - Application
         - Hardware
+        - Hardware/MD_Display
         - Hardware/BSP
         - Middlewares/CmBacktrace
         - Middlewares/CmBacktrace/Languages/zh-CN

@@ -23,6 +23,10 @@
 #include "MD_Display/user_ui/main_1_ui.h"
 #include "Middlewares/LVGL/lvgl.h"
 
+//****************************************************Macros********************************************************************//
+/* 主工作页帧周期: 20ms=50FPS (能量环/呼吸动画); 若实测渲染超时/CPU 偏高, 可改为 33ms(30FPS) 或 50ms 对比 */
+#define			dispPAGE_WORK_CYCLE_MS					20U
+
 //****************************************************Function Declaration******************************************************//
 static void v_page_work_enter(void);
 static void v_page_work_exit(void);
@@ -30,14 +34,14 @@ static void v_page_work_update(const DispDataSnapshot_T *p_data, bool b_force);
 static bool b_page_work_event(DispEvent_E e_event, uint32_t ul_param);
 
 
-const DispPage_T G_tPageWork =
+const DispPage_T G_tPageWorkMain1 =
 {
-    .ePageId     = PAGE_ID_WORK,
+    .ePageId     = PAGE_ID_WORK_MAIN1,
     .vOnEnter    = v_page_work_enter,
     .vOnExit     = v_page_work_exit,
     .vOnUpdate   = v_page_work_update,
     .bOnEvent    = b_page_work_event,
-    .usRefreshMs = 20,
+    .usRefreshMs = dispPAGE_WORK_CYCLE_MS,
 };
 
 /***********************************************************************************************************************
@@ -70,9 +74,8 @@ static void v_page_work_enter(void)
     /* 能量环对象已创建, 补一次主界面数据刷新写入 SOC/充电状态 */
     bDisp_Main1DataUpdate(&t_snapshot);
 
-    /* 进入工作页若背光未开启, 显式点亮背光 */
-    if (bDisp_IsBacklightOn() == false)
-        bDisp_Switch(ST_ON, false);
+    /* 进入工作页点亮背光 (bDisp_Switch 内部幂等: 已亮屏仅重置息屏倒计时) */
+    bDisp_Switch(ST_ON, false);
 }
 
 /***********************************************************************************************************************
@@ -104,17 +107,17 @@ static void v_page_work_update(const DispDataSnapshot_T *p_data, bool b_force)
 }
 
 /***********************************************************************************************************************
- * 函数功能    : 工作页事件回调
- * 说明(备注)  : 工作页不消费按键, 透传框架默认处理(重置息屏倒计时)
+ * 函数功能    : 工作页事件回调 (WORK 组入口页)
+ * 说明(备注)  : WORK 组当前唯一页面, 无组内跳转; 按键透传框架默认处理 (重置息屏倒计时)
  * 传入参数    : e_event: 事件类型
  * 输出参数    : ul_param: 事件参数
- * 返回值      : false (事件透传给框架, 不触发自动跳转)
+ * 返回值      : true: 已消费; false: 透传框架默认处理
  ************************************************************************************************************************/
 static bool b_page_work_event(DispEvent_E e_event, uint32_t ul_param)
 {
     (void)e_event;
     (void)ul_param;
-    return false;   /* 透传框架默认处理: 按键重置息屏倒计时, 故障自动弹窗等 */
+    return false;   /* 透传框架默认处理: 按键重置息屏倒计时 */
 }
 
 #endif  /* boardDISPLAY_EN */

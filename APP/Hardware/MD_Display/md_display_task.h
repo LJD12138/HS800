@@ -52,7 +52,7 @@ extern TaskHandle_t tDispTaskHandler;
 /* 页面控制块全局导出 */
 extern const DispPage_T G_tPageInit;        /* 初始化页 */
 extern const DispPage_T G_tPageBoot;        /* 开机步进动画页 */
-extern const DispPage_T G_tPageWork;        /* 主工作页 */
+extern const DispPage_T G_tPageWorkMain1;   /* 主页1 (WORK 组入口页) */
 extern const DispPage_T G_tPageClosing;     /* 关机中页 */
 extern const DispPage_T G_tPageShutDown;    /* 关机状态页 */
 extern const DispPage_T G_tPageFault;       /* 故障专用页 */
@@ -62,7 +62,12 @@ extern const DispPage_T G_tPageUpdate;      /* 升级页 */
 #endif  /* boardUPDATE */
 
 #if (boardENG_MODE_EN)
-extern const DispPage_T G_tPageEng;         /* 工程模式页 */
+extern const DispPage_T G_tPageEng;         /* 工程模式主菜单页 */
+extern const DispPage_T G_tPageEngPv;       /* 工程模式-参数查看 (页面栈二级页) */
+extern const DispPage_T G_tPageEngPvDetail; /* 工程模式-参数查看详情 (页面栈三级页) */
+extern const DispPage_T G_tPageEngParamSet; /* 工程模式-记忆参数设置 (页面栈二级页) */
+extern const DispPage_T G_tPageEngSysSet;   /* 工程模式-系统设置 (页面栈二级页) */
+extern const DispPage_T G_tPageEngConfirm;  /* 工程模式-确认对话框 (页面栈三级页) */
 #endif  /* boardENG_MODE_EN */
 
 //****************************************************Extern********************************************************************//

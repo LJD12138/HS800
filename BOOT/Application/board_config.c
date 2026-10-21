@@ -99,25 +99,31 @@ static void v_print_init_fail_cb(s16 s_err_code);
 static const TaskInitEntry_T c_task_init_table[] = {
 	/* 任务名称       初始化函数        基准错误码  是否关键任务  失败回调 */
 	{"SysTask",      cSys_TaskInit,          0,         true,        NULL},
+
 	#if (boardPRINT_IFACE)
 	{"PrintTask",    cPrint_TaskInit,        -10,       false,       v_print_init_fail_cb},
 	#endif  /* boardPRINT_IFACE */
+
 	#if (boardADC_EN)
 	{"AdcTask",      cAdc_TaskInit,          -20,       true,        NULL},
 	#endif  /* boardADC_EN */
+
 	#if (boardKEY_EN)
 	{"KeyTask",      cKey_TaskInit,          -30,       true,        NULL},
 	#endif  /* boardKEY_EN */
+
 	#if (boardLED_EN)
 	{"LedTask",      cLed_TaskInit,          -40,       false,       NULL},
 	#endif  /* boardLED_EN */
+
 	#if (boardBMS_EN)
 	{"BmsTask",      cBms_TaskInit,          -50,       true,        NULL},
 	{"BmsRecTask",   cBms_RecTaskInit,       -60,       true,        NULL},
 	#endif  /* boardBMS_EN */
-	#if (boardDISPLAY_EN)
-	{"DispTask",     cDisp_TaskInit,         -70,       true,        NULL},
-	#endif  /* boardDISPLAY_EN */
+
+	// #if (boardDISPLAY_EN)
+	// {"DispTask",     cDisp_TaskInit,         -70,       true,        NULL},
+	// #endif  /* boardDISPLAY_EN */
 };
 
 /***********************************************************************************************************************
@@ -154,14 +160,11 @@ void vBoard_SysInit(void)
 {
 	vGPIO_Init();
 	
-	#if (boardDISPLAY_EN)
-	#endif  /* boardDISPLAY_EN */
-	
 	bFlash_IfaceInit();
 	
-	#if (boardPRINT_IFACE)
-	vPrint_IfaceInit();
-	#endif  /* boardPRINT_IFACE */
+	// #if (boardPRINT_IFACE)
+	// vPrint_IfaceInit();
+	// #endif  /* boardPRINT_IFACE */
 	
 	#if (boardSEGGER)
 	SEGGER_RTT_Init();      //初始化Seeger RTT 输出 
@@ -202,8 +205,6 @@ void vBoard_SysInit(void)
  ***********************************************************************************************************************/
 void vBoard_StartTask(void *pvParameters)
 {
-	mainENTER_CRITICAL();
-
 	for (size_t i = 0; i < sizeof(c_task_init_table) / sizeof(c_task_init_table[0]); i++)
 	{
 		const TaskInitEntry_T *p_entry = &c_task_init_table[i];
@@ -254,8 +255,6 @@ void vBoard_StartTask(void *pvParameters)
 			}
 		}
 	}
-
-	mainEXIT_CRITICAL();
 
 	#if (boardUSE_OS)
 	vTaskDelete(NULL);

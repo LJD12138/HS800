@@ -26,6 +26,10 @@
 #include "MD_Bms/md_bms_task.h"
 #endif  /* boardBMS_EN */
 
+#if (boardPRINT_IFACE)
+#include "Print/print_iface.h"
+#endif  /* boardPRINT_IFACE */
+
 #if (boardCONSOLE_EN)
 #include "MD_Console/md_console_task.h"
 #include "MD_Console/md_console_rec_task.h"
@@ -63,6 +67,10 @@ void v_sys_queue_task_update(Task_T *p_task)
 				cUpdate_ChSelect(CT_PRINT, PT_XMODEM);
 				#endif  /* (boardCONSOLE_EN) */
 			}
+			
+			#if (boardPRINT_IFACE)
+			vPrint_IfaceInit();
+			#endif  /* boardPRINT_IFACE */
 			
 			if (tUpdate.eChType == CT_PRINT)
 				uPrint.ulFlag = 0;

@@ -19,6 +19,10 @@
 #include "Flash/flash_iface.h"
 #include "boot_info.h"
 
+#if (boardDISPLAY_EN)
+#include "MD_Display/md_display_task.h"
+#endif  /* boardDISPLAY_EN */
+
 #if (1)
 //****************************************************Macros********************************************************************//
 
@@ -68,6 +72,12 @@ void v_sys_queue_task_init(Task_T *p_task)
             if (e_task_id != STI_ERR && e_task_id >= STI_INIT)
                 tSysInfo.uInit.tFinish.bIF_BootInfo = true;
             cQueue_AddQueueTask(tpSysTask, e_task_id, 0, false);
+
+            #if(boardDISPLAY_EN)
+            if(e_task_id != STI_ENTER_APP)
+                cDisp_TaskInit();
+            #endif  /* boardDISPLAY_EN */
+            
             cQueue_GotoStep(p_task, STEP_NEXT);
         }
         break;

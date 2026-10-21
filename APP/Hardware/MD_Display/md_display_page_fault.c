@@ -24,6 +24,9 @@
 
 #include "uni_disp_core.h"
 
+//****************************************************Macros********************************************************************//
+/* 故障页帧周期: 保留 33ms 以维持背景工作页动画/图标闪烁的平滑度 */
+#define			dispPAGE_FAULT_CYCLE_MS					33U
 
 //****************************************************Function Declaration******************************************************//
 static void v_page_fault_enter(void);
@@ -38,7 +41,7 @@ const DispPage_T G_tPageFault =
     .vOnExit     = v_page_fault_exit,
     .vOnUpdate   = v_page_fault_update,
     .bOnEvent    = b_page_fault_event,
-    .usRefreshMs = 33,
+    .usRefreshMs = dispPAGE_FAULT_CYCLE_MS,
 };
 
 
@@ -96,23 +99,17 @@ static void v_page_fault_update(const DispDataSnapshot_T *p_data, bool b_force)
 
 /***********************************************************************************************************************
  * 函数功能    : 故障页面事件处理
- * 说明(备注)  : none
+ * 说明(备注)  : 故障页出入口均由场景调度 overlay 以 DS_ERR 电平接管 (压入/弹出),
+ *               本页不再消费任何事件
  * 传入参数    : e_event: 页面事件类型; ul_param: 事件参数
  * 输出参数    : 无
- * 返回值      : true: 已处理 DISP_EVT_FAULT_CLEAR 并退栈返回工作页; false: 非本页事件，透传框架默认处理
+ * 返回值      : false: 透传框架默认处理（本页不消费任何事件）
  ************************************************************************************************************************/
 static bool b_page_fault_event(DispEvent_E e_event, uint32_t ul_param)
 {
+    (void)e_event;
     (void)ul_param;
-
-    if (e_event == DISP_EVT_FAULT_CLEAR)
-    {
-        /* 故障清除, 退栈返回主工作页 */
-        vDisp_PopPage();
-        return true;
-    }
-
-    return false;
+    return false;   /* 透传框架默认处理 */
 }
 
 

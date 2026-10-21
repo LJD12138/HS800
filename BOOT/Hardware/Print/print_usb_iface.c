@@ -108,11 +108,11 @@ void usb_dc_low_level_init(uint8_t busid)
     rcu_periph_clock_enable(RCU_GPIOA);
     rcu_periph_clock_enable(RCU_USBFS);
 
-    /* 4. 软断开重连：先通过通用推挽输出拉低 PA11/PA12 保持约 10ms，强制主机识别断开并重新枚举 */
+    /* 4. 软断开重连：通过推挽输出拉低 PA11/PA12 保持约 1~2ms，强制主机识别断开并重新枚举 */
     gpio_mode_set(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_11 | GPIO_PIN_12);
     gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_LEVEL3, GPIO_PIN_11 | GPIO_PIN_12);
     gpio_bit_reset(GPIOA, GPIO_PIN_11 | GPIO_PIN_12);
-    for (volatile uint32_t i = 0; i < 200000; i++)
+    for (volatile uint32_t i = 0; i < 5000; i++)
     {
         __NOP();
     }

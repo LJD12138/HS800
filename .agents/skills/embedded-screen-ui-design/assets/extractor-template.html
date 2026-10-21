@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>嵌入式屏幕资产提取器模板 (PNG / GIF)</title>
+<!--
+  用法 (embedded-screen-ui-design skill):
+  1. 修改 CONFIG 里的卡片底色/描边宽度等 token;
+  2. 替换 buildAllAssets() 里的演示内容为产品自己的 GIF 动画函数 (renderFrame) 与图标 SVG 表;
+  3. 浏览器打开本文件即可预览/下载全部资产; 右键另存或点按钮均可。
+  内置: GIF89a 编码器 (LZW + Netscape 循环 + 5-6-5 量化) / SVG 转 PNG / 一键顺序下载。
+-->
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #121519; --panel: #1B1E23; --card: #262B33; --border: #3A414C;
+    --text: #E5E7EB; --muted: #9CA3AF; --brand: #38BDF8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px;
+  }
+  .header h1 { margin: 0 0 6px; font-size: 18px; }
+  .header p { margin: 0; font-size: 13px; color: var(--muted); }
+  .btn-primary {
+    background: #0284C7; border-color: #38BDF8; color: #FFF; font-weight: 600;
+    border: 1px solid #38BDF8; border-radius: 8px; padding: 8px 12px; font-size: 13px; cursor: pointer;
+  }
+  .section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  .section-head { margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 10px; }
+  .section-title { font-size: 15px; font-weight: 600; }
+  .section-sub { font-size: 12px; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 14px; }
+  .item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .preview-box {
+    width: 72px; height: 72px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background-color: #16191E; border: 1px dashed #3A414C;
+    background-image:
+      linear-gradient(45deg, #1e2229 25%, transparent 25%), linear-gradient(-45deg, #1e2229 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1e2229 75%), linear-gradient(-45deg, transparent 75%, #1e2229 75%);
+    background-size: 12px 12px; background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+  .preview-box img { display: block; }
+  .item-name { font-size: 13px; font-weight: 600; text-align: center; }
+  .item-meta { font-size: 11px; color: var(--muted); font-family: monospace; }
+  .item-btn {
+    margin-top: 4px; width: 100%; padding: 6px 10px; font-size: 12px; text-align: center;
+    text-decoration: none; background: #313844; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; display: inline-block;
+  }
+  .item-btn:hover { border-color: var(--brand); color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1>嵌入式屏幕资产提取器模板</h1>
+      <p>替换 buildAllAssets() 中的演示内容 — 内置 GIF89a 编码器与 SVG 转 PNG，导出 PNG / GIF 直接用于 LVGL</p>
+    </div>
+    <button class="btn-primary" id="downloadAllBtn">一键顺序下载全部</button>
+  </div>
+
+  <!-- TODO: 按产品拆 section (如: 1. 状态动效 GIF / 2. 拆解图层 PNG / 3. 图标 PNG) -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">演示 · 动效 GIF (8 重对称旋转省帧)</div>
+      <div class="section-sub">24 帧 x 4cs 只转 45°, 播放等效 8 倍时长 360° 无缝循环</div>
+    </div>
+    <div class="grid" id="gifGrid"></div>
+  </div>
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">演示 · 图标 PNG (透明 / 带底座)</div>
+      <div class="section-sub">几何 + 描边半径必须落在 viewBox 内</div>
+    </div>
+    <div class="grid" id="pngGrid"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ==================== CONFIG (按产品修改) ====================
+  var CARD_BG = '#262B33';   // 卡片底色 — GIF 铺底抗锯齿用, 必须与实机卡片色一致
+  var WX_STROKE = 2.6;       // 48px 图标描边 (20px 图标 2.0 / 24px 图标 2.2)
+
+  // ==================== GIF89a 编码器 (LZW + 无限循环 + 5-6-5 量化) ====================
+  function createGIF(width, height, frames, delayCs, transparentIndex) {
+    var bytes = [];
+    function writeStr(s) { for (var i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); }
+    function writeU16(v) { bytes.push(v & 0xFF, (v >> 8) & 0xFF); }
+
+    // 全局调色板: 索引 0 = 背景色 (透明色或卡片底色)
+    var bg = [parseInt(CARD_BG.slice(1,3),16), parseInt(CARD_BG.slice(3,5),16), parseInt(CARD_BG.slice(5,7),16)];
+    var palette = [bg];
+    var colorMap = new Map();
+    colorMap.set((bg[0] << 16) | (bg[1] << 8) | bg[2], 0);
+
+    var indexedFrames = frames.map(function(rgba) {
+      var idxArr = new Uint8Array(width * height);
+      for (var i = 0; i < width * height; i++) {
+        var r = rgba[i * 4], g = rgba[i * 4 + 1], b = rgba[i * 4 + 2], a = rgba[i * 4 + 3];
+        if (transparentIndex === 0 && a < 80) { idxArr[i] = 0; continue; }
+        // 量化到 5-6-5, 防抗锯齿颜色溢出 256 色
+        var qr = r & 0xF8, qg = g & 0xFC, qb = b & 0xF8;
+        var key = (qr << 16) | (qg << 8) | qb;
+        var cIdx = colorMap.get(key);
+        if (cIdx === undefined) {
+          if (palette.length < 256) {
+            cIdx = palette.length; palette.push([qr, qg, qb]); colorMap.set(key, cIdx);
+          } else {
+            var best = 1, bestDist = 1e9;
+            for (var p = 1; p < palette.length; p++) {
+              var dr = qr - palette[p][0], dg = qg - palette[p][1], db = qb - palette[p][2];
+              var d = dr * dr + dg * dg + db * db;
+              if (d < bestDist) { bestDist = d; best = p; }
+            }
+            cIdx = best;
+          }
+        }
+        idxArr[i] = cIdx;
+      }
+      return idxArr;
+    });
+
+    while (palette.length < 256) palette.push([0, 0, 0]);
+
+    writeStr('GIF89a');
+    writeU16(width); writeU16(height);
+    bytes.push(0xF7, 0x00, 0x00); // 256 色全局调色板
+    for (var p = 0; p < 256; p++) bytes.push(palette[p][0], palette[p][1], palette[p][2]);
+
+    // Netscape 2.0 无限循环
+    bytes.push(0x21, 0xFF, 0x0B);
+    writeStr('NETSCAPE2.0');
+    bytes.push(0x03, 0x01, 0x00, 0x00, 0x00);
+
+    function lzwEncode(indexStream) {
+      var minCodeSize = 8, clearCode = 1 << minCodeSize, eoiCode = clearCode + 1;
+      var codeSize = minCodeSize + 1, nextCode = eoiCode + 1;
+      var dict = new Map(), out = [], bitBuf = 0, bitCnt = 0;
+      function emit(code) {
+        bitBuf |= (code << bitCnt); bitCnt += codeSize;
+        while (bitCnt >= 8) { out.push(bitBuf & 0xFF); bitBuf >>= 8; bitCnt -= 8; }
+      }
+      emit(clearCode);
+      var prefix = indexStream[0];
+      for (var i = 1; i < indexStream.length; i++) {
+        var k = indexStream[i], key = (prefix << 8) | k, found = dict.get(key);
+        if (found !== undefined) { prefix = found; }
+        else {
+          emit(prefix);
+          if (nextCode < 4096) {
+            dict.set(key, nextCode++);
+            if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+          } else {
+            emit(clearCode); dict.clear(); codeSize = minCodeSize + 1; nextCode = eoiCode + 1;
+          }
+          prefix = k;
+        }
+      }
+      emit(prefix); emit(eoiCode);
+      if (bitCnt > 0) out.push(bitBuf & 0xFF);
+      return out;
+    }
+
+    for (var f = 0; f < indexedFrames.length; f++) {
+      bytes.push(0x21, 0xF9, 0x04);
+      bytes.push(transparentIndex === 0 ? 0x09 : 0x04); // 透明: disposal=2 / 铺底: disposal=1
+      writeU16(delayCs);
+      bytes.push(0x00, 0x00);
+      bytes.push(0x2C);
+      writeU16(0); writeU16(0); writeU16(width); writeU16(height);
+      bytes.push(0x00);
+      bytes.push(0x08);
+      var compressed = lzwEncode(indexedFrames[f]), pos = 0;
+      while (pos < compressed.length) {
+        var chunk = Math.min(255, compressed.length - pos);
+        bytes.push(chunk);
+        for (var j = 0; j < chunk; j++) bytes.push(compressed[pos++]);
+      }
+      bytes.push(0x00);
+    }
+    bytes.push(0x3B);
+    return new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
+  }
+
+  // ==================== SVG 转 PNG ====================
+  function svgToPngUrl(svgString, width, height, callback) {
+    var img = new Image();
+    var blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      callback(canvas.toDataURL('image/png'));
+    };
+    img.src = url;
+  }
+
+  // ==================== 下载 UI ====================
+  var allDownloads = [];
+  function createCardItem(container, title, meta, dataUrl, filename, w, h) {
+    var div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML =
+      '<div class="preview-box"><img src="' + dataUrl + '" width="' + w + '" height="' + h + '" alt="' + title + '"></div>' +
+      '<div class="item-name">' + title + '</div>' +
+      '<div class="item-meta">' + meta + '</div>' +
+      '<a class="item-btn" href="' + dataUrl + '" download="' + filename + '">下载 ' + filename + '</a>';
+    container.appendChild(div);
+    allDownloads.push({ url: dataUrl, filename: filename });
+  }
+
+  // ==================== 产品资产定义 (TODO: 替换为产品内容) ====================
+  function buildAllAssets() {
+    allDownloads = [];
+    var gifGrid = document.getElementById('gifGrid');
+    var pngGrid = document.getElementById('pngGrid');
+    gifGrid.innerHTML = '';
+    pngGrid.innerHTML = '';
+
+    // --- 演示: 旋转太阳 GIF (8 重对称, 24 帧转 45°) ---
+    var canvas = document.createElement('canvas');
+    canvas.width = 48; canvas.height = 48;
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var FRAMES = 24, DELAY_CS = 4, RAYS = 'M24 4v6M24 38v6M4 24h6M38 24h6M10 10l4.2 4.2M33.8 33.8 38 38M38 10l-4.2 4.2M14.2 33.8 10 38';
+    var frameData = [];
+    for (var f = 0; f < FRAMES; f++) {
+      ctx.clearRect(0, 0, 48, 48);
+      ctx.fillStyle = CARD_BG; ctx.fillRect(0, 0, 48, 48); // 铺底抗锯齿
+      ctx.strokeStyle = '#FFD60A'; ctx.lineWidth = WX_STROKE; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(24, 24, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.save(); ctx.translate(24, 24); ctx.rotate((f / FRAMES) * Math.PI / 4); ctx.translate(-24, -24);
+      ctx.stroke(new Path2D(RAYS)); ctx.restore();
+      frameData.push(ctx.getImageData(0, 0, 48, 48).data);
+    }
+    createCardItem(gifGrid, '旋转太阳 (演示)', '48x48 · GIF (' + FRAMES + '帧)',
+      URL.createObjectURL(createGIF(48, 48, frameData, DELAY_CS, -1)), 'demo_sun_48x48.gif', 48, 48);
+
+    // --- 演示: 图标 PNG (注意: 圆球底部 + 描边半径 = 20.0, 恰好贴合 viewBox) ---
+    var icons = [
+      { name: '示例温度计 (20)', file: 'demo_temp_20x20.png', w: 20, h: 20,
+        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#FFCC4D" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"><path d="M11.8 12.1V4.8a2.2 2.2 0 0 0-4.4 0v7.3a3.8 3.8 0 1 0 4.4 0z" fill="rgba(255,204,77,0.22)"/><circle cx="9.6" cy="15.2" r="1.4" fill="#FFCC4D" stroke="none"/></svg>' },
+      { name: '示例应用 · 带底座 (48)', file: 'demo_app_box_48x48.png', w: 48, h: 48,
+        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">' +
+             '<rect x="0.5" y="0.5" width="47" height="47" rx="5.5" fill="#313844" stroke="#3A414C"/>' +
+             '<g transform="translate(12,12)" stroke="#5CE1FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" fill="rgba(92,225,255,0.12)"/><path d="M12 7.5V12l3.2 2"/></g></svg>' }
+    ];
+    icons.forEach(function(item) {
+      svgToPngUrl(item.svg, item.w, item.h, function(url) {
+        createCardItem(pngGrid, item.name, item.w + 'x' + item.h + ' · PNG', url, item.file, item.w, item.h);
+      });
+    });
+  }
+
+  document.getElementById('downloadAllBtn').addEventListener('click', function() {
+    allDownloads.forEach(function(item, index) {
+      setTimeout(function() {
+        var a = document.createElement('a');
+        a.href = item.url; a.download = item.filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }, index * 180);
+    });
+  });
+
+  buildAllAssets();
+})();
+</script>
+</body>
+</html>
