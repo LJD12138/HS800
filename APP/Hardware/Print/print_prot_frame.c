@@ -169,98 +169,78 @@ s8 c_cycle_relay_data(void)
 
 /***********************************************************************************************************************
  * 函数功能    : 回复模块开关结果  0x02
- * 说明(备注)  : none
- * 传入参数    : data: [0]开关对象, [1]开关动作与执行结果
+ * 说明(备注)  : 执行指定对象的开关动作并按协议返回 [开关对象, 设备状态];
+ *               仅支持 0x00~0x05 对象, 不支持或参数无效时不回复 0x02
+ * 传入参数    : data: [0]开关对象, [1]开关控制(0:关闭, 1:打开)
  * 输出参数    : none
- * 返回值      : true:成功   false:失败
+ * 返回值      : >0:发送成功   <=0:失败或未支持对象/参数错误
  ************************************************************************************************************************/
 s8 c_relay02_switch_result(uint8_t data[])
 {
-    if(data[0] == 0x00)
-    {
-        if(data[1] == 0x00)
-            cSys_Switch(SO_KEY, ST_OFF, false);
-        else if (data[1] == 0x01)
-            cSys_Switch(SO_KEY,ST_ON, false);
-        c_print_data_trans(0x02, data, 2);  
-    }
+    SwitchType_E e_sw = ST_NULL;
+    u8 uca_resp[2] = {0};
 
-	#if(boardUSB_EN)
-    else if(data[0] == 0x01)
+    if (data == NULL)
+        return -1;
+
+    if (data[1] == 0x00)
+        e_sw = ST_OFF;
+    else if (data[1] == 0x01)
+        e_sw = ST_ON;
+    else
+        return -1;
+
+    uca_resp[0] = data[0];
+
+    switch (data[0])
     {
-        if(data[1] == 0x00)
-            cUsb_Switch(ST_OFF, false);
-        else if (data[1] == 0x01)
+        case 0x00:
+            cSys_Switch(SO_KEY, e_sw, false);
+            uca_resp[1] = (u8)tSysInfo.eDevState;
+            break;
+
+        #if (boardUSB_EN)
+        case 0x01:
         {
-            //打开失败
-            if(cUsb_Switch(ST_ON, false) <= 0)
-                data[1] = 0x00;
+            s8 c_ret = cUsb_Switch(e_sw, false);
+            uca_resp[1] = (e_sw == ST_ON && c_ret >= 0) ? 0x01 : 0x00;
+            break;
         }
-        c_print_data_trans(0x02, data, 2);  
-    }
-	#endif  //boardUSB_EN
+        #endif  /* boardUSB_EN */
 
-	#if(boardLIGHT_EN)
-    else if(data[0] == 0x02)
-    {
-        if(data[1] == 0x00)
-            bLight_Switch(ST_OFF);
-        else if (data[1] == 0x01)
-        {
-            //打开失败
-            if(bLight_Switch(ST_ON) == false)
-                data[1] = 0x00;
-        }
-        c_print_data_trans(0x02, data, 2);  
-    }
-	#endif  //boardLIGHT_EN
+        #if (boardLIGHT_EN)
+        case 0x02:
+            bLight_Switch(e_sw);
+            uca_resp[1] = (tLight.eDevState == DS_WORK) ? 0x01 : 0x00;
+            break;
+        #endif  /* boardLIGHT_EN */
 
-	#if(boardDCAC_EN)
-    else if(data[0] == 0x03)
-    {
-        if(data[1] == 0x00)
-            cDCAC_Switch(DSO_AC_OUT,ST_OFF, true);
-        else if (data[1] == 0x01)
-        {
-            //打开失败
-            if(cDCAC_Switch(DSO_AC_OUT,ST_ON, true) < 0)
-                data[1] = 0x00;
-        }
-        c_print_data_trans(0x02, data, 2);  
-    }
-	#endif  //boardDCAC_EN
+        #if (boardDCAC_EN)
+        case 0x03:
+            cDCAC_Switch(DSO_AC_OUT, e_sw, true);
+            uca_resp[1] = (u8)tDcac.eDisChgState;
+            break;
+        #endif  /* boardDCAC_EN */
 
-	#if(boardDC_EN)
-	else if(data[0] == 0x04)
-    {
-        if(data[1] == 0x00)
-            cDc_Switch(ST_OFF, false);
-        else if (data[1] == 0x01)
-        {
-            //打开失败
-            if(cDc_Switch(ST_ON, false) <= 0)
-                data[1] = 0x00;
-        }
-        c_print_data_trans(0x02, data, 2);  
-    }
-	#endif  //boardDC_EN
+        #if (boardDC_EN)
+        case 0x04:
+            cDc_Switch(e_sw, false);
+            uca_resp[1] = (u8)tDc.eDevState;
+            break;
+        #endif  /* boardDC_EN */
 
-	#if(boardDCAC_EN)
-	else if(data[0] == 0x05)
-    {
-       if(data[1] == 0x00)
-           cDCAC_Switch(DSO_AC_IN,ST_OFF, true);
-       else if (data[1] == 0x01)
-       {
-           //打开失败
-           if(cDCAC_Switch(DSO_AC_IN,ST_ON, true) < 0)
-               data[1] = 0x00;
-       }
-        c_print_data_trans(0x02, data, 2);  
-    }
-	#endif  //boardDCAC_EN
+        #if (boardDCAC_EN)
+        case 0x05:
+            cDCAC_Switch(DSO_AC_IN, e_sw, true);
+            uca_resp[1] = (u8)tDcac.eChgState;
+            break;
+        #endif  /* boardDCAC_EN */
 
-    return true;
+        default:
+            return -1;
+    }
+
+    return c_print_data_trans(baikuCMD_REPLY_SWITCH, uca_resp, sizeof(uca_resp));
 }
 
 
@@ -802,36 +782,38 @@ s8 c_relay40_set_chg_pwr(BaikuProtoRx_t* proto)
 
 /***********************************************************************************************************************
  * 函数功能    : 请求校准  0x44
- * 说明(备注)  : none
+ * 说明(备注)  : 当前仅支持校准电流 (对象 0x00)
  * 传入参数    : proto: 协议结构体指针
  * 输出参数    : none
- * 返回值      : 1:成功   -1:参数错误
+ * 返回值      : 1:成功   -1:参数错误   -2:不支持的校准对象
  ************************************************************************************************************************/
 s8 c_relay44_cali(BaikuProtoRx_t* proto)
 {
-	if(proto->ucValidLen != 1 || proto->ucpValidData == NULL)
+	if(proto == NULL || proto->ucValidLen != 1 || proto->ucpValidData == NULL)
 		return -1;
 	
-	if(proto->ucpValidData[0] == 0)
-	{
-		#if(boardBMS_EN)
-		cQueue_AddQueueTask(tpBmsTask, BTI_CALI, 0, false);
-		#endif  //boardBMS_EN
-	}
+	if(proto->ucpValidData[0] != 0x00)
+		return -2;
 	
+	#if(boardBMS_EN)
+	cQueue_AddQueueTask(tpBmsTask, BTI_CALI, proto->ucpValidData[0], false);
+	#endif  //boardBMS_EN
 	return 1;
 }
 
 /***********************************************************************************************************************
  * 函数功能    : 回复校准结果  0x45
- * 说明(备注)  : none
- * 传入参数    : temp: 校准状态结果
+ * 说明(备注)  : 响应载荷 3 字节: [1B 校准对象, 2B 校准结果(小端)]
+ * 传入参数    : data: 数据指针; len: 数据长度
  * 输出参数    : none
- * 返回值      : true:发送成功   false:发送失败   
+ * 返回值      : >0:发送成功   <=0:发送失败
  ************************************************************************************************************************/
-s8 c_relay45_cali(u16 temp)
+s8 c_relay45_cali(u8* data, u8 len)
 {
-	return c_print_data_trans(baikuCMD_REPLY_CALI, (u8*)&temp, sizeof(temp));
+	if(data == NULL || len != 3)
+		return -1;
+
+	return c_print_data_trans(baikuCMD_REPLY_CALI, data, len);
 }
 
 /***********************************************************************************************************************

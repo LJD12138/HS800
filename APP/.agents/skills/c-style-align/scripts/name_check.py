@@ -16,7 +16,7 @@ from collections import Counter, OrderedDict
 SKIP_DIRS = {'.git', '.cmsis', '.pack', 'RTE', 'build', 'DebugConfig', 'Objects', 'Listings',
              'eez_ui', 'eez_project', 'lvgl', 'FreeRTOS', 'EasyFlash', 'EasyLogger',
              'CmBacktrace', 'lwrb', 'LightweightRingBuffer', 'SeggerRtt',
-             'MultiFuncKey', 'Firmware', '.agents', '.trae', '.vscode'}
+             'MultiFuncKey', 'Firmware', '.agents', '.trae', '.vscode', 'tools'}
 SKIP_LOWER = {x.lower() for x in SKIP_DIRS}          # 目录名大小写不敏感
 EXEMPT = {'gd32f50x_it.c', 'gd32f50x_it.h', 'gd32f50x_libopt.h',
           'FreeRTOSConfig.h', 'board_config.h', 'board_config.c'}

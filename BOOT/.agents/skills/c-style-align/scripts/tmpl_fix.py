@@ -10,7 +10,7 @@ RULES = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__))
                                       '..', '..', '..', 'rules', 'c-code-templates.md'))
 SKIP_DIRS = {'.git', '.cmsis', '.pack', 'RTE', 'build', 'DebugConfig', 'Objects', 'Listings',
              'eez_ui', 'eez_project', 'lvgl', 'FreeRTOS', 'EasyFlash', 'EasyLogger',
-             'CmBacktrace', 'lwrb', 'LightweightRingBuffer', 'SeggerRtt', 'MultiFuncKey', 'Firmware'}
+             'CmBacktrace', 'lwrb', 'LightweightRingBuffer', 'SeggerRtt', 'MultiFuncKey', 'Firmware', 'tools'}
 SKIP_LOWER = {x.lower() for x in SKIP_DIRS}   # 目录名大小写不敏感
 # 生成文件 / Keil 配置向导文件：不自动改头块
 EXEMPT = {'gd32f50x_it.c', 'gd32f50x_it.h', 'gd32f50x_libopt.h',

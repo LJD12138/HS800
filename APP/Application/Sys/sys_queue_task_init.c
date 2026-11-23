@@ -16,9 +16,13 @@
 #include "Sys/sys_queue_task.h"
 #include "Sys/sys_task.h"
 
+#include "gpio_init.h"
+#include "app_info.h"
+#include "filter_test.h"
+
 #if (boardPRINT_EN)
 #include "Print/print_task.h"
-#endif  //boardPRINT_EN
+#endif  /* boardPRINT_EN */
 
 #if (boardKEY_EN)
 #include "Key/Key_task.h"
@@ -32,12 +36,10 @@
 #include "Adc/adc_task.h"
 #endif  //boardADC_EN
 
-#include "gpio_init.h"
-#include "app_info.h"
-#include "filter_test.h"
 
 //****************************************************Macros********************************************************************//
 #define			sysTASK_INIT_CYCLE_TIME					100		//任务时间
+
 
 /***********************************************************************************************************************
  * 函数功能    : 系统上电初始化队列任务执行函数
@@ -62,7 +64,7 @@ void v_sys_queue_task_init(Task_T *p_task)
 	}
 	else
 		s_uc_tri_init_cnt = 0;
-	#endif  //boardKEY_EN
+	#endif  /* boardKEY_EN */
 
 	switch (p_task->ucStep)
 	{
@@ -89,10 +91,11 @@ void v_sys_queue_task_init(Task_T *p_task)
 
 				#if (boardUSE_OS)
 				vTaskDelay(100);
-				#endif  //boardUSE_OS
+				#endif  /* boardUSE_OS */
 				break;
 			}
-		}break;
+		}
+		break;
 
 		case 1:
 		{
@@ -116,23 +119,23 @@ void v_sys_queue_task_init(Task_T *p_task)
 
 				#if (boardUSE_OS)
 				vTaskDelay(100);
-				#endif  //boardUSE_OS
+				#endif  /* boardUSE_OS */
 				break;
 			}
-		}break;
+		}
+		break;
 
 		/* 自检 */
 		case 2:
 		{
 			#if (filterSELF_TEST_ENABLE)
 			/* 滤波算法精度与抗扰性自动化自检 */
-			if(bFilter_RunSelfTest(NULL) == false)
+			if (bFilter_RunSelfTest(NULL) == false)
 				break;
 			#endif  /* filterSELF_TEST_ENABLE */
 
 			cQueue_GotoStep(p_task, STEP_NEXT);
 		}
-		break;
 
 		/* 等待重要任务初始化完成 */
 		case 3:
@@ -271,8 +274,10 @@ void v_sys_queue_task_init(Task_T *p_task)
 			if (tSysInfo.eDevState != DS_BOOTING)
 				bSys_SetDevState(DS_SHUT_DOWN, false);
 
+			// cSys_Switch(SO_KEY, ST_ON, false);
 			cQueue_GotoStep(p_task, STEP_END);
-		}break;
+		}
+		break;
 
 		default:
 		{
@@ -297,5 +302,5 @@ void v_sys_queue_task_init(Task_T *p_task)
 
 	#if (boardUSE_OS)
 	ulTaskNotifyTake(pdTRUE, sysTASK_INIT_CYCLE_TIME);  /* 周期节拍；新任务投递立即唤醒抢占 */
-	#endif  //boardUSE_OS
+	#endif  /* boardUSE_OS */
 }

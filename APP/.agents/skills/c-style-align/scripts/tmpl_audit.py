@@ -12,7 +12,7 @@ SKIP_DIRS = {'.git', '.cmsis', '.pack', 'RTE', 'build', 'DebugConfig', 'Objects'
              'eez_ui', 'eez_project', 'lvgl', 'LVGL', 'FreeRTOS', 'EasyFlash', 'easyflash',
              'EasyLogger', 'easylogger', 'CmBacktrace', 'cm_backtrace', 'lwrb',
              'LightweightRingBuffer', 'SeggerRtt',
-             'MultiFuncKey', 'Firmware', 'RTT', 'SEGGER'}
+             'MultiFuncKey', 'Firmware', 'RTT', 'SEGGER', 'tools'}
 SKIP_LOWER = {x.lower() for x in SKIP_DIRS}   # 目录名大小写不敏感
 HDR_FIELDS = ['Project', 'Module', 'File', 'Date', 'Author', 'Desc', 'todo']
 FUNC_RE = re.compile(r'^(static\s+)?[A-Za-z_][\w \t\*]*?[\w\*]\s*\([^;{]*$')

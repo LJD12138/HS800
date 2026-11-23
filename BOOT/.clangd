@@ -50,6 +50,8 @@ CompileFlags:
     - -D__OPT_SMALL_ASSERT=1
     - -D__OPTIMISE_LEVEL=2
     - -ferror-limit=0
+    - -isystemC:\Users\29148\AppData\Local\Keil_v5\ARM\ARMCLANG/include
+    - -isystemC:\Users\29148\AppData\Local\Keil_v5\ARM\ARMCLANG/include/libcxx
   Remove:
     - --cpu
     - --li
@@ -67,5 +69,6 @@ CompileFlags:
     - --execute_only
     - -Otime
   CompilationDatabase: ./build/BOOT
+  Compiler: C:\Users\29148\AppData\Local\Keil_v5\ARM\ARMCLANG\bin\armclang.exe
 Diagnostics:
   Suppress: "*"

@@ -223,17 +223,10 @@ void vSys_Task(void *pvParameters)
  ************************************************************************************************************************/
 static void v_sys_check_prote(void)
 {
-	vu16 us_delay_time = 0;
-
 	if ((tpSysTask->ucID == STI_INIT) ||
 	    (tpSysTask->ucID == STI_CLOSING) ||
 	    (tpSysTask->ucID == STI_SHUT_DOWN))
 		return;
-	else if ((tpSysTask->ucID == STI_BOOTING) ||
-	         (tpSysTask->ucID == STI_WORK))
-		us_delay_time = 10;
-	else
-		us_delay_time = sysTASK_CYCLE_TIME;
 
 	//------------------------------------------------温度获取-----------------------------------------------
 	s16 s_min_temp = 255;
@@ -339,31 +332,35 @@ static void v_sys_check_prote(void)
 
 	//-----------------------------------------放电过功率保护(BMS许可功率限制)----------------------------------------
 	#if (boardBMS_EN)
-	static u16 s_us_dischg_ol_set_cnt = 0;
-	static u16 s_us_dischg_ol_clr_cnt = 0;
+	static uint32_t s_ul_dischg_ol_set_tick = 0;    //放电过功率置位计时起点
+	static uint32_t s_ul_dischg_ol_clr_tick = 0;    //放电过功率清除计时起点
 	u16 us_perm_dischg = tBmsRx.usPermMaxDisChgPwr;
 	vs16 s_bat_out_pwr = tSysInfo.usOutPwr - tSysInfo.usInPwr;
 
 	if ((us_perm_dischg > 0) && (s_bat_out_pwr > us_perm_dischg))
 	{
-		s_us_dischg_ol_clr_cnt = 0;
+		s_ul_dischg_ol_clr_tick = 0;
 		if (tSysInfo.uErrCode.tCode.bDisChgOL == 0)
 		{
-			if (++s_us_dischg_ol_set_cnt >= (500 / us_delay_time)) //0.5s防抖
+			if (s_ul_dischg_ol_set_tick == 0)
+				s_ul_dischg_ol_set_tick = xTaskGetTickCount();
+			else if ((xTaskGetTickCount() - s_ul_dischg_ol_set_tick) >= pdMS_TO_TICKS(500)) //0.5s防抖
 			{
-				s_us_dischg_ol_set_cnt = 0;
+				s_ul_dischg_ol_set_tick = 0;
 				bSys_SetErrCode(SEC_DISCHG_OL, true);
 			}
 		}
 	}
 	else
 	{
-		s_us_dischg_ol_set_cnt = 0;
+		s_ul_dischg_ol_set_tick = 0;
 		if (tSysInfo.uErrCode.tCode.bDisChgOL == 1)
 		{
-			if (++s_us_dischg_ol_clr_cnt >= (2000 / us_delay_time)) //2s
+			if (s_ul_dischg_ol_clr_tick == 0)
+				s_ul_dischg_ol_clr_tick = xTaskGetTickCount();
+			else if ((xTaskGetTickCount() - s_ul_dischg_ol_clr_tick) >= pdMS_TO_TICKS(2000)) //2s
 			{
-				s_us_dischg_ol_clr_cnt = 0;
+				s_ul_dischg_ol_clr_tick = 0;
 				bSys_SetErrCode(SEC_DISCHG_OL, false);
 			}
 		}
@@ -372,22 +369,23 @@ static void v_sys_check_prote(void)
 
 	//------------------------------------------------系统输入过压-----------------------------------------------
 	#if (boardADC_EN)
-	static u16 s_us_over_volt_cnt = 0;
+	static uint32_t s_ul_over_volt_tick = 0;
 	if (sSys_CheckInVolt() == 0)
 	{
 		if (tSysInfo.uErrCode.tCode.bOV == 0)
 		{
-			s_us_over_volt_cnt++;
-			if (s_us_over_volt_cnt > (1000 / us_delay_time))
+			if (s_ul_over_volt_tick == 0)
+				s_ul_over_volt_tick = xTaskGetTickCount();
+			else if ((xTaskGetTickCount() - s_ul_over_volt_tick) >= pdMS_TO_TICKS(1000))
 			{
-				s_us_over_volt_cnt = 0;
+				s_ul_over_volt_tick = 0;
 				bSys_SetErrCode(SEC_OV, true);
 			}
 		}
 	}
 	else
 	{
-		s_us_over_volt_cnt = 0;
+		s_ul_over_volt_tick = 0;
 		if (tSysInfo.uErrCode.tCode.bOV == 1)
 		{
 			tSysInfo.uErrCode.tCode.bOV = 0;
@@ -396,7 +394,7 @@ static void v_sys_check_prote(void)
 	}
 
 	//-----------------------------------------------系统输入欠压--------------------------------------------------
-	static u16 s_us_low_volt_cnt = 0;
+	static uint32_t s_ul_low_volt_tick = 0;
 	if (sSys_CheckInVolt() < 0
 		#if (boardBMS_EN)
 	     || tBms.uErrCode.tCode.uBmsCode.tCode.bCellUV
@@ -405,17 +403,18 @@ static void v_sys_check_prote(void)
 	{
 		if (tSysInfo.uErrCode.tCode.bUV == 0)
 		{
-			s_us_low_volt_cnt++;
-			if (s_us_low_volt_cnt > (1000 / us_delay_time))
+			if (s_ul_low_volt_tick == 0)
+				s_ul_low_volt_tick = xTaskGetTickCount();
+			else if ((xTaskGetTickCount() - s_ul_low_volt_tick) >= pdMS_TO_TICKS(1000))
 			{
-				s_us_low_volt_cnt = 0;
+				s_ul_low_volt_tick = 0;
 				bSys_SetErrCode(SEC_UV, true);
 			}
 		}
 	}
 	else
 	{
-		s_us_low_volt_cnt = 0;
+		s_ul_low_volt_tick = 0;
 		if (tSysInfo.uErrCode.tCode.bUV == 1)
 		{
 			tSysInfo.uErrCode.tCode.bUV = 0;
@@ -504,28 +503,34 @@ static void v_sys_check_prote(void)
 
 	//--------------------------------------低SOC自动关机--------------------------------------------------------
 	#if (boardBMS_EN)
-	static u16 s_us_soc_low_cnt = 0;
+	static uint32_t s_ul_soc_low_tick = 0;
 	if ((ucBms_GetSoc() == 0) &&          //SOC = 0%
 	    (tBms.eDevState != DS_LOST) &&    //BMS非离线
 	    (bSys_ExistInVolt() == false) &&  //非充电状态
 	    (G_TestMode == false))            //非测试模式
 	{
 		if (tSysInfo.uErrCode.tCode.b0SOC == false)
-			s_us_soc_low_cnt++;
+		{
+			if (s_ul_soc_low_tick == 0)
+				s_ul_soc_low_tick = xTaskGetTickCount();
+			else if ((xTaskGetTickCount() - s_ul_soc_low_tick) >= pdMS_TO_TICKS(2000))
+			{
+				s_ul_soc_low_tick = 0;
+				bSys_SetErrCode(SEC_0_SOC, true);
+			}
+		}
 		else if (tpSysTask->ucID == STI_WORK)
 		{
 			cQueue_AddQueueTask(tpSysTask, STI_ERR, SEC_0_SOC, false);
-			s_us_soc_low_cnt = 0;
-		}
-
-		if (s_us_soc_low_cnt >= (2000 / us_delay_time))
-		{
-			s_us_soc_low_cnt = 0;
-			bSys_SetErrCode(SEC_0_SOC, true);
+			s_ul_soc_low_tick = 0;
 		}
 	}
-	else if (tSysInfo.uErrCode.tCode.b0SOC == 1)
-		bSys_SetErrCode(SEC_0_SOC, false);
+	else
+	{
+		s_ul_soc_low_tick = 0;
+		if (tSysInfo.uErrCode.tCode.b0SOC == 1)
+			bSys_SetErrCode(SEC_0_SOC, false);
+	}
 	#endif  //boardBMS_EN
 }
 
@@ -616,44 +621,52 @@ void vSys_TickTimer(void)
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_INIT !\r\n");
-			}break;
+			}
+			break;
 
 			case DS_CLOSING:
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_CLOSING !\r\n");
-			}break;
+			}
+			break;
 
 			case DS_SHUT_DOWN:
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_SHUT_DOWN !\r\n");
-			}break;
+			}
+			break;
 
 			case DS_ERR:
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_ERR !\r\n");
-			}break;
+			}
+			break;
 
 			case DS_BOOTING:
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_BOOTING !\r\n");
-			}break;
+			}
+			break;
 
 			case DS_WORK:
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_WORK !\r\n");
-			}break;
+			}
+			break;
 
 			#if (boardENG_MODE_EN)
 			case DS_ENG_MODE:
 			{
 				if (uPrint.tFlag.bSysTask)
 					sMyPrint("bSysTask = DS_ENG_MODE !\r\n");
-			}break;
+				}
+			}
+			break;
 			#endif  //boardENG_MODE_EN
 
 			default:
@@ -804,7 +817,8 @@ bool bSys_SetDevState(DevState_E state, bool bz)
  ************************************************************************************************************************/
 bool bSys_IsWorkState(void)
 {
-	if ((tSysInfo.eDevState == DS_BOOTING) || (tSysInfo.eDevState == DS_WORK))
+	if ((tSysInfo.eDevState == DS_BOOTING) 
+		|| (tSysInfo.eDevState == DS_WORK))
 		return true;
 	else
 		return false;
@@ -819,7 +833,8 @@ bool bSys_IsWorkState(void)
  ************************************************************************************************************************/
 bool bSys_IsShutDownState(void)
 {
-	if ((tSysInfo.eDevState == DS_CLOSING) || (tSysInfo.eDevState == DS_SHUT_DOWN))
+	if ((tSysInfo.eDevState == DS_CLOSING) 
+		|| (tSysInfo.eDevState == DS_SHUT_DOWN))
 		return true;
 	else
 		return false;

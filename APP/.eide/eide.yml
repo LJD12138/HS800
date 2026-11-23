@@ -100,62 +100,26 @@ virtualFolder:
         - path: Middlewares/Protocol/Modbus/modbus_proto.h
         - path: Middlewares/Protocol/BaiKu/baiku_proto.c
         - path: Middlewares/Protocol/BaiKu/baiku_proto.h
-        - path: Middlewares/Protocol/Megmeet/megmeet_proto.c
-        - path: Middlewares/Protocol/Megmeet/megmeet_proto.h
+        - path: Middlewares/Protocol/Modbus1/modbus_proto1.c
+        - path: Middlewares/Protocol/Modbus1/modbus_proto1.h
         - path: Middlewares/Protocol/proto_update.c
         - path: Middlewares/Protocol/proto_update.h
+        - path: Middlewares/Protocol/Megmeet/megmeet_proto.c
+        - path: Middlewares/Protocol/Megmeet/megmeet_proto.h
       folders: []
     - name: MW-Lwrb
       files:
         - path: Middlewares/LightweightRingBuffer/src/lwrb.c
         - path: Middlewares/LightweightRingBuffer/src/lwrb_ex.c
       folders: []
-    - name: MW-MultiFuncKey
-      files:
-        - path: Middlewares/MultiFuncKey/mf_key.c
-        - path: Middlewares/MultiFuncKey/mf_key.h
-      folders: []
-    - name: MW-TaskQueue
-      files:
-        - path: Middlewares/TaskQueue/queue_task.c
-        - path: Middlewares/TaskQueue/queue_task.h
-        - path: Middlewares/TaskQueue/queue_telemetry.c
-        - path: Middlewares/TaskQueue/queue_telemetry.h
-      folders: []
-    - name: MW-CherryUSB
-      files:
-        - path: Middlewares/CherryUSB/core/usbd_core.c
-        - path: Middlewares/CherryUSB/class/cdc/usbd_cdc_acm.c
-        - path: Middlewares/CherryUSB/port/dwc2/usb_dc_dwc2.c
-        - path: Middlewares/CherryUSB/port/dwc2/usb_glue_gd.c
-      folders: []
-    - name: MW-UniDisplay
-      files:
-        - path: Middlewares/UniDisplay/uni_disp_core.c
-        - path: Middlewares/UniDisplay/uni_disp_core.h
-        - path: Middlewares/UniDisplay/uni_disp_event.c
-        - path: Middlewares/UniDisplay/uni_disp_event.h
-        - path: Middlewares/UniDisplay/uni_disp_nav.c
-        - path: Middlewares/UniDisplay/uni_disp_nav.h
-        - path: Middlewares/UniDisplay/uni_disp_page.h
-        - path: Middlewares/UniDisplay/uni_disp_power.c
-        - path: Middlewares/UniDisplay/uni_disp_power.h
-        - path: Middlewares/UniDisplay/uni_disp_scene.c
-        - path: Middlewares/UniDisplay/uni_disp_scene.h
-      folders: []
-    - name: MW-Filter
-      files:
-        - path: Middlewares/Filter/src/filter.c
-        - path: Middlewares/Filter/inc/filter.h
-        - path: Middlewares/Filter/src/filter_test.c
-        - path: Middlewares/Filter/inc/filter_test.h
-      folders: []
     - name: ComFunc
       files:
         - path: ComFunc/check.c
+        - path: ComFunc/filtration.c
         - path: ComFunc/function.c
         - path: ComFunc/i2c.c
         - path: ComFunc/ntc.c
+        - path: ComFunc/queue_task.c
       folders: []
     - name: Application
       files:
@@ -168,15 +132,6 @@ virtualFolder:
         - path: Application/fwdgt.c
         - path: Application/timer_task.c
         - path: Application/gd32f50x_it.c
-        - path: Application/app_info.h
-        - path: Application/fwdgt.h
-        - path: Application/gd32f50x_it.h
-        - path: Application/gd32f50x_libopt.h
-        - path: Application/get_heapstack_task.c
-        - path: Application/get_heapstack_task.h
-        - path: Application/gpio_init.h
-        - path: Application/main.h
-        - path: Application/timer_task.h
       folders: []
     - name: App-Sys
       files:
@@ -219,11 +174,8 @@ virtualFolder:
         - path: Hardware/Print/print_iface.h
         - path: Hardware/Print/print_queue_task_update.c
         - path: Hardware/Print/print_queue_task_update.h
-        - path: Hardware/Print/Print_update_bms.c
         - path: Hardware/Print/print_update_dcac.c
-        - path: Hardware/Print/print_queue_task_reply_run_log.c
-        - path: Hardware/Print/print_usb_iface.c
-        - path: Hardware/Print/print_usb_iface.h
+        - path: Hardware/Print/Print_update_bms.c
       folders: []
     - name: HW-Adc
       files:
@@ -240,8 +192,6 @@ virtualFolder:
         - path: Hardware/Key/key_func.h
         - path: Hardware/Key/key_func_eng.c
         - path: Hardware/Key/key_func_eng.h
-        - path: Hardware/Key/key_iface.c
-        - path: Hardware/Key/key_iface.h
       folders: []
     - name: HW-Buz
       files:
@@ -254,14 +204,6 @@ virtualFolder:
       files:
         - path: Hardware/Dc/dc_task.c
         - path: Hardware/Dc/dc_task.h
-        - path: Hardware/Dc/dc_queue_task.c
-        - path: Hardware/Dc/dc_queue_task.h
-        - path: Hardware/Dc/dc_queue_task_init.c
-        - path: Hardware/Dc/dc_queue_task_booting.c
-        - path: Hardware/Dc/dc_queue_task_work.c
-        - path: Hardware/Dc/dc_queue_task_closing.c
-        - path: Hardware/Dc/dc_queue_task_err.c
-        - path: Hardware/Dc/dc_queue_task_shut_down.c
         - path: Hardware/Dc/dc_iface.c
         - path: Hardware/Dc/dc_iface.h
       folders: []
@@ -290,28 +232,27 @@ virtualFolder:
       folders: []
     - name: HW-MD_Display
       files:
-        - path: Hardware/MD_Display/lv_port_disp.c
-        - path: Hardware/MD_Display/lv_port_disp.h
-        - path: Hardware/MD_Display/uni_disp_port.c
-        - path: Hardware/MD_Display/uni_disp_port.h
-        - path: Hardware/MD_Display/md_display_api.c
-        - path: Hardware/MD_Display/md_display_api.h
-        - path: Hardware/MD_Display/md_display_data.c
-        - path: Hardware/MD_Display/md_display_data.h
-        - path: Hardware/MD_Display/md_display_err.c
-        - path: Hardware/MD_Display/md_display_iface.c
-        - path: Hardware/MD_Display/md_display_iface.h
-        - path: Hardware/MD_Display/md_display_page_boot.c
-        - path: Hardware/MD_Display/md_display_page_closing.c
-        - path: Hardware/MD_Display/md_display_page_eng.c
-        - path: Hardware/MD_Display/md_display_page_eng_pv.c
-        - path: Hardware/MD_Display/md_display_page_fault.c
-        - path: Hardware/MD_Display/md_display_page_init.c
-        - path: Hardware/MD_Display/md_display_page_shut_down.c
-        - path: Hardware/MD_Display/md_display_page_update.c
-        - path: Hardware/MD_Display/md_display_page_work.c
         - path: Hardware/MD_Display/md_display_task.c
         - path: Hardware/MD_Display/md_display_task.h
+        - path: Hardware/MD_Display/md_display_api.c
+        - path: Hardware/MD_Display/md_display_api.h
+        - path: Hardware/MD_Display/md_display_iface.c
+        - path: Hardware/MD_Display/md_display_iface.h
+        - path: Hardware/MD_Display/md_display_eng_mode.c
+        - path: Hardware/MD_Display/md_display_eng_mode.h
+        - path: Hardware/MD_Display/md_display_err.c
+        - path: Hardware/MD_Display/lv_port_disp.c
+        - path: Hardware/MD_Display/lv_port_disp.h
+        - path: Hardware/MD_Display/md_display_queue_task.c
+        - path: Hardware/MD_Display/md_display_queue_task.h
+        - path: Hardware/MD_Display/md_display_queue_task_booting.c
+        - path: Hardware/MD_Display/md_display_queue_task_closing.c
+        - path: Hardware/MD_Display/md_display_queue_task_eng.c
+        - path: Hardware/MD_Display/md_display_queue_task_err.c
+        - path: Hardware/MD_Display/md_display_queue_task_init.c
+        - path: Hardware/MD_Display/md_display_queue_task_shut_down.c
+        - path: Hardware/MD_Display/md_display_queue_task_work.c
+        - path: Hardware/MD_Display/md_display_queue_task_updata.c
       folders:
         - name: eez_ui
           files:
@@ -396,7 +337,6 @@ virtualFolder:
         - path: Hardware/MD_Bms/md_bms_iface.c
         - path: Hardware/MD_Bms/md_bms_iface.h
         - path: Hardware/MD_Bms/md_bms_queue_task_update.c
-        - path: Hardware/MD_Bms/md_bms_queue_task_run_log.c
       folders: []
     - name: HW-MD_Mppt
       files:
@@ -609,7 +549,6 @@ targets:
         - ComFunc
         - Application
         - Hardware
-        - Hardware/MD_Display
         - Hardware/BSP
         - Middlewares/CmBacktrace
         - Middlewares/CmBacktrace/Languages/zh-CN
@@ -624,17 +563,6 @@ targets:
         - Middlewares/LVGL/src
         - Hardware/MD_Display/eez_ui
         - Hardware/MD_Display/user_ui
-        - Middlewares
-        - Middlewares/MultiFuncKey
-        - Middlewares/TaskQueue
-        - Middlewares/UniDisplay
-        - Middlewares/Filter/inc
-        - Middlewares/CherryUSB
-        - Middlewares/CherryUSB/common
-        - Middlewares/CherryUSB/core
-        - Middlewares/CherryUSB/class/cdc
-        - Middlewares/CherryUSB/port/dwc2
-        - Hardware/Usb
       libList: []
     excludeList: []
     settings:
@@ -772,7 +700,7 @@ targets:
             language-c: c99
             language-cpp: c++11
             one-elf-section-per-function: true
-            optimization: level-2
+            optimization: level-1
             short-enums#wchar: true
             warnings: ac5-like-warnings
           global:
@@ -811,5 +739,5 @@ targets:
           vendor: GigaDevice
         otherCmds: ""
         proType: 1
-        speed: 5000
+        speed: 1000
     uploader: JLink

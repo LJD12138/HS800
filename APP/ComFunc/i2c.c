@@ -153,13 +153,16 @@ __STATIC_INLINE void v_i2c_set_sda_gpio_input(const I2cObj_T *p_i2c_obj)
  ************************************************************************************************************************/
 __STATIC_INLINE bool b_i2c_read_sda_gpio(const I2cObj_T *p_i2c_obj)
 {
-	#if (boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
-	return (((uint32_t)RESET != (GPIO_ISTAT(p_i2c_obj->ulGPIO_PORT_SDA) & (p_i2c_obj->ulGPIO_PIN_SDA))) ? true : false);
+	#if(boardIC_TYPE == boardIC_GD32F30X || boardIC_TYPE == boardIC_GD32F50X)
+    if ((uint32_t)RESET != (GPIO_ISTAT(p_i2c_obj->ulGPIO_PORT_SDA) & (p_i2c_obj->ulGPIO_PIN_SDA)))
 	#elif (boardIC_TYPE == boardIC_STM32H7XX)
-	return ((HAL_GPIO_ReadPin(p_i2c_obj->ulGPIO_PORT_SDA, p_i2c_obj->ulGPIO_PIN_SDA) != GPIO_PIN_RESET) ? true : false);
-	#else
-	return false;
+    if (HAL_GPIO_ReadPin(p_i2c_obj->ulGPIO_PORT_SDA, p_i2c_obj->ulGPIO_PIN_SDA) != GPIO_PIN_RESET)
+	#elif(boardIC_TYPE == boardIC_STM32G4XX)
+	#Error(未定义)
 	#endif  /* boardIC_TYPE */
+		return true;
+	else
+		return false;
 }
 
 /***********************************************************************************************************************

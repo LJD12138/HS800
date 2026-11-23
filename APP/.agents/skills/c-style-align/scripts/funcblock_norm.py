@@ -14,7 +14,7 @@ RULES = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__))
                                       '..', '..', '..', 'rules', 'c-code-templates.md'))
 SKIP_DIRS = {'.git', '.cmsis', '.pack', 'RTE', 'build', 'DebugConfig', 'Objects', 'Listings',
              'eez_ui', 'eez_project', 'lvgl', 'FreeRTOS', 'EasyFlash', 'EasyLogger',
-             'CmBacktrace', 'lwrb', 'LightweightRingBuffer', 'SeggerRtt', 'MultiFuncKey', 'Firmware'}
+             'CmBacktrace', 'lwrb', 'LightweightRingBuffer', 'SeggerRtt', 'MultiFuncKey', 'Firmware', 'tools'}
 SKIP_LOWER = {x.lower() for x in SKIP_DIRS}   # 目录名大小写不敏感
 EXEMPT = {'gd32f50x_it.c', 'gd32f50x_it.h', 'gd32f50x_libopt.h',
           'FreeRTOSConfig.h', 'board_config.h', 'board_config.c'}
@@ -208,9 +208,11 @@ def process(path, open_ban, close_ban):
             ch.append('L%d %s -> 横幅归一(%d/%d)' % (i + 1, lines[i][:40].strip(),
                                                  len(open_ban), len(close_ban)))
             continue
-        start = next((j for j, s in enumerate(reg) if OPEN_RE.match(s)), None)
         end = next((j for j in range(len(reg) - 1, -1, -1) if CLOSE_RE.match(reg[j])), None)
-        if start is None or end is None or end < start:
+        if end is None:
+            continue
+        start = next((j for j in range(end - 1, -1, -1) if OPEN_RE.match(reg[j])), None)
+        if start is None:
             continue
         items = parse_old(reg[start:end + 1])
         if not items:

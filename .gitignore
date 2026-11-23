@@ -17,3 +17,10 @@ __pycache__/
 *.pyo
 
 
+
+# 通用规则与技能：独立仓库 G:\2-User_Projects\9-Docs，此处为目录联接
+.agents/rules/
+.agents/skills/
+
+# 通用协议文档：独立仓库 G:\2-User_Projects\9-Docs\百酷通讯协议文档，此处为目录联接
+APP/Docs/百酷通讯协议文档/

@@ -131,73 +131,73 @@ static void v_print_init_fail_cb(s16 s_err_code);
 
 /* 表驱动式任务注册表 (统一配置任务函数、基准错误码与关键级别) */
 static const TaskInitEntry_T c_task_init_table[] = {
-	/* 任务名称       初始化函数        基准错误码  是否关键任务  失败回调 */
-	{"SysTask",      cSys_TaskInit,          0,         true,        NULL},
+	/* 任务名称       	初始化函数        		基准错误码	是否关键任务	失败回调 */
+	{"SysTask",      	cSys_TaskInit,          	0,         	true,		NULL},
 	
 	#if (boardPRINT_IFACE)
-	{"PrintTask",    cPrint_TaskInit,        -10,       false,       v_print_init_fail_cb},
+	{"PrintTask",    	cPrint_TaskInit,        	-10,       	false,		v_print_init_fail_cb},
 	#endif  /* boardPRINT_IFACE */
 	
 	#if (boardADC_EN)
-	{"AdcTask",      cAdc_TaskInit,          -20,       true,       NULL},
+	{"AdcTask",      	cAdc_TaskInit,          	-20,       	true,		NULL},
 	#endif  /* boardADC_EN */
 	
 	#if (boardDISPLAY_EN)
-	{"DispTask",     cDisp_TaskInit,         -30,       true,        NULL},
+	{"DispTask",     	cDisp_TaskInit,         	-30,       	true,		NULL},
 	#endif  /* boardDISPLAY_EN */
 	
 	#if (boardBUZ_EN)
-	{"BuzTask",      cBuz_TaskInit,          -40,       false,       NULL},
+	{"BuzTask",      	cBuz_TaskInit,          	-40,		false,		NULL},
 	#endif  /* boardBUZ_EN */
 	
 	#if (boardKEY_EN)
-	{"KeyTask",      cKey_TaskInit,          -50,       true,        NULL},
+	{"KeyTask",      	cKey_TaskInit,          	-50,		true,		NULL},
 	#endif  /* boardKEY_EN */
 	
 	#if (boardLED_EN)
-	{"LedTask",      cLed_TaskInit,          -60,       false,       NULL},
+	{"LedTask",      	cLed_TaskInit,          	-60,       false,       NULL},
 	#endif  /* boardLED_EN */
 	
 	#if (boardLIGHT_EN)
-	{"LightTask",    cLight_TaskInit,        -70,       false,       NULL},
+	{"LightTask",    	cLight_TaskInit,          	-70,       false,       NULL},
 	#endif  /* boardLIGHT_EN */
 	
 	#if (boardHEAT_MANAGE_EN)
-	{"HMTask",       cHM_TaskInit,           -80,       false,       NULL},
+	{"HMTask",       	cHM_TaskInit,          		-80,       false,       NULL},
 	#endif  /* boardHEAT_MANAGE_EN */
 	
 	#if (boardUSB_EN)
-	{"UsbTask",      cUsb_TaskInit,          -90,       false,       NULL},
+	{"UsbTask",      	cUsb_TaskInit,          	-90,       false,       NULL},
 	#endif  /* boardUSB_EN */
 	
 	#if (boardDC_EN)
-	{"DcTask",       cDc_TaskInit,           -100,      false,       NULL},
+	{"DcTask",      	cDc_TaskInit,           	-100,      false,       NULL},
 	#endif  /* boardDC_EN */
 	
 	#if (boardDCAC_EN)
-	{"DcacTask",     cDcac_TaskInit,         -110,      false,       NULL},
-	{"DcacRecTask",  cDcac_RecTaskInit,      -120,      false,       NULL},
+	{"DcacTask",    	cDcac_TaskInit,          	-110,      false,       NULL},
+	{"DcacRecTask", 	cDcac_RecTaskInit,       	-120,      false,       NULL},
 	#endif  /* boardDCAC_EN */
 	
 	#if (boardBMS_EN)
-	{"BmsTask",      cBms_TaskInit,          -130,      true,       NULL},
-	{"BmsRecTask",   cBms_RecTaskInit,       -140,      true,       NULL},
+	{"BmsTask",      	cBms_TaskInit,          	-130,      true,        NULL},
+	{"BmsRecTask",  	cBms_RecTaskInit,       	-140,      true,        NULL},
 	#endif  /* boardBMS_EN */
 	
 	#if (boardMPPT_EN)
-	{"MpptTask",     cMppt_TaskInit,         -150,      false,       NULL},
-	{"MpptRecTask",  cMppt_RecTaskInit,      -160,      false,       NULL},
+	{"MpptTask",     	cMppt_TaskInit,          	-150,      false,       NULL},
+	{"MpptRecTask",  	cMppt_RecTaskInit,       	-160,      false,       NULL},
 	#endif  /* boardMPPT_EN */
 	
 	#if (boardWIFI_IFACE)
-	{"WifiTask",     cWifi_TaskInit,         -170,      false,       NULL},
-	{"WifiRecTask",  cWiFi_RecTaskInit,      -180,      false,       NULL},
+	{"WifiTask",     		cWifi_TaskInit,          	-170,      false,       NULL},
+	{"WifiRecTask",     	cWiFi_RecTaskInit,       	-180,      false,       NULL},
 	#endif  /* boardWIFI_IFACE */
 	
-	{"TimerTask",    cTimer_TaskInit,        -190,      false,       NULL},
+	{"TimerTask",     	cTimer_TaskInit,          	-190,      false,       NULL},
 	
 	#if (boardUSE_OS && boardHEALTH_MONITOR_EN)
-	{"HealthTask",   cHealth_TaskInit,       -200,      false,       NULL},
+	{"HealthTask",  	cHealth_TaskInit,      		-200,      false,       NULL},
 	#endif  /* boardUSE_OS && boardHEALTH_MONITOR_EN */
 };
 
@@ -212,29 +212,29 @@ static const TaskInitEntry_T c_task_init_table[] = {
 void SysParamInit(void)
 {
 	#if (boardPRINT_IFACE)
-	uPrint.tFlag.bImportant   = 1;
-	uPrint.tFlag.bAppInfo     = 1;
-	uPrint.tFlag.bSysTask     = 1;
-	uPrint.tFlag.bKeyTask     = 1;
-	uPrint.tFlag.bBmsRecTask  = 0;
-	uPrint.tFlag.bBmsTask     = 0;
-	uPrint.tFlag.bDcacTask    = 0;
-	uPrint.tFlag.bDcacRecTask = 0;
-	uPrint.tFlag.bMpptTask    = 0;
-	uPrint.tFlag.bMpptRecTask = 0;
-	uPrint.tFlag.bUsbTask     = 0;
-	uPrint.tFlag.bDcTask      = 0;
-	uPrint.tFlag.bDispTask    = 0;
+	uPrint.tFlag.bImportant   	= 1;
+	uPrint.tFlag.bAppInfo     	= 1;
+	uPrint.tFlag.bSysTask    	= 0;
+	uPrint.tFlag.bKeyTask     	= 1;
+	uPrint.tFlag.bBmsRecTask  	= 0;
+	uPrint.tFlag.bBmsTask     	= 0;
+	uPrint.tFlag.bDcacTask    	= 0;
+	uPrint.tFlag.bDcacRecTask 	= 0;
+	uPrint.tFlag.bMpptTask    	= 0;
+	uPrint.tFlag.bMpptRecTask 	= 0;
+	uPrint.tFlag.bUsbTask     	= 0;
+	uPrint.tFlag.bDcTask      	= 0;
+	uPrint.tFlag.bDispTask    	= 0;
 
 	#if (boardHEALTH_MONITOR_EN)
-	uPrint.tFlag.bHealthTask = 1;	/* 健康巡检遥测(CPU/队列/栈/堆) */
-	uPrint.tFlag.bFreeRTOS   = 1;	/* FreeRTOS剩余堆/任务表打印 */
+	uPrint.tFlag.bHealthTask	= 1;	/* 健康巡检遥测(CPU/队列/栈/堆) */
+	uPrint.tFlag.bFreeRTOS		= 1;	/* FreeRTOS剩余堆/任务表打印 */
 	#endif  /* boardHEALTH_MONITOR_EN */
 	
 	/* 非调试模式下，关闭一般调试输出 */
 	#if (!boardDEBUG)
 	uPrint.ulFlag = 0;
-	uPrint.tFlag.bImportant  = 1;
+	uPrint.tFlag.bImportant   	= 1;
 	#endif  /* !boardDEBUG */
 
 	#endif  /* boardPRINT_IFACE */
@@ -424,7 +424,6 @@ void vApplicationTickHook(void)
 {
 }
 #endif  /* configUSE_TICK_HOOK > 0 */
-
 
 #if (boardPRINT_IFACE)
 /***********************************************************************************************************************

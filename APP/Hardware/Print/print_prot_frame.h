@@ -45,7 +45,7 @@ s8 c_relay12_dc_param(void);
 s8 c_relay14_sysinfo_param(void);
 s8 c_relay40_set_chg_pwr(BaikuProtoRx_t* proto);
 s8 c_relay44_cali(BaikuProtoRx_t* proto);
-s8 c_relay45_cali(u16 temp);
+s8 c_relay45_cali(u8* data, u8 len);
 s8 c_relay80_get_mem_param(BaikuProtoRx_t* proto);
 s8 c_relay82_write_mem_info(BaikuProtoRx_t* proto);
 s8 c_relay84_set_print_state(BaikuProtoRx_t* proto);

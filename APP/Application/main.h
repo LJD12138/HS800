@@ -27,7 +27,12 @@ extern "C" {
 #include <stdlib.h>
 #include <assert.h>
 #include "board_config.h"
+
+#if (boardIC_TYPE == boardIC_GD32F50X)
 #include "gd32f50x.h"
+#elif(boardIC_TYPE == boardIC_GD32F30X)
+#include "gd32f30x.h"
+#endif  //boardIC_TYPE
 
 //****************************************************Macros********************************************************************//
 #define			mainINIT_BOOT_PARAM_FLAG				0x00000000U				/* 初始化BOOT参数 */

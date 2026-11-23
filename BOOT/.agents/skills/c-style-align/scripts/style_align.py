@@ -20,7 +20,7 @@ import os
 import re
 import sys
 
-SKIP_DIRS = {'objects', 'listings', 'build', 'rte', 'debugconfig', '.git', '.eide', '.cmsis', '.pack', '.agents', '.trae', '.vscode'}
+SKIP_DIRS = {'objects', 'listings', 'build', 'rte', 'debugconfig', '.git', '.eide', '.cmsis', '.pack', '.agents', '.trae', '.vscode', 'tools'}
 TAB = 4
 TYPE_QUAL = {'const', 'volatile', 'static', 'unsigned', 'signed', 'long', 'short',
              'struct', 'union', 'enum', 'register', 'auto', 'extern', '__IO', '__I', '__O'}
@@ -151,13 +151,13 @@ def walk(root, dirs=None):
         if any(rel == e or rel.startswith(e + '/') for e in exclude):
             dirnames[:] = []
             continue
-        if dirs is not None and rel != '.':
-            keep = False
-            for d in dirs:
-                if rel == d or rel.startswith(d + '/') or d.startswith(rel + '/'):
-                    keep = True
-                    break
-            if not keep:
+        if dirs is not None:
+            in_scope = any(rel == d or rel.startswith(d + '/') for d in dirs)
+            is_ancestor = (rel == '.') or any(d.startswith(rel + '/') for d in dirs)
+            if not in_scope and not is_ancestor:
+                dirnames[:] = []
+                continue
+            if not in_scope:
                 continue
         for fn in sorted(filenames):
             if fn.lower().endswith(('.c', '.h')):

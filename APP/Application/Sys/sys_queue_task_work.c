@@ -17,6 +17,9 @@
 #include "Sys/sys_task.h"
 #include "Print/print_task.h"
 
+#include "app_info.h"
+#include "gpio_init.h"
+
 #if (boardBMS_EN)
 #include "MD_Bms/md_bms_task.h"
 #endif  //boardBMS_EN
@@ -34,8 +37,6 @@
 #include "Adc/adc_task.h"
 #endif  //boardADC_EN
 
-#include "app_info.h"
-#include "gpio_init.h"
 
 //****************************************************Macros********************************************************************//
 #define			sysTASK_WORK_CYCLE_TIME					10		//任务时间

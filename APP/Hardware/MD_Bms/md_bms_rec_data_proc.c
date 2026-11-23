@@ -75,7 +75,6 @@ static s8 c_bms_handle_update_c9(BaikuProtoRx_t *p_proto);
 s8 c_bms_rec_proc_data(BaikuProtoRx_t *p_proto)
 {
     s8   c_ret   = 1;
-    vu16 us_temp = 0;
     
     if (uPrint.tFlag.bBmsRecTask)
         sMyPrint("bBmsRecTask:指令:0x%x, 长度:%d\r\n", p_proto->ucCmd, p_proto->ucValidLen);
@@ -105,14 +104,15 @@ s8 c_bms_rec_proc_data(BaikuProtoRx_t *p_proto)
         /* 回复校准结果 */
         case baikuCMD_REPLY_CALI: /* 45 */
         {
-            if (p_proto->ucValidLen != 2 || p_proto->ucpValidData == NULL)
+            if (p_proto->ucValidLen != 3 || p_proto->ucpValidData == NULL)
                 return -40;
-            
-            memcpy((uint8_t *)&us_temp, p_proto->ucpValidData, p_proto->ucValidLen);
 
             #if (boardPRINT_IFACE)
-            if (cQueue_AddQueueTask(tpPrintTask, PTI_REPLY_CALI, us_temp, false) <= 0)
+            if (!bQueue_WriteReply(tpPrintTask, p_proto->ucpValidData, p_proto->ucValidLen))
                 return -41;
+
+            if (cQueue_AddQueueTask(tpPrintTask, PTI_REPLY_CALI, p_proto->ucValidLen, false) <= 0)
+                return -42;
             #endif  /* boardPRINT_IFACE */
         }
         break;

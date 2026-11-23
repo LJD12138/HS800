@@ -39,7 +39,7 @@
 #define			adcTASK_PRIO							4		/* 任务优先级(安全采集层:保护链源头) */
 #define			adcTASK_STK_SIZE						256		/* 任务堆栈(字) */
 static TaskHandle_t s_t_adc_task_handler = NULL;				/* 任务句柄 */
-static void vAdc_Task(void *p_v_parameters);				/* 任务函数 */
+static void vAdc_Task(void *p_v_parameters);					/* 任务函数 */
 #endif  /* boardUSE_OS */
 
 //****************************************************Macros********************************************************************//
@@ -194,8 +194,6 @@ void vAdc_Task(void *p_v_parameters)
 		/* 1.6 DC输入电压2 */
 		s_temp_ad = usAdc_GetChannelValue(adcDC_IN_2);
 		us_filter_dc_in_2_ad = (uint16_t)lFilter_MadianAverage(&s_t_adc_dc_in_2_filter_mad_avg, &s_temp_ad);
-
-		/* 注意: adcKEY_POWER 不需要滤波，在Key任务中直接读取原始AD值 */
 
 		/* ================= 2. 物理量算式换算 ================= */
 

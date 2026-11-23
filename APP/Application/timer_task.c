@@ -72,6 +72,7 @@ TimerHandle_t        tWakeUpBmsTimer = NULL;    /* 单次定时器, BMS的唤醒
 #endif  /* boardBMS_EN */
 
 static TimerHandle_t s_t_repet_timer = NULL;    /* 重复定时器 */
+
 static vu8           s_uc_timer_cnt  = 0;
 
 //****************************************************Function Declaration******************************************************//

@@ -104,49 +104,56 @@ static bool b_task_manage_func_cb(Task_T *p_task)
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("\r\n bSysTask:----装载初始化任务---- \r\n");
 			p_task->vp_func = v_sys_queue_task_init;
-		}break;
+        }
+        break;
 
 		case STI_CLOSING:
 		{
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载关闭任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_closing;
-		}break;
+        }
+        break;
 
 		case STI_SHUT_DOWN:
 		{
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载关闭完成任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_shut_down;
-		}break;
-
+        }
+        break;
+		
 		case STI_ERR:
 		{
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载错误任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_err;
-		}break;
-
+        }
+        break;
+		
 		case STI_RESET:
 		{
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载重置任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_reset;
-		}break;
+        }
+        break;
 
 		case STI_BOOTING:
 		{
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载启动任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_booting;
-		}break;
+        }
+        break;
 
 		case STI_WORK:
 		{
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载工作任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_work;
-		}break;
+        }
+        break;
 
 		#if (boardUPDATE)
 		case STI_UPDATE:
@@ -154,12 +161,14 @@ static bool b_task_manage_func_cb(Task_T *p_task)
 			if (uPrint.tFlag.bSysTask)
 				sMyPrint("bSysTask:----装载升级任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_update;
-		}break;
+		}
+		break;
 
 		case STI_UPDATE_ERR:
 		{
 			p_task->vp_func = v_sys_queue_task_update_err;
-		}break;
+		}
+		break;
 		#endif  //boardUPDATE
 
 		#if (boardENG_MODE_EN)
@@ -169,7 +178,8 @@ static bool b_task_manage_func_cb(Task_T *p_task)
 				sMyPrint("bSysTask:----装载工程模式任务----\r\n");
 			p_task->vp_func = v_sys_queue_task_eng;
 			bSys_SetDevState(DS_ENG_MODE, false);  //进入工程模式
-		}break;
+        }
+        break;
 		#endif  //boardENG_MODE_EN
 
 		case STI_NULL:
